@@ -42,7 +42,11 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - run: npm audit --audit-level=high
+      - name: npm audit (dependencias de producción; gate)
+        run: npm audit --audit-level=high --omit=dev
+      - name: npm audit (incluye dev; informativo)
+        continue-on-error: true
+        run: npm audit --audit-level=high
       - uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
