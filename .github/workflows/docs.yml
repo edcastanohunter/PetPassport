@@ -1,0 +1,29 @@
+name: docs
+
+on:
+  pull_request:
+    paths: ["docs/**", "scripts/**", ".github/workflows/docs.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: specs <-> tracking consistency
+        run: scripts/specs-status.sh --check
+      - name: specs status summary
+        run: scripts/specs-status.sh
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "docs/**/*.md"
+          config: .markdownlint.yaml
+        continue-on-error: true
+      - name: broken links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress "docs/**/*.md"
+          fail: false

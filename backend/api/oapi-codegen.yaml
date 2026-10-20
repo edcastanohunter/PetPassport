@@ -1,0 +1,11 @@
+# Configuración de oapi-codegen (strict server sobre chi). `make gen` regenera api/gen.
+package: gen
+output: gen/api.gen.go
+generate:
+  models: true
+  chi-server: true
+  strict-server: true
+  embedded-spec: true
+output-options:
+  skip-prune: false
+  nullable-type: true

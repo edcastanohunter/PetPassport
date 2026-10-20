@@ -1,0 +1,21 @@
+# Go
+backend/bin/
+backend/tmp/
+backend/coverage*.out
+
+# Node
+node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Entorno
+.env
+.env.*
+!.env.example
+infra/traefik/certs/*.pem
+
+# SO / editores
+.DS_Store
+.idea/
+.vscode/
+*.swp

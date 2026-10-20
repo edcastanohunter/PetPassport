@@ -1,0 +1,13 @@
+# Hot reload del servidor api en desarrollo (docker compose).
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/api ./cmd/api"
+  bin = "./tmp/api"
+  include_ext = ["go", "yaml"]
+  exclude_dir = ["tmp", "api/gen"]
+  delay = 500
+
+[log]
+  time = true

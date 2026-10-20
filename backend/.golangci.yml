@@ -1,0 +1,82 @@
+version: "2"
+run:
+  timeout: 5m
+  build-tags: [integration]
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosec
+    - depguard
+    - bodyclose
+    - noctx
+    - revive
+  settings:
+    gosec:
+      excludes:
+        - G104 # errcheck lo cubre
+    depguard:
+      # Reglas de dependencia de ADR-001 (docs/phase-1/03-arquitectura.md §2).
+      rules:
+        domain-is-pure:
+          files: ["**/internal/*/domain/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/platform"
+              desc: "domain no importa platform (ADR-001 §1)"
+            - pkg: "github.com/jackc/pgx"
+              desc: "domain no importa pgx (ADR-001 §1)"
+            - pkg: "net/http"
+              desc: "domain no importa net/http (ADR-001 §1)"
+        app-no-infra:
+          files: ["**/internal/*/app/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
+            - pkg: "github.com/jackc/pgx"
+              desc: "app define puertos, no adaptadores (ADR-001 §2)"
+        no-cross-context-domain:
+          files: ["**/internal/identity/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+        no-cross-context-domain-pn:
+          files: ["**/internal/partnernetwork/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+        no-cross-context-domain-pr:
+          files: ["**/internal/petregistry/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+        platform-has-no-business:
+          files: ["**/internal/platform/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry"
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/edcastanohunter/petpassport

@@ -1,0 +1,10 @@
+{
+  "nav": { "main": "Main navigation", "terms": "Terms", "privacy": "Privacy" },
+  "home": {
+    "title": "Your pet's health passport",
+    "subtitle": "Vaccination card, medical history and appointments in one place, shared with your clinic.",
+    "status": "API status"
+  },
+  "legal": { "terms": "Terms of service", "privacy": "Privacy policy", "version": "Version" },
+  "notFound": { "title": "Page not found", "back": "Back to home" }
+}

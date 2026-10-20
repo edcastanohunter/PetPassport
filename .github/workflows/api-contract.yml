@@ -1,0 +1,33 @@
+name: api-contract
+
+on:
+  pull_request:
+    paths: ["backend/api/openapi.yaml", "backend/api/.spectral.yaml"]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: spectral
+        run: npx --yes @stoplight/spectral-cli lint backend/api/openapi.yaml --ruleset backend/api/.spectral.yaml --fail-severity=warn
+
+  breaking-changes:
+    # Bloquea cambios incompatibles en /v1 (ADR-005).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: oasdiff breaking
+        uses: oasdiff/oasdiff-action/breaking@v0.0.21
+        with:
+          base: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.base_ref }}/backend/api/openapi.yaml"
+          revision: backend/api/openapi.yaml
+          fail-on: ERR

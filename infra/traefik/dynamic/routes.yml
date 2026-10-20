@@ -1,0 +1,87 @@
+# Enrutamiento de desarrollo (docs/phase-1/08 §3 SEC-002). TLS con certificados de mkcert
+# generados por `make dev-certs` en infra/traefik/certs/.
+http:
+  routers:
+    frontend:
+      rule: Host(`app.pp.localhost`)
+      entryPoints: [websecure]
+      service: frontend
+      middlewares: [security-headers, compress]
+      tls: {}
+    api:
+      rule: Host(`api.pp.localhost`) && (PathPrefix(`/api/`))
+      entryPoints: [websecure]
+      service: api
+      middlewares: [api-headers, api-buffering, api-ratelimit, inflight, compress]
+      tls: {}
+    keycloak:
+      rule: Host(`auth.pp.localhost`) && (PathPrefix(`/realms/`) || PathPrefix(`/resources/`) || PathPrefix(`/js/`))
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [compress]
+      tls: {}
+    keycloak-admin:
+      # Consola de administración: solo redes locales en dev; IP/VPN del equipo en staging/prod.
+      rule: Host(`auth.pp.localhost`) && (PathPrefix(`/admin/`) || Path(`/`))
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [admin-allowlist]
+      tls: {}
+
+  services:
+    frontend:
+      loadBalancer:
+        servers: [{ url: "http://frontend:5173" }]
+    api:
+      loadBalancer:
+        servers: [{ url: "http://api:8080" }]
+        healthCheck:
+          path: /api/v1/healthz
+          interval: 5s
+    keycloak:
+      loadBalancer:
+        servers: [{ url: "http://keycloak:8080" }]
+
+  middlewares:
+    security-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        frameDeny: true
+        customResponseHeaders:
+          Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
+          Cross-Origin-Opener-Policy: same-origin
+    api-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        contentTypeNosniff: true
+        customResponseHeaders:
+          Cache-Control: no-store
+    api-buffering:
+      buffering:
+        maxRequestBodyBytes: 6291456
+        memRequestBodyBytes: 1048576
+    api-ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+    inflight:
+      inFlightReq:
+        amount: 100
+    compress:
+      compress: {}
+    admin-allowlist:
+      ipAllowList:
+        sourceRange: ["127.0.0.1/32", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/pp.localhost.pem
+      keyFile: /etc/traefik/certs/pp.localhost-key.pem
+  options:
+    default:
+      minVersion: VersionTLS12

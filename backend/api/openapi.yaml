@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: PetPassport API
+  version: 1.0.0
+  description: |
+    API pública de PetPassport (`/api/v1`). Contrato fuente (ADR-005): el servidor Go y el cliente
+    TypeScript se generan desde este archivo. Convenciones en docs/phase-1/05-api.md.
+  contact:
+    name: PetPassport
+servers:
+  - url: https://api.petpassport.app/api/v1
+    description: Producción
+  - url: https://api.pp.localhost/api/v1
+    description: Desarrollo (compose + Traefik)
+tags:
+  - name: system
+    description: Salud y estado del servicio
+security:
+  - bearerAuth: []
+paths:
+  /healthz:
+    get:
+      operationId: getHealthz
+      summary: Liveness pública (usada por el WAF)
+      description: Indica que el proceso responde. No comprueba dependencias (eso lo hace /readyz en el puerto interno).
+      tags: [system]
+      security: []
+      x-pp-action: public
+      responses:
+        "200":
+          description: El proceso está vivo
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              examples:
+                ok:
+                  value: { status: ok }
+        default:
+          $ref: "#/components/responses/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token emitido por Keycloak (realm `petpassport`, audiencia `petpassport-api`).
+  headers:
+    X-Correlation-ID:
+      description: Identificador de correlación (UUID). Se acepta entrante y siempre se devuelve.
+      schema:
+        type: string
+        format: uuid
+    X-Request-ID:
+      description: Identificador único del request.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    Problem:
+      description: Error en formato application/problem+json (RFC 9457) con código estable del catálogo.
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          type: string
+          description: Código del catálogo (docs/phase-1/05-api.md §5).
+          pattern: "^[A-Z_]+$"
+        detail:
+          type: string
+        instance:
+          type: string
+        correlation_id:
+          type: string
+          format: uuid
+        errors:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, code]
+            properties:
+              field:
+                type: string
+              code:
+                type: string
+  responses:
+    Problem:
+      description: Error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
