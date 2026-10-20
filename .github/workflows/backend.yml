@@ -25,7 +25,7 @@ jobs:
           cache-dependency-path: backend/go.sum
       - uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.1
+          version: latest
           working-directory: backend
       - name: go vet (incl. integration tag)
         run: go vet -tags integration ./...
@@ -76,7 +76,7 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest -show verbose ./...
       - name: gosec
         run: go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-dir=api/gen ./...
       - name: semgrep

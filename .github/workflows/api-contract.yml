@@ -25,9 +25,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: oasdiff breaking
-        uses: oasdiff/oasdiff-action/breaking@v0.0.21
+      - uses: actions/setup-go@v5
         with:
-          base: "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.base_ref }}/backend/api/openapi.yaml"
-          revision: backend/api/openapi.yaml
-          fail-on: ERR
+          go-version-file: backend/go.mod
+      - name: oasdiff breaking (se omite si el contrato no existe en la rama base)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git show "origin/$BASE_REF:backend/api/openapi.yaml" > /tmp/base-openapi.yaml 2>/dev/null; then
+            go run github.com/oasdiff/oasdiff@latest breaking --fail-on ERR /tmp/base-openapi.yaml backend/api/openapi.yaml
+          else
+            echo "No hay backend/api/openapi.yaml en origin/$BASE_REF: primera versión del contrato, se omite."
+          fi
