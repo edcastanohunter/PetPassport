@@ -13,6 +13,10 @@ o afecta a más de un módulo. Formato: contexto → decisión → consecuencias
 | [ADR-006](ADR-006-gateway-y-waf.md) | WAF gestionado en el borde + Traefik como API Gateway; JWT se valida en la app | Aceptada |
 | [ADR-007](ADR-007-monorepo-e-identificadores.md) | Monorepo; UUIDv7 como identificador universal | Aceptada |
 | [ADR-008](ADR-008-despliegue-inicial.md) | Despliegue inicial en contenedores sobre VM + PostgreSQL gestionado; Kubernetes diferido | Aceptada |
+| [ADR-009](ADR-009-proyecciones-asincronas-y-orden-de-eventos.md) | Proyecciones asíncronas por suscripción catch-up; outbox solo para efectos externos; orden total garantizado | Aceptada |
+| [ADR-010](ADR-010-encounter-como-agregado-e-inmutabilidad-clinica.md) | `Encounter` y `VaccinationCard` como agregados; historial clínico como read model; inmutabilidad por firma y adendas | Aceptada |
+| [ADR-011](ADR-011-agenda-y-reserva-de-franjas.md) | `Appointment` y `ProfessionalAgenda` como agregados; no-solapamiento por restricción de exclusión | Aceptada |
+| [ADR-012](ADR-012-notificaciones-como-process-manager.md) | Notificaciones como process manager sobre el outbox; planificación en tabla; solo email en F2 | Aceptada |
 
 ## Plantilla
 

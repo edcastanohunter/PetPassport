@@ -102,12 +102,12 @@ Calidad y Experiencia de desarrollo.
 - **Event Store v0** en PostgreSQL con proyecciones síncronas y *outbox* escrito (ver ADR-002: se adelanta el núcleo del event store a F1 para evitar migrar de CRUD a ES en F2).
 - Borde: WAF gestionado + Traefik; CI/CD; observabilidad base.
 
-#### F2 — Clínica y CQRS-ES
-- *Clinical Records*: `MedicalRecord` (stream por mascota) con `Visit`, `Diagnosis`, `Treatment`, `VaccinationRecord`; carnet de vacunas (PDF/QR compartible); reglas de refuerzo por especie.
-- *Scheduling*: `Appointment` (solicitud, confirmación, reprogramación, no-show), agendas por profesional, `ReminderRule`.
-- *Notifications v0*: email transaccional por eventos; plantillas; preferencias.
-- **Event Store v1**: consumidor de outbox, proyectores asíncronos con *checkpoints*, *snapshots*, *upcasters*, herramienta de *rebuild* de proyecciones, idempotencia de proyección.
-- Solicitud de vínculo iniciada por la clínica con aprobación del tutor.
+#### F2 — Clínica y CQRS-ES → `docs/phase-2/`
+- *Clinical Records*: `Encounter` (consulta SOAP: borrador → firmada → adendas) y `VaccinationCard` (vacunas y preventivos, protocolos por especie/país, entradas declaradas) como agregados; el historial clínico es un read model (`medical_timeline`); PDF firmado con hash verificable; carnet PDF/QR y enlace compartido (ADR-010).
+- *Scheduling*: `Appointment` y `ProfessionalAgenda` como agregados; no-solapamiento por restricción de exclusión transaccional (ADR-011).
+- *Notifications v0*: process manager sobre el outbox, recordatorios programados, plantillas es/en, preferencias, dead-letter (ADR-012).
+- **Event Store v1**: `worker`, suscripciones catch-up con checkpoints, orden total por advisory lock, snapshots, upcasters, rebuild, fail-stop (ADR-009).
+- Solicitud de vínculo iniciada por la clínica con aprobación del tutor; perfil de mascota con alertas.
 
 #### F3 — Search & Performance
 - Proyecciones a OpenSearch: historial clínico (full-text, filtros, *highlight*), catálogo de medicamentos, pacientes por clínica.
