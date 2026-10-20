@@ -33,9 +33,14 @@ type Config struct {
 	}
 
 	OIDC struct {
-		Issuer   string
-		Audience string
+		Issuer       string
+		DiscoveryURL string // red interna (compose: http://keycloak:8080/realms/petpassport); vacío = Issuer
+		Audience     string
+		AllowedAZP   []string // azp permitidos (IAM-007)
 	}
+
+	// IPHashSalt sala el hash de IP del audit log (SEC-007). Obligatoria fuera de dev.
+	IPHashSalt string
 
 	Keycloak struct {
 		AdminClientID     string
@@ -96,11 +101,21 @@ func Load() (*Config, error) {
 	}
 	cfg.DB.MaxConns = int32(maxConns) //nolint:gosec // rango validado arriba
 
-	// OIDC es obligatorio fuera de dev; la validación de tokens se cablea en M1.1.
+	// OIDC es obligatorio fuera de dev. Sin issuer en dev, las rutas protegidas responden 503.
 	cfg.OIDC.Issuer = os.Getenv("PP_OIDC_ISSUER")
+	cfg.OIDC.DiscoveryURL = os.Getenv("PP_OIDC_DISCOVERY_URL")
 	cfg.OIDC.Audience = getenv("PP_OIDC_AUDIENCE", "petpassport-api")
+	cfg.OIDC.AllowedAZP = splitCSV(getenv("PP_OIDC_ALLOWED_AZP", "petpassport-web"))
 	if cfg.Env != EnvDev && cfg.OIDC.Issuer == "" {
 		errs = append(errs, errors.New("PP_OIDC_ISSUER es obligatoria fuera de dev"))
+	}
+
+	cfg.IPHashSalt = os.Getenv("PP_IP_HASH_SALT")
+	if cfg.Env != EnvDev && len(cfg.IPHashSalt) < 16 {
+		errs = append(errs, errors.New("PP_IP_HASH_SALT (≥16 caracteres) es obligatoria fuera de dev"))
+	}
+	if cfg.IPHashSalt == "" {
+		cfg.IPHashSalt = "dev-salt-not-for-production"
 	}
 
 	cfg.Keycloak.AdminClientID = getenv("PP_KC_ADMIN_CLIENT_ID", "petpassport-backend")

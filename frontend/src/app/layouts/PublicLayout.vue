@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useSessionStore } from '@/features/auth/sessionStore'
 const { t } = useI18n()
+const session = useSessionStore()
 </script>
 
 <template>
@@ -13,12 +15,25 @@ const { t } = useI18n()
         :aria-label="t('nav.main')"
       >
         <RouterLink to="/" class="font-semibold text-lg">PetPassport</RouterLink>
-        <ul class="flex gap-4 text-sm">
+        <ul class="flex items-center gap-4 text-sm">
           <li>
             <RouterLink to="/legal/terms">{{ t('nav.terms') }}</RouterLink>
           </li>
           <li>
             <RouterLink to="/legal/privacy">{{ t('nav.privacy') }}</RouterLink>
+          </li>
+          <li v-if="session.isAuthenticated">
+            <RouterLink to="/app" class="btn-primary">{{ t('nav.myPets') }}</RouterLink>
+          </li>
+          <li v-else>
+            <button
+              type="button"
+              class="btn-primary"
+              data-testid="login"
+              @click="session.login('/app')"
+            >
+              {{ t('nav.login') }}
+            </button>
           </li>
         </ul>
       </nav>

@@ -23,6 +23,15 @@ const (
 	Unavailable      Code = "UNAVAILABLE"
 	PayloadTooLarge  Code = "PAYLOAD_TOO_LARGE"
 	UnsupportedMedia Code = "UNSUPPORTED_MEDIA_TYPE"
+
+	EmailNotVerified       Code = "EMAIL_NOT_VERIFIED"
+	OnboardingRequired     Code = "ONBOARDING_REQUIRED"
+	ConsentVersionOutdated Code = "CONSENT_VERSION_OUTDATED"
+	AccountSuspended       Code = "ACCOUNT_SUSPENDED"
+	ConflictVersion        Code = "CONFLICT_VERSION"
+	RequestInProgress      Code = "REQUEST_IN_PROGRESS"
+	IdempotencyKeyReused   Code = "IDEMPOTENCY_KEY_REUSED"
+	RateLimited            Code = "RATE_LIMITED"
 )
 
 var defaultStatus = map[Code]int{
@@ -34,6 +43,15 @@ var defaultStatus = map[Code]int{
 	Unavailable:      http.StatusServiceUnavailable,
 	PayloadTooLarge:  http.StatusRequestEntityTooLarge,
 	UnsupportedMedia: http.StatusUnsupportedMediaType,
+
+	EmailNotVerified:       http.StatusForbidden,
+	OnboardingRequired:     http.StatusForbidden,
+	ConsentVersionOutdated: http.StatusUnprocessableEntity,
+	AccountSuspended:       http.StatusForbidden,
+	ConflictVersion:        http.StatusConflict,
+	RequestInProgress:      http.StatusConflict,
+	IdempotencyKeyReused:   http.StatusUnprocessableEntity,
+	RateLimited:            http.StatusTooManyRequests,
 }
 
 // FieldError describe un error de validación por campo.

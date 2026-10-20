@@ -2,11 +2,19 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/features/legal/HomePage.vue'
 import LegalPage from '@/features/legal/LegalPage.vue'
 import NotFoundPage from '@/features/legal/NotFoundPage.vue'
+import ForbiddenPage from '@/features/legal/ForbiddenPage.vue'
+import CallbackPage from '@/features/auth/CallbackPage.vue'
+import LogoutPage from '@/features/auth/LogoutPage.vue'
+import OnboardingPage from '@/features/onboarding/OnboardingPage.vue'
+import ProfilePage from '@/features/profile/ProfilePage.vue'
+import DashboardPage from '@/features/dashboard/DashboardPage.vue'
+import { authGuard } from './guards'
 
-// Tabla de rutas de docs/phase-1/07 §4. En M1.0 solo las públicas; los guards
-// requiresAuth / requiresOnboarding / requiresMembership llegan en M1.1.
+// Tabla de rutas de docs/phase-1/07 §4. En M1.1: públicas, auth, onboarding y
+// cuenta propia. Mascotas (M1.2), organizaciones (M1.3) y admin (M1.4) se añaden
+// con sus hitos.
 export function createAppRouter() {
-  return createRouter({
+  const router = createRouter({
     history: createWebHistory(),
     routes: [
       { path: '/', name: 'home', component: HomePage, meta: { layout: 'public' } },
@@ -25,6 +33,37 @@ export function createAppRouter() {
         meta: { layout: 'public' },
       },
       {
+        path: '/auth/callback',
+        name: 'auth-callback',
+        component: CallbackPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/auth/logout',
+        name: 'auth-logout',
+        component: LogoutPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/onboarding',
+        name: 'onboarding',
+        component: OnboardingPage,
+        meta: { layout: 'public', requiresAuth: true },
+      },
+      {
+        path: '/app',
+        name: 'app',
+        component: DashboardPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/profile',
+        name: 'profile',
+        component: ProfilePage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      { path: '/403', name: 'forbidden', component: ForbiddenPage, meta: { layout: 'public' } },
+      {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: NotFoundPage,
@@ -33,4 +72,6 @@ export function createAppRouter() {
     ],
     scrollBehavior: () => ({ top: 0 }),
   })
+  router.beforeEach(authGuard)
+  return router
 }

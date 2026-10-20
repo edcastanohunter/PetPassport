@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { createApiClient } from '@/shared/api/client'
+import { api } from '@/shared/api/client'
 
 const { t } = useI18n()
 const apiStatus = ref<'checking' | 'ok' | 'down'>('checking')
 
 onMounted(async () => {
   try {
-    const { data } = await createApiClient().GET('/healthz')
+    const { data } = await api().GET('/healthz')
     apiStatus.value = data?.status === 'ok' ? 'ok' : 'down'
   } catch {
     apiStatus.value = 'down'

@@ -19,3 +19,4 @@ infra/traefik/certs/*.pem
 .idea/
 .vscode/
 *.swp
+frontend/tsconfig.app.tsbuildinfo

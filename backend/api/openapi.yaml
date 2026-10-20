@@ -15,9 +15,186 @@ servers:
 tags:
   - name: system
     description: Salud y estado del servicio
+  - name: me
+    description: Cuenta propia (docs/phase-1/05-api.md §3.1)
+  - name: legal
+    description: Términos y privacidad vigentes
 security:
   - bearerAuth: []
 paths:
+  /legal/current:
+    get:
+      operationId: getLegalCurrent
+      summary: Versiones vigentes de términos y privacidad
+      description: Público. La SPA lo usa en el onboarding y en el modal de re-consentimiento.
+      tags: [legal]
+      security: []
+      x-pp-action: public
+      responses:
+        "200":
+          description: Versiones vigentes
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalCurrent"
+              examples:
+                current:
+                  value:
+                    terms_version: 2026-10-draft
+                    privacy_version: 2026-10-draft
+                    terms_url: /legal/terms
+                    privacy_url: /legal/privacy
+        default:
+          $ref: "#/components/responses/Problem"
+  /me:
+    get:
+      operationId: getMe
+      summary: Cuenta propia
+      description: |
+        Devuelve la cuenta del actor. Provoca el aprovisionamiento JIT (IAM-009). Acepta email sin
+        verificar y onboarding pendiente para que la SPA pueda decidir a dónde redirigir.
+      tags: [me]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Cuenta del actor
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+              examples:
+                onboarded:
+                  $ref: "#/components/examples/MeOnboarded"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateMe
+      summary: Editar perfil
+      description: |
+        Actualiza los campos presentes. Para vaciar un campo opcional (`phone`, `country`, `address`,
+        `emergency_contact`) se envía `null`. Registra la acción en `platform.audit_log` (sin valores).
+      tags: [me]
+      x-pp-action: me:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMeRequest"
+            examples:
+              phone:
+                value: { phone: "+57 300 123 4567" }
+      responses:
+        "200":
+          description: Cuenta actualizada
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/onboarding:
+    post:
+      operationId: completeOnboarding
+      summary: Completar onboarding
+      description: |
+        Acepta las versiones vigentes de términos y privacidad y registra los datos básicos (PRD-003,
+        PRD-020). `422 CONSENT_VERSION_OUTDATED` si las versiones aceptadas no son las vigentes.
+        Idempotente: repetirlo actualiza los datos y el consentimiento.
+      tags: [me]
+      x-pp-action: onboarding:complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingRequest"
+            examples:
+              owner:
+                value:
+                  display_name: Ana Tutora
+                  country: CO
+                  locale: es
+                  phone: "+573001234567"
+                  accept_terms_version: 2026-10-draft
+                  accept_privacy_version: 2026-10-draft
+      responses:
+        "200":
+          description: Cuenta con onboarding completado
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/consent:
+    post:
+      operationId: acceptConsent
+      summary: Aceptar versiones vigentes de términos y privacidad
+      description: Re-consentimiento tras una actualización legal. `422 CONSENT_VERSION_OUTDATED` si no son las vigentes.
+      tags: [me]
+      x-pp-action: me:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentRequest"
+            examples:
+              current:
+                value: { terms_version: 2026-10-draft, privacy_version: 2026-10-draft }
+      responses:
+        "204":
+          description: Consentimiento registrado
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -61,7 +238,240 @@ components:
       schema:
         type: string
         format: uuid
+  examples:
+    MeOnboarded:
+      value:
+        id: 0192f3a2-2222-7aaa-bbbb-dddddddddddd
+        email: ana@example.com
+        email_verified: true
+        display_name: Ana Tutora
+        locale: es
+        country: CO
+        phone: "+573001234567"
+        address: null
+        emergency_contact: null
+        global_roles: [pet_owner]
+        memberships: []
+        onboarding_required: false
+        consent:
+          terms_version: 2026-10-draft
+          privacy_version: 2026-10-draft
+          accepted_at: 2026-10-20T10:00:00Z
+        consent_outdated: false
+        status: active
   schemas:
+    DisplayName:
+      type: string
+      minLength: 1
+      maxLength: 120
+      pattern: "^[^\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]*$"
+    CountryCode:
+      type: string
+      description: ISO 3166-1 alpha-2.
+      pattern: "^[A-Za-z]{2}$"
+    Locale:
+      type: string
+      enum: [es, en]
+    Phone:
+      type: string
+      description: E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
+      maxLength: 32
+      pattern: "^\\+[0-9 ()\\-.]{6,30}$"
+    ConsentVersion:
+      type: string
+      maxLength: 32
+      pattern: "^[A-Za-z0-9.-]+$"
+    Address:
+      type: object
+      additionalProperties: false
+      required: [country, city, line1]
+      properties:
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        region:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 120
+        line1:
+          type: string
+          minLength: 1
+          maxLength: 200
+        line2:
+          type: string
+          maxLength: 200
+        postal_code:
+          type: string
+          maxLength: 20
+    EmergencyContact:
+      type: object
+      additionalProperties: false
+      required: [name, phone]
+      properties:
+        name:
+          $ref: "#/components/schemas/DisplayName"
+        phone:
+          $ref: "#/components/schemas/Phone"
+        relationship:
+          type: string
+          maxLength: 60
+    Consent:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version, accepted_at]
+      properties:
+        terms_version:
+          type: string
+        privacy_version:
+          type: string
+        accepted_at:
+          type: string
+          format: date-time
+    Membership:
+      type: object
+      additionalProperties: false
+      required: [organization_id, display_name, type, role, org_status]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        type:
+          type: string
+          enum: [clinic, pharmacy]
+        role:
+          type: string
+          enum: [clinic_admin, veterinarian, receptionist, pharmacy_admin, pharmacist]
+        org_status:
+          type: string
+          enum: [pending_verification, active, suspended, rejected]
+    Me:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - email_verified
+        - display_name
+        - locale
+        - global_roles
+        - memberships
+        - onboarding_required
+        - consent_outdated
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        email_verified:
+          type: boolean
+        display_name:
+          type: string
+        locale:
+          $ref: "#/components/schemas/Locale"
+        country:
+          type: [string, "null"]
+        phone:
+          type: [string, "null"]
+        address:
+          oneOf:
+            - $ref: "#/components/schemas/Address"
+            - type: "null"
+        emergency_contact:
+          oneOf:
+            - $ref: "#/components/schemas/EmergencyContact"
+            - type: "null"
+        global_roles:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        memberships:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Membership"
+        onboarding_required:
+          type: boolean
+        consent:
+          oneOf:
+            - $ref: "#/components/schemas/Consent"
+            - type: "null"
+        consent_outdated:
+          type: boolean
+        status:
+          type: string
+          enum: [active, suspended]
+    OnboardingRequest:
+      type: object
+      additionalProperties: false
+      required: [display_name, country, locale, accept_terms_version, accept_privacy_version]
+      properties:
+        display_name:
+          $ref: "#/components/schemas/DisplayName"
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        locale:
+          $ref: "#/components/schemas/Locale"
+        phone:
+          $ref: "#/components/schemas/Phone"
+        accept_terms_version:
+          $ref: "#/components/schemas/ConsentVersion"
+        accept_privacy_version:
+          $ref: "#/components/schemas/ConsentVersion"
+    UpdateMeRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        display_name:
+          $ref: "#/components/schemas/DisplayName"
+        locale:
+          $ref: "#/components/schemas/Locale"
+        country:
+          oneOf:
+            - $ref: "#/components/schemas/CountryCode"
+            - type: "null"
+        phone:
+          oneOf:
+            - $ref: "#/components/schemas/Phone"
+            - type: "null"
+        address:
+          oneOf:
+            - $ref: "#/components/schemas/Address"
+            - type: "null"
+        emergency_contact:
+          oneOf:
+            - $ref: "#/components/schemas/EmergencyContact"
+            - type: "null"
+    ConsentRequest:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version]
+      properties:
+        terms_version:
+          $ref: "#/components/schemas/ConsentVersion"
+        privacy_version:
+          $ref: "#/components/schemas/ConsentVersion"
+    LegalCurrent:
+      type: object
+      additionalProperties: false
+      required: [terms_version, privacy_version, terms_url, privacy_url]
+      properties:
+        terms_version:
+          type: string
+        privacy_version:
+          type: string
+        terms_url:
+          type: string
+        privacy_url:
+          type: string
     HealthStatus:
       type: object
       additionalProperties: false

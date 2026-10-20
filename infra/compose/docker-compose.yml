@@ -77,6 +77,9 @@ services:
       KC_DB_PASSWORD: ${KC_DB_PASSWORD:-keycloak}
       KC_HOSTNAME: https://auth.pp.localhost
       KC_HOSTNAME_STRICT: "false"
+      # La API descubre el realm por la red interna (http://keycloak:8080) mientras
+      # los tokens llevan iss=https://auth.pp.localhost (PP_OIDC_DISCOVERY_URL).
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
@@ -170,7 +173,10 @@ services:
       PP_DB_URL: postgres://petpassport_api:${PP_API_PASSWORD:-api}@postgres:5432/petpassport?sslmode=disable
       PP_DB_MAX_CONNS: "10"
       PP_OIDC_ISSUER: https://auth.pp.localhost/realms/petpassport
+      PP_OIDC_DISCOVERY_URL: http://keycloak:8080/realms/petpassport
       PP_OIDC_AUDIENCE: petpassport-api
+      PP_OIDC_ALLOWED_AZP: petpassport-web
+      PP_IP_HASH_SALT: ${PP_IP_HASH_SALT:-dev-ip-hash-salt-change-me}
       PP_KC_ADMIN_CLIENT_ID: petpassport-backend
       PP_KC_ADMIN_CLIENT_SECRET: ${PP_BACKEND_CLIENT_SECRET:-dev-backend-secret-change-me}
       PP_STORAGE_ENDPOINT: minio:9000

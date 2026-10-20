@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/problem"
 )
 
@@ -31,7 +32,12 @@ type Options struct {
 	Health      *Health
 	CORSOrigins []string
 	Dev         bool
-	// Mount registra las rutas de negocio bajo /api/v1.
+	// Handlers implementa el contrato completo (composición de SystemHandlers y módulos).
+	Handlers gen.StrictServerInterface
+	// Guard es el middleware de autenticación por operación (auth.Guard.Middleware).
+	// nil solo en pruebas de la capa HTTP: las rutas no públicas responden 503.
+	Guard func(http.Handler) http.Handler
+	// Mount registra rutas adicionales fuera del contrato bajo /api/v1 (opcional).
 	Mount func(r chi.Router)
 }
 
@@ -74,7 +80,24 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Use(middleware.RequestSize(MaxJSONBody))
-		mountGenerated(api)
+		handlers := o.Handlers
+		if handlers == nil {
+			handlers = systemOnly{}
+		}
+		// Orden de ejecución: captura de cuerpo → guard (401/403 antes que 422) →
+		// validación de contrato → handler.
+		perOp := []func(http.Handler) http.Handler{captureBody}
+		if o.Guard != nil {
+			perOp = append(perOp, o.Guard)
+		} else {
+			perOp = append(perOp, unavailableUnlessPublic)
+		}
+		if spec, err := gen.GetSpec(); err == nil {
+			perOp = append(perOp, requestValidator(spec))
+		} else {
+			panic("httpserver: contrato embebido inválido: " + err.Error())
+		}
+		mountGenerated(api, handlers, perOp)
 		if o.Mount != nil {
 			o.Mount(api)
 		}
@@ -125,6 +148,18 @@ func (s *Servers) Start() <-chan error {
 // Shutdown apaga ambos servidores de forma ordenada.
 func (s *Servers) Shutdown(ctx context.Context) error {
 	return errors.Join(s.Public.Shutdown(ctx), s.Internal.Shutdown(ctx))
+}
+
+// unavailableUnlessPublic sustituye al guard cuando no hay verificador: solo
+// deja pasar /healthz (deny by default, 503 en el resto).
+func unavailableUnlessPublic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if chiRoutePattern(r) == "/api/v1/healthz" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		problem.Write(w, r, problem.New(problem.Unavailable, "No disponible", "La autenticación no está configurada."))
+	})
 }
 
 func chiRoutePattern(r *http.Request) string {

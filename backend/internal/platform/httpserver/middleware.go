@@ -13,26 +13,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/problem"
-)
-
-type ctxKey int
-
-const (
-	ctxCorrelationID ctxKey = iota
-	ctxRequestID
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/reqctx"
 )
 
 // CorrelationIDFrom devuelve el X-Correlation-ID del request.
-func CorrelationIDFrom(ctx context.Context) string {
-	v, _ := ctx.Value(ctxCorrelationID).(string)
-	return v
-}
+func CorrelationIDFrom(ctx context.Context) string { return reqctx.From(ctx).CorrelationID }
 
 // RequestIDFrom devuelve el X-Request-ID del request.
-func RequestIDFrom(ctx context.Context) string {
-	v, _ := ctx.Value(ctxRequestID).(string)
-	return v
-}
+func RequestIDFrom(ctx context.Context) string { return reqctx.From(ctx).RequestID }
 
 // correlation asigna X-Request-ID (siempre nuevo) y X-Correlation-ID (entrante
 // si es un UUID válido; nuevo si no) y los devuelve en la respuesta.
@@ -43,8 +31,7 @@ func correlation(next http.Handler) http.Handler {
 		if _, err := uuid.Parse(corr); err != nil {
 			corr = reqID
 		}
-		ctx := context.WithValue(r.Context(), ctxRequestID, reqID)
-		ctx = context.WithValue(ctx, ctxCorrelationID, corr)
+		ctx := reqctx.With(r.Context(), &reqctx.Info{RequestID: reqID, CorrelationID: corr, RemoteAddr: r.RemoteAddr})
 		w.Header().Set("X-Request-ID", reqID)
 		w.Header().Set("X-Correlation-ID", corr)
 		r.Header.Set("X-Correlation-ID", corr)
@@ -88,6 +75,9 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				"duration_ms", time.Since(start).Milliseconds(),
 				"request_id", RequestIDFrom(r.Context()),
 				"correlation_id", CorrelationIDFrom(r.Context()),
+			}
+			if actor := reqctx.From(r.Context()).ActorID(); actor != "" {
+				attrs = append(attrs, "actor_id", actor)
 			}
 			if span.HasTraceID() {
 				attrs = append(attrs, "trace_id", span.TraceID().String())
