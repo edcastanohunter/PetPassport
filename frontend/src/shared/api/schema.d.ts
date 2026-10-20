@@ -4,6 +4,94 @@
  */
 
 export interface paths {
+    "/legal/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versiones vigentes de términos y privacidad
+         * @description Público. La SPA lo usa en el onboarding y en el modal de re-consentimiento.
+         */
+        get: operations["getLegalCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuenta propia
+         * @description Devuelve la cuenta del actor. Provoca el aprovisionamiento JIT (IAM-009). Acepta email sin
+         *     verificar y onboarding pendiente para que la SPA pueda decidir a dónde redirigir.
+         */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Editar perfil
+         * @description Actualiza los campos presentes. Para vaciar un campo opcional (`phone`, `country`, `address`,
+         *     `emergency_contact`) se envía `null`. Registra la acción en `platform.audit_log` (sin valores).
+         */
+        patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/me/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Completar onboarding
+         * @description Acepta las versiones vigentes de términos y privacidad y registra los datos básicos (PRD-003,
+         *     PRD-020). `422 CONSENT_VERSION_OUTDATED` si las versiones aceptadas no son las vigentes.
+         *     Idempotente: repetirlo actualiza los datos y el consentimiento.
+         */
+        post: operations["completeOnboarding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar versiones vigentes de términos y privacidad
+         * @description Re-consentimiento tras una actualización legal. `422 CONSENT_VERSION_OUTDATED` si no son las vigentes.
+         */
+        post: operations["acceptConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -28,6 +116,90 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        DisplayName: string;
+        /** @description ISO 3166-1 alpha-2. */
+        CountryCode: string;
+        /** @enum {string} */
+        Locale: "es" | "en";
+        /** @description E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar. */
+        Phone: string;
+        ConsentVersion: string;
+        Address: {
+            country: components["schemas"]["CountryCode"];
+            region?: string;
+            city: string;
+            line1: string;
+            line2?: string;
+            postal_code?: string;
+        };
+        EmergencyContact: {
+            name: components["schemas"]["DisplayName"];
+            phone: components["schemas"]["Phone"];
+            relationship?: string;
+        };
+        Consent: {
+            terms_version: string;
+            privacy_version: string;
+            /** Format: date-time */
+            accepted_at: string;
+        };
+        Membership: {
+            /** Format: uuid */
+            organization_id: string;
+            display_name: string;
+            /** @enum {string} */
+            type: "clinic" | "pharmacy";
+            /** @enum {string} */
+            role: "clinic_admin" | "veterinarian" | "receptionist" | "pharmacy_admin" | "pharmacist";
+            /** @enum {string} */
+            org_status: "pending_verification" | "active" | "suspended" | "rejected";
+        };
+        Me: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            email_verified: boolean;
+            display_name: string;
+            locale: components["schemas"]["Locale"];
+            country?: string | null;
+            phone?: string | null;
+            address?: components["schemas"]["Address"] | null;
+            emergency_contact?: components["schemas"]["EmergencyContact"] | null;
+            global_roles: string[];
+            memberships: components["schemas"]["Membership"][];
+            onboarding_required: boolean;
+            consent?: components["schemas"]["Consent"] | null;
+            consent_outdated: boolean;
+            /** @enum {string} */
+            status: "active" | "suspended";
+        };
+        OnboardingRequest: {
+            display_name: components["schemas"]["DisplayName"];
+            country: components["schemas"]["CountryCode"];
+            locale: components["schemas"]["Locale"];
+            phone?: components["schemas"]["Phone"];
+            accept_terms_version: components["schemas"]["ConsentVersion"];
+            accept_privacy_version: components["schemas"]["ConsentVersion"];
+        };
+        UpdateMeRequest: {
+            display_name?: components["schemas"]["DisplayName"];
+            locale?: components["schemas"]["Locale"];
+            country?: components["schemas"]["CountryCode"] | null;
+            phone?: components["schemas"]["Phone"] | null;
+            address?: components["schemas"]["Address"] | null;
+            emergency_contact?: components["schemas"]["EmergencyContact"] | null;
+        };
+        ConsentRequest: {
+            terms_version: components["schemas"]["ConsentVersion"];
+            privacy_version: components["schemas"]["ConsentVersion"];
+        };
+        LegalCurrent: {
+            terms_version: string;
+            privacy_version: string;
+            terms_url: string;
+            privacy_url: string;
+        };
         HealthStatus: {
             /** @enum {string} */
             status: "ok";
@@ -73,6 +245,142 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getLegalCurrent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versiones vigentes */
+            200: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalCurrent"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuenta del actor */
+            200: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description Cuenta actualizada */
+            200: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    completeOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingRequest"];
+            };
+        };
+        responses: {
+            /** @description Cuenta con onboarding completado */
+            200: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description Consentimiento registrado */
+            204: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
     getHealthz: {
         parameters: {
             query?: never;

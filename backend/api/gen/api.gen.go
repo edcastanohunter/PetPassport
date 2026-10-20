@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -35,6 +36,154 @@ func (e HealthStatusStatus) Valid() bool {
 	}
 }
 
+// Defines values for Locale.
+const (
+	En Locale = "en"
+	Es Locale = "es"
+)
+
+// Valid indicates whether the value is a known member of the Locale enum.
+func (e Locale) Valid() bool {
+	switch e {
+	case En:
+		return true
+	case Es:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MeStatus.
+const (
+	MeStatusActive    MeStatus = "active"
+	MeStatusSuspended MeStatus = "suspended"
+)
+
+// Valid indicates whether the value is a known member of the MeStatus enum.
+func (e MeStatus) Valid() bool {
+	switch e {
+	case MeStatusActive:
+		return true
+	case MeStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MembershipOrgStatus.
+const (
+	MembershipOrgStatusActive              MembershipOrgStatus = "active"
+	MembershipOrgStatusPendingVerification MembershipOrgStatus = "pending_verification"
+	MembershipOrgStatusRejected            MembershipOrgStatus = "rejected"
+	MembershipOrgStatusSuspended           MembershipOrgStatus = "suspended"
+)
+
+// Valid indicates whether the value is a known member of the MembershipOrgStatus enum.
+func (e MembershipOrgStatus) Valid() bool {
+	switch e {
+	case MembershipOrgStatusActive:
+		return true
+	case MembershipOrgStatusPendingVerification:
+		return true
+	case MembershipOrgStatusRejected:
+		return true
+	case MembershipOrgStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MembershipRole.
+const (
+	ClinicAdmin   MembershipRole = "clinic_admin"
+	Pharmacist    MembershipRole = "pharmacist"
+	PharmacyAdmin MembershipRole = "pharmacy_admin"
+	Receptionist  MembershipRole = "receptionist"
+	Veterinarian  MembershipRole = "veterinarian"
+)
+
+// Valid indicates whether the value is a known member of the MembershipRole enum.
+func (e MembershipRole) Valid() bool {
+	switch e {
+	case ClinicAdmin:
+		return true
+	case Pharmacist:
+		return true
+	case PharmacyAdmin:
+		return true
+	case Receptionist:
+		return true
+	case Veterinarian:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MembershipType.
+const (
+	Clinic   MembershipType = "clinic"
+	Pharmacy MembershipType = "pharmacy"
+)
+
+// Valid indicates whether the value is a known member of the MembershipType enum.
+func (e MembershipType) Valid() bool {
+	switch e {
+	case Clinic:
+		return true
+	case Pharmacy:
+		return true
+	default:
+		return false
+	}
+}
+
+// Address defines model for Address.
+type Address struct {
+	City string `json:"city"`
+
+	// Country ISO 3166-1 alpha-2.
+	Country    CountryCode `json:"country"`
+	Line1      string      `json:"line1"`
+	Line2      *string     `json:"line2,omitempty"`
+	PostalCode *string     `json:"postal_code,omitempty"`
+	Region     *string     `json:"region,omitempty"`
+}
+
+// Consent defines model for Consent.
+type Consent struct {
+	AcceptedAt     time.Time `json:"accepted_at"`
+	PrivacyVersion string    `json:"privacy_version"`
+	TermsVersion   string    `json:"terms_version"`
+}
+
+// ConsentRequest defines model for ConsentRequest.
+type ConsentRequest struct {
+	PrivacyVersion ConsentVersion `json:"privacy_version"`
+	TermsVersion   ConsentVersion `json:"terms_version"`
+}
+
+// ConsentVersion defines model for ConsentVersion.
+type ConsentVersion = string
+
+// CountryCode ISO 3166-1 alpha-2.
+type CountryCode = string
+
+// DisplayName defines model for DisplayName.
+type DisplayName = string
+
+// EmergencyContact defines model for EmergencyContact.
+type EmergencyContact struct {
+	Name DisplayName `json:"name"`
+
+	// Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
+	Phone        Phone   `json:"phone"`
+	Relationship *string `json:"relationship,omitempty"`
+}
+
 // HealthStatus defines model for HealthStatus.
 type HealthStatus struct {
 	Status HealthStatusStatus `json:"status"`
@@ -42,6 +191,74 @@ type HealthStatus struct {
 
 // HealthStatusStatus defines model for HealthStatus.Status.
 type HealthStatusStatus string
+
+// LegalCurrent defines model for LegalCurrent.
+type LegalCurrent struct {
+	PrivacyUrl     string `json:"privacy_url"`
+	PrivacyVersion string `json:"privacy_version"`
+	TermsUrl       string `json:"terms_url"`
+	TermsVersion   string `json:"terms_version"`
+}
+
+// Locale defines model for Locale.
+type Locale string
+
+// Me defines model for Me.
+type Me struct {
+	Address            *Address            `json:"address,omitempty"`
+	Consent            *Consent            `json:"consent,omitempty"`
+	ConsentOutdated    bool                `json:"consent_outdated"`
+	Country            *string             `json:"country,omitempty"`
+	DisplayName        string              `json:"display_name"`
+	Email              openapi_types.Email `json:"email"`
+	EmailVerified      bool                `json:"email_verified"`
+	EmergencyContact   *EmergencyContact   `json:"emergency_contact,omitempty"`
+	GlobalRoles        []string            `json:"global_roles"`
+	Id                 openapi_types.UUID  `json:"id"`
+	Locale             Locale              `json:"locale"`
+	Memberships        []Membership        `json:"memberships"`
+	OnboardingRequired bool                `json:"onboarding_required"`
+	Phone              *string             `json:"phone,omitempty"`
+	Status             MeStatus            `json:"status"`
+}
+
+// MeStatus defines model for Me.Status.
+type MeStatus string
+
+// Membership defines model for Membership.
+type Membership struct {
+	DisplayName    string              `json:"display_name"`
+	OrgStatus      MembershipOrgStatus `json:"org_status"`
+	OrganizationId openapi_types.UUID  `json:"organization_id"`
+	Role           MembershipRole      `json:"role"`
+	Type           MembershipType      `json:"type"`
+}
+
+// MembershipOrgStatus defines model for Membership.OrgStatus.
+type MembershipOrgStatus string
+
+// MembershipRole defines model for Membership.Role.
+type MembershipRole string
+
+// MembershipType defines model for Membership.Type.
+type MembershipType string
+
+// OnboardingRequest defines model for OnboardingRequest.
+type OnboardingRequest struct {
+	AcceptPrivacyVersion ConsentVersion `json:"accept_privacy_version"`
+	AcceptTermsVersion   ConsentVersion `json:"accept_terms_version"`
+
+	// Country ISO 3166-1 alpha-2.
+	Country     CountryCode `json:"country"`
+	DisplayName DisplayName `json:"display_name"`
+	Locale      Locale      `json:"locale"`
+
+	// Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
+	Phone *Phone `json:"phone,omitempty"`
+}
+
+// Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
+type Phone = string
 
 // Problem Error en formato application/problem+json (RFC 9457) con código estable del catálogo.
 type Problem struct {
@@ -59,11 +276,45 @@ type Problem struct {
 	Type     string  `json:"type"`
 }
 
+// UpdateMeRequest defines model for UpdateMeRequest.
+type UpdateMeRequest struct {
+	Address          *Address          `json:"address,omitempty"`
+	Country          *CountryCode      `json:"country,omitempty"`
+	DisplayName      *DisplayName      `json:"display_name,omitempty"`
+	EmergencyContact *EmergencyContact `json:"emergency_contact,omitempty"`
+	Locale           *Locale           `json:"locale,omitempty"`
+	Phone            *Phone            `json:"phone,omitempty"`
+}
+
+// UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
+type UpdateMeJSONRequestBody = UpdateMeRequest
+
+// AcceptConsentJSONRequestBody defines body for AcceptConsent for application/json ContentType.
+type AcceptConsentJSONRequestBody = ConsentRequest
+
+// CompleteOnboardingJSONRequestBody defines body for CompleteOnboarding for application/json ContentType.
+type CompleteOnboardingJSONRequestBody = OnboardingRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetHealthz Liveness pública (usada por el WAF)
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
+	// GetLegalCurrent Versiones vigentes de términos y privacidad
+	// (GET /legal/current)
+	GetLegalCurrent(w http.ResponseWriter, r *http.Request)
+	// GetMe Cuenta propia
+	// (GET /me)
+	GetMe(w http.ResponseWriter, r *http.Request)
+	// UpdateMe Editar perfil
+	// (PATCH /me)
+	UpdateMe(w http.ResponseWriter, r *http.Request)
+	// AcceptConsent Aceptar versiones vigentes de términos y privacidad
+	// (POST /me/consent)
+	AcceptConsent(w http.ResponseWriter, r *http.Request)
+	// CompleteOnboarding Completar onboarding
+	// (POST /me/onboarding)
+	CompleteOnboarding(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -73,6 +324,36 @@ type Unimplemented struct{}
 // GetHealthz Liveness pública (usada por el WAF)
 // (GET /healthz)
 func (_ Unimplemented) GetHealthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetLegalCurrent Versiones vigentes de términos y privacidad
+// (GET /legal/current)
+func (_ Unimplemented) GetLegalCurrent(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetMe Cuenta propia
+// (GET /me)
+func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateMe Editar perfil
+// (PATCH /me)
+func (_ Unimplemented) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AcceptConsent Aceptar versiones vigentes de términos y privacidad
+// (POST /me/consent)
+func (_ Unimplemented) AcceptConsent(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CompleteOnboarding Completar onboarding
+// (POST /me/onboarding)
+func (_ Unimplemented) CompleteOnboarding(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90,6 +371,76 @@ func (siw *ServerInterfaceWrapper) GetHealthz(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealthz(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLegalCurrent operation middleware
+func (siw *ServerInterfaceWrapper) GetLegalCurrent(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLegalCurrent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMe operation middleware
+func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateMe operation middleware
+func (siw *ServerInterfaceWrapper) UpdateMe(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptConsent operation middleware
+func (siw *ServerInterfaceWrapper) AcceptConsent(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptConsent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CompleteOnboarding operation middleware
+func (siw *ServerInterfaceWrapper) CompleteOnboarding(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteOnboarding(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -213,6 +564,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/legal/current", wrapper.GetLegalCurrent)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/me", wrapper.GetMe)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/me", wrapper.UpdateMe)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/me/onboarding", wrapper.CompleteOnboarding)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/me/consent", wrapper.AcceptConsent)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/healthz", wrapper.GetHealthz)
 	})
 
@@ -273,11 +639,443 @@ func (response GetHealthzdefaultApplicationProblemPlusJSONResponse) VisitGetHeal
 	return err
 }
 
+type GetLegalCurrentRequestObject struct {
+}
+
+type GetLegalCurrentResponseObject interface {
+	VisitGetLegalCurrentResponse(w http.ResponseWriter) error
+}
+
+type GetLegalCurrent200ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type GetLegalCurrent200JSONResponse struct {
+	Body    LegalCurrent
+	Headers GetLegalCurrent200ResponseHeaders
+}
+
+func (response GetLegalCurrent200JSONResponse) VisitGetLegalCurrentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLegalCurrentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetLegalCurrentdefaultApplicationProblemPlusJSONResponse) VisitGetLegalCurrentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMeRequestObject struct {
+}
+
+type GetMeResponseObject interface {
+	VisitGetMeResponse(w http.ResponseWriter) error
+}
+
+type GetMe200ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type GetMe200JSONResponse struct {
+	Body    Me
+	Headers GetMe200ResponseHeaders
+}
+
+func (response GetMe200JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetMe401ApplicationProblemPlusJSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe403ApplicationProblemPlusJSONResponse Problem
+
+func (response GetMe403ApplicationProblemPlusJSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetMedefaultApplicationProblemPlusJSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMeRequestObject struct {
+	Body *UpdateMeJSONRequestBody
+}
+
+type UpdateMeResponseObject interface {
+	VisitUpdateMeResponse(w http.ResponseWriter) error
+}
+
+type UpdateMe200ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type UpdateMe200JSONResponse struct {
+	Body    Me
+	Headers UpdateMe200ResponseHeaders
+}
+
+func (response UpdateMe200JSONResponse) VisitUpdateMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMe401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateMe401ApplicationProblemPlusJSONResponse) VisitUpdateMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMe403ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateMe403ApplicationProblemPlusJSONResponse) VisitUpdateMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMe422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateMe422ApplicationProblemPlusJSONResponse) VisitUpdateMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateMedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UpdateMedefaultApplicationProblemPlusJSONResponse) VisitUpdateMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptConsentRequestObject struct {
+	Body *AcceptConsentJSONRequestBody
+}
+
+type AcceptConsentResponseObject interface {
+	VisitAcceptConsentResponse(w http.ResponseWriter) error
+}
+
+type AcceptConsent204ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type AcceptConsent204Response struct {
+	Headers AcceptConsent204ResponseHeaders
+}
+
+func (response AcceptConsent204Response) VisitAcceptConsentResponse(w http.ResponseWriter) error {
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(204)
+	return nil
+}
+
+type AcceptConsent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptConsent401ApplicationProblemPlusJSONResponse) VisitAcceptConsentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptConsent403ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptConsent403ApplicationProblemPlusJSONResponse) VisitAcceptConsentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptConsent422ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptConsent422ApplicationProblemPlusJSONResponse) VisitAcceptConsentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptConsentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response AcceptConsentdefaultApplicationProblemPlusJSONResponse) VisitAcceptConsentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteOnboardingRequestObject struct {
+	Body *CompleteOnboardingJSONRequestBody
+}
+
+type CompleteOnboardingResponseObject interface {
+	VisitCompleteOnboardingResponse(w http.ResponseWriter) error
+}
+
+type CompleteOnboarding200ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type CompleteOnboarding200JSONResponse struct {
+	Body    Me
+	Headers CompleteOnboarding200ResponseHeaders
+}
+
+func (response CompleteOnboarding200JSONResponse) VisitCompleteOnboardingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteOnboarding401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteOnboarding401ApplicationProblemPlusJSONResponse) VisitCompleteOnboardingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteOnboarding403ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteOnboarding403ApplicationProblemPlusJSONResponse) VisitCompleteOnboardingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteOnboarding422ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteOnboarding422ApplicationProblemPlusJSONResponse) VisitCompleteOnboardingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteOnboardingdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CompleteOnboardingdefaultApplicationProblemPlusJSONResponse) VisitCompleteOnboardingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealthz Liveness pública (usada por el WAF)
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
+	// GetLegalCurrent Versiones vigentes de términos y privacidad
+	// (GET /legal/current)
+	GetLegalCurrent(ctx context.Context, request GetLegalCurrentRequestObject) (GetLegalCurrentResponseObject, error)
+	// GetMe Cuenta propia
+	// (GET /me)
+	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// UpdateMe Editar perfil
+	// (PATCH /me)
+	UpdateMe(ctx context.Context, request UpdateMeRequestObject) (UpdateMeResponseObject, error)
+	// AcceptConsent Aceptar versiones vigentes de términos y privacidad
+	// (POST /me/consent)
+	AcceptConsent(ctx context.Context, request AcceptConsentRequestObject) (AcceptConsentResponseObject, error)
+	// CompleteOnboarding Completar onboarding
+	// (POST /me/onboarding)
+	CompleteOnboarding(ctx context.Context, request CompleteOnboardingRequestObject) (CompleteOnboardingResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -343,30 +1141,203 @@ func (sh *strictHandler) GetHealthz(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetLegalCurrent operation middleware
+func (sh *strictHandler) GetLegalCurrent(w http.ResponseWriter, r *http.Request) {
+	var request GetLegalCurrentRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLegalCurrent(ctx, request.(GetLegalCurrentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLegalCurrent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLegalCurrentResponseObject); ok {
+		if err := validResponse.VisitGetLegalCurrentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMe operation middleware
+func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	var request GetMeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMe(ctx, request.(GetMeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMeResponseObject); ok {
+		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateMe operation middleware
+func (sh *strictHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	var request UpdateMeRequestObject
+
+	var body UpdateMeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateMe(ctx, request.(UpdateMeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateMe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateMeResponseObject); ok {
+		if err := validResponse.VisitUpdateMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptConsent operation middleware
+func (sh *strictHandler) AcceptConsent(w http.ResponseWriter, r *http.Request) {
+	var request AcceptConsentRequestObject
+
+	var body AcceptConsentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptConsent(ctx, request.(AcceptConsentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptConsent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptConsentResponseObject); ok {
+		if err := validResponse.VisitAcceptConsentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CompleteOnboarding operation middleware
+func (sh *strictHandler) CompleteOnboarding(w http.ResponseWriter, r *http.Request) {
+	var request CompleteOnboardingRequestObject
+
+	var body CompleteOnboardingJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CompleteOnboarding(ctx, request.(CompleteOnboardingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CompleteOnboarding")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CompleteOnboardingResponseObject); ok {
+		if err := validResponse.VisitCompleteOnboardingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -12,8 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
+	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
+	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/config"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
@@ -59,8 +62,35 @@ func run() error {
 	}
 	defer pool.Close()
 
-	// 4. Event store registry — M1.2. 5. OIDC verifier — M1.1.
-	// 6. Módulos (identity, partnernetwork, petregistry) — M1.1+.
+	// 4. Event store registry — M1.2.
+
+	// 5. Verificador OIDC (IAM-007). Fuera de dev el issuer es obligatorio; en dev
+	// sin issuer las rutas protegidas responden 503.
+	var verifier *auth.Verifier
+	if cfg.OIDC.Issuer != "" {
+		verifier, err = newVerifierWithRetry(ctx, logger, auth.VerifierConfig{
+			Issuer: cfg.OIDC.Issuer, DiscoveryURL: cfg.OIDC.DiscoveryURL,
+			Audience: cfg.OIDC.Audience, AllowedAZP: cfg.OIDC.AllowedAZP,
+		})
+		if err != nil {
+			return fmt.Errorf("oidc: %w", err)
+		}
+	} else {
+		logger.Warn("PP_OIDC_ISSUER vacío: autenticación deshabilitada (solo dev)")
+	}
+
+	// 6. Módulos. Identity (M1.1); partnernetwork y petregistry llegan en M1.2–M1.3.
+	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
+	spec, err := gen.GetSpec()
+	if err != nil {
+		return fmt.Errorf("openapi: %w", err)
+	}
+	guard, err := auth.NewGuard(spec, auth.GuardOptions{
+		Verifier: verifier, Resolver: identitySvc, Logger: logger, BasePath: "/api/v1",
+	})
+	if err != nil {
+		return err
+	}
 
 	// 7. Router y servidores.
 	health := httpserver.NewHealth()
@@ -68,9 +98,8 @@ func run() error {
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
-		Mount: func(r chi.Router) {
-			// Las rutas de negocio se montan aquí a partir de M1.1.
-		},
+		Handlers: apiHandlers{Handlers: identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt)},
+		Guard:    guard.Middleware,
 	})
 	errs := servers.Start()
 	health.SetReady(true)
@@ -92,4 +121,25 @@ func run() error {
 	}
 	logger.Info("stopped")
 	return nil
+}
+
+// newVerifierWithRetry espera al proveedor OIDC hasta ~60 s (Keycloak tarda en
+// arrancar en compose); después falla y el proceso no arranca (IAM-007 §1).
+func newVerifierWithRetry(ctx context.Context, logger *slog.Logger, cfg auth.VerifierConfig) (*auth.Verifier, error) {
+	const attempts = 20
+	var lastErr error
+	for i := 1; i <= attempts; i++ {
+		v, err := auth.NewVerifier(ctx, cfg)
+		if err == nil {
+			return v, nil
+		}
+		lastErr = err
+		logger.Warn("oidc discovery failed, retrying", "attempt", i, "error", err.Error())
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(3 * time.Second):
+		}
+	}
+	return nil, lastErr
 }

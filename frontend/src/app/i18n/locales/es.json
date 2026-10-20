@@ -1,5 +1,22 @@
 {
-  "nav": { "main": "Navegación principal", "terms": "Términos", "privacy": "Privacidad" },
+  "nav": {
+    "main": "Navegación principal",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "login": "Entrar o crear cuenta",
+    "logout": "Cerrar sesión",
+    "myPets": "Mis mascotas",
+    "admin": "Administración",
+    "profile": "Mi perfil"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "next": "Continuar",
+    "back": "Atrás",
+    "save": "Guardar",
+    "select": "Selecciona…",
+    "optional": "opcional"
+  },
   "home": {
     "title": "El pasaporte de salud de tu mascota",
     "subtitle": "Carnet de vacunas, historial clínico y citas en un solo lugar, compartido con tu clínica.",
@@ -10,5 +27,83 @@
     "privacy": "Política de privacidad",
     "version": "Versión"
   },
-  "notFound": { "title": "Página no encontrada", "back": "Volver al inicio" }
+  "auth": {
+    "signingIn": "Iniciando sesión…",
+    "callbackError": "No se pudo completar el inicio de sesión.",
+    "retry": "Reintentar",
+    "signedOut": "Sesión cerrada.",
+    "sessionExpired": "Tu sesión ha caducado.",
+    "signInAgain": "Volver a entrar"
+  },
+  "onboarding": {
+    "title": "Bienvenido a PetPassport",
+    "step": "Paso {n} de {total}",
+    "acceptTerms": "He leído y acepto los {link}",
+    "acceptPrivacy": "He leído y acepto la {link}",
+    "choosePath": "¿Cómo vas a usar PetPassport?",
+    "pathOwner": "Soy tutor",
+    "pathOwnerHint": "Gestiono la salud de mis mascotas.",
+    "pathOrg": "Registrar organización",
+    "pathOrgHint": "Clínica o farmacia (disponible próximamente).",
+    "skip": "Saltar este paso"
+  },
+  "consent": {
+    "title": "Hemos actualizado nuestros términos",
+    "detail": "Para seguir usando PetPassport, acepta las versiones vigentes.",
+    "accept": "Aceptar"
+  },
+  "profile": {
+    "title": "Mi perfil",
+    "email": "Email",
+    "manageAccount": "Gestionar cuenta (contraseña, email)",
+    "displayName": "Nombre",
+    "country": "País",
+    "locale": "Idioma",
+    "phone": "Teléfono",
+    "address": "Dirección",
+    "region": "Región / departamento",
+    "city": "Ciudad",
+    "postalCode": "Código postal",
+    "line1": "Dirección",
+    "line2": "Complemento",
+    "emergencyContact": "Contacto de emergencia",
+    "contactName": "Nombre del contacto",
+    "relationship": "Relación",
+    "saved": "Perfil guardado.",
+    "security": "Seguridad",
+    "securityHint": "Activa la verificación en dos pasos (OTP) desde tu cuenta.",
+    "configureOtp": "Configurar OTP"
+  },
+  "dashboard": {
+    "title": "Hola, {name}",
+    "petsSoon": "Aquí verás tus mascotas. Muy pronto podrás registrarlas."
+  },
+  "forbidden": {
+    "title": "Acceso no permitido",
+    "detail": "No tienes permiso para ver esta página o tu cuenta está suspendida."
+  },
+  "notFound": { "title": "Página no encontrada", "back": "Volver al inicio" },
+  "errors": {
+    "GENERIC": "Ocurrió un error. Inténtalo de nuevo.",
+    "UNAUTHENTICATED": "Tu sesión no es válida. Vuelve a entrar.",
+    "EMAIL_NOT_VERIFIED": "Verifica tu email para continuar.",
+    "ONBOARDING_REQUIRED": "Completa el onboarding para continuar.",
+    "CONSENT_VERSION_OUTDATED": "Los términos han cambiado. Acepta las versiones vigentes.",
+    "ACCOUNT_SUSPENDED": "Tu cuenta está suspendida.",
+    "FORBIDDEN": "No tienes permiso para esta acción.",
+    "NOT_FOUND": "No encontrado.",
+    "VALIDATION_FAILED": "Revisa los campos marcados.",
+    "CONFLICT_VERSION": "El recurso cambió. Recarga y reintenta.",
+    "RATE_LIMITED": "Demasiadas solicitudes. Espera un momento.",
+    "UNAVAILABLE": "Servicio no disponible temporalmente."
+  },
+  "fieldErrors": {
+    "INVALID": "Valor no válido.",
+    "REQUIRED": "Obligatorio.",
+    "TOO_LONG": "Demasiado largo.",
+    "TOO_SHORT": "Demasiado corto.",
+    "INVALID_FORMAT": "Formato no válido.",
+    "INVALID_ENUM": "Opción no válida.",
+    "UNKNOWN_FIELD": "Campo no reconocido."
+  }
 }

@@ -51,6 +51,7 @@ http:
         contentTypeNosniff: true
         referrerPolicy: strict-origin-when-cross-origin
         frameDeny: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.pp.localhost https://auth.pp.localhost wss://app.pp.localhost; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.pp.localhost; object-src 'none'; upgrade-insecure-requests"
         customResponseHeaders:
           Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
           Cross-Origin-Opener-Policy: same-origin

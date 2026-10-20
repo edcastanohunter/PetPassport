@@ -16,8 +16,9 @@ rememberMe: false
 editUsernameAllowed: false
 sslRequired: external
 
-# Política de contraseñas (IAM-004; se completa con passwordHistory/blacklist en M1.1).
-passwordPolicy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername and notEmail"
+# Política de contraseñas (IAM-004). La blacklist de 100k contraseñas se monta como
+# archivo del tema en M1.5 (passwordBlacklist(...) requiere el fichero en data/password-blacklists).
+passwordPolicy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername and notEmail and passwordHistory(3) and hashAlgorithm(argon2)"
 
 # --- Fuerza bruta (IAM-005; OTP condicional para super_admin se configura en M1.4) ---
 bruteForceProtected: true

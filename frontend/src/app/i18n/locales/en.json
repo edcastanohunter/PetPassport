@@ -1,10 +1,105 @@
 {
-  "nav": { "main": "Main navigation", "terms": "Terms", "privacy": "Privacy" },
+  "nav": {
+    "main": "Main navigation",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "login": "Sign in or sign up",
+    "logout": "Sign out",
+    "myPets": "My pets",
+    "admin": "Administration",
+    "profile": "My profile"
+  },
+  "common": {
+    "loading": "Loading…",
+    "next": "Continue",
+    "back": "Back",
+    "save": "Save",
+    "select": "Select…",
+    "optional": "optional"
+  },
   "home": {
     "title": "Your pet's health passport",
     "subtitle": "Vaccination card, medical history and appointments in one place, shared with your clinic.",
     "status": "API status"
   },
   "legal": { "terms": "Terms of service", "privacy": "Privacy policy", "version": "Version" },
-  "notFound": { "title": "Page not found", "back": "Back to home" }
+  "auth": {
+    "signingIn": "Signing in…",
+    "callbackError": "Sign-in could not be completed.",
+    "retry": "Retry",
+    "signedOut": "Signed out.",
+    "sessionExpired": "Your session has expired.",
+    "signInAgain": "Sign in again"
+  },
+  "onboarding": {
+    "title": "Welcome to PetPassport",
+    "step": "Step {n} of {total}",
+    "acceptTerms": "I have read and accept the {link}",
+    "acceptPrivacy": "I have read and accept the {link}",
+    "choosePath": "How will you use PetPassport?",
+    "pathOwner": "I'm a pet owner",
+    "pathOwnerHint": "I manage my pets' health.",
+    "pathOrg": "Register an organization",
+    "pathOrgHint": "Clinic or pharmacy (coming soon).",
+    "skip": "Skip this step"
+  },
+  "consent": {
+    "title": "We have updated our terms",
+    "detail": "To keep using PetPassport, please accept the current versions.",
+    "accept": "Accept"
+  },
+  "profile": {
+    "title": "My profile",
+    "email": "Email",
+    "manageAccount": "Manage account (password, email)",
+    "displayName": "Name",
+    "country": "Country",
+    "locale": "Language",
+    "phone": "Phone",
+    "address": "Address",
+    "region": "Region / state",
+    "city": "City",
+    "postalCode": "Postal code",
+    "line1": "Address line",
+    "line2": "Additional line",
+    "emergencyContact": "Emergency contact",
+    "contactName": "Contact name",
+    "relationship": "Relationship",
+    "saved": "Profile saved.",
+    "security": "Security",
+    "securityHint": "Enable two-step verification (OTP) from your account.",
+    "configureOtp": "Configure OTP"
+  },
+  "dashboard": {
+    "title": "Hello, {name}",
+    "petsSoon": "Your pets will show up here. You'll be able to register them very soon."
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "detail": "You don't have permission to view this page or your account is suspended."
+  },
+  "notFound": { "title": "Page not found", "back": "Back to home" },
+  "errors": {
+    "GENERIC": "Something went wrong. Please try again.",
+    "UNAUTHENTICATED": "Your session is not valid. Please sign in again.",
+    "EMAIL_NOT_VERIFIED": "Verify your email to continue.",
+    "ONBOARDING_REQUIRED": "Complete onboarding to continue.",
+    "CONSENT_VERSION_OUTDATED": "The terms have changed. Please accept the current versions.",
+    "ACCOUNT_SUSPENDED": "Your account is suspended.",
+    "FORBIDDEN": "You don't have permission for this action.",
+    "NOT_FOUND": "Not found.",
+    "VALIDATION_FAILED": "Check the highlighted fields.",
+    "CONFLICT_VERSION": "The resource changed. Reload and retry.",
+    "RATE_LIMITED": "Too many requests. Please wait a moment.",
+    "UNAVAILABLE": "Service temporarily unavailable."
+  },
+  "fieldErrors": {
+    "INVALID": "Invalid value.",
+    "REQUIRED": "Required.",
+    "TOO_LONG": "Too long.",
+    "TOO_SHORT": "Too short.",
+    "INVALID_FORMAT": "Invalid format.",
+    "INVALID_ENUM": "Invalid option.",
+    "UNKNOWN_FIELD": "Unknown field."
+  }
 }

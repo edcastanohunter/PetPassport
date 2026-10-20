@@ -4,7 +4,7 @@ import { createI18n } from 'vue-i18n'
 import HomePage from './HomePage.vue'
 
 vi.mock('@/shared/api/client', () => ({
-  createApiClient: () => ({ GET: async () => ({ data: { status: 'ok' } }) }),
+  api: () => ({ GET: async () => ({ data: { status: 'ok' } }) }),
 }))
 
 describe('HomePage', () => {

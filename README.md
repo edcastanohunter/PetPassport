@@ -42,6 +42,36 @@ curl -s -X POST https://auth.pp.localhost/realms/petpassport/protocol/openid-con
 > fallará a propósito. Para obtener un token de prueba usa el flujo del navegador desde la app (M1.1) o un token
 > firmado por el testkit (`backend/test/testkit`).
 
+## Verificación manual del entorno (no cubierta por CI)
+
+La CI ejecuta lint, pruebas unitarias, la prueba de integración con PostgreSQL real (testcontainers), el contrato
+OpenAPI y la construcción de imágenes. **No** levanta el entorno Compose completo (Keycloak + `keycloak-config-cli`,
+Traefik, MinIO, Mailpit). Tras cada cambio en `infra/` conviene verificarlo en una máquina con Docker:
+
+```bash
+cp .env.example .env
+make dev-certs                              # una vez por máquina (mkcert)
+make dev-up                                 # espera a que keycloak-config y migrate terminen (docker compose ps)
+make dev-seed                               # usuarios semilla
+curl -k https://api.pp.localhost/api/v1/healthz        # {"status":"ok"}
+curl -s localhost:9090/readyz | jq                     # "db": {"status":"ok"}
+open https://auth.pp.localhost/realms/petpassport/account   # cuenta de Keycloak (login con owner@dev.local)
+```
+
+Si algo falla, los puntos más sensibles son el tag de `adorsys/keycloak-config-cli` y el `healthcheck` de Keycloak
+en `infra/compose/docker-compose.yml`. Reporta el resultado en el PR del hito correspondiente.
+
+Flujo de identidad (M1.1) de punta a punta, en el navegador:
+
+1. `https://app.pp.localhost` → **Entrar o crear cuenta** → en Keycloak, "Registrarse" (email, contraseña ≥ 12 con
+   mayúscula, minúscula y dígito, nombre y apellido).
+2. Verificar el email desde Mailpit (`http://localhost:8025`) → vuelve a la app y entra en `/onboarding`
+   (consentimiento → datos básicos → camino) → `/app`.
+3. `/app/profile`: editar teléfono o dirección y guardar; comprobar la fila en `platform.audit_log`
+   (`docker compose exec postgres psql -U postgres petpassport -c "select action, details from platform.audit_log"`).
+4. `curl -k https://api.pp.localhost/api/v1/me` sin token → `401` con `WWW-Authenticate`; con un token caducado
+   (espera 5 min sin renovar) → `401`; `GET /api/v1/legal/current` → `200` sin token.
+
 ## Desarrollo
 
 ```bash
