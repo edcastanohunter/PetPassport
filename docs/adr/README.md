@@ -26,6 +26,10 @@ o afecta a más de un módulo. Formato: contexto → decisión → consecuencias
 | [ADR-019](ADR-019-pipeline-ocr-ia-con-confirmacion-humana.md) | Extracción con modelo de visión y salida estructurada; confianza por campo; confirmación humana | Aceptada |
 | [ADR-020](ADR-020-saga-de-cotizacion-y-pedidos.md) | `QuoteRequest` como saga; `Order` como agregado; pago en la farmacia | Aceptada |
 | [ADR-021](ADR-021-niveles-de-integracion-de-partners.md) | Tres niveles de integración de partners; ACL por adaptador; simulador | Aceptada |
+| [ADR-022](ADR-022-billing-propio-con-proveedores-de-pago-y-facturacion.md) | Suscripciones propias; proveedor de pagos y de facturación fiscal abstraídos por jurisdicción | Aceptada |
+| [ADR-023](ADR-023-crypto-shredding-y-derechos-del-titular.md) | Crypto-shredding por sujeto; migración única de eventos históricos; derechos del titular automatizados | Aceptada |
+| [ADR-024](ADR-024-kubernetes-dr-y-continuidad.md) | Kubernetes multi-zona; RPO 5 min / RTO 1 h; backups cross-region; simulacros | Aceptada |
+| [ADR-025](ADR-025-entitlements-y-limites-por-plan.md) | Entitlements por puerto; límites blandos con gracia; medición de uso por eventos | Aceptada |
 
 ## Plantilla
 

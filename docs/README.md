@@ -17,14 +17,15 @@ seguridad, infraestructura y calidad.
 | [`phase-2/`](phase-2/00-vision-y-alcance.md) | Especificación completa de la Fase 2 (Clínica y CQRS-ES). |
 | [`phase-3/`](phase-3/00-vision-y-alcance.md) | Especificación completa de la Fase 3 (Search & Performance). |
 | [`phase-4/`](phase-4/00-vision-y-alcance.md) | Especificación completa de la Fase 4 (Integración B2B, OCR y farmacias). |
+| [`phase-5/`](phase-5/00-vision-y-alcance.md) | Especificación completa de la Fase 5 (Operación SaaS y monetización). |
 | [`tracking/`](tracking/README.md) | Mecanismo de seguimiento del avance de cada spec (fuente de verdad + script). |
-| `phase-5/` … `phase-N/` | Se generan al cerrar la revisión de la fase anterior. |
+| `phase-6/` | Se genera al cerrar la revisión de la Fase 5. |
 
 ## Convenciones de las specs
 
 - **Identificador de requisito**: `PP-F<fase>-<ÁREA>-<nnn>` (ej. `PP-F1-IAM-007`).
   Áreas: `PRD` producto, `DOM` dominio/DDD, `ARQ` arquitectura, `IAM` identidad y acceso,
-  `API`, `PTN` API de partners, `DAT` datos, `FE` frontend, `NOT` notificaciones, `OCR` extracción/IA, `PRF` rendimiento, `SEC` seguridad, `INF` infraestructura/DevOps, `QA` calidad.
+  `API`, `PTN` API de partners, `DAT` datos, `FE` frontend, `NOT` notificaciones, `OCR` extracción/IA, `PRF` rendimiento, `OPS` operaciones, `CMP` cumplimiento, `SEC` seguridad, `INF` infraestructura/DevOps, `QA` calidad.
 - **Prioridad (MoSCoW)**: `MUST` (bloquea la fase), `SHOULD` (esperado), `COULD` (si hay capacidad).
 - **Estado**: vive únicamente en `tracking/phase-N.md`; las specs describen el *qué*, el tracking el *cuánto falta*.
 - **Lenguaje**: los documentos están en español; los nombres de código (agregados, eventos,

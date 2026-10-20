@@ -123,10 +123,11 @@ Calidad y Experiencia de desarrollo.
 - *Partner Integration*: tres niveles (portal sin integración, `partner/v1` con OAuth2 + webhooks firmados + sandbox + simulador, adaptador saliente con ACL); borde `partners.<dominio>` con WAF propio, egress proxy anti-SSRF; producto de gateway diferido con criterio (ADR-017, ADR-021).
 - Portal de farmacia completo; administración de partners, reglas regulatorias por país, presupuesto de IA.
 
-#### F5 — Operación SaaS y Monetización
-- Planes (tutor gratuito, clínica por profesionales, farmacia por volumen); facturación; límites por plan aplicados en dominio.
-- Backups verificados, DR con RPO/RTO definidos, auditoría de cumplimiento (protección de datos local y GDPR-like), exportación/eliminación de datos automatizada (*crypto-shredding*).
-- Soporte, *status page*, SLA.
+#### F5 — Operación SaaS y Monetización → `docs/phase-5/`
+- *Billing*: `BillingAccount` y `Subscription` propios (planes versionados, prueba 30 días, prorrateo, dunning con gracia); proveedor de pagos y proveedor de facturación fiscal (DIAN) abstraídos y elegidos por jurisdicción (ADR-022); entitlements consultados por puerto en el command bus con límites blandos y medición de uso por eventos (ADR-025).
+- *Privacy*: crypto-shredding por sujeto con KMS, migración única de eventos históricos, derechos del titular automatizados, retención automática (ADR-023).
+- *Operación*: Kubernetes multi-zona, RPO 5 min / RTO 1 h, backups cross-region, simulacros, on-call, incidentes y postmortems, status page, SLA con créditos, FinOps (ADR-024).
+- Soporte con impersonación consentida y auditada; SMS/WhatsApp; cumplimiento (registro de tratamientos, DPIA, DPAs, revisión de accesos, auditoría exportable, fiscal).
 
 #### F6 — Escala y Evolución
 - Extracción a servicios (Search, OCR, Notifications) solo si la carga lo justifica; Kubernetes.
