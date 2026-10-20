@@ -1,0 +1,10 @@
+# Configuración de gitleaks (PP-F1-SEC-008). Extiende las reglas por defecto.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Artefactos generados sin secretos: el contrato OpenAPI embebido en base64/gzip dispara generic-api-key."
+paths = [
+  '''backend/api/gen/api\.gen\.go''',
+  '''frontend/package-lock\.json''',
+]
