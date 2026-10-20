@@ -21,6 +21,11 @@ o afecta a más de un módulo. Formato: contexto → decisión → consecuencias
 | [ADR-014](ADR-014-redis-usos-permitidos.md) | Redis para caché, rate limiting y trabajos no ordenados; PostgreSQL sigue siendo la fuente durable | Aceptada |
 | [ADR-015](ADR-015-escalado-horizontal.md) | Escalado horizontal: `api` N réplicas, `worker` con leases; Helm en F3, Kubernetes en F5 | Aceptada (actualiza ADR-008) |
 | [ADR-016](ADR-016-catalogo-de-medicamentos.md) | Catálogo de medicamentos como datos de referencia; `MedicationItem` v2 con `catalog_id` | Aceptada |
+| [ADR-017](ADR-017-borde-partner-y-autenticacion-b2b.md) | Borde dedicado para partners, OAuth2 client-credentials, webhooks firmados; gateway diferido | Aceptada |
+| [ADR-018](ADR-018-prescription-como-agregado.md) | `Prescription` como agregado con dos orígenes; validez, controladas, verificación | Aceptada |
+| [ADR-019](ADR-019-pipeline-ocr-ia-con-confirmacion-humana.md) | Extracción con modelo de visión y salida estructurada; confianza por campo; confirmación humana | Aceptada |
+| [ADR-020](ADR-020-saga-de-cotizacion-y-pedidos.md) | `QuoteRequest` como saga; `Order` como agregado; pago en la farmacia | Aceptada |
+| [ADR-021](ADR-021-niveles-de-integracion-de-partners.md) | Tres niveles de integración de partners; ACL por adaptador; simulador | Aceptada |
 
 ## Plantilla
 
