@@ -116,12 +116,12 @@ Calidad y Experiencia de desarrollo.
 - Escalado horizontal: `api`×N, `worker`×N con leases; Helm chart; Kubernetes en F5 (ADR-015). SLOs, k6 con datos sintéticos a escala, CDN, game day.
 - Pendientes de F2: ClamAV, Web Push, paciente provisional, accesos anómalos.
 
-#### F4 — Integración B2B y Automatización
-- *Prescriptions*: `Prescription` emitida por un veterinario (estructurada) o subida como imagen por el tutor.
-- Pipeline OCR/IA: subida → preprocesado → OCR/visión (proveedor intercambiable) → extracción estructurada → **confirmación humana** → receta validada.
-- *Pharmacy Orders*: saga de cotización multi-partner (`QuoteRequested` → `QuoteReceived`/`QuoteFailed` → comparación → `OrderPlaced`), ACL por partner, *webhooks* firmados, reintentos y compensaciones.
-- Gateway/WAF dedicado para tráfico partner: mTLS u OAuth2 client-credentials, cuotas, API keys, portal de desarrollador.
-- Portal de administrador de farmacia.
+#### F4 — Integración B2B y Automatización → `docs/phase-4/`
+- *Prescriptions*: `Prescription` como agregado con dos orígenes — emitida por veterinario con credencial verificada (firma, PDF, QR, verificación pública) o externa subida por el tutor; validez, refills, dispensaciones; controladas no pedibles (ADR-018).
+- Pipeline OCR/IA en el worker: preprocesado → modelo de visión con salida estructurada (Claude, proveedor intercambiable) → emparejamiento con catálogo → **confirmación humana obligatoria**; evaluación continua con dataset y presupuesto (ADR-019).
+- *Pharmacy Orders*: `QuoteRequest` como saga y `Order` como agregado; pago en la farmacia; sustituciones validadas; minimización de datos por etapa (ADR-020).
+- *Partner Integration*: tres niveles (portal sin integración, `partner/v1` con OAuth2 + webhooks firmados + sandbox + simulador, adaptador saliente con ACL); borde `partners.<dominio>` con WAF propio, egress proxy anti-SSRF; producto de gateway diferido con criterio (ADR-017, ADR-021).
+- Portal de farmacia completo; administración de partners, reglas regulatorias por país, presupuesto de IA.
 
 #### F5 — Operación SaaS y Monetización
 - Planes (tutor gratuito, clínica por profesionales, farmacia por volumen); facturación; límites por plan aplicados en dominio.

@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCS="$ROOT/docs"
 VALID_STATES="PENDIENTE EN_DISENO EN_PROGRESO IMPLEMENTADO VERIFICADO BLOQUEADO DESCARTADO"
-ID_RE='PP-F[0-9]+-(PRD|DOM|ARQ|IAM|API|DAT|FE|NOT|PRF|SEC|INF|QA)-[0-9]{3}'
+ID_RE='PP-F[0-9]+-(PRD|DOM|ARQ|IAM|API|PTN|DAT|FE|NOT|OCR|PRF|SEC|INF|QA)-[0-9]{3}'
 
 mode="summary"; phase=""
 while [ $# -gt 0 ]; do
