@@ -17,6 +17,10 @@ o afecta a más de un módulo. Formato: contexto → decisión → consecuencias
 | [ADR-010](ADR-010-encounter-como-agregado-e-inmutabilidad-clinica.md) | `Encounter` y `VaccinationCard` como agregados; historial clínico como read model; inmutabilidad por firma y adendas | Aceptada |
 | [ADR-011](ADR-011-agenda-y-reserva-de-franjas.md) | `Appointment` y `ProfessionalAgenda` como agregados; no-solapamiento por restricción de exclusión | Aceptada |
 | [ADR-012](ADR-012-notificaciones-como-process-manager.md) | Notificaciones como process manager sobre el outbox; planificación en tabla; solo email en F2 | Aceptada |
+| [ADR-013](ADR-013-opensearch-como-read-model-de-busqueda.md) | OpenSearch como read model de búsqueda; indexación catch-up; autorización denormalizada | Aceptada |
+| [ADR-014](ADR-014-redis-usos-permitidos.md) | Redis para caché, rate limiting y trabajos no ordenados; PostgreSQL sigue siendo la fuente durable | Aceptada |
+| [ADR-015](ADR-015-escalado-horizontal.md) | Escalado horizontal: `api` N réplicas, `worker` con leases; Helm en F3, Kubernetes en F5 | Aceptada (actualiza ADR-008) |
+| [ADR-016](ADR-016-catalogo-de-medicamentos.md) | Catálogo de medicamentos como datos de referencia; `MedicationItem` v2 con `catalog_id` | Aceptada |
 
 ## Plantilla
 

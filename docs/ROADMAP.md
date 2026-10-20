@@ -109,10 +109,12 @@ Calidad y Experiencia de desarrollo.
 - **Event Store v1**: `worker`, suscripciones catch-up con checkpoints, orden total por advisory lock, snapshots, upcasters, rebuild, fail-stop (ADR-009).
 - Solicitud de vínculo iniciada por la clínica con aprobación del tutor; perfil de mascota con alertas.
 
-#### F3 — Search & Performance
-- Proyecciones a OpenSearch: historial clínico (full-text, filtros, *highlight*), catálogo de medicamentos, pacientes por clínica.
-- Redis: caché de read models calientes, rate limiting distribuido (gateway y app), colas de workers (asynq) para proyecciones y notificaciones.
-- SLOs y pruebas de carga (k6); paginación por cursor a escala; CDN para activos.
+#### F3 — Search & Performance → `docs/phase-3/`
+- OpenSearch como read model de búsqueda (índices `pets`, `clinical`, `medications`, `organizations`) alimentado por suscripción catch-up, autorización denormalizada en documentos, reindex sin downtime, degradación a PostgreSQL (ADR-013).
+- Catálogo de medicamentos con identificadores estables y `MedicationItem` v2 (ADR-016); cohortes y campañas; directorio público opt-in; panel de plataforma.
+- Redis para caché compartida, rate limiting distribuido y asynq (trabajos no ordenados); PostgreSQL sigue siendo la fuente durable (ADR-014).
+- Escalado horizontal: `api`×N, `worker`×N con leases; Helm chart; Kubernetes en F5 (ADR-015). SLOs, k6 con datos sintéticos a escala, CDN, game day.
+- Pendientes de F2: ClamAV, Web Push, paciente provisional, accesos anómalos.
 
 #### F4 — Integración B2B y Automatización
 - *Prescriptions*: `Prescription` emitida por un veterinario (estructurada) o subida como imagen por el tutor.
