@@ -15,14 +15,15 @@ seguridad, infraestructura y calidad.
 | [`adr/`](adr/README.md) | Decisiones de arquitectura (ADR). Leer antes de implementar. |
 | [`phase-1/`](phase-1/00-vision-y-alcance.md) | Especificación completa de la Fase 1 (Fundación y MVP Core). |
 | [`phase-2/`](phase-2/00-vision-y-alcance.md) | Especificación completa de la Fase 2 (Clínica y CQRS-ES). |
+| [`phase-3/`](phase-3/00-vision-y-alcance.md) | Especificación completa de la Fase 3 (Search & Performance). |
 | [`tracking/`](tracking/README.md) | Mecanismo de seguimiento del avance de cada spec (fuente de verdad + script). |
-| `phase-3/` … `phase-N/` | Se generan al cerrar la revisión de la fase anterior. |
+| `phase-4/` … `phase-N/` | Se generan al cerrar la revisión de la fase anterior. |
 
 ## Convenciones de las specs
 
 - **Identificador de requisito**: `PP-F<fase>-<ÁREA>-<nnn>` (ej. `PP-F1-IAM-007`).
   Áreas: `PRD` producto, `DOM` dominio/DDD, `ARQ` arquitectura, `IAM` identidad y acceso,
-  `API`, `DAT` datos, `FE` frontend, `NOT` notificaciones, `SEC` seguridad, `INF` infraestructura/DevOps, `QA` calidad.
+  `API`, `DAT` datos, `FE` frontend, `NOT` notificaciones, `PRF` rendimiento, `SEC` seguridad, `INF` infraestructura/DevOps, `QA` calidad.
 - **Prioridad (MoSCoW)**: `MUST` (bloquea la fase), `SHOULD` (esperado), `COULD` (si hay capacidad).
 - **Estado**: vive únicamente en `tracking/phase-N.md`; las specs describen el *qué*, el tracking el *cuánto falta*.
 - **Lenguaje**: los documentos están en español; los nombres de código (agregados, eventos,
