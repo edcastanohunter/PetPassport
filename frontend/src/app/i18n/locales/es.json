@@ -1,0 +1,14 @@
+{
+  "nav": { "main": "Navegación principal", "terms": "Términos", "privacy": "Privacidad" },
+  "home": {
+    "title": "El pasaporte de salud de tu mascota",
+    "subtitle": "Carnet de vacunas, historial clínico y citas en un solo lugar, compartido con tu clínica.",
+    "status": "Estado de la API"
+  },
+  "legal": {
+    "terms": "Términos del servicio",
+    "privacy": "Política de privacidad",
+    "version": "Versión"
+  },
+  "notFound": { "title": "Página no encontrada", "back": "Volver al inicio" }
+}

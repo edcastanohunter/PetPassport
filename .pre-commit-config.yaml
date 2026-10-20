@@ -1,0 +1,45 @@
+# pre-commit install  (docs/phase-1/09 §1)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.1.6
+    hooks:
+      - id: golangci-lint
+        entry: bash -c 'cd backend && golangci-lint run --fast-only ./...'
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: bash -c 'cd backend && test -z "$(gofmt -l $(git ls-files "*.go" | sed "s#^backend/##"))"'
+        language: system
+        files: ^backend/.*\.go$
+        pass_filenames: false
+      - id: frontend-lint
+        name: eslint + prettier (frontend)
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: spectral
+        name: spectral (openapi)
+        entry: bash -c 'cd backend/api && npx --yes @stoplight/spectral-cli lint openapi.yaml'
+        language: system
+        files: ^backend/api/openapi\.yaml$
+        pass_filenames: false
+      - id: specs-check
+        name: specs-status --check
+        entry: scripts/specs-status.sh --check
+        language: system
+        files: ^docs/
+        pass_filenames: false

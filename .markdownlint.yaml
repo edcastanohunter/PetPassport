@@ -1,0 +1,5 @@
+default: true
+MD013: false # longitud de línea
+MD033: false # HTML inline (diagramas, tablas)
+MD024: false # títulos repetidos entre secciones
+MD041: false # primera línea título

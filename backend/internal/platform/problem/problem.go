@@ -1,0 +1,78 @@
+// Package problem implementa respuestas de error application/problem+json
+// (RFC 9457) con el catálogo de códigos de docs/phase-1/05-api.md §5.
+package problem
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// TypeBase es el prefijo de la URI de tipo de error.
+const TypeBase = "https://docs.petpassport.app/errors/"
+
+// Code es un código estable del catálogo.
+type Code string
+
+// Códigos del catálogo F1 (los de hitos posteriores se añaden cuando se usan).
+const (
+	ValidationFailed Code = "VALIDATION_FAILED"
+	Unauthenticated  Code = "UNAUTHENTICATED"
+	Forbidden        Code = "FORBIDDEN"
+	NotFound         Code = "NOT_FOUND"
+	Internal         Code = "INTERNAL"
+	Unavailable      Code = "UNAVAILABLE"
+	PayloadTooLarge  Code = "PAYLOAD_TOO_LARGE"
+	UnsupportedMedia Code = "UNSUPPORTED_MEDIA_TYPE"
+)
+
+var defaultStatus = map[Code]int{
+	ValidationFailed: http.StatusUnprocessableEntity,
+	Unauthenticated:  http.StatusUnauthorized,
+	Forbidden:        http.StatusForbidden,
+	NotFound:         http.StatusNotFound,
+	Internal:         http.StatusInternalServerError,
+	Unavailable:      http.StatusServiceUnavailable,
+	PayloadTooLarge:  http.StatusRequestEntityTooLarge,
+	UnsupportedMedia: http.StatusUnsupportedMediaType,
+}
+
+// FieldError describe un error de validación por campo.
+type FieldError struct {
+	Field string `json:"field"`
+	Code  string `json:"code"`
+}
+
+// Problem es el cuerpo de la respuesta.
+type Problem struct {
+	Type          string       `json:"type"`
+	Title         string       `json:"title"`
+	Status        int          `json:"status"`
+	Code          Code         `json:"code"`
+	Detail        string       `json:"detail,omitempty"`
+	Instance      string       `json:"instance,omitempty"`
+	CorrelationID string       `json:"correlation_id,omitempty"`
+	Errors        []FieldError `json:"errors,omitempty"`
+}
+
+// New construye un Problem con el estado por defecto del código.
+func New(code Code, title, detail string) *Problem {
+	status, ok := defaultStatus[code]
+	if !ok {
+		status = http.StatusInternalServerError
+	}
+	return &Problem{Type: TypeBase + string(code), Title: title, Status: status, Code: code, Detail: detail}
+}
+
+// Write serializa el Problem en la respuesta.
+func Write(w http.ResponseWriter, r *http.Request, p *Problem) {
+	if p.Instance == "" && r != nil {
+		p.Instance = r.URL.Path
+	}
+	if p.CorrelationID == "" && r != nil {
+		p.CorrelationID = r.Header.Get("X-Correlation-ID")
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(p.Status)
+	_ = json.NewEncoder(w).Encode(p)
+}

@@ -1,0 +1,159 @@
+# Realm `petpassport` como código (PP-F1-IAM-001/002/003). Lo aplica keycloak-config-cli de
+# forma idempotente en todos los entornos; cualquier cambio manual en la consola es drift.
+# Referencia: docs/phase-1/04-iam-keycloak.md. Las variables $(env:...) se sustituyen por entorno.
+realm: petpassport
+enabled: true
+displayName: PetPassport
+
+# --- Registro, login y recuperación (04 §1, §4) ---
+registrationAllowed: true
+registrationEmailAsUsername: true
+loginWithEmailAllowed: true
+duplicateEmailsAllowed: false
+verifyEmail: true
+resetPasswordAllowed: true
+rememberMe: false
+editUsernameAllowed: false
+sslRequired: external
+
+# Política de contraseñas (IAM-004; se completa con passwordHistory/blacklist en M1.1).
+passwordPolicy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername and notEmail"
+
+# --- Fuerza bruta (IAM-005; OTP condicional para super_admin se configura en M1.4) ---
+bruteForceProtected: true
+permanentLockout: false
+failureFactor: 5
+waitIncrementSeconds: 60
+maxFailureWaitSeconds: 900
+maxDeltaTimeSeconds: 43200
+quickLoginCheckMilliSeconds: 1000
+minimumQuickLoginWaitSeconds: 60
+
+# --- Tiempos de vida (IAM-006) ---
+accessTokenLifespan: 300
+ssoSessionIdleTimeout: 1800
+ssoSessionMaxLifespan: 36000
+revokeRefreshToken: true
+refreshTokenMaxReuse: 0
+accessCodeLifespanLogin: 1800
+actionTokenGeneratedByUserLifespan: 1800
+actionTokenGeneratedByAdminLifespan: 43200
+offlineSessionIdleTimeout: 2592000
+attributes:
+  actionTokenGeneratedByUserLifespan.verify-email: "43200"
+  actionTokenGeneratedByUserLifespan.reset-credentials: "1800"
+
+# --- Internacionalización ---
+internationalizationEnabled: true
+supportedLocales: [es, en]
+defaultLocale: es
+
+# --- Eventos ---
+eventsEnabled: true
+eventsExpiration: 2592000
+enabledEventTypes: [LOGIN, LOGIN_ERROR, LOGOUT, REGISTER, REGISTER_ERROR, UPDATE_PASSWORD, RESET_PASSWORD, SEND_RESET_PASSWORD, VERIFY_EMAIL, UPDATE_EMAIL, UPDATE_TOTP, REMOVE_TOTP]
+adminEventsEnabled: true
+adminEventsDetailsEnabled: true
+
+# --- SMTP (dev: Mailpit) ---
+smtpServer:
+  host: $(env:PP_SMTP_HOST)
+  port: $(env:PP_SMTP_PORT)
+  from: $(env:PP_SMTP_FROM)
+  fromDisplayName: PetPassport
+  auth: "false"
+  ssl: "false"
+  starttls: "false"
+
+# --- Roles de realm (IAM-003) ---
+roles:
+  realm:
+    - name: pet_owner
+      description: Toda persona puede ser tutor de mascotas. Asignado por defecto.
+    - name: super_admin
+      description: Administración de la plataforma. Asignación manual, nunca por auto-registro.
+defaultRole:
+  name: default-roles-petpassport
+  composite: true
+  composites:
+    realm: [pet_owner, offline_access, uma_authorization]
+
+# --- Client scope de audiencia (IAM-002) ---
+clientScopes:
+  - name: petpassport-api-audience
+    description: Añade la audiencia petpassport-api al access token.
+    protocol: openid-connect
+    attributes:
+      include.in.token.scope: "false"
+      display.on.consent.screen: "false"
+    protocolMappers:
+      - name: petpassport-api-audience
+        protocol: openid-connect
+        protocolMapper: oidc-audience-mapper
+        consentRequired: false
+        config:
+          included.client.audience: petpassport-api
+          id.token.claim: "false"
+          access.token.claim: "true"
+
+# --- Clients (IAM-002) ---
+clients:
+  - clientId: petpassport-web
+    name: PetPassport Web
+    description: SPA Vue. Authorization Code + PKCE S256. Sin implicit ni direct grant.
+    enabled: true
+    publicClient: true
+    protocol: openid-connect
+    standardFlowEnabled: true
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+    fullScopeAllowed: false
+    rootUrl: $(env:PP_WEB_ORIGIN)
+    baseUrl: /
+    redirectUris:
+      - $(env:PP_WEB_ORIGIN)/auth/callback
+      - $(env:PP_WEB_ORIGIN_DEV)/auth/callback
+    webOrigins:
+      - $(env:PP_WEB_ORIGIN)
+      - $(env:PP_WEB_ORIGIN_DEV)
+    attributes:
+      pkce.code.challenge.method: S256
+      post.logout.redirect.uris: "$(env:PP_WEB_ORIGIN)/auth/logout##$(env:PP_WEB_ORIGIN_DEV)/auth/logout"
+      access.token.lifespan: "300"
+    defaultClientScopes: [openid, profile, email, roles, petpassport-api-audience]
+    optionalClientScopes: []
+
+  - clientId: petpassport-api
+    name: PetPassport API
+    description: Existe solo como audiencia. Sin flujos habilitados (bearer-only).
+    enabled: true
+    publicClient: false
+    bearerOnly: true
+    protocol: openid-connect
+    standardFlowEnabled: false
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+
+  - clientId: petpassport-backend
+    name: PetPassport Backend (service account)
+    description: Operaciones administrativas puntuales vía Admin API (IAM-011). Mínimo privilegio.
+    enabled: true
+    publicClient: false
+    protocol: openid-connect
+    clientAuthenticatorType: client-secret
+    secret: $(env:PP_BACKEND_CLIENT_SECRET)
+    standardFlowEnabled: false
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: true
+    fullScopeAllowed: false
+
+# Roles de realm-management de la service account (solo lo necesario, IAM-011).
+users:
+  - username: service-account-petpassport-backend
+    serviceAccountClientId: petpassport-backend
+    enabled: true
+    clientRoles:
+      realm-management: [view-users, manage-users]

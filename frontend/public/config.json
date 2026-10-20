@@ -1,0 +1,8 @@
+{
+  "apiBaseUrl": "/api/v1",
+  "oidc": {
+    "issuer": "https://auth.pp.localhost/realms/petpassport",
+    "clientId": "petpassport-web"
+  },
+  "env": "dev"
+}
