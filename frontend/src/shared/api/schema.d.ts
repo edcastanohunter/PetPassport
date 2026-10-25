@@ -92,6 +92,148 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lista de mascotas del tutor
+         * @description Solo las del actor (pet:read sobre propias). Paginación por cursor; filtro por estado vital.
+         */
+        get: operations["listPets"];
+        put?: never;
+        /**
+         * Registrar mascota
+         * @description Crea la mascota del actor (pet:register). Proyección síncrona: aparece inmediatamente en la lista (PRD-005).
+         */
+        post: operations["createPet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Ficha de la mascota
+         * @description Visible para el tutor (G), organizaciones con vínculo activo (L) o super_admin. No visible → 404 sin revelar existencia.
+         */
+        get: operations["getPet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Editar perfil de la mascota
+         * @description Solo el tutor (o super_admin). Requiere `If-Match` con la versión conocida; discrepancia → 409 CONFLICT_VERSION (PRD-006).
+         */
+        patch: operations["updatePet"];
+        trace?: never;
+    };
+    "/pets/{petId}/microchip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Asignar o corregir el microchip
+         * @description Solo el tutor. Una sola corrección; segunda → 409 MICROCHIP_CORRECTION_LIMIT. Chip ajeno → 409 MICROCHIP_ALREADY_ASSIGNED sin revelar la otra mascota (PRD-007).
+         */
+        put: operations["putPetMicrochip"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Subir o reemplazar la foto
+         * @description Solo el tutor. JPEG/PNG/WebP/HEIC ≤ 5 MB; el servidor re-encodea (1024 px + miniatura 256 px) y sirve por URL prefirmada (ARQ-012, SEC-004).
+         */
+        put: operations["putPetPhoto"];
+        post?: never;
+        /**
+         * Quitar la foto
+         * @description Solo el tutor. La anterior se conserva en storage 30 días (PRD-008).
+         */
+        delete: operations["deletePetPhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/deceased": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar como fallecida
+         * @description Solo el tutor; exige confirmación en la UI. Fecha opcional ≤ hoy y ≥ nacimiento. Requiere If-Match (PRD-009).
+         */
+        post: operations["markPetDeceased"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/deceased/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deshacer fallecimiento
+         * @description Dentro de las 24 h (PRD-009); después → 409 UNDO_WINDOW_EXPIRED.
+         */
+        post: operations["undoPetDeceased"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -142,6 +284,133 @@ export interface components {
             privacy_version: string;
             /** Format: date-time */
             accepted_at: string;
+        };
+        /** @description 1–60 caracteres; letras/espacios/'/-; sin control. Se recortan espacios y se colapsan. */
+        PetName: string;
+        /** @description Texto libre en F1 (catálogo en F2). */
+        Breed: string;
+        /** @description Color / señas particulares. */
+        Markings: string;
+        /** @enum {string} */
+        Species: "dog" | "cat" | "bird" | "rabbit" | "reptile" | "rodent" | "equine" | "ferret" | "fish" | "other";
+        /** @description Obligatoria si species = other; 1–40. */
+        SpeciesOther: string;
+        /** @enum {string} */
+        Sex: "male" | "female" | "unknown";
+        /** @enum {string} */
+        Neutered: "yes" | "no" | "unknown";
+        BirthDate: {
+            /**
+             * Format: date
+             * @description Fecha civil YYYY-MM-DD; ≤ hoy y ≥ hoy − 40 años.
+             */
+            date: string;
+            approximate: boolean;
+        };
+        /** @description ISO 11784/11785 (15 dígitos) o legado (9/10 alfanuméricos). Se normaliza (sin espacios/guiones, mayúsculas). */
+        Microchip: string;
+        Photo: {
+            /** @description URL prefirmada (15 min) de la foto (ARQ-012). */
+            url: string;
+            thumb_url: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        CreatePetRequest: {
+            name: components["schemas"]["PetName"];
+            species: components["schemas"]["Species"];
+            species_other?: components["schemas"]["SpeciesOther"];
+            breed?: components["schemas"]["Breed"];
+            sex: components["schemas"]["Sex"];
+            neutered: components["schemas"]["Neutered"];
+            birth_date?: components["schemas"]["BirthDate"];
+            markings?: components["schemas"]["Markings"];
+        };
+        UpdatePetRequest: {
+            name?: components["schemas"]["PetName"];
+            species?: components["schemas"]["Species"];
+            species_other?: components["schemas"]["SpeciesOther"];
+            /** @description Cadena vacía vacía el campo. */
+            breed?: string;
+            sex?: components["schemas"]["Sex"];
+            neutered?: components["schemas"]["Neutered"];
+            birth_date?: components["schemas"]["BirthDate"];
+            /** @description Cadena vacía vacía el campo. */
+            markings?: string;
+        };
+        MicrochipRequest: {
+            microchip: components["schemas"]["Microchip"];
+        };
+        DeceasedRequest: {
+            /** Format: date */
+            deceased_at?: string;
+        };
+        Pet: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: uuid */
+            guardian_id: string;
+            name: string;
+            species: components["schemas"]["Species"];
+            species_other?: string | null;
+            breed?: string | null;
+            sex: components["schemas"]["Sex"];
+            neutered: components["schemas"]["Neutered"];
+            birth_date?: components["schemas"]["BirthDate"] | null;
+            age?: {
+                years: number;
+                months: number;
+            };
+            markings?: string | null;
+            microchip?: string | null;
+            /** @description Correcciones de microchip ya usadas por el tutor (0..1). */
+            microchip_corrections?: number;
+            photo?: components["schemas"]["Photo"] | null;
+            /** @enum {string} */
+            status: "active" | "deceased";
+            /** Format: date */
+            deceased_at?: string | null;
+            care_links: components["schemas"]["CareLink"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CareLink: {
+            /** Format: uuid */
+            organization_id: string;
+            display_name: string;
+            city?: string | null;
+            /** @enum {string} */
+            status: "active" | "revoked";
+            org_suspended: boolean;
+            /** Format: date-time */
+            granted_at: string;
+            /** Format: date-time */
+            revoked_at?: string | null;
+        };
+        PetListItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            name: string;
+            species: components["schemas"]["Species"];
+            breed?: string | null;
+            photo?: components["schemas"]["Photo"] | null;
+            /** @enum {string} */
+            status: "active" | "deceased";
+            birth_date?: components["schemas"]["BirthDate"] | null;
+            active_links: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PetPage: {
+            data: components["schemas"]["PetListItem"][];
+            /** Format: date-time */
+            next_cursor: string | null;
         };
         Membership: {
             /** Format: uuid */
@@ -233,9 +502,17 @@ export interface components {
             };
         };
     };
-    parameters: never;
+    parameters: {
+        PetId: string;
+        /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+        IdempotencyKey: string;
+        /** @description Versión conocida del recurso (ETag de la última lectura). */
+        IfMatch: number;
+    };
     requestBodies: never;
     headers: {
+        /** @description Versión del recurso; enviar en If-Match para los comandos. */
+        ETag: number;
         /** @description Identificador de correlación (UUID). Se acepta entrante y siempre se devuelve. */
         "X-Correlation-ID": string;
         /** @description Identificador único del request. */
@@ -378,6 +655,301 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPets: {
+        parameters: {
+            query?: {
+                status?: "active" | "deceased" | "all";
+                /** @description Cursor opaco devuelto por la página anterior. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de mascotas */
+            200: {
+                headers: {
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePetRequest"];
+            };
+        };
+        responses: {
+            /** @description Mascota creada */
+            201: {
+                headers: {
+                    /** @description URL del recurso creado. */
+                    Location?: string;
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mascota */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    "X-Request-ID": components["headers"]["X-Request-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updatePet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePetRequest"];
+            };
+        };
+        responses: {
+            /** @description Mascota actualizada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putPetMicrochip: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MicrochipRequest"];
+            };
+        };
+        responses: {
+            /** @description Mascota con el microchip actualizado */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putPetPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Mascota con la foto actualizada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            415: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deletePetPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mascota sin foto */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    markPetDeceased: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeceasedRequest"];
+            };
+        };
+        responses: {
+            /** @description Mascota en estado fallecida */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    undoPetDeceased: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mascota reactivada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

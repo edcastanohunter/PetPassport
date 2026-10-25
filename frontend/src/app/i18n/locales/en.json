@@ -15,14 +15,21 @@
     "back": "Back",
     "save": "Save",
     "select": "Select…",
-    "optional": "optional"
+    "optional": "optional",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "errorGeneric": "Something went wrong."
   },
   "home": {
     "title": "Your pet's health passport",
     "subtitle": "Vaccination card, medical history and appointments in one place, shared with your clinic.",
     "status": "API status"
   },
-  "legal": { "terms": "Terms of service", "privacy": "Privacy policy", "version": "Version" },
+  "legal": {
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "version": "Version"
+  },
   "auth": {
     "signingIn": "Signing in…",
     "callbackError": "Sign-in could not be completed.",
@@ -72,13 +79,16 @@
   },
   "dashboard": {
     "title": "Hello, {name}",
-    "petsSoon": "Your pets will show up here. You'll be able to register them very soon."
+    "petsIntro": "These are your pets."
   },
   "forbidden": {
     "title": "Access denied",
     "detail": "You don't have permission to view this page or your account is suspended."
   },
-  "notFound": { "title": "Page not found", "back": "Back to home" },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to home"
+  },
   "errors": {
     "GENERIC": "Something went wrong. Please try again.",
     "UNAUTHENTICATED": "Your session is not valid. Please sign in again.",
@@ -101,5 +111,85 @@
     "INVALID_FORMAT": "Invalid format.",
     "INVALID_ENUM": "Invalid option.",
     "UNKNOWN_FIELD": "Unknown field."
+  },
+  "pets": {
+    "listTitle": "My pets",
+    "addPet": "Add pet",
+    "edit": "Edit",
+    "editTitle": "Edit pet",
+    "newTitle": "New pet",
+    "empty": "No pets yet. Add your first one!",
+    "notFound": "This pet does not exist or is not yours.",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "deceased": "In memoriam"
+    },
+    "inMemoriam": "In memoriam",
+    "inMemoriamTitle": "In memoriam",
+    "linksBadge": "{n} link(s)",
+    "linksComingSoon": "Clinic links and guardianship transfer are coming soon.",
+    "photoAlt": "Photo of {name}",
+    "photoAdd": "Add photo",
+    "photoChange": "Change photo",
+    "photoRemove": "Remove photo",
+    "microchip": "Microchip",
+    "noMicrochip": "No microchip registered.",
+    "add": "Add",
+    "correct": "Correct",
+    "microchipCorrected": "You already corrected the microchip once; further corrections require support.",
+    "microchipWarning": "You can only correct the microchip once.",
+    "approximate": "approximate",
+    "version": "Version",
+    "ageShort": "{years}y {months}m",
+    "conflict": "Another tab modified this pet.",
+    "reload": "Reload and retry",
+    "form": {
+      "name": "Name",
+      "nameError": "1–60 letters, spaces, apostrophe or hyphen.",
+      "species": "Species",
+      "speciesOther": "Which one?",
+      "speciesOtherError": "Enter the species (1–40).",
+      "sex": "Sex",
+      "neutered": "Neutered",
+      "breed": "Breed (optional)",
+      "birthDate": "Birth date",
+      "birthDateError": "Must be today or earlier (up to 40 years).",
+      "approximate": "Approximate date",
+      "markings": "Color / markings (optional)",
+      "microchipError": "15 digits (ISO) or 9–10 alphanumeric (legacy)."
+    },
+    "species": {
+      "dog": "Dog",
+      "cat": "Cat",
+      "bird": "Bird",
+      "rabbit": "Rabbit",
+      "reptile": "Reptile",
+      "rodent": "Rodent",
+      "equine": "Equine",
+      "ferret": "Ferret",
+      "fish": "Fish",
+      "other": "Other"
+    },
+    "sex": {
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Not said"
+    },
+    "neutered": {
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "I don't know"
+    },
+    "deceased": {
+      "title": "Passing",
+      "info": "Marking a pet as deceased moves it to the «In memoriam» section without losing its history.",
+      "action": "Mark as deceased",
+      "confirm": "Are you sure? You can undo it for 24 hours.",
+      "confirmAction": "Confirm",
+      "undoInfo": "You can undo it for 24 hours.",
+      "undo": "Undo",
+      "windowClosed": "The 24-hour window closed; contact support to revert."
+    }
   }
 }

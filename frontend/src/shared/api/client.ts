@@ -7,6 +7,9 @@ export type Me = components['schemas']['Me']
 export type LegalCurrent = components['schemas']['LegalCurrent']
 export type OnboardingRequest = components['schemas']['OnboardingRequest']
 export type UpdateMeRequest = components['schemas']['UpdateMeRequest']
+export type Pet = components['schemas']['Pet']
+export type PetListItem = components['schemas']['PetListItem']
+export type PetPage = components['schemas']['PetPage']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

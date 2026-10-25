@@ -15,7 +15,10 @@
     "back": "Atrás",
     "save": "Guardar",
     "select": "Selecciona…",
-    "optional": "opcional"
+    "optional": "opcional",
+    "cancel": "Cancelar",
+    "saving": "Guardando…",
+    "errorGeneric": "Ocurrió un error inesperado."
   },
   "home": {
     "title": "El pasaporte de salud de tu mascota",
@@ -76,13 +79,16 @@
   },
   "dashboard": {
     "title": "Hola, {name}",
-    "petsSoon": "Aquí verás tus mascotas. Muy pronto podrás registrarlas."
+    "petsIntro": "Estas son tus mascotas."
   },
   "forbidden": {
     "title": "Acceso no permitido",
     "detail": "No tienes permiso para ver esta página o tu cuenta está suspendida."
   },
-  "notFound": { "title": "Página no encontrada", "back": "Volver al inicio" },
+  "notFound": {
+    "title": "Página no encontrada",
+    "back": "Volver al inicio"
+  },
   "errors": {
     "GENERIC": "Ocurrió un error. Inténtalo de nuevo.",
     "UNAUTHENTICATED": "Tu sesión no es válida. Vuelve a entrar.",
@@ -105,5 +111,85 @@
     "INVALID_FORMAT": "Formato no válido.",
     "INVALID_ENUM": "Opción no válida.",
     "UNKNOWN_FIELD": "Campo no reconocido."
+  },
+  "pets": {
+    "listTitle": "Mis mascotas",
+    "addPet": "Añadir mascota",
+    "edit": "Editar",
+    "editTitle": "Editar mascota",
+    "newTitle": "Nueva mascota",
+    "empty": "Aún no tienes mascotas registradas. ¡Añade la primera!",
+    "notFound": "Esta mascota no existe o no es tuya.",
+    "filter": {
+      "all": "Todas",
+      "active": "Activas",
+      "deceased": "En memoria"
+    },
+    "inMemoriam": "En memoria",
+    "inMemoriamTitle": "En memoria",
+    "linksBadge": "{n} vínculo(s)",
+    "linksComingSoon": "Vínculos con clínicas y transferencia de tutela disponibles próximamente.",
+    "photoAlt": "Foto de {name}",
+    "photoAdd": "Añadir foto",
+    "photoChange": "Cambiar foto",
+    "photoRemove": "Quitar foto",
+    "microchip": "Microchip",
+    "noMicrochip": "Sin microchip registrado.",
+    "add": "Añadir",
+    "correct": "Corregir",
+    "microchipCorrected": "Ya corregiste el microchip una vez; más correcciones requieren soporte.",
+    "microchipWarning": "Solo puedes corregir el microchip una vez.",
+    "approximate": "aproximada",
+    "version": "Versión",
+    "ageShort": "{years} a {months} m",
+    "conflict": "Otra pestaña modificó esta mascota.",
+    "reload": "Recargar y reintentar",
+    "form": {
+      "name": "Nombre",
+      "nameError": "1–60 letras, espacios, apóstrofe o guion.",
+      "species": "Especie",
+      "speciesOther": "¿Cuál?",
+      "speciesOtherError": "Indica la especie (1–40).",
+      "sex": "Sexo",
+      "neutered": "Esterilizado/a",
+      "breed": "Raza (opcional)",
+      "birthDate": "Fecha de nacimiento",
+      "birthDateError": "Debe ser hoy o antes (máximo 40 años).",
+      "approximate": "Fecha aproximada",
+      "markings": "Color / señas (opcional)",
+      "microchipError": "15 dígitos (ISO) o 9–10 alfanumérico (legado)."
+    },
+    "species": {
+      "dog": "Perro",
+      "cat": "Gato",
+      "bird": "Ave",
+      "rabbit": "Conejo",
+      "reptile": "Reptil",
+      "rodent": "Roedor",
+      "equine": "Equino",
+      "ferret": "Hurón",
+      "fish": "Pez",
+      "other": "Otra"
+    },
+    "sex": {
+      "male": "Macho",
+      "female": "Hembra",
+      "unknown": "No indicado"
+    },
+    "neutered": {
+      "yes": "Sí",
+      "no": "No",
+      "unknown": "No sé"
+    },
+    "deceased": {
+      "title": "Fallecimiento",
+      "info": "Marcar una mascota como fallecida la mueve a la sección «En memoria» sin perder su historia.",
+      "action": "Marcar como fallecida",
+      "confirm": "¿Confirmas? Podrás deshacerlo durante 24 horas.",
+      "confirmAction": "Confirmar",
+      "undoInfo": "Puedes deshacerlo durante 24 horas.",
+      "undo": "Deshacer",
+      "windowClosed": "Pasaron las 24 horas; contacta a soporte para revertir."
+    }
   }
 }

@@ -1,0 +1,143 @@
+{
+  "version": "1",
+  "generated_from": "backend/internal/petregistry/domain (DOM-004)",
+  "fields": {
+    "breed": {
+      "valid": [
+        "Beagle",
+        " Mestizo "
+      ],
+      "invalid": [
+        "",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    "markings": {
+      "valid": [
+        "blanca",
+        "tricolor"
+      ],
+      "invalid": [
+        "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+      ]
+    },
+    "microchip": {
+      "valid": [
+        "941000012345678",
+        "941 0000 1234 567 8",
+        "941-00001234567-8",
+        "ABC123DEF",
+        "abc123defg"
+      ],
+      "invalid": [
+        "",
+        "94100001234567",
+        "12345678",
+        "9410000123456789X"
+      ]
+    },
+    "neutered": {
+      "valid": [
+        "yes",
+        "no",
+        "unknown"
+      ],
+      "invalid": [
+        "maybe",
+        ""
+      ]
+    },
+    "petName": {
+      "valid": [
+        "Luna",
+        "  Rex  ",
+        "O'Brien",
+        "María José",
+        "a",
+        "Rex Jr"
+      ],
+      "invalid": [
+        "",
+        "   ",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "Luna\u003cscript\u003e",
+        "Luna\t"
+      ]
+    },
+    "publicCode": {
+      "valid": [
+        "7K3MQ2",
+        "0189AB"
+      ],
+      "invalid": [
+        "7K3MQ",
+        "7K3MQ23",
+        "7K3MQI",
+        "7k3mq2"
+      ]
+    },
+    "sex": {
+      "valid": [
+        "male",
+        "female",
+        "unknown"
+      ],
+      "invalid": [
+        "n/a",
+        ""
+      ]
+    },
+    "species": {
+      "valid": [
+        "dog",
+        "Dog",
+        " cat ",
+        "other"
+      ],
+      "invalid": [
+        "dragon",
+        ""
+      ]
+    }
+  },
+  "dates": {
+    "birthDate": [
+      {
+        "date": "2021-05-10",
+        "today": "2026-10-20",
+        "approximate": false,
+        "valid": true
+      },
+      {
+        "date": "2026-10-20",
+        "today": "2026-10-20",
+        "approximate": false,
+        "valid": true
+      },
+      {
+        "date": "2026-10-21",
+        "today": "2026-10-20",
+        "approximate": false,
+        "valid": false
+      },
+      {
+        "date": "2021-5-10",
+        "today": "2026-10-20",
+        "approximate": false,
+        "valid": false
+      },
+      {
+        "date": "1985-01-01",
+        "today": "2026-10-20",
+        "approximate": false,
+        "valid": false
+      },
+      {
+        "date": "2021-05-10",
+        "today": "2026-10-20",
+        "approximate": true,
+        "valid": true
+      }
+    ]
+  }
+}
