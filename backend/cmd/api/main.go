@@ -16,10 +16,20 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
+	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
+	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/config"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 )
 
@@ -79,8 +89,49 @@ func run() error {
 		logger.Warn("PP_OIDC_ISSUER vacío: autenticación deshabilitada (solo dev)")
 	}
 
-	// 6. Módulos. Identity (M1.1); partnernetwork y petregistry llegan en M1.2–M1.3.
+	// 6. Event Store (ARQ-004/007): registro de tipos, validación de arranque,
+	// store con métricas.
+	registry := eventstore.NewRegistry()
+	petinfra.RegisterEvents(registry)
+	if err := registry.Validate(); err != nil {
+		return fmt.Errorf("eventstore registry: %w", err)
+	}
+	store := eventstore.NewStore(registry, pool, tel.Registry)
+	tel.Registry.MustRegister(outbox.PendingGauge(pool))
+
+	// 7. Módulos. Identity (M1.1); Pet Registry (M1.2); partnernetwork en M1.3.
 	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
+	unit := db.NewUnitOfWork(pool)
+	runner := projection.NewRunner()
+	petQueries := petinfra.NewQueries(pool.Pool)
+	petSvc := petapp.NewService(petapp.Options{
+		Repo:     petinfra.NewRepository(store, registry, nil, nil),
+		UoW:      unit,
+		Projects: petinfra.NewSyncProjector(runner),
+		Reserve:  petinfra.NewReservations(pool),
+		Guardian: petinfra.NewGuardianAdapter(identitySvc),
+		Queries:  petQueries,
+		Events:   store,
+		Logger:   logger,
+	})
+	runner.Register(petinfra.NewPetsProjector(registry, petinfra.NewGuardianAdapter(identitySvc)))
+	petBus := bus.New()
+	petSvc.RegisterCommands(petBus)
+	idemStore := idempotency.NewStore(pool, 0)
+	var objects storage.ObjectStorage
+	if cfg.Storage.Endpoint != "" {
+		objects, err = storage.NewMinIO(ctx, storage.MinIOOptions{
+			Endpoint: cfg.Storage.Endpoint, Bucket: cfg.Storage.Bucket,
+			AccessKey: cfg.Storage.AccessKey, SecretKey: cfg.Storage.SecretKey, UseSSL: cfg.Storage.UseSSL,
+		})
+		if err != nil {
+			return fmt.Errorf("storage: %w", err)
+		}
+	} else {
+		logger.Warn("PP_STORAGE_ENDPOINT vacío: subida de fotos deshabilitada")
+	}
+	authz.InitMetrics(tel.Registry)
+
 	spec, err := gen.GetSpec()
 	if err != nil {
 		return fmt.Errorf("openapi: %w", err)
@@ -92,14 +143,17 @@ func run() error {
 		return err
 	}
 
-	// 7. Router y servidores.
+	// 8. Router y servidores.
 	health := httpserver.NewHealth()
 	health.Register("db", pool.Ping)
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
-		Handlers: apiHandlers{Handlers: identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt)},
-		Guard:    guard.Middleware,
+		Handlers: apiHandlers{
+			Handlers:    identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt),
+			PetHandlers: pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger),
+		},
+		Guard: guard.Middleware,
 	})
 	errs := servers.Start()
 	health.SetReady(true)

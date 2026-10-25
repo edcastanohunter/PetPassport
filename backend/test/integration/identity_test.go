@@ -22,6 +22,7 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
@@ -34,6 +35,7 @@ import (
 type handlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
+	*pethttp.PetHandlers
 }
 
 type nopWriter struct{}
@@ -120,7 +122,7 @@ func TestIdentity_HTTPFlowAgainstPostgres(t *testing.T) {
 	}
 	srv := httpserver.New(":0", ":0", httpserver.Options{
 		Logger: logger, Registry: prometheus.NewRegistry(), Health: httpserver.NewHealth(),
-		Handlers: handlers{Handlers: identityhttp.NewHandlers(svc, "salt")}, Guard: guard.Middleware,
+		Handlers: handlers{Handlers: identityhttp.NewHandlers(svc, "salt"), PetHandlers: pethttp.NewPetHandlers(nil, nil, nil, nil, nil)}, Guard: guard.Middleware,
 	})
 	contract := testkit.NewContract(t)
 	userID := uuid.Must(uuid.NewV7())

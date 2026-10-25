@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 )
 
@@ -12,6 +13,7 @@ import (
 type apiHandlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
+	*pethttp.PetHandlers
 }
 
 var _ gen.StrictServerInterface = apiHandlers{}

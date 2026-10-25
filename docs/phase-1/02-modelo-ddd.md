@@ -116,7 +116,7 @@ Invariantes:
 | `BirthDate` | `Date` ≤ hoy; ≥ hoy − 40 años; `Approximate bool`. | fecha civil (sin TZ). |
 | `Markings` | ≤ 200. | trim. |
 | `Microchip` | ISO: `^\d{15}$` (prefijo de fabricante/país válido no se verifica en F1). Legado: `^[A-Z0-9]{9,10}$`. | quitar espacios/guiones, upper. |
-| `PhotoRef` | `ObjectKey` con prefijo `pets/<PetID>/`; `ContentType` ∈ {jpeg, png, webp}. | |
+| `PhotoRef` | `ObjectKey` con prefijo `pets/<PetID>/`; `ContentType` ∈ {jpeg, png, webp}. **Decisión M1.2**: el pipeline genera siempre objetos `jpeg` (ver ARQ-012). | |
 | `CareLinkStatus` | `active, revoked`. | |
 
 ### 3.3 Eventos Pet Registry (v1)

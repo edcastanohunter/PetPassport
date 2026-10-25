@@ -73,7 +73,7 @@ Formato: **[ID] (Prioridad)** Como *persona* quiero *acción* para *beneficio*. 
 - Se puede corregir una vez por el tutor; correcciones posteriores requieren SuperAdmin (F2: clínica).
 
 **[PP-F1-PRD-008] (SHOULD)** Como tutor quiero subir una foto de mi mascota.
-- JPEG/PNG/WebP/HEIC ≤ 5 MB; el sistema recorta/re-encodea a 1024 px máx y genera miniatura 256 px.
+- JPEG/PNG/WebP de entrada, HEIC rechazado con mensaje (decisión M1.2: sin libheif); ≤ 5 MB; el sistema re-encodea a JPEG 1024 px máx y genera miniatura 256 px (ver ARQ-012).
 - La foto anterior se conserva en el storage 30 días (recuperable por soporte) y se elimina después.
 
 **[PP-F1-PRD-009] (SHOULD)** Como tutor quiero marcar a mi mascota como fallecida (fecha opcional) para que deje de aparecer como activa sin perder su historia.
