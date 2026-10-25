@@ -17,6 +17,8 @@ tags:
     description: Salud y estado del servicio
   - name: me
     description: Cuenta propia (docs/phase-1/05-api.md §3.1)
+  - name: pets
+    description: Mascotas del tutor (docs/phase-1/05-api.md §3.2)
   - name: legal
     description: Términos y privacidad vigentes
 security:
@@ -195,6 +197,342 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /pets:
+    get:
+      operationId: listPets
+      summary: Lista de mascotas del tutor
+      description: "Solo las del actor (pet:read sobre propias). Paginación por cursor; filtro por estado vital."
+      tags: [pets]
+      x-pp-action: pet:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, deceased, all]
+            default: all
+        - name: cursor
+          in: query
+          description: Cursor opaco devuelto por la página anterior.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página de mascotas
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createPet
+      summary: Registrar mascota
+      description: "Crea la mascota del actor (pet:register). Proyección síncrona: aparece inmediatamente en la lista (PRD-005)."
+      tags: [pets]
+      x-pp-action: pet:register
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePetRequest"
+            examples:
+              luna:
+                value:
+                  name: Luna
+                  species: dog
+                  breed: Beagle
+                  sex: female
+                  neutered: "yes"
+                  birth_date: { date: "2021-05-10", approximate: false }
+      responses:
+        "201":
+          description: Mascota creada
+          headers:
+            Location:
+              description: URL del recurso creado.
+              schema:
+                type: string
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPet
+      summary: Ficha de la mascota
+      description: Visible para el tutor (G), organizaciones con vínculo activo (L) o super_admin. No visible → 404 sin revelar existencia.
+      tags: [pets]
+      x-pp-action: pet:read
+      responses:
+        "200":
+          description: Mascota
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updatePet
+      summary: Editar perfil de la mascota
+      description: Solo el tutor (o super_admin). Requiere `If-Match` con la versión conocida; discrepancia → 409 CONFLICT_VERSION (PRD-006).
+      tags: [pets]
+      x-pp-action: pet:update
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePetRequest"
+      responses:
+        "200":
+          description: Mascota actualizada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/microchip:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    put:
+      operationId: putPetMicrochip
+      summary: Asignar o corregir el microchip
+      description: Solo el tutor. Una sola corrección; segunda → 409 MICROCHIP_CORRECTION_LIMIT. Chip ajeno → 409 MICROCHIP_ALREADY_ASSIGNED sin revelar la otra mascota (PRD-007).
+      tags: [pets]
+      x-pp-action: pet:microchip
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MicrochipRequest"
+      responses:
+        "200":
+          description: Mascota con el microchip actualizado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/photo:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    put:
+      operationId: putPetPhoto
+      summary: Subir o reemplazar la foto
+      description: Solo el tutor. JPEG/PNG/WebP/HEIC ≤ 5 MB; el servidor re-encodea (1024 px + miniatura 256 px) y sirve por URL prefirmada (ARQ-012, SEC-004).
+      tags: [pets]
+      x-pp-action: pet:photo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Mascota con la foto actualizada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "415":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deletePetPhoto
+      summary: Quitar la foto
+      description: Solo el tutor. La anterior se conserva en storage 30 días (PRD-008).
+      tags: [pets]
+      x-pp-action: pet:photo
+      responses:
+        "200":
+          description: Mascota sin foto
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/deceased:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: markPetDeceased
+      summary: Marcar como fallecida
+      description: Solo el tutor; exige confirmación en la UI. Fecha opcional ≤ hoy y ≥ nacimiento. Requiere If-Match (PRD-009).
+      tags: [pets]
+      x-pp-action: pet:deceased
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeceasedRequest"
+      responses:
+        "200":
+          description: Mascota en estado fallecida
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/deceased/undo:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: undoPetDeceased
+      summary: Deshacer fallecimiento
+      description: Dentro de las 24 h (PRD-009); después → 409 UNDO_WINDOW_EXPIRED.
+      tags: [pets]
+      x-pp-action: pet:deceased
+      responses:
+        "200":
+          description: Mascota reactivada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -227,7 +565,37 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Access token emitido por Keycloak (realm `petpassport`, audiencia `petpassport-api`).
+  parameters:
+    PetId:
+      name: petId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+      schema:
+        type: string
+        format: uuid
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Versión conocida del recurso (ETag de la última lectura).
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
   headers:
+    ETag:
+      description: Versión del recurso; enviar en If-Match para los comandos.
+      schema:
+        type: integer
+        format: int64
     X-Correlation-ID:
       description: Identificador de correlación (UUID). Se acepta entrante y siempre se devuelve.
       schema:
@@ -328,6 +696,261 @@ components:
           type: string
         accepted_at:
           type: string
+          format: date-time
+    PetName:
+      type: string
+      description: 1–60 caracteres; letras/espacios/'/-; sin control. Se recortan espacios y se colapsan.
+      minLength: 1
+      maxLength: 60
+      pattern: "^[^\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]*$"
+    Breed:
+      type: string
+      description: Texto libre en F1 (catálogo en F2).
+      minLength: 1
+      maxLength: 80
+    Markings:
+      type: string
+      description: Color / señas particulares.
+      maxLength: 200
+    Species:
+      type: string
+      enum: [dog, cat, bird, rabbit, reptile, rodent, equine, ferret, fish, other]
+    SpeciesOther:
+      type: string
+      description: Obligatoria si species = other; 1–40.
+      minLength: 1
+      maxLength: 40
+    Sex:
+      type: string
+      enum: [male, female, unknown]
+    Neutered:
+      type: string
+      enum: ["yes", "no", "unknown"]
+    BirthDate:
+      type: object
+      additionalProperties: false
+      required: [date, approximate]
+      properties:
+        date:
+          type: string
+          description: Fecha civil YYYY-MM-DD; ≤ hoy y ≥ hoy − 40 años.
+          format: date
+        approximate:
+          type: boolean
+    Microchip:
+      type: string
+      description: ISO 11784/11785 (15 dígitos) o legado (9/10 alfanuméricos). Se normaliza (sin espacios/guiones, mayúsculas).
+      minLength: 9
+      maxLength: 15
+      pattern: "^([0-9]{15}|[A-Z0-9]{9,10})$"
+    Photo:
+      type: object
+      additionalProperties: false
+      required: [url, thumb_url, expires_at]
+      properties:
+        url:
+          type: string
+          description: URL prefirmada (15 min) de la foto (ARQ-012).
+        thumb_url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    CreatePetRequest:
+      type: object
+      additionalProperties: false
+      required: [name, species, sex, neutered]
+      properties:
+        name:
+          $ref: "#/components/schemas/PetName"
+        species:
+          $ref: "#/components/schemas/Species"
+        species_other:
+          $ref: "#/components/schemas/SpeciesOther"
+        breed:
+          $ref: "#/components/schemas/Breed"
+        sex:
+          $ref: "#/components/schemas/Sex"
+        neutered:
+          $ref: "#/components/schemas/Neutered"
+        birth_date:
+          $ref: "#/components/schemas/BirthDate"
+        markings:
+          $ref: "#/components/schemas/Markings"
+    UpdatePetRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          $ref: "#/components/schemas/PetName"
+        species:
+          $ref: "#/components/schemas/Species"
+        species_other:
+          $ref: "#/components/schemas/SpeciesOther"
+        breed:
+          description: Cadena vacía vacía el campo.
+          type: string
+          maxLength: 80
+        sex:
+          $ref: "#/components/schemas/Sex"
+        neutered:
+          $ref: "#/components/schemas/Neutered"
+        birth_date:
+          $ref: "#/components/schemas/BirthDate"
+        markings:
+          description: Cadena vacía vacía el campo.
+          type: string
+          maxLength: 200
+    MicrochipRequest:
+      type: object
+      additionalProperties: false
+      required: [microchip]
+      properties:
+        microchip:
+          $ref: "#/components/schemas/Microchip"
+    DeceasedRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        deceased_at:
+          type: string
+          format: date
+    Pet:
+      type: object
+      additionalProperties: false
+      required: [id, version, guardian_id, name, species, sex, neutered, status, care_links, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        guardian_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        species_other:
+          type: [string, "null"]
+        breed:
+          type: [string, "null"]
+        sex:
+          $ref: "#/components/schemas/Sex"
+        neutered:
+          $ref: "#/components/schemas/Neutered"
+        birth_date:
+          oneOf:
+            - $ref: "#/components/schemas/BirthDate"
+            - type: "null"
+        age:
+          type: object
+          additionalProperties: false
+          required: [years, months]
+          properties:
+            years:
+              type: integer
+            months:
+              type: integer
+        markings:
+          type: [string, "null"]
+        microchip:
+          type: [string, "null"]
+        microchip_corrections:
+          type: integer
+          description: Correcciones de microchip ya usadas por el tutor (0..1).
+        photo:
+          oneOf:
+            - $ref: "#/components/schemas/Photo"
+            - type: "null"
+        status:
+          type: string
+          enum: [active, deceased]
+        deceased_at:
+          type: [string, "null"]
+          format: date
+        care_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareLink"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CareLink:
+      type: object
+      additionalProperties: false
+      required: [organization_id, display_name, status, granted_at, org_suspended]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        city:
+          type: [string, "null"]
+        status:
+          type: string
+          enum: [active, revoked]
+        org_suspended:
+          type: boolean
+        granted_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: [string, "null"]
+          format: date-time
+    PetListItem:
+      type: object
+      additionalProperties: false
+      required: [id, version, name, species, status, active_links, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        breed:
+          type: [string, "null"]
+        photo:
+          oneOf:
+            - $ref: "#/components/schemas/Photo"
+            - type: "null"
+        status:
+          type: string
+          enum: [active, deceased]
+        birth_date:
+          oneOf:
+            - $ref: "#/components/schemas/BirthDate"
+            - type: "null"
+        active_links:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    PetPage:
+      type: object
+      additionalProperties: false
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetListItem"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
           format: date-time
     Membership:
       type: object

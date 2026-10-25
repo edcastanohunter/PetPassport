@@ -9,7 +9,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
@@ -18,8 +20,27 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for CareLinkStatus.
+const (
+	CareLinkStatusActive  CareLinkStatus = "active"
+	CareLinkStatusRevoked CareLinkStatus = "revoked"
+)
+
+// Valid indicates whether the value is a known member of the CareLinkStatus enum.
+func (e CareLinkStatus) Valid() bool {
+	switch e {
+	case CareLinkStatusActive:
+		return true
+	case CareLinkStatusRevoked:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for HealthStatusStatus.
 const (
@@ -141,6 +162,147 @@ func (e MembershipType) Valid() bool {
 	}
 }
 
+// Defines values for Neutered.
+const (
+	NeuteredNo      Neutered = "no"
+	NeuteredUnknown Neutered = "unknown"
+	NeuteredYes     Neutered = "yes"
+)
+
+// Valid indicates whether the value is a known member of the Neutered enum.
+func (e Neutered) Valid() bool {
+	switch e {
+	case NeuteredNo:
+		return true
+	case NeuteredUnknown:
+		return true
+	case NeuteredYes:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PetStatus.
+const (
+	PetStatusActive   PetStatus = "active"
+	PetStatusDeceased PetStatus = "deceased"
+)
+
+// Valid indicates whether the value is a known member of the PetStatus enum.
+func (e PetStatus) Valid() bool {
+	switch e {
+	case PetStatusActive:
+		return true
+	case PetStatusDeceased:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PetListItemStatus.
+const (
+	PetListItemStatusActive   PetListItemStatus = "active"
+	PetListItemStatusDeceased PetListItemStatus = "deceased"
+)
+
+// Valid indicates whether the value is a known member of the PetListItemStatus enum.
+func (e PetListItemStatus) Valid() bool {
+	switch e {
+	case PetListItemStatusActive:
+		return true
+	case PetListItemStatusDeceased:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Sex.
+const (
+	SexFemale  Sex = "female"
+	SexMale    Sex = "male"
+	SexUnknown Sex = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the Sex enum.
+func (e Sex) Valid() bool {
+	switch e {
+	case SexFemale:
+		return true
+	case SexMale:
+		return true
+	case SexUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for Species.
+const (
+	Bird    Species = "bird"
+	Cat     Species = "cat"
+	Dog     Species = "dog"
+	Equine  Species = "equine"
+	Ferret  Species = "ferret"
+	Fish    Species = "fish"
+	Other   Species = "other"
+	Rabbit  Species = "rabbit"
+	Reptile Species = "reptile"
+	Rodent  Species = "rodent"
+)
+
+// Valid indicates whether the value is a known member of the Species enum.
+func (e Species) Valid() bool {
+	switch e {
+	case Bird:
+		return true
+	case Cat:
+		return true
+	case Dog:
+		return true
+	case Equine:
+		return true
+	case Ferret:
+		return true
+	case Fish:
+		return true
+	case Other:
+		return true
+	case Rabbit:
+		return true
+	case Reptile:
+		return true
+	case Rodent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListPetsParamsStatus.
+const (
+	ListPetsParamsStatusActive   ListPetsParamsStatus = "active"
+	ListPetsParamsStatusAll      ListPetsParamsStatus = "all"
+	ListPetsParamsStatusDeceased ListPetsParamsStatus = "deceased"
+)
+
+// Valid indicates whether the value is a known member of the ListPetsParamsStatus enum.
+func (e ListPetsParamsStatus) Valid() bool {
+	switch e {
+	case ListPetsParamsStatusActive:
+		return true
+	case ListPetsParamsStatusAll:
+		return true
+	case ListPetsParamsStatusDeceased:
+		return true
+	default:
+		return false
+	}
+}
+
 // Address defines model for Address.
 type Address struct {
 	City string `json:"city"`
@@ -152,6 +314,31 @@ type Address struct {
 	PostalCode *string     `json:"postal_code,omitempty"`
 	Region     *string     `json:"region,omitempty"`
 }
+
+// BirthDate defines model for BirthDate.
+type BirthDate struct {
+	Approximate bool `json:"approximate"`
+
+	// Date Fecha civil YYYY-MM-DD; ≤ hoy y ≥ hoy − 40 años.
+	Date openapi_types.Date `json:"date"`
+}
+
+// Breed Texto libre en F1 (catálogo en F2).
+type Breed = string
+
+// CareLink defines model for CareLink.
+type CareLink struct {
+	City           *string            `json:"city,omitempty"`
+	DisplayName    string             `json:"display_name"`
+	GrantedAt      time.Time          `json:"granted_at"`
+	OrgSuspended   bool               `json:"org_suspended"`
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+	RevokedAt      *time.Time         `json:"revoked_at,omitempty"`
+	Status         CareLinkStatus     `json:"status"`
+}
+
+// CareLinkStatus defines model for CareLink.Status.
+type CareLinkStatus string
 
 // Consent defines model for Consent.
 type Consent struct {
@@ -171,6 +358,31 @@ type ConsentVersion = string
 
 // CountryCode ISO 3166-1 alpha-2.
 type CountryCode = string
+
+// CreatePetRequest defines model for CreatePetRequest.
+type CreatePetRequest struct {
+	BirthDate *BirthDate `json:"birth_date,omitempty"`
+
+	// Breed Texto libre en F1 (catálogo en F2).
+	Breed *Breed `json:"breed,omitempty"`
+
+	// Markings Color / señas particulares.
+	Markings *Markings `json:"markings,omitempty"`
+
+	// Name 1–60 caracteres; letras/espacios/'/-; sin control. Se recortan espacios y se colapsan.
+	Name     PetName  `json:"name"`
+	Neutered Neutered `json:"neutered"`
+	Sex      Sex      `json:"sex"`
+	Species  Species  `json:"species"`
+
+	// SpeciesOther Obligatoria si species = other; 1–40.
+	SpeciesOther *SpeciesOther `json:"species_other,omitempty"`
+}
+
+// DeceasedRequest defines model for DeceasedRequest.
+type DeceasedRequest struct {
+	DeceasedAt *openapi_types.Date `json:"deceased_at,omitempty"`
+}
 
 // DisplayName defines model for DisplayName.
 type DisplayName = string
@@ -202,6 +414,9 @@ type LegalCurrent struct {
 
 // Locale defines model for Locale.
 type Locale string
+
+// Markings Color / señas particulares.
+type Markings = string
 
 // Me defines model for Me.
 type Me struct {
@@ -243,6 +458,18 @@ type MembershipRole string
 // MembershipType defines model for Membership.Type.
 type MembershipType string
 
+// Microchip ISO 11784/11785 (15 dígitos) o legado (9/10 alfanuméricos). Se normaliza (sin espacios/guiones, mayúsculas).
+type Microchip = string
+
+// MicrochipRequest defines model for MicrochipRequest.
+type MicrochipRequest struct {
+	// Microchip ISO 11784/11785 (15 dígitos) o legado (9/10 alfanuméricos). Se normaliza (sin espacios/guiones, mayúsculas).
+	Microchip Microchip `json:"microchip"`
+}
+
+// Neutered defines model for Neutered.
+type Neutered string
+
 // OnboardingRequest defines model for OnboardingRequest.
 type OnboardingRequest struct {
 	AcceptPrivacyVersion ConsentVersion `json:"accept_privacy_version"`
@@ -257,8 +484,75 @@ type OnboardingRequest struct {
 	Phone *Phone `json:"phone,omitempty"`
 }
 
+// Pet defines model for Pet.
+type Pet struct {
+	Age *struct {
+		Months int `json:"months"`
+		Years  int `json:"years"`
+	} `json:"age,omitempty"`
+	BirthDate  *BirthDate          `json:"birth_date,omitempty"`
+	Breed      *string             `json:"breed,omitempty"`
+	CareLinks  []CareLink          `json:"care_links"`
+	CreatedAt  time.Time           `json:"created_at"`
+	DeceasedAt *openapi_types.Date `json:"deceased_at,omitempty"`
+	GuardianId openapi_types.UUID  `json:"guardian_id"`
+	Id         openapi_types.UUID  `json:"id"`
+	Markings   *string             `json:"markings,omitempty"`
+	Microchip  *string             `json:"microchip,omitempty"`
+
+	// MicrochipCorrections Correcciones de microchip ya usadas por el tutor (0..1).
+	MicrochipCorrections *int      `json:"microchip_corrections,omitempty"`
+	Name                 string    `json:"name"`
+	Neutered             Neutered  `json:"neutered"`
+	Photo                *Photo    `json:"photo,omitempty"`
+	Sex                  Sex       `json:"sex"`
+	Species              Species   `json:"species"`
+	SpeciesOther         *string   `json:"species_other,omitempty"`
+	Status               PetStatus `json:"status"`
+	UpdatedAt            time.Time `json:"updated_at"`
+	Version              int64     `json:"version"`
+}
+
+// PetStatus defines model for Pet.Status.
+type PetStatus string
+
+// PetListItem defines model for PetListItem.
+type PetListItem struct {
+	ActiveLinks int                `json:"active_links"`
+	BirthDate   *BirthDate         `json:"birth_date,omitempty"`
+	Breed       *string            `json:"breed,omitempty"`
+	CreatedAt   time.Time          `json:"created_at"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	Photo       *Photo             `json:"photo,omitempty"`
+	Species     Species            `json:"species"`
+	Status      PetListItemStatus  `json:"status"`
+	Version     int64              `json:"version"`
+}
+
+// PetListItemStatus defines model for PetListItem.Status.
+type PetListItemStatus string
+
+// PetName 1–60 caracteres; letras/espacios/'/-; sin control. Se recortan espacios y se colapsan.
+type PetName = string
+
+// PetPage defines model for PetPage.
+type PetPage struct {
+	Data       []PetListItem `json:"data"`
+	NextCursor *string       `json:"next_cursor"`
+}
+
 // Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
 type Phone = string
+
+// Photo defines model for Photo.
+type Photo struct {
+	ExpiresAt time.Time `json:"expires_at"`
+	ThumbUrl  string    `json:"thumb_url"`
+
+	// Url URL prefirmada (15 min) de la foto (ARQ-012).
+	Url string `json:"url"`
+}
 
 // Problem Error en formato application/problem+json (RFC 9457) con código estable del catálogo.
 type Problem struct {
@@ -276,6 +570,15 @@ type Problem struct {
 	Type     string  `json:"type"`
 }
 
+// Sex defines model for Sex.
+type Sex string
+
+// Species defines model for Species.
+type Species string
+
+// SpeciesOther Obligatoria si species = other; 1–40.
+type SpeciesOther = string
+
 // UpdateMeRequest defines model for UpdateMeRequest.
 type UpdateMeRequest struct {
 	Address          *Address          `json:"address,omitempty"`
@@ -286,6 +589,76 @@ type UpdateMeRequest struct {
 	Phone            *Phone            `json:"phone,omitempty"`
 }
 
+// UpdatePetRequest defines model for UpdatePetRequest.
+type UpdatePetRequest struct {
+	BirthDate *BirthDate `json:"birth_date,omitempty"`
+
+	// Breed Cadena vacía vacía el campo.
+	Breed *string `json:"breed,omitempty"`
+
+	// Markings Cadena vacía vacía el campo.
+	Markings *string `json:"markings,omitempty"`
+
+	// Name 1–60 caracteres; letras/espacios/'/-; sin control. Se recortan espacios y se colapsan.
+	Name     *PetName  `json:"name,omitempty"`
+	Neutered *Neutered `json:"neutered,omitempty"`
+	Sex      *Sex      `json:"sex,omitempty"`
+	Species  *Species  `json:"species,omitempty"`
+
+	// SpeciesOther Obligatoria si species = other; 1–40.
+	SpeciesOther *SpeciesOther `json:"species_other,omitempty"`
+}
+
+// IdempotencyKey defines model for IdempotencyKey.
+type IdempotencyKey = openapi_types.UUID
+
+// IfMatch defines model for IfMatch.
+type IfMatch = int64
+
+// PetId defines model for PetId.
+type PetId = openapi_types.UUID
+
+// ListPetsParams defines parameters for ListPets.
+type ListPetsParams struct {
+	Status *ListPetsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// Cursor Cursor opaco devuelto por la página anterior.
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListPetsParamsStatus defines parameters for ListPets.
+type ListPetsParamsStatus string
+
+// CreatePetParams defines parameters for CreatePet.
+type CreatePetParams struct {
+	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// UpdatePetParams defines parameters for UpdatePet.
+type UpdatePetParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// MarkPetDeceasedParams defines parameters for MarkPetDeceased.
+type MarkPetDeceasedParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// PutPetMicrochipParams defines parameters for PutPetMicrochip.
+type PutPetMicrochipParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// PutPetPhotoMultipartBody defines parameters for PutPetPhoto.
+type PutPetPhotoMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateMeRequest
 
@@ -294,6 +667,21 @@ type AcceptConsentJSONRequestBody = ConsentRequest
 
 // CompleteOnboardingJSONRequestBody defines body for CompleteOnboarding for application/json ContentType.
 type CompleteOnboardingJSONRequestBody = OnboardingRequest
+
+// CreatePetJSONRequestBody defines body for CreatePet for application/json ContentType.
+type CreatePetJSONRequestBody = CreatePetRequest
+
+// UpdatePetJSONRequestBody defines body for UpdatePet for application/json ContentType.
+type UpdatePetJSONRequestBody = UpdatePetRequest
+
+// MarkPetDeceasedJSONRequestBody defines body for MarkPetDeceased for application/json ContentType.
+type MarkPetDeceasedJSONRequestBody = DeceasedRequest
+
+// PutPetMicrochipJSONRequestBody defines body for PutPetMicrochip for application/json ContentType.
+type PutPetMicrochipJSONRequestBody = MicrochipRequest
+
+// PutPetPhotoMultipartRequestBody defines body for PutPetPhoto for multipart/form-data ContentType.
+type PutPetPhotoMultipartRequestBody PutPetPhotoMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -315,6 +703,33 @@ type ServerInterface interface {
 	// CompleteOnboarding Completar onboarding
 	// (POST /me/onboarding)
 	CompleteOnboarding(w http.ResponseWriter, r *http.Request)
+	// ListPets Lista de mascotas del tutor
+	// (GET /pets)
+	ListPets(w http.ResponseWriter, r *http.Request, params ListPetsParams)
+	// CreatePet Registrar mascota
+	// (POST /pets)
+	CreatePet(w http.ResponseWriter, r *http.Request, params CreatePetParams)
+	// GetPet Ficha de la mascota
+	// (GET /pets/{petId})
+	GetPet(w http.ResponseWriter, r *http.Request, petId PetId)
+	// UpdatePet Editar perfil de la mascota
+	// (PATCH /pets/{petId})
+	UpdatePet(w http.ResponseWriter, r *http.Request, petId PetId, params UpdatePetParams)
+	// MarkPetDeceased Marcar como fallecida
+	// (POST /pets/{petId}/deceased)
+	MarkPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId, params MarkPetDeceasedParams)
+	// UndoPetDeceased Deshacer fallecimiento
+	// (POST /pets/{petId}/deceased/undo)
+	UndoPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId)
+	// PutPetMicrochip Asignar o corregir el microchip
+	// (PUT /pets/{petId}/microchip)
+	PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams)
+	// DeletePetPhoto Quitar la foto
+	// (DELETE /pets/{petId}/photo)
+	DeletePetPhoto(w http.ResponseWriter, r *http.Request, petId PetId)
+	// PutPetPhoto Subir o reemplazar la foto
+	// (PUT /pets/{petId}/photo)
+	PutPetPhoto(w http.ResponseWriter, r *http.Request, petId PetId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -354,6 +769,60 @@ func (_ Unimplemented) AcceptConsent(w http.ResponseWriter, r *http.Request) {
 // CompleteOnboarding Completar onboarding
 // (POST /me/onboarding)
 func (_ Unimplemented) CompleteOnboarding(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListPets Lista de mascotas del tutor
+// (GET /pets)
+func (_ Unimplemented) ListPets(w http.ResponseWriter, r *http.Request, params ListPetsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreatePet Registrar mascota
+// (POST /pets)
+func (_ Unimplemented) CreatePet(w http.ResponseWriter, r *http.Request, params CreatePetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetPet Ficha de la mascota
+// (GET /pets/{petId})
+func (_ Unimplemented) GetPet(w http.ResponseWriter, r *http.Request, petId PetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdatePet Editar perfil de la mascota
+// (PATCH /pets/{petId})
+func (_ Unimplemented) UpdatePet(w http.ResponseWriter, r *http.Request, petId PetId, params UpdatePetParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkPetDeceased Marcar como fallecida
+// (POST /pets/{petId}/deceased)
+func (_ Unimplemented) MarkPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId, params MarkPetDeceasedParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UndoPetDeceased Deshacer fallecimiento
+// (POST /pets/{petId}/deceased/undo)
+func (_ Unimplemented) UndoPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutPetMicrochip Asignar o corregir el microchip
+// (PUT /pets/{petId}/microchip)
+func (_ Unimplemented) PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeletePetPhoto Quitar la foto
+// (DELETE /pets/{petId}/photo)
+func (_ Unimplemented) DeletePetPhoto(w http.ResponseWriter, r *http.Request, petId PetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutPetPhoto Subir o reemplazar la foto
+// (PUT /pets/{petId}/photo)
+func (_ Unimplemented) PutPetPhoto(w http.ResponseWriter, r *http.Request, petId PetId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -441,6 +910,376 @@ func (siw *ServerInterfaceWrapper) CompleteOnboarding(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CompleteOnboarding(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPets operation middleware
+func (siw *ServerInterfaceWrapper) ListPets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPetsParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPets(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreatePet operation middleware
+func (siw *ServerInterfaceWrapper) CreatePet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreatePetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreatePet(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPet operation middleware
+func (siw *ServerInterfaceWrapper) GetPet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPet(w, r, petId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdatePet operation middleware
+func (siw *ServerInterfaceWrapper) UpdatePet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdatePetParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdatePet(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkPetDeceased operation middleware
+func (siw *ServerInterfaceWrapper) MarkPetDeceased(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MarkPetDeceasedParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkPetDeceased(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UndoPetDeceased operation middleware
+func (siw *ServerInterfaceWrapper) UndoPetDeceased(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UndoPetDeceased(w, r, petId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutPetMicrochip operation middleware
+func (siw *ServerInterfaceWrapper) PutPetMicrochip(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutPetMicrochipParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutPetMicrochip(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePetPhoto operation middleware
+func (siw *ServerInterfaceWrapper) DeletePetPhoto(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePetPhoto(w, r, petId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutPetPhoto operation middleware
+func (siw *ServerInterfaceWrapper) PutPetPhoto(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutPetPhoto(w, r, petId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -577,6 +1416,33 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/me/consent", wrapper.AcceptConsent)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets", wrapper.ListPets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/pets", wrapper.CreatePet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{petId}", wrapper.GetPet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/pets/{petId}", wrapper.UpdatePet)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/pets/{petId}/microchip", wrapper.PutPetMicrochip)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/pets/{petId}/photo", wrapper.DeletePetPhoto)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/pets/{petId}/photo", wrapper.PutPetPhoto)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/pets/{petId}/deceased", wrapper.MarkPetDeceased)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/pets/{petId}/deceased/undo", wrapper.UndoPetDeceased)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/healthz", wrapper.GetHealthz)
@@ -1056,6 +1922,941 @@ func (response CompleteOnboardingdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListPetsRequestObject struct {
+	Params ListPetsParams
+}
+
+type ListPetsResponseObject interface {
+	VisitListPetsResponse(w http.ResponseWriter) error
+}
+
+type ListPets200ResponseHeaders struct {
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type ListPets200JSONResponse struct {
+	Body    PetPage
+	Headers ListPets200ResponseHeaders
+}
+
+func (response ListPets200JSONResponse) VisitListPetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPets401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListPets401ApplicationProblemPlusJSONResponse) VisitListPetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPetsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListPetsdefaultApplicationProblemPlusJSONResponse) VisitListPetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePetRequestObject struct {
+	Params CreatePetParams
+	Body   *CreatePetJSONRequestBody
+}
+
+type CreatePetResponseObject interface {
+	VisitCreatePetResponse(w http.ResponseWriter) error
+}
+
+type CreatePet201ResponseHeaders struct {
+	ETag           *int64
+	Location       *string
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type CreatePet201JSONResponse struct {
+	Body    Pet
+	Headers CreatePet201ResponseHeaders
+}
+
+func (response CreatePet201JSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePet401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreatePet401ApplicationProblemPlusJSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePet403ApplicationProblemPlusJSONResponse Problem
+
+func (response CreatePet403ApplicationProblemPlusJSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePet409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreatePet409ApplicationProblemPlusJSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePet422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreatePet422ApplicationProblemPlusJSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreatePetdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CreatePetdefaultApplicationProblemPlusJSONResponse) VisitCreatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetRequestObject struct {
+	PetId PetId `json:"petId"`
+}
+
+type GetPetResponseObject interface {
+	VisitGetPetResponse(w http.ResponseWriter) error
+}
+
+type GetPet200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+	XRequestID     *openapi_types.UUID
+}
+
+type GetPet200JSONResponse struct {
+	Body    Pet
+	Headers GetPet200ResponseHeaders
+}
+
+func (response GetPet200JSONResponse) VisitGetPetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	if response.Headers.XRequestID != nil {
+		w.Header().Set("X-Request-ID", fmt.Sprint(*response.Headers.XRequestID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPet401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetPet401ApplicationProblemPlusJSONResponse) VisitGetPetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPet404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetPet404ApplicationProblemPlusJSONResponse) VisitGetPetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetPetdefaultApplicationProblemPlusJSONResponse) VisitGetPetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePetRequestObject struct {
+	PetId  PetId `json:"petId"`
+	Params UpdatePetParams
+	Body   *UpdatePetJSONRequestBody
+}
+
+type UpdatePetResponseObject interface {
+	VisitUpdatePetResponse(w http.ResponseWriter) error
+}
+
+type UpdatePet200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type UpdatePet200JSONResponse struct {
+	Body    Pet
+	Headers UpdatePet200ResponseHeaders
+}
+
+func (response UpdatePet200JSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePet401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdatePet401ApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePet403ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdatePet403ApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePet404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdatePet404ApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePet409ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdatePet409ApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePet422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdatePet422ApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdatePetdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UpdatePetdefaultApplicationProblemPlusJSONResponse) VisitUpdatePetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceasedRequestObject struct {
+	PetId  PetId `json:"petId"`
+	Params MarkPetDeceasedParams
+	Body   *MarkPetDeceasedJSONRequestBody
+}
+
+type MarkPetDeceasedResponseObject interface {
+	VisitMarkPetDeceasedResponse(w http.ResponseWriter) error
+}
+
+type MarkPetDeceased200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type MarkPetDeceased200JSONResponse struct {
+	Body    Pet
+	Headers MarkPetDeceased200ResponseHeaders
+}
+
+func (response MarkPetDeceased200JSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceased401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MarkPetDeceased401ApplicationProblemPlusJSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceased404ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkPetDeceased404ApplicationProblemPlusJSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceased409ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkPetDeceased409ApplicationProblemPlusJSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceased422ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkPetDeceased422ApplicationProblemPlusJSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkPetDeceaseddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response MarkPetDeceaseddefaultApplicationProblemPlusJSONResponse) VisitMarkPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoPetDeceasedRequestObject struct {
+	PetId PetId `json:"petId"`
+}
+
+type UndoPetDeceasedResponseObject interface {
+	VisitUndoPetDeceasedResponse(w http.ResponseWriter) error
+}
+
+type UndoPetDeceased200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type UndoPetDeceased200JSONResponse struct {
+	Body    Pet
+	Headers UndoPetDeceased200ResponseHeaders
+}
+
+func (response UndoPetDeceased200JSONResponse) VisitUndoPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoPetDeceased401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UndoPetDeceased401ApplicationProblemPlusJSONResponse) VisitUndoPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoPetDeceased404ApplicationProblemPlusJSONResponse Problem
+
+func (response UndoPetDeceased404ApplicationProblemPlusJSONResponse) VisitUndoPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoPetDeceased409ApplicationProblemPlusJSONResponse Problem
+
+func (response UndoPetDeceased409ApplicationProblemPlusJSONResponse) VisitUndoPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UndoPetDeceaseddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UndoPetDeceaseddefaultApplicationProblemPlusJSONResponse) VisitUndoPetDeceasedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochipRequestObject struct {
+	PetId  PetId `json:"petId"`
+	Params PutPetMicrochipParams
+	Body   *PutPetMicrochipJSONRequestBody
+}
+
+type PutPetMicrochipResponseObject interface {
+	VisitPutPetMicrochipResponse(w http.ResponseWriter) error
+}
+
+type PutPetMicrochip200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type PutPetMicrochip200JSONResponse struct {
+	Body    Pet
+	Headers PutPetMicrochip200ResponseHeaders
+}
+
+func (response PutPetMicrochip200JSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochip401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutPetMicrochip401ApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochip403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetMicrochip403ApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochip404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetMicrochip404ApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochip409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetMicrochip409ApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochip422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetMicrochip422ApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetMicrochipdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutPetMicrochipdefaultApplicationProblemPlusJSONResponse) VisitPutPetMicrochipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePetPhotoRequestObject struct {
+	PetId PetId `json:"petId"`
+}
+
+type DeletePetPhotoResponseObject interface {
+	VisitDeletePetPhotoResponse(w http.ResponseWriter) error
+}
+
+type DeletePetPhoto200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type DeletePetPhoto200JSONResponse struct {
+	Body    Pet
+	Headers DeletePetPhoto200ResponseHeaders
+}
+
+func (response DeletePetPhoto200JSONResponse) VisitDeletePetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePetPhoto401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeletePetPhoto401ApplicationProblemPlusJSONResponse) VisitDeletePetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePetPhoto404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeletePetPhoto404ApplicationProblemPlusJSONResponse) VisitDeletePetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeletePetPhotodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DeletePetPhotodefaultApplicationProblemPlusJSONResponse) VisitDeletePetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhotoRequestObject struct {
+	PetId PetId `json:"petId"`
+	Body  *multipart.Reader
+}
+
+type PutPetPhotoResponseObject interface {
+	VisitPutPetPhotoResponse(w http.ResponseWriter) error
+}
+
+type PutPetPhoto200ResponseHeaders struct {
+	ETag           *int64
+	XCorrelationID *openapi_types.UUID
+}
+
+type PutPetPhoto200JSONResponse struct {
+	Body    Pet
+	Headers PutPetPhoto200ResponseHeaders
+}
+
+func (response PutPetPhoto200JSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.XCorrelationID != nil {
+		w.Header().Set("X-Correlation-ID", fmt.Sprint(*response.Headers.XCorrelationID))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhoto401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutPetPhoto401ApplicationProblemPlusJSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhoto404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetPhoto404ApplicationProblemPlusJSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhoto413ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetPhoto413ApplicationProblemPlusJSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhoto415ApplicationProblemPlusJSONResponse Problem
+
+func (response PutPetPhoto415ApplicationProblemPlusJSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(415)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutPetPhotodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutPetPhotodefaultApplicationProblemPlusJSONResponse) VisitPutPetPhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealthz Liveness pública (usada por el WAF)
@@ -1076,6 +2877,33 @@ type StrictServerInterface interface {
 	// CompleteOnboarding Completar onboarding
 	// (POST /me/onboarding)
 	CompleteOnboarding(ctx context.Context, request CompleteOnboardingRequestObject) (CompleteOnboardingResponseObject, error)
+	// ListPets Lista de mascotas del tutor
+	// (GET /pets)
+	ListPets(ctx context.Context, request ListPetsRequestObject) (ListPetsResponseObject, error)
+	// CreatePet Registrar mascota
+	// (POST /pets)
+	CreatePet(ctx context.Context, request CreatePetRequestObject) (CreatePetResponseObject, error)
+	// GetPet Ficha de la mascota
+	// (GET /pets/{petId})
+	GetPet(ctx context.Context, request GetPetRequestObject) (GetPetResponseObject, error)
+	// UpdatePet Editar perfil de la mascota
+	// (PATCH /pets/{petId})
+	UpdatePet(ctx context.Context, request UpdatePetRequestObject) (UpdatePetResponseObject, error)
+	// MarkPetDeceased Marcar como fallecida
+	// (POST /pets/{petId}/deceased)
+	MarkPetDeceased(ctx context.Context, request MarkPetDeceasedRequestObject) (MarkPetDeceasedResponseObject, error)
+	// UndoPetDeceased Deshacer fallecimiento
+	// (POST /pets/{petId}/deceased/undo)
+	UndoPetDeceased(ctx context.Context, request UndoPetDeceasedRequestObject) (UndoPetDeceasedResponseObject, error)
+	// PutPetMicrochip Asignar o corregir el microchip
+	// (PUT /pets/{petId}/microchip)
+	PutPetMicrochip(ctx context.Context, request PutPetMicrochipRequestObject) (PutPetMicrochipResponseObject, error)
+	// DeletePetPhoto Quitar la foto
+	// (DELETE /pets/{petId}/photo)
+	DeletePetPhoto(ctx context.Context, request DeletePetPhotoRequestObject) (DeletePetPhotoResponseObject, error)
+	// PutPetPhoto Subir o reemplazar la foto
+	// (PUT /pets/{petId}/photo)
+	PutPetPhoto(ctx context.Context, request PutPetPhotoRequestObject) (PutPetPhotoResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1282,62 +3110,376 @@ func (sh *strictHandler) CompleteOnboarding(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ListPets operation middleware
+func (sh *strictHandler) ListPets(w http.ResponseWriter, r *http.Request, params ListPetsParams) {
+	var request ListPetsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPets(ctx, request.(ListPetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPetsResponseObject); ok {
+		if err := validResponse.VisitListPetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreatePet operation middleware
+func (sh *strictHandler) CreatePet(w http.ResponseWriter, r *http.Request, params CreatePetParams) {
+	var request CreatePetRequestObject
+
+	request.Params = params
+
+	var body CreatePetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreatePet(ctx, request.(CreatePetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreatePet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreatePetResponseObject); ok {
+		if err := validResponse.VisitCreatePetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPet operation middleware
+func (sh *strictHandler) GetPet(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request GetPetRequestObject
+
+	request.PetId = petId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPet(ctx, request.(GetPetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPetResponseObject); ok {
+		if err := validResponse.VisitGetPetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdatePet operation middleware
+func (sh *strictHandler) UpdatePet(w http.ResponseWriter, r *http.Request, petId PetId, params UpdatePetParams) {
+	var request UpdatePetRequestObject
+
+	request.PetId = petId
+	request.Params = params
+
+	var body UpdatePetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdatePet(ctx, request.(UpdatePetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdatePet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdatePetResponseObject); ok {
+		if err := validResponse.VisitUpdatePetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkPetDeceased operation middleware
+func (sh *strictHandler) MarkPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId, params MarkPetDeceasedParams) {
+	var request MarkPetDeceasedRequestObject
+
+	request.PetId = petId
+	request.Params = params
+
+	var body MarkPetDeceasedJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkPetDeceased(ctx, request.(MarkPetDeceasedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkPetDeceased")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkPetDeceasedResponseObject); ok {
+		if err := validResponse.VisitMarkPetDeceasedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UndoPetDeceased operation middleware
+func (sh *strictHandler) UndoPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request UndoPetDeceasedRequestObject
+
+	request.PetId = petId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UndoPetDeceased(ctx, request.(UndoPetDeceasedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UndoPetDeceased")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UndoPetDeceasedResponseObject); ok {
+		if err := validResponse.VisitUndoPetDeceasedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutPetMicrochip operation middleware
+func (sh *strictHandler) PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams) {
+	var request PutPetMicrochipRequestObject
+
+	request.PetId = petId
+	request.Params = params
+
+	var body PutPetMicrochipJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutPetMicrochip(ctx, request.(PutPetMicrochipRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutPetMicrochip")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutPetMicrochipResponseObject); ok {
+		if err := validResponse.VisitPutPetMicrochipResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeletePetPhoto operation middleware
+func (sh *strictHandler) DeletePetPhoto(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request DeletePetPhotoRequestObject
+
+	request.PetId = petId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeletePetPhoto(ctx, request.(DeletePetPhotoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeletePetPhoto")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeletePetPhotoResponseObject); ok {
+		if err := validResponse.VisitDeletePetPhotoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutPetPhoto operation middleware
+func (sh *strictHandler) PutPetPhoto(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request PutPetPhotoRequestObject
+
+	request.PetId = petId
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutPetPhoto(ctx, request.(PutPetPhotoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutPetPhoto")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutPetPhotoResponseObject); ok {
+		if err := validResponse.VisitPutPetPhotoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7Fpbc9vGFf4rO9s8iDVIgpRs1+xLGclOlNqWxpKTTCSFXAKH5MbALrK7YE1r+GPy1MlDn/KWx+qPdc4C",
-	"IAFixYscdzJtMhlZAvZyrt+54ZYGMk6kAGE07d1SeM/iJAL7+ys4EyPJVAgh/jljUQr4CwtDBVrTnkij",
-	"yKOBFBqEsW+CABID4YAZ2qNdv/uk2fGbXf+y4/d8/P876tFE8RkL5oMZKM2lKC0MFRsb6lEDKtb3vl8s",
-	"rxzI1ITMIHljFmnAF6kwak579PiMejTkOonYfCBYDLRH+4KRy9RIxahHIWY8oj3KBPtbznUrkHHxBq/n",
-	"Y45nG5UCPgU1ARHMB4EUhgWm4H8SyRGLBkpasV3RBMxA/kOAojce5SHtUb/zrDs+ZN1mt9vtNp8yxpqj",
-	"0WjUDEv/UY9GMmAR0gmaejSGeARKT3mCp954VGbK4GIyUPBjylWJ72QqBe589Pjpoe93uodHj588pR7V",
-	"hplUI5eB4TOgi8XCo1NgISir4m+bx1IpiJjhUjRPT/BZCDpQPDGZ7E9DEIaPecBCqUgIJMg2BPzuF0EO",
-	"3r49PWm0yAUQhqpnBIRRTBggc6I5xIkCooGEMEshmkELaQqmEDO8aSxVbC0lTTkKwMwTZEIbxcWEIqnf",
-	"Nt/AjyloswNtd78KHkgSQkRUtmm/2xYeVaATNC0rm3MlRxHE+CtqvDDxJIl4YOXVTrIVj37QSM5t6a7P",
-	"FIxpj/6pvfKudvZWt4tz7Y1Vhp4rJZVlPF+MZ/ULd7Oex3Epi86VTEAZjqQWNlB6dEsDbub4b8zevwQx",
-	"MVPa63R9j8ZcLP+uyaDkQJt5OM6WHcsQcFfEBXTWbuv622/DfV3XvtrKRGrDokGAF66vdyxXMOGZTtb5",
-	"r9vYypmulux7mfwKzm6W++ToBwgsBh2XYG93tVQQsmSTCGNNw2OgLubXEfO2vmYNM2+3MFpdXr/Cq1C6",
-	"gf/cP/cUg4OjzeZm7/o6X+1id5/te8piA/dfrwgoGdph16MJMwYUOvX3V/3md6z5wW8+azVvHn3m0nDZ",
-	"n+owd3FGDjtPnjQ7hEXJlDW7CGz1C25uuwvn6SdZGHxto+A2SCif+/319Xvfb+LPv+CPz/HHMf54jg87",
-	"L27+7LzweRErj4tQuZd1iJzQTTot87RYBsAtyGsXWe1nEQ+j65pEnmzFCEtdcaPLNr4EFpnpRR569+Jc",
-	"LzeBSGO8Tb4r3XEPRfkuFy0vYcKi41Sp/aGqcINURU7E2R2V7jvhN8es1XVehXynZPJsayVqm3aBcMjb",
-	"o69gX6BfRW0p4GxMe1ebjbMI8wtvKQfML+niZlHJsXc7rYhOm04rpc/LRSMpI2BiLRXIXl4V8vCys/Co",
-	"aobt0HGeZpdCXfbEu2dpKe92EeXIwncVSQ2UnLKpZvO3lBuItZOzmL0/zV6W8gqmFJvjWx7ukHOucv7N",
-	"pOe2ulirCkrUbdr9armnSnbHd9DtrDJcmlgi7v3GUUezvAzxqE51AgIry63oZgVXGM2ajawZ4FKea3qs",
-	"ys3NpMMtvE3IWpLqfsiw1WWkmgzqokNxIcEZ71kFYtO0mkRRfEilU7j2eCb4B3vAYEczRTGWiQkiLngw",
-	"YGHMkYgZGFBcMMWZsNdj6sil4NrYSMlUjFBcLM8f4FsXgdmD9ctKB223mXUea3Zit+d8VSTuUvXZ0lwe",
-	"lu1mqfTgo5Pe/JyPyn0fWuKtW+0eudm+GLdPLrem9zUtr8q5JS44ZejdpyKXNZwX5K3V7q3Ok6O/El10",
-	"QgQBnbCAS+2RScqlAE3mJGHq7mdhQHNNfkxtbwQiHnPBBGEREeiIEf/AFKb495cU19ePrvzmM3LQuL5u",
-	"tm5un3iHvjv3L3UxNlqsoxFBQJAMGSS5r+1BDt68OCbPjh4/bZBAChLc/RLyiSSgDRtFYLsxATN3P0Vy",
-	"Im3ZUu1SOAue4/yQymZyEMpAt5Mp09DstP3HTZbwVhySf//zccNREA3uKbWCVcNrV/QLweRJTD1nQUFV",
-	"Q/E+TZqc/dqxYw5RuD0jzpZ52TkuW90S7LnQhonATcMqBMXsPY8Rix8/e2bLxeyvo9KRXBiYgLLwzU3k",
-	"PrEA9pXAFafboDxH6uzUJVUbeH6bYPR+BbtidcxF+WnnU2fyS/TdNZMv47DjxI9A5k+eTT8Y+ncjoijo",
-	"azcvanaBBg1BqriZX+DuTLcjYApUP0WILf56UVjnV99c0nVg7AcBaE2MfAeCQMwNDyVJpCJ/h3kQSfaO",
-	"HChgUUyGCZiEaZ1IZYYeYWnIQQScVV4ghA0byza1zbAtDSuvmBqTZK1iLsayaEbnqsrnGudgzvMTaa2n",
-	"3D8/JcndryOEbxICKS0mB8M2S3h71hk2WgQVqRDrxykIA+Sgf/Km6fuPGz0CEdGgZjyUinwhyRwfBBHH",
-	"Zdficp7Ahb0Qo9kEBCgmSAg6BAwDQJgKpnwm7Q0zFIKNhSCIG9Bb12Lp7xXeSP/81CabxVyo0/Jbvk1p",
-	"ExAs4bRHD1udlp8Fg6nVcHtquzEf8PcJGEd3TYQoGQzGEJFEyQC0JNkkIIQWeS0JWp5KYYTyszk2KlKT",
-	"A1wYSTJlAZC2AhbOPyBbeEwKykiCqKiEtBpGSLFR5zSkPfoFmC9zwtbGDl3f3zByKEYN5TmdfFcZzy1n",
-	"PvJdZji7jSUqXSvXbGIlHNDm7icy4zNJt06TXFfmW9q19Y6Jz+b9pbU5yWOWRua+jUtBl4YwK1zIxmw6",
-	"jWNmR4gv+QwEevvSfQ5SzUJm/R0i8k3/RQMtlU3s3E/PtYEYQ9L7ZpI0sTCzgktS3GxvakcwYVE7WPXj",
-	"nCZ5nt0nW+QlIxfnfTSyVLPctlbFKzqifRTLkEXo3AqaeRXLY3RP6bS8SlPwo82vxM3SBiu9w4Lt/OEe",
-	"I+DKdvto+3R4d4uviMFh8XnNBJrM+ASxTv9Pm3udXbQoc/ezirmQtnixauMhC0tmb5Wz2eqzvMRp6if5",
-	"YJhEjAQYd5jN+llgpGqRcyVnMmBo4ixRcsaRQJZZNvnq9JIcnPZfNX3/WaNF+vn8OWY8IpqLa1F0ShSZ",
-	"l53GNlJshEuYyoA/ytwsSSHE+wMeckUYCe9+EdapQq74hKssMtXc6RX8Bhhe/tLCpcticbv8Vcbutv4K",
-	"XBZ+vCbx35t9H/mdPWwb1x/utf5h/rP0mFx8WC5wVnKJGOr+EEMPMwSb5DITTOuu0A9Mamt/EklNAhYn",
-	"UpNEgba+2CLnaK3of0yRVGQLiEwCW9eQg6HNnYceGeYlBv6a1y5D71oMa8n+sGHbD2J29y9Ghpg6D1vk",
-	"DUy4NoqhT7Ag+8oDBBkmETNYt7UwkzWDSE6G5EBzQWYskgp0w+UcRSlGs5IOtPlchvM9XWNZE6yiy+pr",
-	"F3Lo+6TTPST2g5c9wH+9SlxU606jUlg8yKt/A39khSWE7P/NI4+63f+mBz8PuWGKJKDG2Uxqswen1miK",
-	"oNYuTeUSqR3R7c16OkaMYpqkoqTjzMVsFG2R4VG3S47PXl88f305+Pr5m4vTs9eDs7eXJ/3L5ydDojkR",
-	"kmgpSMRWYbqe4/VtN7OYAX6M821K7h78Ad/uXrr2kclOTnrkaChWlaByjAvlH+71Sd0ry8kUmT0stdzN",
-	"C1ep3f2OmCeH1mv2oIXMl7Zig3LIjNRkdPeT5oHU5OD8zUnT9w+9a2F/6/qNXVy4SkU2LQiZdrr2tTgN",
-	"IU4k+iv0iIIEDFeRXOFHibCsL1Ot/xxR+ViiextYjbU+CiKyb10rHwjfM++q4YR7oFVbtsdXvdVvaN2f",
-	"xe6BP/XJ3+8pTwikKBc2QabXP2Dtk+f9uaBVSfpbYGu1sJerKVdsqRqvtqOvbhZYnoOaWTVe1ZpESoZp",
-	"lqBTj2adkqkxie612yzhrVKbucWSJG/02mb5egmumVIyiiQ5sELQQB6RS8VgzN813GcnLetoU6nN8uCb",
-	"pQTWb7hgUYpYChqN05abtp0ccLTU3I3z9lmdvkqVtWEKeNjqNFbHxeA46tKN8qX2Tr47a2osbhb/CQAA",
-	"//8=",
+	"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",
+	"h/8LAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

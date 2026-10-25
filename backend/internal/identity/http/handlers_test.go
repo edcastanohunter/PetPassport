@@ -15,6 +15,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/test/testkit"
@@ -25,6 +26,7 @@ const aud = "petpassport-api"
 type handlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
+	*pethttp.PetHandlers
 }
 
 type env struct {
@@ -53,7 +55,7 @@ func newEnv(t *testing.T) *env {
 	s := httpserver.New(":0", ":0", httpserver.Options{
 		Logger: slog.New(slog.NewTextHandler(discard{}, nil)), Registry: prometheus.NewRegistry(),
 		Health: httpserver.NewHealth(), CORSOrigins: []string{"http://localhost:5173"},
-		Handlers: handlers{Handlers: identityhttp.NewHandlers(svc, "salt")}, Guard: guard.Middleware,
+		Handlers: handlers{Handlers: identityhttp.NewHandlers(svc, "salt"), PetHandlers: pethttp.NewPetHandlers(nil, nil, nil, nil, nil)}, Guard: guard.Middleware,
 	})
 	return &env{t: t, h: s.Public.Handler, jwks: j, repo: repo, contract: testkit.NewContract(t), userID: uuid.Must(uuid.NewV7())}
 }
