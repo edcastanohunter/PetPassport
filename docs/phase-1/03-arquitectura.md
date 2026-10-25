@@ -226,7 +226,7 @@ Apagado: `SIGTERM` → `readyz = fail` → espera 5 s (drenado del LB) → `serv
 **[PP-F1-ARQ-012] (SHOULD)**
 
 - Puerto `storage.ObjectStorage{Put, Get, Delete, PresignGet}`; adaptador S3 (MinIO en dev).
-- Pipeline de foto (`platform/storage/image`): límite 5 MB → detección por *magic bytes* → decodificación con límite de píxeles (≤ 25 MP) → *strip* de metadatos EXIF → redimensionar a 1024 px y 256 px → re-encodear a WebP (calidad 82) → `Put` con `Content-Disposition: inline` y `Cache-Control: private, max-age=86400`.
+- Pipeline de foto (`platform/storage/image`): límite 5 MB → detección por *magic bytes* → decodificación con límite de píxeles (≤ 25 MP) → *strip* de metadatos EXIF (la re-codificación no los conserva) → redimensionar a 1024 px y 256 px → re-encodear. **Decisión M1.2**: salida JPEG calidad 82 en vez de WebP — no existe encoder WebP pure-Go compatible con `CGO_ENABLED=0`; revisar si cambia la imagen base → `Put` con `Content-Disposition: inline` y `Cache-Control: private, max-age=86400`.
 - Servir fotos por URL prefirmada de 15 min emitida por la API (autorizada), nunca bucket público.
 
 ## 10. Diagrama de secuencia — `POST /pets`

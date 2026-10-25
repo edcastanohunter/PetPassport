@@ -61,7 +61,7 @@ CORS en la API: `Access-Control-Allow-Origin` solo `https://app.<dominio>` (y `h
 **[PP-F1-SEC-004] (MUST)**
 
 - Toda entrada pasa por el esquema OpenAPI (API-010) y luego por VOs de dominio; no existe *bypass* interno.
-- Subidas: ver ARQ-012. Además: nombre de archivo ignorado (se genera `ObjectKey`), `Content-Type` del cliente ignorado, decodificación en *goroutine* con límite de memoria y timeout 10 s, SVG/GIF rechazados, HEIC convertido vía `libheif` o rechazado con mensaje (decisión en M1.2 según soporte de la imagen base).
+- Subidas: ver ARQ-012. Además: nombre de archivo ignorado (se genera `ObjectKey`), `Content-Type` del cliente ignorado, SVG/GIF rechazados, HEIC **rechazado con mensaje** (decisión M1.2: sin libheif en la imagen base; se revisará si cambia). **M1.2**: la cota de memoria se garantiza con buffer ≤ 5 MB y límite de 25 MP verificado en la cabecera ANTES de decodificar (en lugar de goroutine + timeout).
 - Prohibidas expresiones regulares con *backtracking* catastrófico; usar `regexp` de Go (RE2) exclusivamente.
 - Enlaces en emails: solo a `PP_PUBLIC_BASE_URL`; nunca se construyen desde cabeceras `Host`.
 
