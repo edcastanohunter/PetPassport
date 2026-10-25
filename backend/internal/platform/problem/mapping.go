@@ -5,19 +5,34 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
+// DirectError envuelve un Problem ya construido (p. ej. errores del pipeline
+// de imagen) para saltar el mapeo de From.
+type DirectError struct{ P *Problem }
+
+func (e *DirectError) Error() string { return e.P.Title }
+
 // From mapea las tres familias de errores de ARQ-010 a un Problem:
-// DomainError → código del catálogo; NotFoundError → 404; ForbiddenError → 403;
-// ValidationError → 422 con errors[]; cualquier otro → 500 sin detalles internos.
+// DirectError → tal cual; DomainError → código del catálogo; NotFoundError → 404;
+// ForbiddenError → 403; ValidationError → 422 con errors[]; cualquier otro →
+// 500 sin detalles internos.
 func From(err error) *Problem {
 	var de *kernel.DomainError
 	var nf *kernel.NotFoundError
 	var fb *kernel.ForbiddenError
 	var ve *kernel.ValidationError
 	var ce *kernel.ConcurrencyError
+	var direct *DirectError
 	switch {
+	case errors.As(err, &direct):
+		return direct.P
+	case errors.Is(err, idempotency.ErrKeyReused):
+		return New(IdempotencyKeyReused, "Clave de idempotencia reutilizada", "La misma clave fue usada con un cuerpo distinto.")
+	case errors.Is(err, idempotency.ErrRequestInProgress):
+		return New(RequestInProgress, "Petición en curso", "Un request con la misma Idempotency-Key está en vuelo.")
 	case errors.As(err, &de):
 		p := New(Code(de.Code), titleFor(Code(de.Code)), de.Message)
 		if _, known := defaultStatus[Code(de.Code)]; !known {
