@@ -75,3 +75,22 @@ SELECT EXISTS (
    WHERE id = sqlc.arg('id') AND organization_id = sqlc.arg('organization_id')
      AND status = 'pending' AND expires_at > sqlc.arg('now')::timestamptz
 ) AS ok;
+
+-- name: AdminListOrganizations :many
+-- Panel admin (PRD-017, API-008): organizaciones por estado, de la más
+-- antigua a la más reciente (cola de verificación FIFO). q busca por nombre,
+-- razón social o código público (ILIKE escapado por el adaptador). Cursor por
+-- (created_at, id) ascendente.
+SELECT id, version, type, legal_name, display_name, tax_country, tax_value, address, city, country,
+       contact_email::text AS contact_email, contact_phone, website, public_code, status, status_reason,
+       founder_id, member_count, created_at, updated_at
+  FROM read_partnernetwork.organizations
+ WHERE status = sqlc.arg('status')::text
+   AND (sqlc.narg('q')::text IS NULL
+        OR display_name ILIKE '%' || sqlc.narg('q')::text || '%'
+        OR legal_name ILIKE '%' || sqlc.narg('q')::text || '%'
+        OR public_code = upper(sqlc.narg('q')::text))
+   AND (sqlc.narg('created_at')::timestamptz IS NULL
+        OR (created_at, id) > (sqlc.narg('created_at')::timestamptz, sqlc.narg('id')::uuid))
+ ORDER BY created_at, id
+ LIMIT sqlc.arg('limit');

@@ -80,3 +80,10 @@ SELECT p.id, p.name, p.species, p.breed, p.status, p.birth_date, p.birth_date_ap
         OR (l.granted_at, l.pet_id) < (sqlc.narg('granted_at')::timestamptz, sqlc.narg('pet_id')::uuid))
  ORDER BY l.granted_at DESC, l.pet_id DESC
  LIMIT sqlc.arg('limit');
+
+-- name: CountPetsByGuardians :many
+-- Panel admin (AdminUserRow.pet_count, API-008): mascotas por tutor.
+SELECT guardian_id, count(*)::int AS pet_count
+  FROM read_petregistry.pets
+ WHERE guardian_id = ANY(sqlc.arg('guardian_ids')::uuid[])
+ GROUP BY guardian_id;

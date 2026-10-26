@@ -128,6 +128,44 @@ func (a *UserAccount) TouchLogin(now time.Time) { a.LastLoginAt = &now }
 // IsSuspended indica si la cuenta está suspendida.
 func (a *UserAccount) IsSuspended() bool { return a.Status == StatusSuspended }
 
+// MinAdminReason es la longitud mínima del motivo de una acción admin (RN-06, API-008).
+const MinAdminReason = 10
+
+// ErrReasonRequired: acción admin sin motivo suficiente (API-011 REASON_REQUIRED).
+var ErrReasonRequired = kernel.NewDomainError("REASON_REQUIRED", "La acción requiere un motivo de al menos 10 caracteres.")
+
+// NormalizeReason recorta el motivo y exige MinAdminReason caracteres.
+func NormalizeReason(reason string) (string, error) {
+	r := strings.TrimSpace(reason)
+	if len([]rune(r)) < MinAdminReason {
+		return "", ErrReasonRequired
+	}
+	return r, nil
+}
+
+// Suspend suspende la cuenta (PRD-018). Idempotente: suspender una cuenta ya
+// suspendida solo actualiza el motivo. Devuelve true si el estado cambió.
+func (a *UserAccount) Suspend(reason string, now time.Time) (bool, error) {
+	r, err := NormalizeReason(reason)
+	if err != nil {
+		return false, err
+	}
+	changed := a.Status != StatusSuspended
+	a.Status, a.StatusReason, a.UpdatedAt = StatusSuspended, r, now
+	return changed, nil
+}
+
+// Reactivate reactiva la cuenta. Idempotente; true si el estado cambió.
+func (a *UserAccount) Reactivate(reason string, now time.Time) (bool, error) {
+	r, err := NormalizeReason(reason)
+	if err != nil {
+		return false, err
+	}
+	changed := a.Status != StatusActive
+	a.Status, a.StatusReason, a.UpdatedAt = StatusActive, r, now
+	return changed, nil
+}
+
 // IsOnboarded indica si completó el onboarding.
 func (a *UserAccount) IsOnboarded() bool { return a.OnboardingCompletedAt != nil }
 

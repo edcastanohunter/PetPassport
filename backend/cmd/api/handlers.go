@@ -14,6 +14,7 @@ import (
 type apiHandlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
+	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 }

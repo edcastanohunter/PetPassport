@@ -135,3 +135,32 @@ func TestTruncateAndRoles(t *testing.T) {
 		t.Fatalf("roles: %v", got)
 	}
 }
+
+func TestSuspendReactivate_ReasonRequiredAndIdempotent(t *testing.T) {
+	a := Provision(uuid.Must(uuid.NewV7()), snap(), now)
+	if _, err := a.Suspend("corto", now); !errors.Is(err, ErrReasonRequired) {
+		t.Fatalf("motivo corto: %v", err)
+	}
+	if _, err := a.Suspend("   abc       ", now); !errors.Is(err, ErrReasonRequired) {
+		t.Fatalf("motivo con espacios no cuenta: %v", err)
+	}
+	if a.IsSuspended() {
+		t.Fatal("un motivo inválido no debe suspender")
+	}
+	changed, err := a.Suspend("  Fraude reportado por clínica  ", now)
+	if err != nil || !changed || !a.IsSuspended() || a.StatusReason != "Fraude reportado por clínica" {
+		t.Fatalf("suspend: changed=%v err=%v %+v", changed, err, a)
+	}
+	if changed, err = a.Suspend("Segundo motivo válido", now); err != nil || changed {
+		t.Fatalf("suspender dos veces debe ser idempotente: changed=%v err=%v", changed, err)
+	}
+	if _, err := a.UpdateProfile(ProfileChanges{}, now); !errors.Is(err, ErrAccountSuspended) {
+		t.Fatalf("cuenta suspendida no edita perfil: %v", err)
+	}
+	if changed, err = a.Reactivate("Revisión completada", now); err != nil || !changed || a.IsSuspended() {
+		t.Fatalf("reactivate: changed=%v err=%v", changed, err)
+	}
+	if changed, _ = a.Reactivate("Revisión completada", now); changed {
+		t.Fatal("reactivar dos veces debe ser idempotente")
+	}
+}

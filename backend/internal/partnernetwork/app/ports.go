@@ -1,6 +1,6 @@
 // Package app expone los casos de uso de Partner Network (ARQ-003): registro
-// y edición de organizaciones, verificación (comando; HTTP en M1.4), miembros
-// e invitaciones. Cada comando: authz (en http) → idempotency (en http) →
+// y edición de organizaciones, verificación, miembros
+// e invitaciones, y las transiciones de SuperAdmin (M1.4). Cada comando: authz (en http) → idempotency (en http) →
 // uow.Do {load → reserve → handle → append → project(sync)} → tras el commit:
 // invalidación de membresías y emails best-effort (DOM-011).
 package app
@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 )
@@ -161,6 +162,28 @@ type Queries interface {
 	// ActiveClinic: ErrOrgNotEligible si no es clínica activa (puerto de Pet Registry).
 	ActiveClinic(ctx context.Context, orgID uuid.UUID) (OrgSummary, error)
 	MembershipsOf(ctx context.Context, userID uuid.UUID) ([]MembershipRow, error)
+	// AdminListOrgs: panel admin por estado, FIFO por (created_at, id) (API-008).
+	AdminListOrgs(ctx context.Context, f AdminOrgFilter) ([]OrgView, *OrgCursor, error)
+}
+
+// AdminOrgFilter filtra la cola admin (PRD-017).
+type AdminOrgFilter struct {
+	Status string // pending_verification por defecto
+	Query  string
+	Cursor *OrgCursor
+	Limit  int
+}
+
+// OrgCursor es la posición (created_at, id) de la última organización devuelta.
+type OrgCursor struct {
+	CreatedAt time.Time
+	ID        uuid.UUID
+}
+
+// Auditor escribe en platform.audit_log dentro de la transacción del
+// comando (RN-06: toda acción de SuperAdmin queda auditada con motivo).
+type Auditor interface {
+	Record(ctx context.Context, e audit.Entry) error
 }
 
 // ------------------------------------------------- hash de token en contexto

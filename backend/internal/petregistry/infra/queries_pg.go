@@ -358,3 +358,18 @@ func photoRef(obj, thumb, ct *string) *domain.PhotoRef {
 	}
 	return &domain.PhotoRef{ObjectKey: *obj, ThumbKey: *thumb, ContentType: *ct}
 }
+
+// CountByGuardians devuelve cuántas mascotas (activas o fallecidas) tiene
+// cada tutor; implementa el puerto identity.PetCounter (DOM-010) para el
+// panel admin. Los tutores sin mascotas no aparecen en el mapa (0).
+func (r *Queries) CountByGuardians(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]int, error) {
+	rows, err := r.q.CountPetsByGuardians(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]int, len(rows))
+	for _, row := range rows {
+		out[row.GuardianID] = int(row.PetCount)
+	}
+	return out, nil
+}

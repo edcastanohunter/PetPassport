@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,6 +46,10 @@ func (r *Queries) GetOrg(ctx context.Context, id uuid.UUID) (app.OrgView, error)
 	if err != nil {
 		return app.OrgView{}, err
 	}
+	return orgViewFrom(row)
+}
+
+func orgViewFrom(row orgqueries.GetOrganizationByIDRow) (app.OrgView, error) {
 	view := app.OrgView{
 		ID: row.ID, Version: row.Version, Type: row.Type,
 		LegalName: row.LegalName, DisplayName: row.DisplayName,
@@ -152,6 +157,47 @@ func (r *Queries) ActiveClinic(ctx context.Context, orgID uuid.UUID) (app.OrgSum
 	}
 	return app.OrgSummary{ID: row.ID, Type: row.Type, DisplayName: row.DisplayName, City: row.City, Country: row.Country, Status: row.Status}, nil
 }
+
+// AdminListOrgs implementa la cola admin (API-008): por estado, FIFO por
+// (created_at, id), búsqueda por nombre/razón social/código.
+func (r *Queries) AdminListOrgs(ctx context.Context, f app.AdminOrgFilter) ([]app.OrgView, *app.OrgCursor, error) {
+	limit := f.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	params := orgqueries.AdminListOrganizationsParams{Status: f.Status, Limit: int32(limit + 1)} //nolint:gosec // acotado arriba
+	if f.Query != "" {
+		escaped := likeEscaper.Replace(f.Query)
+		params.Q = &escaped
+	}
+	if f.Cursor != nil {
+		params.CreatedAt = tz(f.Cursor.CreatedAt)
+		id := f.Cursor.ID
+		params.ID = &id
+	}
+	rows, err := r.q.AdminListOrganizations(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	var next *app.OrgCursor
+	if len(rows) > limit {
+		rows = rows[:limit]
+		last := rows[len(rows)-1]
+		next = &app.OrgCursor{CreatedAt: last.CreatedAt.Time, ID: last.ID}
+	}
+	out := make([]app.OrgView, 0, len(rows))
+	for _, row := range rows {
+		v, err := orgViewFrom(orgqueries.GetOrganizationByIDRow(row))
+		if err != nil {
+			return nil, nil, err
+		}
+		out = append(out, v)
+	}
+	return out, next, nil
+}
+
+// likeEscaper escapa los comodines de ILIKE en la búsqueda del usuario.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 
 // MembershipsOf devuelve las membresías activas de un usuario con tipo y
 // estado de la organización.

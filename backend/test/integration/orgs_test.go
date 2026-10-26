@@ -113,7 +113,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 	orgSvc := orgapp.NewService(orgapp.Options{
 		Repo: orginfra.NewRepository(store, registry, nil, nil), UoW: unit, Projects: orginfra.NewSyncProjector(runner),
 		Codes: orginfra.PublicCodes{}, Tokens: orginfra.NewInvitationTokens(pool.Pool), Queries: orgQ,
-		Users: users, Memberships: cache, Mailer: box, BaseURL: "https://app.test", Logger: logger,
+		Users: users, Memberships: cache, Mailer: box, Auditor: orginfra.TxAuditor{}, BaseURL: "https://app.test", Logger: logger,
 	})
 	orgSvc.RegisterCommands(commands)
 	runner.Register(orginfra.NewOrgsProjector(registry))

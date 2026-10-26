@@ -67,6 +67,7 @@ type Service struct {
 	users       UserLookup
 	memberships MembershipInvalidator
 	mailer      Mailer
+	auditor     Auditor
 	baseURL     string
 	ids         kernel.IDGenerator
 	tokenGen    kernel.TokenGenerator
@@ -87,6 +88,7 @@ type Options struct {
 	Users       UserLookup
 	Memberships MembershipInvalidator
 	Mailer      Mailer
+	Auditor     Auditor // obligatorio para los comandos admin (WithAdminAudit)
 	BaseURL     string
 	IDs         kernel.IDGenerator
 	TokenGen    kernel.TokenGenerator
@@ -110,7 +112,7 @@ func NewService(opts Options) *Service {
 	}
 	return &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects, codes: opts.Codes, tokens: opts.Tokens,
-		queries: opts.Queries, users: opts.Users, memberships: opts.Memberships, mailer: opts.Mailer,
+		queries: opts.Queries, users: opts.Users, memberships: opts.Memberships, mailer: opts.Mailer, auditor: opts.Auditor,
 		baseURL: strings.TrimRight(opts.BaseURL, "/"), ids: opts.IDs, tokenGen: opts.TokenGen,
 		clock: opts.Clock, logger: opts.Logger,
 	}
@@ -202,7 +204,7 @@ func (s *Service) execute(ctx context.Context, orgID uuid.UUID, fn func(o *domai
 			return err
 		}
 		out.result.Version = versionOf(stored)
-		return nil
+		return s.recordAdminAudit(ctx, orgID)
 	})
 	if err != nil {
 		return outcome{}, mapErr(err)

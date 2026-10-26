@@ -12,6 +12,39 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countPetsByGuardians = `-- name: CountPetsByGuardians :many
+SELECT guardian_id, count(*)::int AS pet_count
+  FROM read_petregistry.pets
+ WHERE guardian_id = ANY($1::uuid[])
+ GROUP BY guardian_id
+`
+
+type CountPetsByGuardiansRow struct {
+	GuardianID uuid.UUID
+	PetCount   int32
+}
+
+// Panel admin (AdminUserRow.pet_count, API-008): mascotas por tutor.
+func (q *Queries) CountPetsByGuardians(ctx context.Context, guardianIds []uuid.UUID) ([]CountPetsByGuardiansRow, error) {
+	rows, err := q.db.Query(ctx, countPetsByGuardians, guardianIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountPetsByGuardiansRow
+	for rows.Next() {
+		var i CountPetsByGuardiansRow
+		if err := rows.Scan(&i.GuardianID, &i.PetCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMicrochipReservation = `-- name: GetMicrochipReservation :one
 SELECT microchip, pet_id FROM read_petregistry.microchip_reservations
  WHERE microchip = $1
