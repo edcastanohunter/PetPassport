@@ -1,0 +1,9 @@
+{
+  "organization_id": "01930000-0000-7000-8000-0000000000f1",
+  "invitation_id": "01930000-0000-7000-8000-0000000000e1",
+  "role": "veterinarian",
+  "expires_at": "2026-11-01T10:00:00Z",
+  "pii": {
+    "email": "vet@sur.co"
+  }
+}

@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, ApiError, type Pet } from '@/shared/api/client'
 import { microchipSchema } from '@/shared/validation/schemas'
+import CareLinksPanel from './CareLinksPanel.vue'
+import TransferPanel from './TransferPanel.vue'
 
-// Ficha de mascota (FE-006, PRD-006..009): datos, foto, microchip (una
-// corrección), fallecida + deshacer 24 h. Sin vínculos ni transferencia
-// (M1.3). ETag de cada lectura se usa como If-Match de los comandos.
+// Ficha de mascota (FE-006/FE-008, PRD-006..010, PRD-015): datos, foto,
+// microchip (una corrección), vínculos con clínicas, transferencia de tutela,
+// fallecida + deshacer 24 h. ETag de cada lectura = If-Match de los comandos.
 const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -392,7 +394,8 @@ function undoDeceased() {
         </p>
       </div>
 
-      <p class="text-sm text-surface-400">{{ t('pets.linksComingSoon') }}</p>
+      <CareLinksPanel :pet="pet" @changed="load" />
+      <TransferPanel :pet="pet" @changed="load" />
     </template>
   </section>
 </template>

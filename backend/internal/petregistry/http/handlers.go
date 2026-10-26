@@ -36,20 +36,27 @@ const photoURLTTL = 15 * time.Minute
 // PetHandlers implementa las operaciones de mascotas del contrato. Nombre
 // distinto de identityhttp.Handlers para componerlos en cmd/api.
 type PetHandlers struct {
-	svc     *app.Service
-	queries app.PetQueries
-	idem    *idempotency.Store
-	objects storage.ObjectStorage // nil en pruebas sin storage
-	logger  *slog.Logger
-	now     func() time.Time
+	svc      *app.Service
+	queries  app.PetQueries
+	idem     *idempotency.Store
+	objects  storage.ObjectStorage // nil en pruebas sin storage
+	guardian app.GuardianLookup    // contacto del tutor para clínicas (nil = sin contacto)
+	logger   *slog.Logger
+	now      func() time.Time
 }
 
-// NewHandlers construye los handlers.
+// NewPetHandlers construye los handlers.
 func NewPetHandlers(svc *app.Service, queries app.PetQueries, idem *idempotency.Store, objects storage.ObjectStorage, logger *slog.Logger) *PetHandlers {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &PetHandlers{svc: svc, queries: queries, idem: idem, objects: objects, logger: logger, now: time.Now}
+}
+
+// WithGuardian inyecta el puerto de Identity para guardian_contact (RN-05).
+func (h *PetHandlers) WithGuardian(g app.GuardianLookup) *PetHandlers {
+	h.guardian = g
+	return h
 }
 
 func (h *PetHandlers) principal(ctx context.Context) (auth.Principal, error) {
@@ -215,12 +222,22 @@ func (h *PetHandlers) GetPet(ctx context.Context, req gen.GetPetRequestObject) (
 	if err != nil {
 		return nil, err // NotFoundError → 404
 	}
-	if d := authz.Can(p, authz.PetRead, petResource(view)); !d.Allow {
+	res := petResource(view)
+	if d := authz.Can(p, authz.PetRead, res); !d.Allow {
 		return nil, notFoundOnDeny(d)
+	}
+	body := toPet(view, h.presign())
+	if p.UserID != view.GuardianID {
+		// Vista de clínica vinculada o super_admin: sin transferencia pendiente;
+		// contacto del tutor solo con pet:guardian_contact:read (API-004).
+		body.PendingTransfer = nil
+		if d := authz.Can(p, authz.PetGuardianContact, res); d.Allow {
+			body.GuardianContact = h.guardianContact(ctx, view.GuardianID)
+		}
 	}
 	return gen.GetPet200JSONResponse{
 		Headers: gen.GetPet200ResponseHeaders{ETag: ptr(int64(view.Version))},
-		Body:    toPet(view, h.presign()),
+		Body:    body,
 	}, nil
 }
 

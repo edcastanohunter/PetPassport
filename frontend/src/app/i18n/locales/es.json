@@ -101,7 +101,28 @@
     "VALIDATION_FAILED": "Revisa los campos marcados.",
     "CONFLICT_VERSION": "El recurso cambió. Recarga y reintenta.",
     "RATE_LIMITED": "Demasiadas solicitudes. Espera un momento.",
-    "UNAVAILABLE": "Servicio no disponible temporalmente."
+    "UNAVAILABLE": "Servicio no disponible temporalmente.",
+    "ORGANIZATION_NOT_ELIGIBLE": "Esa organización no puede recibir vínculos (debe ser una clínica activa).",
+    "CARE_LINK_LIMIT": "La mascota ya tiene 20 vínculos activos.",
+    "CARE_LINK_NOT_ACTIVE": "El vínculo ya no está activo.",
+    "ORGANIZATION_SUSPENDED": "La organización está suspendida: sus miembros no pueden acceder a pacientes.",
+    "ORGANIZATION_REJECTED": "La organización fue rechazada y no admite cambios.",
+    "ROLE_NOT_ALLOWED_FOR_TYPE": "Ese rol no es válido para este tipo de organización.",
+    "LAST_ADMIN_CANNOT_BE_REMOVED": "No puedes retirar ni degradar al último administrador.",
+    "ALREADY_MEMBER": "Esa persona ya es miembro de la organización.",
+    "INVITATION_EMAIL_MISMATCH": "La invitación está dirigida a otro email.",
+    "INVITATION_RESEND_LIMIT": "Máximo 3 reenvíos por invitación en 24 horas.",
+    "INVITATION_NOT_FOUND": "La invitación ya no está pendiente.",
+    "TRANSFER_ALREADY_PENDING": "Ya hay una transferencia pendiente para esta mascota.",
+    "TRANSFER_NOT_PENDING": "No hay una transferencia pendiente.",
+    "TRANSFER_TOKEN_INVALID": "El enlace es inválido o ha caducado.",
+    "TRANSFER_EMAIL_MISMATCH": "Esta transferencia está dirigida a otro email. Entra con la cuenta del destinatario.",
+    "SAME_GUARDIAN": "El nuevo tutor debe ser otra persona.",
+    "PET_DECEASED": "La mascota está en memoria: la acción no está disponible.",
+    "INVALID_STATUS_TRANSITION": "La organización no está en un estado que permita esta acción.",
+    "IDEMPOTENCY_KEY_REUSED": "Se reutilizó un intento anterior con datos distintos. Vuelve a intentarlo.",
+    "REQUEST_IN_PROGRESS": "La solicitud anterior aún está en curso.",
+    "INTERNAL": "Ocurrió un error inesperado."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -110,7 +131,8 @@
     "TOO_SHORT": "Demasiado corto.",
     "INVALID_FORMAT": "Formato no válido.",
     "INVALID_ENUM": "Opción no válida.",
-    "UNKNOWN_FIELD": "Campo no reconocido."
+    "UNKNOWN_FIELD": "Campo no reconocido.",
+    "ALREADY_REGISTERED": "Ya existe una organización con esa identificación fiscal."
   },
   "pets": {
     "listTitle": "Mis mascotas",
@@ -128,7 +150,6 @@
     "inMemoriam": "En memoria",
     "inMemoriamTitle": "En memoria",
     "linksBadge": "{n} vínculo(s)",
-    "linksComingSoon": "Vínculos con clínicas y transferencia de tutela disponibles próximamente.",
     "photoAlt": "Foto de {name}",
     "photoAdd": "Añadir foto",
     "photoChange": "Cambiar foto",
@@ -190,6 +211,177 @@
       "undoInfo": "Puedes deshacerlo durante 24 horas.",
       "undo": "Deshacer",
       "windowClosed": "Pasaron las 24 horas; contacta a soporte para revertir."
+    },
+    "links": {
+      "title": "Clínicas vinculadas",
+      "add": "Vincular con clínica",
+      "empty": "Aún no hay clínicas vinculadas. Pide a tu clínica su código para que vean la ficha.",
+      "code": "Código de la clínica",
+      "search": "Buscar",
+      "codeInvalid": "El código tiene 6 caracteres (letras y números).",
+      "notFound": "No encontramos una clínica activa con ese código.",
+      "confirmInfo": "La clínica podrá ver la ficha de {name} y tus datos de contacto. Puedes revocarlo cuando quieras.",
+      "confirm": "Confirmar vínculo",
+      "revoke": "Revocar",
+      "confirmRevoke": "¿Revocar el acceso de esta clínica?",
+      "since": "desde {date}",
+      "suspended": "Clínica suspendida",
+      "unnamed": "Clínica"
+    },
+    "transfer": {
+      "title": "Transferir tutela",
+      "info": "Entrega la tutela a otra persona; la historia y los vínculos viajan con la mascota.",
+      "action": "Iniciar transferencia",
+      "email": "Email del nuevo tutor",
+      "hint": "Recibirá un enlace válido 7 días. Si no tiene cuenta, deberá registrarse con ese email.",
+      "send": "Enviar invitación",
+      "pending": "Transferencia pendiente para {email} (caduca el {date}).",
+      "cancel": "Cancelar transferencia",
+      "acceptTitle": "Aceptar transferencia de tutela",
+      "from": "{name} quiere transferirte la tutela.",
+      "accept": "Aceptar tutela",
+      "invalid": "El enlace es inválido o ha caducado."
+    }
+  },
+  "orgs": {
+    "publicCode": "Código público",
+    "publicCodeHint": "Comparte este código con tus clientes para que vinculen a sus mascotas con {name}.",
+    "copy": "Copiar código",
+    "copied": "¡Copiado!",
+    "print": "Imprimir tarjeta",
+    "statusReason": "Motivo",
+    "quickLinks": "Accesos rápidos",
+    "memberCount": "{n} miembro | {n} miembros",
+    "type": {
+      "clinic": "Clínica veterinaria",
+      "pharmacy": "Farmacia"
+    },
+    "typeHint": {
+      "clinic": "Atiende pacientes y recibe vínculos de tutores.",
+      "pharmacy": "Dispensa medicamentos (recetas desde F4)."
+    },
+    "role": {
+      "clinic_admin": "Administrador/a",
+      "veterinarian": "Veterinario/a",
+      "receptionist": "Recepción",
+      "pharmacy_admin": "Administrador/a",
+      "pharmacist": "Farmacéutico/a"
+    },
+    "status": {
+      "pending_verification": "Pendiente de verificación",
+      "pending_verification_hint": "Estamos verificando la existencia legal de la organización (normalmente en menos de 24 h hábiles). Mientras tanto puedes editar el perfil e invitar miembros, pero aún no puede recibir vínculos de mascotas.",
+      "active": "Activa",
+      "active_hint": "",
+      "suspended": "Suspendida",
+      "suspended_hint": "Los miembros no pueden acceder a pacientes mientras dure la suspensión.",
+      "rejected": "Rechazada",
+      "rejected_hint": "No pudimos verificar la organización."
+    },
+    "nav": {
+      "label": "Navegación de la organización",
+      "summary": "Resumen",
+      "patients": "Pacientes",
+      "patientsHint": "Mascotas vinculadas y su ficha",
+      "members": "Miembros",
+      "settings": "Ajustes",
+      "settingsHint": "Perfil, dirección y contacto"
+    },
+    "form": {
+      "type": "Tipo de organización",
+      "legalName": "Razón social",
+      "displayName": "Nombre comercial",
+      "taxCountry": "País fiscal",
+      "taxValue": "Identificación fiscal",
+      "taxHintCO": "NIT con dígito de verificación, p. ej. 900123456-8.",
+      "taxHintGeneric": "Entre 5 y 20 caracteres: letras, números, puntos y guiones.",
+      "address": "Dirección",
+      "country": "País",
+      "region": "Departamento / región",
+      "city": "Ciudad",
+      "line1": "Dirección",
+      "line2": "Complemento",
+      "postalCode": "Código postal",
+      "contact": "Contacto",
+      "email": "Email de contacto",
+      "phone": "Teléfono (formato internacional)",
+      "website": "Sitio web"
+    },
+    "register": {
+      "title": "Registrar organización",
+      "steps": "Pasos del registro",
+      "step": {
+        "type": "Tipo",
+        "legal": "Datos legales",
+        "address": "Dirección",
+        "contact": "Contacto",
+        "review": "Revisión"
+      },
+      "reviewHint": "Al crearla quedarás como administrador/a y la organización quedará pendiente de verificación.",
+      "submit": "Crear organización",
+      "created": "¡{name} está registrada!",
+      "goToOrg": "Ir a la organización"
+    },
+    "settings": {
+      "verificationWarning": "Cambiar la razón social o la identificación fiscal de una organización verificada la devuelve a «pendiente de verificación».",
+      "willReset": "Al guardar, la organización volverá a estar pendiente de verificación.",
+      "saved": "Cambios guardados.",
+      "conflict": "La organización cambió mientras editabas."
+    },
+    "members": {
+      "tab": "Miembros",
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "roleOf": "Rol de {name}",
+      "since": "Desde",
+      "actions": "Acciones",
+      "remove": "Retirar",
+      "confirmRemove": "¿Retirar a {name}? Perderá el acceso de inmediato.",
+      "lastAdmin": "Es el último administrador.",
+      "roleChanged": "Rol actualizado.",
+      "removed": "Miembro retirado."
+    },
+    "invitations": {
+      "tab": "Invitaciones",
+      "send": "Invitar",
+      "sent": "Invitación enviada.",
+      "resend": "Reenviar",
+      "resent": "Invitación reenviada.",
+      "revoke": "Revocar",
+      "revoked": "Invitación revocada.",
+      "empty": "No hay invitaciones.",
+      "expires": "caduca el {date}",
+      "status": {
+        "pending": "Pendiente",
+        "accepted": "Aceptada",
+        "revoked": "Revocada",
+        "expired": "Caducada"
+      }
+    },
+    "invite": {
+      "title": "Invitación a una organización",
+      "role": "Te invitan como {role}.",
+      "for": "Para {email}",
+      "accept": "Aceptar invitación",
+      "invalid": "El enlace de invitación es inválido o ha caducado.",
+      "mismatch": "La invitación es para otro email; ahora estás conectado como {email}.",
+      "switchAccount": "Cambiar de cuenta"
+    },
+    "patients": {
+      "search": "Buscar",
+      "searchPlaceholder": "Nombre de la mascota o del tutor",
+      "empty": "Aún no hay pacientes vinculados. Comparte tu código {code} con tus clientes.",
+      "noResults": "Sin resultados para la búsqueda.",
+      "photo": "Foto",
+      "pet": "Mascota",
+      "speciesBreed": "Especie / raza",
+      "age": "Edad",
+      "guardian": "Tutor",
+      "linkedAt": "Vinculado desde",
+      "more": "Cargar más",
+      "guardianContact": "Contacto del tutor",
+      "history": "Historia clínica",
+      "historySoon": "Disponible próximamente."
     }
   }
 }

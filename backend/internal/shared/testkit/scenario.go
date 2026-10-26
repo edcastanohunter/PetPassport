@@ -108,6 +108,24 @@ func (s *ScenarioCtx[A]) ThenError(want error) *ScenarioCtx[A] {
 	return s
 }
 
+// ThenAssert ejecuta los eventos emitidos por una aserción arbitraria:
+// útil cuando el payload contiene valores generados por el dominio (IDs).
+func (s *ScenarioCtx[A]) ThenAssert(fn func(t testing.TB, events []any)) {
+	s.t.Helper()
+	got, err := s.run()
+	if err != nil {
+		s.t.Fatalf("When(%T): error inesperado: %v", s.when, err)
+	}
+	fn(s.t, got)
+}
+
+// Prepare ejecuta una mutación sobre el agregado ANTES de aplicar Given
+// (inyección de estado efímero: mapas token→id, códigos pendientes).
+func (s *ScenarioCtx[A]) Prepare(fn func(A)) *ScenarioCtx[A] {
+	fn(s.agg)
+	return s
+}
+
 // Agg devuelve el agregado rehidratado tras ejecutar el escenario.
 func (s *ScenarioCtx[A]) Agg() A { return s.agg }
 

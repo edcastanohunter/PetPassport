@@ -34,3 +34,16 @@ html {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+
+/* Tarjeta imprimible del código público (FE-007): solo se imprime la tarjeta. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-card {
+    border: 2px solid #111827;
+    box-shadow: none;
+    margin: 2rem auto;
+    max-width: 28rem;
+  }
+}

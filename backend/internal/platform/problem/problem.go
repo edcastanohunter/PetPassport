@@ -32,6 +32,17 @@ const (
 	RequestInProgress      Code = "REQUEST_IN_PROGRESS"
 	IdempotencyKeyReused   Code = "IDEMPOTENCY_KEY_REUSED"
 	RateLimited            Code = "RATE_LIMITED"
+
+	// Códigos de dominio con estado distinto de 409 (API-011, M1.3).
+	SameGuardian            Code = "SAME_GUARDIAN"
+	TransferTokenInvalid    Code = "TRANSFER_TOKEN_INVALID"
+	TransferEmailMismatch   Code = "TRANSFER_EMAIL_MISMATCH"
+	OrganizationNotEligible Code = "ORGANIZATION_NOT_ELIGIBLE"
+	OrganizationSuspended   Code = "ORGANIZATION_SUSPENDED"
+	RoleNotAllowedForType   Code = "ROLE_NOT_ALLOWED_FOR_TYPE"
+	InvitationEmailMismatch Code = "INVITATION_EMAIL_MISMATCH"
+	InvitationResendLimit   Code = "INVITATION_RESEND_LIMIT"
+	ReasonRequired          Code = "REASON_REQUIRED"
 )
 
 var defaultStatus = map[Code]int{
@@ -52,6 +63,16 @@ var defaultStatus = map[Code]int{
 	RequestInProgress:      http.StatusConflict,
 	IdempotencyKeyReused:   http.StatusUnprocessableEntity,
 	RateLimited:            http.StatusTooManyRequests,
+
+	SameGuardian:            http.StatusUnprocessableEntity,
+	TransferTokenInvalid:    http.StatusNotFound,
+	TransferEmailMismatch:   http.StatusForbidden,
+	OrganizationNotEligible: http.StatusUnprocessableEntity,
+	OrganizationSuspended:   http.StatusForbidden,
+	RoleNotAllowedForType:   http.StatusUnprocessableEntity,
+	InvitationEmailMismatch: http.StatusForbidden,
+	InvitationResendLimit:   http.StatusTooManyRequests,
+	ReasonRequired:          http.StatusUnprocessableEntity,
 }
 
 // FieldError describe un error de validación por campo.

@@ -9,8 +9,8 @@ import { COUNTRIES } from '@/shared/i18n/countries'
 import FieldError from '@/shared/ui/FieldError.vue'
 
 // Onboarding en 3 pasos (FE-005, PRD-003, PRD-020): consentimiento → datos
-// básicos → elección de camino. "Registrar organización" llega en M1.3; por
-// ahora ambas opciones llevan a /app.
+// básicos → elección de camino: "Soy tutor" va a /app y "Registrar
+// organización" al asistente /org/new (M1.3, FE-007).
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
@@ -62,7 +62,7 @@ function back() {
   if (step.value > 1) step.value = (step.value - 1) as 1 | 2
 }
 
-async function submit() {
+async function submit(target?: string) {
   if (!legal.value || submitting.value) return
   submitting.value = true
   fieldErrors.value = {}
@@ -82,7 +82,7 @@ async function submit() {
       session.setMe(data)
       locale.value = data.locale
     }
-    await router.replace(returnToFrom(route))
+    await router.replace(target ?? returnToFrom(route))
   } catch (e) {
     if (e instanceof ApiError) {
       fieldErrors.value = e.fieldErrors()
@@ -234,7 +234,7 @@ async function submit() {
           class="card"
           :disabled="submitting"
           data-testid="path-owner"
-          @click="submit"
+          @click="submit()"
         >
           <span class="block font-semibold">{{ t('onboarding.pathOwner') }}</span>
           <span class="block text-sm text-surface-500">{{ t('onboarding.pathOwnerHint') }}</span>
@@ -244,7 +244,7 @@ async function submit() {
           class="card"
           :disabled="submitting"
           data-testid="path-org"
-          @click="submit"
+          @click="submit('/org/new')"
         >
           <span class="block font-semibold">{{ t('onboarding.pathOrg') }}</span>
           <span class="block text-sm text-surface-500">{{ t('onboarding.pathOrgHint') }}</span>
@@ -254,7 +254,7 @@ async function submit() {
         <button type="button" class="btn-secondary" :disabled="submitting" @click="back">
           {{ t('common.back') }}
         </button>
-        <button type="button" class="underline text-sm" :disabled="submitting" @click="submit">
+        <button type="button" class="underline text-sm" :disabled="submitting" @click="submit()">
           {{ t('onboarding.skip') }}
         </button>
       </div>

@@ -16,6 +16,9 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
+	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
+	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
 	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
@@ -27,6 +30,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
@@ -93,31 +97,78 @@ func run() error {
 	// store con métricas.
 	registry := eventstore.NewRegistry()
 	petinfra.RegisterEvents(registry)
+	orginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
 	store := eventstore.NewStore(registry, pool, tel.Registry)
 	tel.Registry.MustRegister(outbox.PendingGauge(pool))
 
-	// 7. Módulos. Identity (M1.1); Pet Registry (M1.2); partnernetwork en M1.3.
+	// 7. Módulos. Identity (M1.1); Pet Registry (M1.2); Partner Network (M1.3).
+	// Un único runner de proyecciones: las reacciones entre contextos (p. ej.
+	// OrganizationSuspended → pet_care_links) ocurren en la misma tx (DOM-011).
 	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
 	unit := db.NewUnitOfWork(pool)
 	runner := projection.NewRunner()
-	petQueries := petinfra.NewQueries(pool.Pool)
-	petSvc := petapp.NewService(petapp.Options{
+	commands := bus.New()
+	idemStore := idempotency.NewStore(pool, 0)
+	var mailer *mail.SMTP
+	if cfg.SMTP.Host != "" {
+		mailer = mail.NewSMTP(mail.Options{
+			Host: cfg.SMTP.Host, Port: cfg.SMTP.Port, From: cfg.SMTP.From,
+			User: cfg.SMTP.User, Password: cfg.SMTP.Password,
+		})
+	} else {
+		logger.Warn("PP_SMTP_HOST vacío: emails transaccionales deshabilitados")
+	}
+
+	// Partner Network: membresías del Principal con caché LRU 60 s (IAM-008),
+	// invalidada por los comandos que cambian membresías (DOM-011).
+	userAdapter := orginfra.NewUserAdapter(identitySvc)
+	orgQueries := orginfra.NewQueries(pool.Pool, userAdapter)
+	membershipCache := auth.NewMembershipCache(orginfra.NewMembershipProvider(orgQueries), 60*time.Second, 0)
+	orgOpts := orgapp.Options{
+		Repo:        orginfra.NewRepository(store, registry, nil, nil),
+		UoW:         unit,
+		Projects:    orginfra.NewSyncProjector(runner),
+		Codes:       orginfra.PublicCodes{},
+		Tokens:      orginfra.NewInvitationTokens(pool.Pool),
+		Queries:     orgQueries,
+		Users:       userAdapter,
+		Memberships: membershipCache,
+		BaseURL:     cfg.PublicBaseURL,
+		Logger:      logger,
+	}
+	if mailer != nil {
+		orgOpts.Mailer = mailer
+	}
+	orgSvc := orgapp.NewService(orgOpts)
+	orgSvc.RegisterCommands(commands)
+	runner.Register(orginfra.NewOrgsProjector(registry))
+
+	// Pet Registry.
+	guardianAdapter := petinfra.NewGuardianAdapter(identitySvc)
+	orgAdapter := petinfra.NewOrganizationAdapter(orgQueries)
+	petQueries := petinfra.NewQueries(pool.Pool).WithGuardian(guardianAdapter)
+	petOpts := petapp.Options{
 		Repo:     petinfra.NewRepository(store, registry, nil, nil),
 		UoW:      unit,
 		Projects: petinfra.NewSyncProjector(runner),
 		Reserve:  petinfra.NewReservations(pool),
-		Guardian: petinfra.NewGuardianAdapter(identitySvc),
+		Guardian: guardianAdapter,
+		Orgs:     orgAdapter,
 		Queries:  petQueries,
 		Events:   store,
+		BaseURL:  cfg.PublicBaseURL,
 		Logger:   logger,
-	})
-	runner.Register(petinfra.NewPetsProjector(registry, petinfra.NewGuardianAdapter(identitySvc)))
-	petBus := bus.New()
-	petSvc.RegisterCommands(petBus)
-	idemStore := idempotency.NewStore(pool, 0)
+	}
+	if mailer != nil {
+		petOpts.Mailer = mailer
+	}
+	petSvc := petapp.NewService(petOpts)
+	petSvc.RegisterCommands(commands)
+	runner.Register(petinfra.NewPetsProjector(registry, guardianAdapter).WithOrganizations(orgAdapter))
+	runner.Register(petinfra.OrgReactionsProjector{})
 	var objects storage.ObjectStorage
 	if cfg.Storage.Endpoint != "" {
 		objects, err = storage.NewMinIO(ctx, storage.MinIOOptions{
@@ -137,7 +188,7 @@ func run() error {
 		return fmt.Errorf("openapi: %w", err)
 	}
 	guard, err := auth.NewGuard(spec, auth.GuardOptions{
-		Verifier: verifier, Resolver: identitySvc, Logger: logger, BasePath: "/api/v1",
+		Verifier: verifier, Resolver: identitySvc, Memberships: membershipCache, Logger: logger, BasePath: "/api/v1",
 	})
 	if err != nil {
 		return err
@@ -146,12 +197,14 @@ func run() error {
 	// 8. Router y servidores.
 	health := httpserver.NewHealth()
 	health.Register("db", pool.Ping)
+	identityHandlers := identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt)
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
 		Handlers: apiHandlers{
-			Handlers:    identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt),
-			PetHandlers: pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger),
+			Handlers:    identityHandlers,
+			PetHandlers: pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
+			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger),
 		},
 		Guard: guard.Middleware,
 	})

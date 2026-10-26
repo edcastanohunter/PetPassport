@@ -55,6 +55,21 @@ func (m *MemoryIdentityRepo) Get(_ context.Context, id uuid.UUID) (*domain.UserA
 	return clone(a), nil
 }
 
+// FindByEmail implementa app.Repository.
+func (m *MemoryIdentityRepo) FindByEmail(_ context.Context, email kernel.Email) (*domain.UserAccount, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.FailWith != nil {
+		return nil, m.FailWith
+	}
+	for _, a := range m.Accounts {
+		if a.Email == email {
+			return clone(a), nil
+		}
+	}
+	return nil, &kernel.NotFoundError{Resource: "user_account"}
+}
+
 // Insert implementa app.Repository.
 func (m *MemoryIdentityRepo) Insert(_ context.Context, a *domain.UserAccount) error {
 	m.mu.Lock()

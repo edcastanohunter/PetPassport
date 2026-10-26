@@ -13,6 +13,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
+	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
 // PetsProjector proyecta read_petregistry.pets, pet_care_links y
@@ -22,6 +23,7 @@ import (
 type PetsProjector struct {
 	reg      *eventstore.Registry
 	guardian app.GuardianLookup
+	orgs     app.OrganizationLookup
 }
 
 var _ projection.Projector = (*PetsProjector)(nil)
@@ -30,6 +32,13 @@ var _ projection.Projector = (*PetsProjector)(nil)
 // tutor (DOM-010); nil = nombre vacío (pruebas sin Identity).
 func NewPetsProjector(reg *eventstore.Registry, guardian app.GuardianLookup) *PetsProjector {
 	return &PetsProjector{reg: reg, guardian: guardian}
+}
+
+// WithOrganizations inyecta el puerto de Partner Network para denormalizar
+// nombre y ciudad de la clínica en pet_care_links (DAT-005).
+func (p *PetsProjector) WithOrganizations(orgs app.OrganizationLookup) *PetsProjector {
+	p.orgs = orgs
+	return p
 }
 
 // Name implementa Projector.
@@ -168,14 +177,24 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		return err
 
 	case domain.CareLinkGranted:
+		// Nombre y ciudad desnormalizados (DOM-010). En rebuild la org puede no
+		// estar activa: se conserva lo ya proyectado (COALESCE con NULLIF).
+		name, city := "", ""
+		if p.orgs != nil {
+			if org, err := p.orgs.ActiveClinic(ctx, ev.OrganizationID); err == nil {
+				name, city = org.DisplayName, org.City
+			}
+		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO read_petregistry.pet_care_links
-			  (pet_id, organization_id, status, granted_by, granted_at)
-			VALUES ($1, $2, 'active', $3, $4)
+			  (pet_id, organization_id, org_display_name, org_city, status, granted_by, granted_at)
+			VALUES ($1, $2, $5, NULLIF($6, ''), 'active', $3, $4)
 			ON CONFLICT (pet_id, organization_id) DO UPDATE SET
 			  status = 'active', granted_by = EXCLUDED.granted_by, granted_at = EXCLUDED.granted_at,
-			  revoked_at = NULL`,
-			ev.PetID, ev.OrganizationID, ev.GrantedBy, e.OccurredAt); err != nil {
+			  revoked_at = NULL,
+			  org_display_name = COALESCE(NULLIF(EXCLUDED.org_display_name, ''), read_petregistry.pet_care_links.org_display_name),
+			  org_city = COALESCE(EXCLUDED.org_city, read_petregistry.pet_care_links.org_city)`,
+			ev.PetID, ev.OrganizationID, ev.GrantedBy, e.OccurredAt, name, city); err != nil {
 			return err
 		}
 		return p.recountLinks(ctx, tx, ev.PetID, e)
@@ -194,16 +213,44 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		if ev.PII != nil {
 			masked = ev.PII.ToEmail.Masked()
 		}
-		payload, err := json.Marshal(map[string]any{"to_email_masked": masked, "expires_at": ev.ExpiresAt})
+		payload, err := json.Marshal(app.PendingTransferView{ToEmailMasked: masked, ExpiresAt: ev.ExpiresAt})
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(ctx, `
+		if _, err = tx.Exec(ctx, `
 			UPDATE read_petregistry.pets SET version = $2, updated_at = $3, pending_transfer = $4
-			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, payload)
+			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, payload); err != nil {
+			return err
+		}
+		// pet_transfers resuelve token → mascota (DAT-005). El hash llega por el
+		// contexto del comando; en replay/rebuild no existe (el token no está en
+		// el evento) y las filas operativas se dejan como están: proyectar dos
+		// veces = mismo estado.
+		hash := app.TransferTokenHashFrom(ctx, ev.PetID)
+		if hash == nil {
+			return nil
+		}
+		emailHash := kernel.HashToken("")
+		if ev.PII != nil {
+			emailHash = kernel.HashToken(ev.PII.ToEmail.String())
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pet_transfers SET status = 'cancelled'
+			 WHERE pet_id = $1 AND status = 'pending' AND token_hash <> $2`, ev.PetID, hash); err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO read_petregistry.pet_transfers (token_hash, pet_id, to_email_hash, expires_at, status)
+			VALUES ($1, $2, $3, $4, 'pending')
+			ON CONFLICT (token_hash) DO NOTHING`, hash, ev.PetID, emailHash, ev.ExpiresAt)
 		return err
 
 	case domain.GuardianshipTransferCancelled:
+		if _, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pet_transfers SET status = 'cancelled'
+			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID); err != nil {
+			return err
+		}
 		_, err := tx.Exec(ctx, `
 			UPDATE read_petregistry.pets SET version = $2, updated_at = $3, pending_transfer = NULL
 			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt)
@@ -213,6 +260,11 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		name := ""
 		if p.guardian != nil {
 			name = p.guardian.DisplayName(ctx, ev.ToGuardianID)
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pet_transfers SET status = 'accepted'
+			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID); err != nil {
+			return err
 		}
 		_, err := tx.Exec(ctx, `
 			UPDATE read_petregistry.pets SET version = $2, updated_at = $3,

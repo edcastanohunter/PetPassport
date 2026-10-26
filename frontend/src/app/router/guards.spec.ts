@@ -81,6 +81,47 @@ describe('authGuard', () => {
     })
   })
 
+  it('rutas de organización: membresía, tipo y rol (FE-004, FE-007/008)', async () => {
+    const s = useSessionStore()
+    s.user = { access_token: 't', expired: false } as never
+    current = {
+      ...base,
+      memberships: [
+        {
+          organization_id: 'c1',
+          display_name: 'Clínica',
+          type: 'clinic',
+          role: 'receptionist',
+          org_status: 'active',
+        },
+        {
+          organization_id: 'f1',
+          display_name: 'Farma',
+          type: 'pharmacy',
+          role: 'pharmacy_admin',
+          org_status: 'active',
+        },
+      ],
+    }
+    const patients = {
+      requiresMembership: true,
+      requiresOrgType: 'clinic',
+      requiresOrgRole: ['clinic_admin', 'veterinarian', 'receptionist'],
+    }
+    const admin = { requiresMembership: true, requiresOrgRole: ['clinic_admin', 'pharmacy_admin'] }
+    expect(await run(route(patients, '/org/c1/patients', { orgId: 'c1' }))).toBe(true)
+    expect(await run(route(patients, '/org/f1/patients', { orgId: 'f1' }))).toEqual({
+      name: 'forbidden',
+    })
+    expect(await run(route(admin, '/org/c1/members', { orgId: 'c1' }))).toEqual({
+      name: 'forbidden',
+    })
+    expect(await run(route(admin, '/org/f1/members', { orgId: 'f1' }))).toBe(true)
+    expect(await run(route(admin, '/org/zz/members', { orgId: 'zz' }))).toEqual({
+      name: 'not-found',
+    })
+  })
+
   it('cuenta suspendida → 403', async () => {
     const s = useSessionStore()
     s.user = { access_token: 't', expired: false } as never

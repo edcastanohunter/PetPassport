@@ -101,6 +101,57 @@ type PlatformProjectionCheckpoint struct {
 	UpdatedAt      pgtype.Timestamptz
 }
 
+type ReadPartnernetworkInvitation struct {
+	ID                uuid.UUID
+	OrganizationID    uuid.UUID
+	Email             string
+	Role              string
+	TokenHash         []byte
+	Status            string
+	ExpiresAt         pgtype.Timestamptz
+	ResendCount       int32
+	LastSentAt        pgtype.Timestamptz
+	ResendWindowStart pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+}
+
+type ReadPartnernetworkOrgMember struct {
+	OrganizationID uuid.UUID
+	UserID         uuid.UUID
+	Role           string
+	Status         string
+	JoinedAt       pgtype.Timestamptz
+	RemovedAt      pgtype.Timestamptz
+}
+
+type ReadPartnernetworkOrganization struct {
+	ID           uuid.UUID
+	Version      int64
+	Type         string
+	LegalName    string
+	DisplayName  string
+	TaxCountry   string
+	TaxValue     string
+	Address      []byte
+	City         string
+	Country      string
+	ContactEmail string
+	ContactPhone string
+	Website      *string
+	PublicCode   string
+	Status       string
+	StatusReason *string
+	FounderID    uuid.UUID
+	MemberCount  int32
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+type ReadPartnernetworkPublicCodeReservation struct {
+	PublicCode     string
+	OrganizationID uuid.UUID
+}
+
 type ReadPetregistryMicrochipReservation struct {
 	Microchip  string
 	PetID      uuid.UUID

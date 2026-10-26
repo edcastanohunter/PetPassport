@@ -15,27 +15,62 @@ type PetAggregate = domain.Pet
 
 // PetView es la mascota proyectada completa (GET /pets/{id}).
 type PetView struct {
-	ID              uuid.UUID
-	Version         int64
-	GuardianID      uuid.UUID
+	ID                  uuid.UUID
+	Version             int64
+	GuardianID          uuid.UUID
 	GuardianDisplayName string
-	Name            string
-	Species         string
-	SpeciesOther    string
-	Breed           string
-	Sex             string
-	Neutered        string
-	BirthDate       *domain.BirthDate
-	Markings        string
-	Microchip       string
-	Corrections     int
-	Photo           *domain.PhotoRef
-	Status          string
-	DeceasedAt      *kernel.CivilDate
-	DeceasedMarkedAt *time.Time
-	ActiveLinks     []CareLinkView
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	Name                string
+	Species             string
+	SpeciesOther        string
+	Breed               string
+	Sex                 string
+	Neutered            string
+	BirthDate           *domain.BirthDate
+	Markings            string
+	Microchip           string
+	Corrections         int
+	Photo               *domain.PhotoRef
+	Status              string
+	DeceasedAt          *kernel.CivilDate
+	DeceasedMarkedAt    *time.Time
+	ActiveLinks         []CareLinkView
+	PendingTransfer     *PendingTransferView
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+// PendingTransferView es la transferencia pendiente vista por el tutor
+// (email enmascarado, API-004).
+type PendingTransferView struct {
+	ToEmailMasked string    `json:"to_email_masked"`
+	ExpiresAt     time.Time `json:"expires_at"`
+}
+
+// TransferView resuelve un token de transferencia (API-004 /pet-transfers).
+type TransferView struct {
+	PetID     uuid.UUID
+	ExpiresAt time.Time
+}
+
+// PatientRow es una fila de la lista de pacientes de una clínica (PRD-016).
+type PatientRow struct {
+	PetID               uuid.UUID
+	Name                string
+	Species             string
+	Breed               string
+	Status              string
+	BirthDate           *domain.BirthDate
+	Photo               *domain.PhotoRef
+	GuardianID          uuid.UUID
+	GuardianDisplayName string
+	GuardianPhone       string
+	LinkedAt            time.Time
+}
+
+// PatientCursor es el cursor de la lista de pacientes: (granted_at, pet_id).
+type PatientCursor struct {
+	LinkedAt time.Time
+	PetID    uuid.UUID
 }
 
 // CareLinkView es un vínculo proyectado.

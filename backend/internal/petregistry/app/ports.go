@@ -6,10 +6,13 @@ package app
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -39,14 +42,32 @@ type GuardianLookup interface {
 	Exists(ctx context.Context, id uuid.UUID) bool
 	EmailOf(ctx context.Context, id uuid.UUID) (string, bool)
 	DisplayName(ctx context.Context, id uuid.UUID) string
+	// Contact devuelve los datos de contacto del tutor (RN-05: solo para G, L
+	// o super_admin, tras pet:guardian_contact:read).
+	Contact(ctx context.Context, id uuid.UUID) (GuardianContact, bool)
 }
 
-// OrganizationLookup es el puerto hacia Partner Network (DOM-010). El
-// adaptador llega con M1.3; los handlers de vínculo lo usan para I5.
+// GuardianContact son los datos de contacto del tutor visibles para clínicas
+// con vínculo activo (PRD-016).
+type GuardianContact struct {
+	DisplayName string
+	Email       string
+	Phone       string
+}
+
+// OrganizationLookup es el puerto hacia Partner Network (DOM-010).
 type OrganizationLookup interface {
-	// ActiveClinic devuelve error si la org no existe, no es clínica o no está
-	// activa (→ ORGANIZATION_NOT_ELIGIBLE).
+	// ActiveClinic devuelve ErrOrganizationNotEligible si la org no existe, no
+	// es clínica o no está activa (I5); otros errores son de infraestructura.
 	ActiveClinic(ctx context.Context, orgID uuid.UUID) (OrgSummary, error)
+}
+
+// ErrOrganizationNotEligible lo devuelve OrganizationLookup (I5).
+var ErrOrganizationNotEligible = errors.New("organization not eligible")
+
+// Mailer es el puerto de email (DOM-011): best-effort tras el commit.
+type Mailer interface {
+	Send(ctx context.Context, msg mail.Message) error
 }
 
 // OrgSummary es lo que Pet Registry sabe de una organización.
@@ -75,6 +96,30 @@ type PetQueries interface {
 	ListPets(ctx context.Context, guardianID uuid.UUID, status string, cursor PetCursor, limit int) ([]PetListItem, *PetCursor, error)
 	// GetPet devuelve la mascota (vista completa con vínculos).
 	GetPet(ctx context.Context, petID uuid.UUID) (PetView, error)
+	// ListPatients lista las mascotas con vínculo activo de una clínica
+	// (PRD-016); excluye vínculos de org suspendida. q busca por nombre de
+	// mascota o de tutor (ILIKE, trigram).
+	ListPatients(ctx context.Context, orgID uuid.UUID, q, status string, cursor PatientCursor, limit int) ([]PatientRow, *PatientCursor, error)
+	// TransferByTokenHash resuelve una transferencia pendiente y vigente;
+	// otra cosa → *kernel.NotFoundError (404 sin distinguir).
+	TransferByTokenHash(ctx context.Context, hash []byte, now time.Time) (TransferView, error)
+}
+
+// ------------------------------------------------- hash de token en contexto
+
+type transferHashKey struct{}
+
+// WithTransferTokenHash adjunta el hash del token de la transferencia que el
+// comando va a iniciar; el proyector de pet_transfers lo lee en la misma tx.
+func WithTransferTokenHash(ctx context.Context, petID uuid.UUID, hash []byte) context.Context {
+	return context.WithValue(ctx, transferHashKey{}, map[uuid.UUID][]byte{petID: hash})
+}
+
+// TransferTokenHashFrom devuelve el hash adjunto; nil en replay/rebuild (el
+// proyector invalida el token con un hash aleatorio).
+func TransferTokenHashFrom(ctx context.Context, petID uuid.UUID) []byte {
+	m, _ := ctx.Value(transferHashKey{}).(map[uuid.UUID][]byte)
+	return m[petID]
 }
 
 // ErrMicrochipTaken lo devuelve Reserve cuando el chip pertenece a otra mascota.

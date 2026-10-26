@@ -16,6 +16,9 @@ const MaxActiveCareLinks = 20
 // UndoWindow es el plazo para deshacer un fallecimiento (PRD-009).
 const UndoWindow = 24 * time.Hour
 
+// TransferTTL es la vigencia de una transferencia de tutela (PRD-010).
+const TransferTTL = 7 * 24 * time.Hour
+
 // StreamType es el tipo de stream del agregado (pet-<PetID>).
 const StreamType = "Pet"
 
@@ -41,26 +44,26 @@ type GuardianshipTransfer struct {
 // la versión, así que el repositorio persiste con expected =
 // Version - len(uncommitted).
 type Pet struct {
-	id            uuid.UUID
-	version       int64
-	guardianID    uuid.UUID
-	name          PetName
-	species       Species
-	speciesOther  string
-	breed         *string
-	sex           Sex
-	neutered      Tristate
-	birthDate     *BirthDate
-	markings      *string
-	microchip     *Microchip
-	corrections   int
-	photo         *PhotoRef
-	status        PetStatus
-	deceasedAt    *kernel.CivilDate
-	careLinks     map[uuid.UUID]CareLink
-	activeLinks   int
-	pending       *GuardianshipTransfer
-	uncommitted   []any
+	id           uuid.UUID
+	version      int64
+	guardianID   uuid.UUID
+	name         PetName
+	species      Species
+	speciesOther string
+	breed        *string
+	sex          Sex
+	neutered     Tristate
+	birthDate    *BirthDate
+	markings     *string
+	microchip    *Microchip
+	corrections  int
+	photo        *PhotoRef
+	status       PetStatus
+	deceasedAt   *kernel.CivilDate
+	careLinks    map[uuid.UUID]CareLink
+	activeLinks  int
+	pending      *GuardianshipTransfer
+	uncommitted  []any
 }
 
 // ID devuelve el identificador del agregado.
@@ -71,6 +74,9 @@ func (p *Pet) Version() int64 { return p.version }
 
 // GuardianID devuelve el tutor actual.
 func (p *Pet) GuardianID() uuid.UUID { return p.guardianID }
+
+// Name devuelve el nombre (emails de transferencia).
+func (p *Pet) Name() string { return string(p.name) }
 
 // Status devuelve el estado vital.
 func (p *Pet) Status() PetStatus { return p.status }

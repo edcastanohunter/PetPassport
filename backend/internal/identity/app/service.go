@@ -26,6 +26,8 @@ import (
 type Repository interface {
 	// Get devuelve la cuenta o *kernel.NotFoundError.
 	Get(ctx context.Context, id uuid.UUID) (*domain.UserAccount, error)
+	// FindByEmail devuelve la cuenta con ese email (normalizado) o *kernel.NotFoundError.
+	FindByEmail(ctx context.Context, email kernel.Email) (*domain.UserAccount, error)
 	// Insert crea la cuenta (JIT). Si ya existe (carrera), devuelve ErrAlreadyExists.
 	Insert(ctx context.Context, a *domain.UserAccount) error
 	// Save persiste el estado completo y, si entry != nil, la entrada de auditoría en la misma transacción.

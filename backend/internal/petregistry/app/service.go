@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -62,23 +63,29 @@ type Service struct {
 	orgs     OrganizationLookup
 	queries  PetQueries
 	events   *eventstore.Store
+	mailer   Mailer
+	baseURL  string
 	ids      kernel.IDGenerator
+	tokens   kernel.TokenGenerator
 	clock    kernel.Clock
 	logger   *slog.Logger
 	bus      *bus.Bus
 }
 
-// Options construye el servicio.
+// Options construye el servicio. Mailer es opcional (DOM-011, best-effort).
 type Options struct {
 	Repo     Repository
 	UoW      TxRunner
 	Projects ProjectionRunner
 	Reserve  MicrochipReservations
 	Guardian GuardianLookup
-	Orgs     OrganizationLookup // nil en M1.2: los comandos de vínculo llegan en M1.3
+	Orgs     OrganizationLookup
 	Queries  PetQueries
 	Events   *eventstore.Store
+	Mailer   Mailer
+	BaseURL  string
 	IDs      kernel.IDGenerator
+	Tokens   kernel.TokenGenerator
 	Clock    kernel.Clock
 	Logger   *slog.Logger
 }
@@ -94,10 +101,14 @@ func NewService(opts Options) *Service {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
+	if opts.Tokens == nil {
+		opts.Tokens = kernel.RealTokenGenerator{}
+	}
 	s := &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects, reserve: opts.Reserve,
 		guardian: opts.Guardian, orgs: opts.Orgs, queries: opts.Queries, events: opts.Events,
-		ids: opts.IDs, clock: opts.Clock, logger: opts.Logger,
+		mailer: opts.Mailer, baseURL: strings.TrimRight(opts.BaseURL, "/"),
+		ids: opts.IDs, tokens: opts.Tokens, clock: opts.Clock, logger: opts.Logger,
 	}
 	return s
 }
@@ -117,6 +128,9 @@ func (s *Service) RegisterCommands(b *bus.Bus) {
 	b.Register(domain.UndoDeceased{}, s.handleUndoDeceased)
 	b.Register(domain.GrantCareLink{}, s.handleGrantCareLink)
 	b.Register(domain.RevokeCareLink{}, s.handleRevokeCareLink)
+	b.Register(domain.InitiateGuardianshipTransfer{}, s.handleInitiateTransfer)
+	b.Register(domain.CancelGuardianshipTransfer{}, s.handleCancelTransfer)
+	b.Register(domain.AcceptGuardianshipTransfer{}, s.handleAcceptTransfer)
 }
 
 // Dispatch ejecuta un comando por el bus (fachada para http).
@@ -230,10 +244,14 @@ func (s *Service) handleUndoDeceased(ctx context.Context, cmd bus.Command) (bus.
 func (s *Service) handleGrantCareLink(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.GrantCareLink)
 	// I5: solo organizaciones clínica + activa (puerto OrganizationLookup).
-	if s.orgs != nil {
-		if _, err := s.orgs.ActiveClinic(ctx, c.OrganizationID); err != nil {
+	if s.orgs == nil {
+		return bus.Result{}, errors.New("petregistry: OrganizationLookup no configurado")
+	}
+	if _, err := s.orgs.ActiveClinic(ctx, c.OrganizationID); err != nil {
+		if errors.Is(err, ErrOrganizationNotEligible) {
 			return bus.Result{}, domain.ErrOrganizationNotEligible
 		}
+		return bus.Result{}, err
 	}
 	// Reintento único ante ErrConcurrency: GrantCareLink es idempotente por
 	// naturaleza (ARQ-003).

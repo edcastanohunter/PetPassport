@@ -7,6 +7,7 @@ import {
   microchipSchema,
   petNameSchema,
   publicCodeSchema,
+  taxIdSchema,
 } from './schemas'
 import fixture from '../../../../docs/phase-1/fixtures/validation-cases.json'
 
@@ -60,6 +61,13 @@ describe('fixture de validación compartido (FE-011)', () => {
   it('publicCode', () => {
     run(publicCodeSchema(), cases.fields.publicCode.valid, true, 'publicCode')
     run(publicCodeSchema(), cases.fields.publicCode.invalid, false, 'publicCode')
+  })
+
+  it('taxId por país (CO NIT con DV y genérico)', () => {
+    run(taxIdSchema('CO'), cases.fields.taxIdCO.valid, true, 'taxIdCO')
+    run(taxIdSchema('CO'), cases.fields.taxIdCO.invalid, false, 'taxIdCO')
+    run(taxIdSchema('MX'), cases.fields.taxIdGeneric.valid, true, 'taxIdGeneric')
+    run(taxIdSchema('MX'), cases.fields.taxIdGeneric.invalid, false, 'taxIdGeneric')
   })
 
   it('birthDate', () => {
