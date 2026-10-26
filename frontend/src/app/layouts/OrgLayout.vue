@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
 import ConsentDialog from '@/features/onboarding/ConsentDialog.vue'
+import AppFooter from '@/shared/ui/AppFooter.vue'
 
 // Layout Org (FE-004/FE-007): selector de contexto (Mis mascotas + una
 // entrada por organización + Administración) y navegación de la organización
@@ -92,6 +93,7 @@ const sections = computed(() => {
     <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
       <slot />
     </main>
+    <AppFooter />
     <ConsentDialog v-if="session.consentOutdated" />
   </div>
 </template>

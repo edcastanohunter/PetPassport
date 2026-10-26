@@ -19,6 +19,9 @@ import OrgSettingsPage from '@/features/orgs/OrgSettingsPage.vue'
 import AcceptInvitationPage from '@/features/orgs/AcceptInvitationPage.vue'
 import PatientsPage from '@/features/orgs/PatientsPage.vue'
 import PatientDetailPage from '@/features/orgs/PatientDetailPage.vue'
+import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
+import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
+import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
 import { authGuard } from './guards'
 
@@ -31,6 +34,12 @@ const orgMeta = {
   requiresOnboarding: true,
   requiresMembership: true,
 } as const
+const adminMeta = {
+  layout: 'admin',
+  requiresAuth: true,
+  requiresGlobalRole: 'super_admin',
+} as const
+
 export function createAppRouter() {
   const router = createRouter({
     history: createWebHistory(),
@@ -147,6 +156,15 @@ export function createAppRouter() {
         component: OrgSettingsPage,
         meta: { ...orgMeta, requiresOrgRole: ADMIN_ROLES },
       },
+      { path: '/admin', redirect: { name: 'admin-organizations' } },
+      {
+        path: '/admin/organizations',
+        name: 'admin-organizations',
+        component: AdminOrganizationsPage,
+        meta: adminMeta,
+      },
+      { path: '/admin/users', name: 'admin-users', component: AdminUsersPage, meta: adminMeta },
+      { path: '/admin/audit', name: 'admin-audit', component: AdminAuditPage, meta: adminMeta },
       { path: '/403', name: 'forbidden', component: ForbiddenPage, meta: { layout: 'public' } },
       {
         path: '/:pathMatch(.*)*',

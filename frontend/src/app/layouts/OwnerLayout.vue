@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import ConsentDialog from '@/features/onboarding/ConsentDialog.vue'
+import AppFooter from '@/shared/ui/AppFooter.vue'
 
 // Layout Owner (FE-004): barra con selector de contexto ("Mis mascotas", una
 // entrada por organización, "Administración" si aplica) y menú de cuenta.
@@ -68,6 +69,7 @@ const contexts = computed(() => {
     <main id="main" class="flex-1 mx-auto w-full max-w-6xl px-4 py-6">
       <slot />
     </main>
+    <AppFooter />
     <ConsentDialog v-if="session.consentOutdated" />
   </div>
 </template>

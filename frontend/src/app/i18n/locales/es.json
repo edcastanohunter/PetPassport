@@ -122,7 +122,8 @@
     "INVALID_STATUS_TRANSITION": "La organización no está en un estado que permita esta acción.",
     "IDEMPOTENCY_KEY_REUSED": "Se reutilizó un intento anterior con datos distintos. Vuelve a intentarlo.",
     "REQUEST_IN_PROGRESS": "La solicitud anterior aún está en curso.",
-    "INTERNAL": "Ocurrió un error inesperado."
+    "INTERNAL": "Ocurrió un error inesperado.",
+    "REASON_REQUIRED": "Indica un motivo de al menos 10 caracteres."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -382,6 +383,83 @@
       "guardianContact": "Contacto del tutor",
       "history": "Historia clínica",
       "historySoon": "Disponible próximamente."
+    }
+  },
+  "admin": {
+    "nav": {
+      "label": "Navegación de administración",
+      "organizations": "Organizaciones",
+      "users": "Usuarios",
+      "audit": "Auditoría"
+    },
+    "search": "Buscar",
+    "loadMore": "Cargar más",
+    "reason": {
+      "label": "Motivo (mínimo 10 caracteres)",
+      "labelOptional": "Motivo (opcional; si lo escribes, mínimo 10 caracteres)",
+      "hint": "{n} caracteres · mínimo {min}. Queda registrado en la auditoría.",
+      "confirm": "Confirmar"
+    },
+    "orgs": {
+      "search": "Nombre, razón social o código",
+      "empty": "No hay organizaciones en este estado.",
+      "detail": "Detalle de la organización",
+      "createdAt": "alta {date}",
+      "legalName": "Razón social",
+      "taxId": "NIT / ID fiscal",
+      "address": "Dirección",
+      "contact": "Contacto",
+      "founder": "Fundador/a",
+      "members": "Miembros",
+      "action": {
+        "verify": "Verificar",
+        "reject": "Rechazar",
+        "suspend": "Suspender",
+        "reactivate": "Reactivar"
+      },
+      "done": {
+        "verify": "{name} verificada. Se notificó al fundador.",
+        "reject": "{name} rechazada.",
+        "suspend": "{name} suspendida.",
+        "reactivate": "{name} reactivada."
+      }
+    },
+    "users": {
+      "search": "Email o nombre",
+      "status": "Estado",
+      "anyStatus": "Cualquier estado",
+      "empty": "No hay usuarios que coincidan.",
+      "user": "Usuario",
+      "roles": "Roles globales",
+      "memberships": "Membresías",
+      "pets": "Mascotas",
+      "lastLogin": "Último acceso",
+      "self": "No puedes suspender tu propia cuenta.",
+      "statusValue": {
+        "active": "Activa",
+        "suspended": "Suspendida"
+      },
+      "action": {
+        "suspend": "Suspender",
+        "reactivate": "Reactivar"
+      },
+      "done": {
+        "suspend": "{email} suspendida: se cerraron sus sesiones.",
+        "reactivate": "{email} reactivada."
+      }
+    },
+    "audit": {
+      "actor": "Actor (id)",
+      "target": "Objetivo (id)",
+      "from": "Desde",
+      "to": "Hasta",
+      "filter": "Filtrar",
+      "badRange": "La fecha final debe ser posterior a la inicial.",
+      "empty": "Sin entradas para estos filtros.",
+      "when": "Fecha",
+      "action": "Acción",
+      "reason": "Motivo",
+      "system": "sistema"
     }
   }
 }
