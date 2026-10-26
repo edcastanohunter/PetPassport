@@ -1,6 +1,8 @@
 # Realm `petpassport` como código (PP-F1-IAM-001/002/003). Lo aplica keycloak-config-cli de
 # forma idempotente en todos los entornos; cualquier cambio manual en la consola es drift.
-# Referencia: docs/phase-1/04-iam-keycloak.md. Las variables $(env:...) se sustituyen por entorno.
+# Referencia: docs/phase-1/04-iam-keycloak.md. Los valores PP_* se sustituyen desde el entorno
+# (IMPORT_VARSUBSTITUTION_ENABLED; la sustitución se aplica también a los comentarios: no escribir
+# la sintaxis de variable en ellos).
 realm: petpassport
 enabled: true
 displayName: PetPassport
