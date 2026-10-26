@@ -115,9 +115,9 @@ func run() error {
 	identityRepo := identityinfra.NewPostgresRepository(pool)
 	identitySvc := identityapp.NewService(identityRepo, logger)
 	unit := db.NewUnitOfWork(pool)
-	runner := projection.NewRunner()
-	commands := bus.New()
-	idemStore := idempotency.NewStore(pool, 0)
+	runner := projection.NewRunner().Instrument(tel.Registry)
+	commands := bus.New().Instrument(tel.Registry)
+	idemStore := idempotency.NewStore(pool, 0).Instrument(tel.Registry)
 	var mailer *mail.SMTP
 	if cfg.SMTP.Host != "" {
 		mailer = mail.NewSMTP(mail.Options{

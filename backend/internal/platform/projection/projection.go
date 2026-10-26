@@ -8,8 +8,10 @@ package projection
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 )
@@ -25,11 +27,25 @@ type Projector interface {
 type Runner struct {
 	byType map[string][]Projector
 	names  map[string]bool
+
+	duration *prometheus.HistogramVec
 }
 
 // NewRunner construye el runner.
 func NewRunner() *Runner {
 	return &Runner{byType: map[string][]Projector{}, names: map[string]bool{}}
+}
+
+// Instrument registra projection_duration_seconds{projector} (INF-007).
+// Sin llamar = sin métricas.
+func (r *Runner) Instrument(reg prometheus.Registerer) *Runner {
+	r.duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "projection_duration_seconds",
+		Help:    "Duración de cada proyección de evento, por proyector.",
+		Buckets: []float64{.0005, .001, .0025, .005, .01, .025, .05, .1, .25},
+	}, []string{"projector"})
+	reg.MustRegister(r.duration)
+	return r
 }
 
 // Register suscribe un proyector. Pánico si el nombre ya existe.
@@ -48,7 +64,12 @@ func (r *Runner) Register(p Projector) {
 func (r *Runner) Apply(ctx context.Context, tx pgx.Tx, events []eventstore.StoredEvent) error {
 	for _, e := range events {
 		for _, p := range r.byType[e.Type] {
-			if err := p.Project(ctx, tx, e); err != nil {
+			start := time.Now()
+			err := p.Project(ctx, tx, e)
+			if r.duration != nil {
+				r.duration.WithLabelValues(p.Name()).Observe(time.Since(start).Seconds())
+			}
+			if err != nil {
 				return fmt.Errorf("projection %s: %s@%d: %w", p.Name(), e.Type, e.SchemaVersion, err)
 			}
 		}
