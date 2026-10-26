@@ -1,0 +1,88 @@
+# Pruebas de las alertas de INF-007:
+#   promtool test rules infra/observability/alerts_test.yml
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+
+tests:
+  # 5xx: 2 de cada 100 req/s (2%) durante 10 min → dispara; 0,5% no.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_total{route="/api/v1/me",method="GET",status="200"}'
+        values: "0+5880x15"
+      - series: 'http_server_requests_total{route="/api/v1/me",method="GET",status="503"}'
+        values: "0+120x15"
+      - series: 'http_server_requests_total{route="/api/v1/pets",method="GET",status="200"}'
+        values: "0+5970x15"
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: ApiHigh5xxRate
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Error rate 5xx > 1% (5 min): 1.003%"
+              runbook: "infra/deploy/RUNBOOK.md#71-apihigh5xxrate"
+
+  - interval: 1m
+    input_series:
+      - series: 'http_server_requests_total{route="/x",method="GET",status="200"}'
+        values: "0+5970x15"
+      - series: 'http_server_requests_total{route="/x",method="GET",status="500"}'
+        values: "0+30x15"
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: ApiHigh5xxRate
+        exp_alerts: []
+
+  # readyz caído 3 min → dispara (for: 2m); sin la serie también.
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="readyz",instance="http://api:9090/readyz"}'
+        values: "1 1 1 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ApiNotReady
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: ApiNotReady
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "/readyz caído 2 min"
+              runbook: "infra/deploy/RUNBOOK.md#73-apinotready"
+
+  # p95 > 500 ms sostenido 10 min: todas las requests en el bucket de 1 s.
+  - interval: 1m
+    input_series:
+      - series: 'http_server_request_duration_seconds_bucket{le="0.5"}'
+        values: "0x20"
+      - series: 'http_server_request_duration_seconds_bucket{le="1"}'
+        values: "0+60x20"
+      - series: 'http_server_request_duration_seconds_bucket{le="+Inf"}'
+        values: "0+60x20"
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ApiHighLatencyP95
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: ApiHighLatencyP95
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "p95 > 500 ms (10 min): 975ms"
+              runbook: "infra/deploy/RUNBOOK.md#72-apihighlatencyp95"
+
+  # Certificado a 10 días → dispara tras 1 h.
+  # (expiry absoluto = 864000 s = día 10 desde epoch; time() empieza en 0)
+  - interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{job="tls",instance="https://app.example/"}'
+        values: "864000x80"
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: CertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { severity: ticket, instance: "https://app.example/" }
+            exp_annotations:
+              summary: "Certificado de https://app.example/ caduca en 9.951 días"
+              runbook: "infra/deploy/RUNBOOK.md#75-certificateexpiringsoon"

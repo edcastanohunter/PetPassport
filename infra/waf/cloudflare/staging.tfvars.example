@@ -1,0 +1,22 @@
+# Copiar a staging.tfvars (ignorado por git) y completar. El secreto de origen
+# NO va aquí: TF_VAR_origin_auth_secret desde el secret manager.
+environment    = "staging"
+zone_id        = "<zone-id>"
+domain         = "staging.<dominio>"
+origin_ip      = "<ip-publica-vm>"
+team_ip_ranges = ["<ip-vpn>/32"]
+
+# Semana 1: log. Tras revisar falsos positivos en Security Events → block.
+waf_mode = "log"
+
+# Plan Business o superior: límites de la API también en el borde.
+# rate_limits = [
+#   { name = "login-token", requests = 10, period = 60,
+#     expression = "(http.host eq \"auth.$${domain}\" and http.request.method eq \"POST\" and (starts_with(http.request.uri.path, \"/realms/petpassport/login-actions/\") or http.request.uri.path eq \"/realms/petpassport/protocol/openid-connect/token\"))" },
+#   { name = "org-lookup", requests = 20, period = 60,
+#     expression = "(http.host eq \"api.$${domain}\" and http.request.uri.path eq \"/api/v1/organizations/lookup\")" },
+#   { name = "api-write", requests = 60, period = 60,
+#     expression = "(http.host eq \"api.$${domain}\" and starts_with(http.request.uri.path, \"/api/v1/\") and http.request.method in {\"POST\" \"PUT\" \"PATCH\" \"DELETE\"})" },
+#   { name = "api-read", requests = 300, period = 60,
+#     expression = "(http.host eq \"api.$${domain}\" and starts_with(http.request.uri.path, \"/api/v1/\") and http.request.method eq \"GET\")" },
+# ]

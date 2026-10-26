@@ -21,6 +21,7 @@ services:
       - --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=180s
       - --api.dashboard=true
       - --api.insecure=true
+      - --metrics.prometheus=true
       - --log.level=INFO
       - --accesslog=true
       - --accesslog.fields.headers.names.Authorization=drop
