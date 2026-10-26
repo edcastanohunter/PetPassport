@@ -397,7 +397,7 @@
     "reason": {
       "label": "Motivo (mínimo 10 caracteres)",
       "labelOptional": "Motivo (opcional; si lo escribes, mínimo 10 caracteres)",
-      "hint": "{n} caracteres · mínimo {min}. Queda registrado en la auditoría.",
+      "hint": "{n} caracteres · mínimo {min}. Queda registrado en la auditoría: no incluyas datos personales.",
       "confirm": "Confirmar"
     },
     "orgs": {

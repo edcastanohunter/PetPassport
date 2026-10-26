@@ -397,7 +397,7 @@
     "reason": {
       "label": "Reason (at least 10 characters)",
       "labelOptional": "Reason (optional; at least 10 characters if provided)",
-      "hint": "{n} characters · minimum {min}. Recorded in the audit log.",
+      "hint": "{n} characters · minimum {min}. Recorded in the audit log: do not include personal data.",
       "confirm": "Confirm"
     },
     "orgs": {

@@ -156,3 +156,21 @@ func (r *Registry) Len() int {
 	defer r.mu.RUnlock()
 	return len(r.factories)
 }
+
+// Events devuelve un valor cero de cada tipo@versión registrado, ordenado por
+// clave. Lo usa el inventario de PII (SEC-009) para exigir que todo evento
+// con `pii{}` declare sus sujetos.
+func (r *Registry) Events() []Event {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	keys := make([]string, 0, len(r.factories))
+	for k := range r.factories {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]Event, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, r.factories[k]())
+	}
+	return out
+}
