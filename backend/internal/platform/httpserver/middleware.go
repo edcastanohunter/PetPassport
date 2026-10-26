@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -153,7 +154,12 @@ func (m *httpMetrics) middleware(next http.Handler) http.Handler {
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		next.ServeHTTP(ww, r)
 		route := routePattern(r)
-		m.requests.WithLabelValues(route, r.Method, http.StatusText(ww.Status())).Inc()
+		// status numérico ("200", "503"): las alertas filtran por clase (status=~"5..").
+		status := ww.Status()
+		if status == 0 {
+			status = http.StatusOK // el handler escribió sin WriteHeader explícito
+		}
+		m.requests.WithLabelValues(route, r.Method, strconv.Itoa(status)).Inc()
 		m.duration.WithLabelValues(route, r.Method).Observe(time.Since(start).Seconds())
 	})
 }
