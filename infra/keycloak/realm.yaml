@@ -20,7 +20,7 @@ sslRequired: external
 # archivo del tema en M1.5 (passwordBlacklist(...) requiere el fichero en data/password-blacklists).
 passwordPolicy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername and notEmail and passwordHistory(3) and hashAlgorithm(argon2)"
 
-# --- Fuerza bruta (IAM-005; OTP condicional para super_admin se configura en M1.4) ---
+# --- Fuerza bruta (IAM-005) ---
 bruteForceProtected: true
 permanentLockout: false
 failureFactor: 5
@@ -29,6 +29,111 @@ maxFailureWaitSeconds: 900
 maxDeltaTimeSeconds: 43200
 quickLoginCheckMilliSeconds: 1000
 minimumQuickLoginWaitSeconds: 60
+
+# --- MFA (IAM-005): TOTP 6 dígitos, 30 s, 1 ventana de tolerancia ---
+otpPolicyType: totp
+otpPolicyAlgorithm: HmacSHA1
+otpPolicyDigits: 6
+otpPolicyPeriod: 30
+otpPolicyLookAheadWindow: 1
+otpSupportedApplications: [totpAppFreeOTPName, totpAppGoogleName, totpAppMicrosoftAuthenticatorName]
+
+# Flujo browser propio: cookie SSO o formulario usuario/contraseña, seguido de
+#   (a) OTP OBLIGATORIA si el usuario tiene el rol super_admin (si aún no la
+#       configuró, Keycloak exige CONFIGURE_TOTP en ese mismo login), o
+#   (b) OTP opcional para el resto: solo si el usuario la configuró en "Mi cuenta".
+# Las condiciones de un subflujo CONDITIONAL se combinan con AND; (b) niega el rol
+# para no pedir la OTP dos veces a un super_admin.
+browserFlow: browser-petpassport
+authenticationFlows:
+  - alias: browser-petpassport
+    description: Browser con OTP obligatoria para super_admin (IAM-005)
+    providerId: basic-flow
+    topLevel: true
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: auth-cookie
+        authenticatorFlow: false
+        requirement: ALTERNATIVE
+        priority: 10
+        userSetupAllowed: false
+      - authenticatorFlow: true
+        flowAlias: browser-petpassport-forms
+        requirement: ALTERNATIVE
+        priority: 20
+        userSetupAllowed: false
+  - alias: browser-petpassport-forms
+    description: Usuario/contraseña y segundo factor
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: auth-username-password-form
+        authenticatorFlow: false
+        requirement: REQUIRED
+        priority: 10
+        userSetupAllowed: false
+      - authenticatorFlow: true
+        flowAlias: browser-petpassport-otp-super-admin
+        requirement: CONDITIONAL
+        priority: 20
+        userSetupAllowed: false
+      - authenticatorFlow: true
+        flowAlias: browser-petpassport-otp-optional
+        requirement: CONDITIONAL
+        priority: 30
+        userSetupAllowed: false
+  - alias: browser-petpassport-otp-super-admin
+    description: OTP obligatoria para super_admin
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-user-role
+        authenticatorFlow: false
+        authenticatorConfig: cond-role-super-admin
+        requirement: REQUIRED
+        priority: 10
+        userSetupAllowed: false
+      - authenticator: auth-otp-form
+        authenticatorFlow: false
+        requirement: REQUIRED
+        priority: 20
+        userSetupAllowed: false
+  - alias: browser-petpassport-otp-optional
+    description: OTP opcional para quien la configuró (no super_admin)
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-user-configured
+        authenticatorFlow: false
+        requirement: REQUIRED
+        priority: 10
+        userSetupAllowed: false
+      - authenticator: conditional-user-role
+        authenticatorFlow: false
+        authenticatorConfig: cond-role-not-super-admin
+        requirement: REQUIRED
+        priority: 20
+        userSetupAllowed: false
+      - authenticator: auth-otp-form
+        authenticatorFlow: false
+        requirement: REQUIRED
+        priority: 30
+        userSetupAllowed: false
+authenticatorConfig:
+  - alias: cond-role-super-admin
+    config:
+      condUserRole: super_admin
+      negate: "false"
+  - alias: cond-role-not-super-admin
+    config:
+      condUserRole: super_admin
+      negate: "true"
+# CONFIGURE_TOTP y VERIFY_EMAIL son required actions habilitadas por defecto en
+# Keycloak; no se declaran aquí porque el modo "managed full" de
+# keycloak-config-cli eliminaría las no listadas (p. ej. UPDATE_PASSWORD).
 
 # --- Tiempos de vida (IAM-006) ---
 accessTokenLifespan: 300
