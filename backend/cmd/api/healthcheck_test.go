@@ -17,7 +17,8 @@ func TestHealthcheck_ReflectsReadyz(t *testing.T) {
 		w.WriteHeader(status)
 	}))
 	defer srv.Close()
-	t.Setenv("PP_INTERNAL_ADDR", strings.TrimPrefix(srv.URL, "http://"))
+	// El host de la config se ignora (siempre 127.0.0.1): solo cuenta el puerto.
+	t.Setenv("PP_INTERNAL_ADDR", "otro-host"+strings.TrimPrefix(srv.URL, "http://127.0.0.1"))
 
 	if code := healthcheck(); code != 0 {
 		t.Fatalf("readyz 200 → exit %d", code)

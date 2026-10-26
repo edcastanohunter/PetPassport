@@ -19,7 +19,7 @@ func TestHTTPMetrics_StatusLabelIsNumeric(t *testing.T) {
 		func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusServiceUnavailable) },
 		func(http.ResponseWriter, *http.Request) {},
 	} {
-		m.middleware(h).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/x", nil))
+		m.middleware(h).ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x", nil))
 	}
 	families, err := reg.Gather()
 	if err != nil {
