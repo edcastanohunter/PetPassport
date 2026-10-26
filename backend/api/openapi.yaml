@@ -581,6 +581,7 @@ paths:
     delete:
       operationId: cancelPetTransfer
       summary: Cancelar transferencia pendiente
+      description: Cancela la transferencia pendiente de la mascota; el enlace enviado deja de ser válido. Solo el tutor actual. Sin transferencia pendiente → 404.
       tags: [pets]
       x-pp-action: pet:transfer
       responses:
@@ -983,6 +984,7 @@ paths:
     get:
       operationId: listInvitations
       summary: Invitaciones de la organización
+      description: Lista las invitaciones de la organización (pendientes, aceptadas, revocadas y caducadas). Solo administradores de la organización.
       tags: [invitations]
       x-pp-action: org:member:invite
       parameters:
@@ -1013,6 +1015,7 @@ paths:
     delete:
       operationId: revokeInvitation
       summary: Revocar una invitación pendiente
+      description: Revoca una invitación pendiente; su enlace deja de ser válido. Solo administradores de la organización. Inexistente o no pendiente → 404.
       tags: [invitations]
       x-pp-action: org:member:invite
       responses:

@@ -250,7 +250,10 @@ export interface paths {
          * @description Solo el tutor. Envía un email al destinatario con un enlace de un solo uso que caduca en 7 días; si no tiene cuenta, se le invita a registrarse con ese email (PRD-010).
          */
         post: operations["initiatePetTransfer"];
-        /** Cancelar transferencia pendiente */
+        /**
+         * Cancelar transferencia pendiente
+         * @description Cancela la transferencia pendiente de la mascota; el enlace enviado deja de ser válido. Solo el tutor actual. Sin transferencia pendiente → 404.
+         */
         delete: operations["cancelPetTransfer"];
         options?: never;
         head?: never;
@@ -472,7 +475,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Invitaciones de la organización */
+        /**
+         * Invitaciones de la organización
+         * @description Lista las invitaciones de la organización (pendientes, aceptadas, revocadas y caducadas). Solo administradores de la organización.
+         */
         get: operations["listInvitations"];
         put?: never;
         /**
@@ -499,7 +505,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revocar una invitación pendiente */
+        /**
+         * Revocar una invitación pendiente
+         * @description Revoca una invitación pendiente; su enlace deja de ser válido. Solo administradores de la organización. Inexistente o no pendiente → 404.
+         */
         delete: operations["revokeInvitation"];
         options?: never;
         head?: never;

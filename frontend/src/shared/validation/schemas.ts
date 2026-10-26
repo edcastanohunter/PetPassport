@@ -22,7 +22,7 @@ export const SEXES = ['male', 'female', 'unknown'] as const
 export const NEUTERED = ['yes', 'no', 'unknown'] as const
 
 /** 1–60; letras/espacios/'/-; sin control; trim y colapso de espacios. */
-export function petNameSchema(): ZodType<string> {
+export function petNameSchema(): ZodType<string, string> {
   return (
     z
       .string()
@@ -47,7 +47,7 @@ export function petNameSchema(): ZodType<string> {
 }
 
 /** ISO 11784/11785 (15 dígitos) o legado (9/10 alfanuméricos). */
-export function microchipSchema(): ZodType<string> {
+export function microchipSchema(): ZodType<string, string> {
   return z
     .string()
     .transform((s) => s.replace(/[ \-_]/g, '').toUpperCase())
@@ -55,7 +55,7 @@ export function microchipSchema(): ZodType<string> {
 }
 
 /** Fecha civil ≤ hoy y ≥ hoy − 40 años (la comparación la hace el caller con `today`). */
-export function birthDateSchema(today: string): ZodType<string> {
+export function birthDateSchema(today: string): ZodType<string, string> {
   const min = addYears(today, -40)
   return z
     .string()
@@ -66,22 +66,22 @@ export function birthDateSchema(today: string): ZodType<string> {
 }
 
 /** Raza: texto libre 1–80 en F1. */
-export function breedSchema(): ZodType<string> {
+export function breedSchema(): ZodType<string, string> {
   return z.string().trim().min(1).max(80)
 }
 
 /** Señas: ≤ 200. */
-export function markingsSchema(): ZodType<string> {
+export function markingsSchema(): ZodType<string, string> {
   return z.string().trim().max(200)
 }
 
 /** species_other: obligatoria (1–40) si species = other. */
-export function speciesOtherSchema(): ZodType<string> {
+export function speciesOtherSchema(): ZodType<string, string> {
   return z.string().trim().min(1).max(40)
 }
 
 /** PublicCode de organización (6 chars Crockford base32, listo para M1.3). */
-export function publicCodeSchema(): ZodType<string> {
+export function publicCodeSchema(): ZodType<string, string> {
   return z.string().regex(/^[0-9A-HJKMNP-TV-Z]{6}$/)
 }
 
@@ -110,7 +110,7 @@ export function validNitCO(value: string): boolean {
 }
 
 /** Identificación fiscal por país (DOM-007): CO = NIT con DV; resto genérico. */
-export function taxIdSchema(country: string): ZodType<string> {
+export function taxIdSchema(country: string): ZodType<string, string> {
   const isCO = country.trim().toUpperCase() === 'CO'
   return z
     .string()
@@ -122,7 +122,7 @@ export function taxIdSchema(country: string): ZodType<string> {
 }
 
 /** Teléfono E.164 (se aceptan espacios, guiones, puntos y paréntesis). */
-export function phoneE164Schema(): ZodType<string> {
+export function phoneE164Schema(): ZodType<string, string> {
   return z
     .string()
     .transform((s) => s.replace(/[\s().-]/g, ''))
@@ -130,12 +130,12 @@ export function phoneE164Schema(): ZodType<string> {
 }
 
 /** Email normalizado (lower). */
-export function emailSchema(): ZodType<string> {
+export function emailSchema(): ZodType<string, string> {
   return z.string().trim().toLowerCase().pipe(z.string().email().max(254))
 }
 
 /** Sitio web https opcional (vacío = sin web). */
-export function websiteSchema(): ZodType<string> {
+export function websiteSchema(): ZodType<string, string> {
   return z
     .string()
     .trim()
@@ -182,7 +182,7 @@ export function organizationFormSchema() {
     })
     .superRefine((v, ctx) => {
       if (!taxIdSchema(v.tax_country).safeParse(v.tax_value).success) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['tax_value'], message: 'invalid' })
+        ctx.addIssue({ code: 'custom', path: ['tax_value'], message: 'invalid' })
       }
     })
 }
@@ -204,7 +204,7 @@ export function petFormSchema(today: string) {
     })
     .superRefine((v, ctx) => {
       if (v.species === 'other' && !v.species_other?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['species_other'], message: 'required' })
+        ctx.addIssue({ code: 'custom', path: ['species_other'], message: 'required' })
       }
     })
 }

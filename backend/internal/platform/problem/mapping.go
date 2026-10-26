@@ -57,7 +57,10 @@ func From(err error) *Problem {
 	return New(Internal, "Error interno", "Ocurrió un error inesperado.")
 }
 
-var titles = map[Code]string{ //nolint:gosec // G101: títulos del catálogo de errores, no credenciales
+// #nosec G101 -- títulos del catálogo de errores, no credenciales.
+//
+//nolint:gosec // G101: idem.
+var titles = map[Code]string{
 	ConsentVersionOutdated:  "Consentimiento no vigente",
 	AccountSuspended:        "Cuenta suspendida",
 	OnboardingRequired:      "Onboarding pendiente",
