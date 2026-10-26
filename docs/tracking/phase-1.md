@@ -21,8 +21,8 @@
 | PP-F1-PRD-014 | PRD | Cambiar rol / retirar miembro (último admin protegido) | MUST | M1.3 | IMPLEMENTADO | | #9 | PATCH/DELETE /organizations/{id}/members/{user}: O1/O2; la caché de membresías se invalida al commit (pierde acceso en el siguiente request). |
 | PP-F1-PRD-015 | PRD | Vincular mascota a clínica por código y revocar | MUST | M1.3 | IMPLEMENTADO | | #9 | GET /organizations/lookup?code, POST/DELETE /pets/{id}/care-links: solo clínicas activas (I5), máx 20 (I8), idempotente (200). FE: CareLinksPanel con previsualización. |
 | PP-F1-PRD-016 | PRD | Lista de pacientes y ficha (clínica, solo lectura) | MUST | M1.3 | IMPLEMENTADO | | #9 | GET /organizations/{id}/patients (q ILIKE escapado + cursor) y /patients/{pet} con guardian_contact; org suspendida → 403 ORGANIZATION_SUSPENDED. FE: PatientsPage/PatientDetailPage. |
-| PP-F1-PRD-017 | PRD | SuperAdmin: verificación, rechazo, suspensión de organizaciones | MUST | M1.4 | EN_PROGRESO | | | |
-| PP-F1-PRD-018 | PRD | SuperAdmin: buscar y suspender usuarios | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-PRD-017 | PRD | SuperAdmin: verificación, rechazo, suspensión de organizaciones | MUST | M1.4 | IMPLEMENTADO | | #10 | Cola de verificación FIFO + verificar/rechazar/suspender/reactivar con motivo (≥10; opcional en verificar) y audit_log en la misma tx; FE /admin/organizations. |
+| PP-F1-PRD-018 | PRD | SuperAdmin: buscar y suspender usuarios | MUST | M1.4 | IMPLEMENTADO | | #10 | Búsqueda (email/nombre, ILIKE escapado, cursor) y suspender/reactivar con motivo: plataforma primero, luego Keycloak (503 si falla, reintento idempotente); auto-suspensión prohibida. |
 | PP-F1-PRD-019 | PRD | i18n es/en, responsive, accesibilidad | SHOULD | M1.5 | PENDIENTE | | | |
 | PP-F1-PRD-020 | PRD | Páginas legales y consentimiento versionado | MUST | M1.1 | IMPLEMENTADO | | #7 | identity.consent_versions con semilla 2026-10-draft; GET /legal/current; modal de re-consentimiento. |
 | PP-F1-DOM-001 | DOM | Glosario / lenguaje ubicuo aplicado en código | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
@@ -53,13 +53,13 @@
 | PP-F1-IAM-002 | IAM | Clients web/api/backend | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-IAM-003 | IAM | Roles de realm y rol por defecto | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-IAM-004 | IAM | Registro, verificación y política de contraseñas | MUST | M1.1 | IMPLEMENTADO | | #7 | passwordHistory(3)+argon2 en realm.yaml; blacklist 100k pendiente de fichero (M1.5). |
-| PP-F1-IAM-005 | IAM | Brute force y OTP obligatoria para super_admin | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-IAM-005 | IAM | Brute force y OTP obligatoria para super_admin | MUST | M1.4 | IMPLEMENTADO | | #10 | Flujo browser-petpassport: OTP obligatoria para super_admin (conditional-user-role), opcional si configurada; brute force activo. Verificado con KC 26.1.5 + config-cli 6.5.1. |
 | PP-F1-IAM-006 | IAM | Tiempos de vida de tokens y sesiones | MUST | M1.1 | IMPLEMENTADO | | #7 | Tiempos de vida en realm.yaml desde M1.0; verificados en M1.1. |
 | PP-F1-IAM-007 | IAM | Validación JWT en backend | MUST | M1.1 | IMPLEMENTADO | | #7 | platform/auth.Verifier (go-oidc): RS256/ES256, iss, aud, azp, typ, skew 60 s. |
 | PP-F1-IAM-008 | IAM | Principal y membresías con caché | MUST | M1.3 | IMPLEMENTADO | | #9 | Principal con membresías desde read_partnernetwork (incluye display_name/estado); caché LRU 60 s (cota 10 000) invalidada por eventos; pruebas TTL/LRU/invalidación/concurrencia. |
 | PP-F1-IAM-009 | IAM | Aprovisionamiento JIT de UserAccount | MUST | M1.1 | IMPLEMENTADO | | #7 | identity/app.Service.Resolve: upsert JIT, throttle 5 min en memoria. |
 | PP-F1-IAM-010 | IAM | Modelo de autorización (paquete authz) | MUST | M1.2 | IMPLEMENTADO | | #8 | authz: políticas de pets (G/L/A) deny-by-default; métricas authz_decisions_total/authz_denied_total; sonda para cobertura de rutas (SEC-005 M1.3).
-| PP-F1-IAM-011 | IAM | Service account para operaciones admin | SHOULD | M1.4 | EN_PROGRESO | | | |
+| PP-F1-IAM-011 | IAM | Service account para operaciones admin | SHOULD | M1.4 | IMPLEMENTADO | | #10 | keycloakadmin: client credentials con caché (renueva 60 s antes), reintento ante 401; SetEnabled, logout, send-verify-email. |
 | PP-F1-IAM-012 | IAM | Tema de login, SMTP y localización | SHOULD | M1.5 | PENDIENTE | | | |
 | PP-F1-IAM-013 | IAM | Cierre de sesión | MUST | M1.1 | IMPLEMENTADO | | #7 | signoutRedirect con id_token_hint; /auth/logout limpia estado. |
 | PP-F1-API-001 | API | Convenciones REST | MUST | M1.1 | IMPLEMENTADO | | #7 | Convenciones aplicadas en /me*; validación de contrato en tests. |
@@ -69,7 +69,7 @@
 | PP-F1-API-005 | API | Endpoints de vínculos y pacientes | MUST | M1.3 | IMPLEMENTADO | | #9 | Lookup por código, care-links grant/revoke, pacientes y ficha (x-pp-action declarada; contrato OpenAPI + spectral). |
 | PP-F1-API-006 | API | Endpoints de organizaciones y miembros | MUST | M1.3 | IMPLEMENTADO | | #9 | Organizaciones y miembros (OrganizationOrSummary: completa para miembros/super_admin, resumen para el resto). |
 | PP-F1-API-007 | API | Endpoints de invitaciones | MUST | M1.3 | IMPLEMENTADO | | #9 | Invitaciones: crear/listar/revocar/reenviar, previsualizar y aceptar (devuelve Me con la membresía nueva). |
-| PP-F1-API-008 | API | Endpoints de administración | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-API-008 | API | Endpoints de administración | MUST | M1.4 | IMPLEMENTADO | | #10 | /admin/organizations[/{id}/verify|reject|suspend|reactivate], /admin/users[/{id}/suspend|reactivate], /admin/audit-log; 403 salvo super_admin (suite authz). |
 | PP-F1-API-009 | API | Salud y métricas | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-API-010 | API | Validación de payloads | MUST | M1.1 | IMPLEMENTADO | | #7 | nethttp-middleware (kin-openapi) por operación: 422 con errors[]; 415 por Content-Type. |
 | PP-F1-API-011 | API | Catálogo de errores | MUST | M1.1 | IMPLEMENTADO | | #7 | Catálogo F1 en platform/problem; códigos de otros hitos se añaden al usarse. |
@@ -90,11 +90,11 @@
 | PP-F1-FE-006 | FE | Pantallas de mascotas | MUST | M1.2 | IMPLEMENTADO | | #8 | Lista/formulario/ficha (sin vínculos ni transferencia); If-Match en edición; test de store.
 | PP-F1-FE-007 | FE | Pantallas de organización | MUST | M1.3 | IMPLEMENTADO | | #9 | Registro (wizard), resumen con código copiable/imprimible, miembros/invitaciones, ajustes, aceptar invitación; OrgLayout con navegación por rol/tipo; guards requiresOrgType/requiresOrgRole. |
 | PP-F1-FE-008 | FE | Pacientes (clínica) y vínculos (tutor) | MUST | M1.3 | IMPLEMENTADO | | #9 | Vínculos y transferencia en la ficha del tutor; lista de pacientes (búsqueda, cursor, tel:) y ficha de solo lectura; aviso de org suspendida sin llamar a la API. |
-| PP-F1-FE-009 | FE | Administración | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-FE-009 | FE | Administración | MUST | M1.4 | IMPLEMENTADO | | #10 | Organizaciones (pestañas, detalle con fundador, modal de motivo), usuarios (roles, membresías, mascotas) y auditoría (filtros, cursor); rutas requiresGlobalRole super_admin. |
 | PP-F1-FE-010 | FE | i18n, accesibilidad y responsive | SHOULD | M1.5 | PENDIENTE | | | |
 | PP-F1-FE-011 | FE | Validación zod espejo de VOs con fixture compartido | MUST | M1.2 | IMPLEMENTADO | | #8 | shared/validation/schemas.ts (zod) + validation-cases.spec.ts ejecutando el fixture de Go.
 | PP-F1-FE-012 | FE | Observabilidad en cliente | COULD | M1.5 | PENDIENTE | | | |
-| PP-F1-SEC-001 | SEC | WAF gestionado y rate limiting en el borde | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-SEC-001 | SEC | WAF gestionado y rate limiting en el borde | MUST | M1.4 | EN_PROGRESO | | #10 | Código listo: Terraform Cloudflare (OWASP+Managed log→block, rate limits, X-Origin-Auth) y Traefik de origen cerrado con todos los límites SEC-001. Pendiente: aprovisionar (dominio/cuenta) y pasar a block tras 1 semana. |
 | PP-F1-SEC-002 | SEC | Traefik: routers, middlewares, timeouts | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-SEC-003 | SEC | Cabeceras de seguridad y CORS | MUST | M1.1 | IMPLEMENTADO | | #7 | CSP en nginx.conf y Traefik; CORS en API desde M1.0. |
 | PP-F1-SEC-004 | SEC | Validación de entrada y subidas seguras | MUST | M1.2 | IMPLEMENTADO | | #8 | Validación OpenAPI + VOs; subidas: nombre/Content-Type del cliente ignorados, magic bytes, ≤ 5 MB, ≤ 25 MP, SVG/GIF/HEIC rechazados; regexp RE2.
@@ -102,16 +102,16 @@
 | PP-F1-SEC-006 | SEC | Gestión de secretos | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-SEC-007 | SEC | Logging sin PII, correlación y audit log | MUST | M1.1 | IMPLEMENTADO | | #7 | kernel.Email/Phone/Address/Contact con LogValue; actor_id en logs; audit_log sin PII. |
 | PP-F1-SEC-008 | SEC | SAST, dependencias, imágenes, SBOM | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
-| PP-F1-SEC-009 | SEC | Privacidad: consentimiento, derechos, diseño crypto-shredding | MUST | M1.4 | EN_PROGRESO | | | |
-| PP-F1-SEC-010 | SEC | Mínimo privilegio en BD, red y contenedores | MUST | M1.4 | EN_PROGRESO | | | |
-| PP-F1-SEC-011 | SEC | Threat model F1 revisado | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-SEC-009 | SEC | Privacidad: consentimiento, derechos, diseño crypto-shredding | MUST | M1.4 | IMPLEMENTADO | | #10 | docs/phase-1/security/privacy-runbook.md (SQL verificado); inventario PII con TestRegistry_PIIInventory; aviso de privacidad en el pie. Hallazgo F5: sujetos de pii{} por email sin UserID. |
+| PP-F1-SEC-010 | SEC | Mínimo privilegio en BD, red y contenedores | MUST | M1.4 | IMPLEMENTADO | | #10 | Migración 000007 (writer: UPDATE en es.streams; sin UPDATE/DELETE en events/outbox/audit_log; CREATE revocado a PUBLIC); contenedores no root, read_only, cap_drop ALL; solo Traefik publica 443. |
+| PP-F1-SEC-011 | SEC | Threat model F1 revisado | MUST | M1.4 | EN_PROGRESO | | #10 | Threat model STRIDE en docs/phase-1/security/threat-model.md; pendiente revisión de dos personas (checklist §6 y PR). |
 | PP-F1-INF-001 | INF | Monorepo, Makefile, pre-commit | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-INF-002 | INF | Docker Compose de desarrollo con seeds | MUST | M1.0 | IMPLEMENTADO | | #6 | Compose validado con `docker compose config`; ejecución end-to-end pendiente de verificar en máquina con Docker (sin daemon en el entorno de autoría). |
 | PP-F1-INF-003 | INF | CI GitHub Actions | MUST | M1.0 | IMPLEMENTADO | | #6 | Workflows creados; primera ejecución real ocurre en este PR. |
 | PP-F1-INF-004 | INF | Imágenes Docker endurecidas | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
-| PP-F1-INF-005 | INF | Entornos y configuración | MUST | M1.4 | EN_PROGRESO | | | |
-| PP-F1-INF-006 | INF | Despliegue en staging y runbook | MUST | M1.4 | EN_PROGRESO | | | |
-| PP-F1-INF-007 | INF | Observabilidad: logs, trazas, métricas, dashboards, alertas | MUST | M1.4 | EN_PROGRESO | | | |
+| PP-F1-INF-005 | INF | Entornos y configuración | MUST | M1.4 | IMPLEMENTADO | | #10 | infra/deploy/staging.env.example (PP_* + plataforma), /config.json por entorno generado en despliegue, .env 600 desde secret manager. |
+| PP-F1-INF-006 | INF | Despliegue en staging y runbook | MUST | M1.4 | EN_PROGRESO | | #10 | deploy.sh (pull, migrate, realm, up --wait, smoke PKCE, rollback automático, anotación) + RUNBOOK/RESTORE-LOG. Pendiente: VM real, primer despliegue y ensayo por alguien distinto del autor. |
+| PP-F1-INF-007 | INF | Observabilidad: logs, trazas, métricas, dashboards, alertas | MUST | M1.4 | IMPLEMENTADO | | #10 | Dashboards API overview/Event Store/Auth & Authz/Keycloak; 6 alertas con pruebas promtool; Loki+Alloy; métricas commands/projection/idempotency añadidas. |
 | PP-F1-INF-008 | INF | Health checks y apagado ordenado | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-INF-009 | INF | PostgreSQL y storage gestionados con backups | MUST | M1.5 | PENDIENTE | | | |
 | PP-F1-QA-001 | QA | Estrategia de pruebas | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
