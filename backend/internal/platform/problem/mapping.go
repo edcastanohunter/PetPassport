@@ -57,11 +57,21 @@ func From(err error) *Problem {
 	return New(Internal, "Error interno", "Ocurrió un error inesperado.")
 }
 
+// #nosec G101 -- títulos del catálogo de errores, no credenciales.
+//
+//nolint:gosec // G101: idem.
 var titles = map[Code]string{
-	ConsentVersionOutdated: "Consentimiento no vigente",
-	AccountSuspended:       "Cuenta suspendida",
-	OnboardingRequired:     "Onboarding pendiente",
-	EmailNotVerified:       "Email no verificado",
+	ConsentVersionOutdated:  "Consentimiento no vigente",
+	AccountSuspended:        "Cuenta suspendida",
+	OnboardingRequired:      "Onboarding pendiente",
+	EmailNotVerified:        "Email no verificado",
+	SameGuardian:            "Mismo tutor",
+	TransferTokenInvalid:    "Enlace inválido o caducado",
+	OrganizationNotEligible: "Organización no elegible",
+	OrganizationSuspended:   "Organización suspendida",
+	RoleNotAllowedForType:   "Rol no permitido",
+	InvitationEmailMismatch: "Invitación para otro email",
+	InvitationResendLimit:   "Límite de reenvíos",
 }
 
 func titleFor(c Code) string {

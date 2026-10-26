@@ -101,7 +101,28 @@
     "VALIDATION_FAILED": "Check the highlighted fields.",
     "CONFLICT_VERSION": "The resource changed. Reload and retry.",
     "RATE_LIMITED": "Too many requests. Please wait a moment.",
-    "UNAVAILABLE": "Service temporarily unavailable."
+    "UNAVAILABLE": "Service temporarily unavailable.",
+    "ORGANIZATION_NOT_ELIGIBLE": "That organization cannot receive care links (it must be an active clinic).",
+    "CARE_LINK_LIMIT": "This pet already has 20 active care links.",
+    "CARE_LINK_NOT_ACTIVE": "The care link is no longer active.",
+    "ORGANIZATION_SUSPENDED": "The organization is suspended: its members cannot access patients.",
+    "ORGANIZATION_REJECTED": "The organization was rejected and cannot be changed.",
+    "ROLE_NOT_ALLOWED_FOR_TYPE": "That role is not valid for this organization type.",
+    "LAST_ADMIN_CANNOT_BE_REMOVED": "You cannot remove or demote the last administrator.",
+    "ALREADY_MEMBER": "That person is already a member of the organization.",
+    "INVITATION_EMAIL_MISMATCH": "The invitation was sent to a different email.",
+    "INVITATION_RESEND_LIMIT": "At most 3 resends per invitation every 24 hours.",
+    "INVITATION_NOT_FOUND": "The invitation is no longer pending.",
+    "TRANSFER_ALREADY_PENDING": "There is already a pending transfer for this pet.",
+    "TRANSFER_NOT_PENDING": "There is no pending transfer.",
+    "TRANSFER_TOKEN_INVALID": "The link is invalid or has expired.",
+    "TRANSFER_EMAIL_MISMATCH": "This transfer was sent to a different email. Sign in with the recipient's account.",
+    "SAME_GUARDIAN": "The new guardian must be someone else.",
+    "PET_DECEASED": "This pet is in memoriam: the action is not available.",
+    "INVALID_STATUS_TRANSITION": "The organization is not in a state that allows this action.",
+    "IDEMPOTENCY_KEY_REUSED": "A previous attempt was reused with different data. Please try again.",
+    "REQUEST_IN_PROGRESS": "The previous request is still in progress.",
+    "INTERNAL": "An unexpected error occurred."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -110,7 +131,8 @@
     "TOO_SHORT": "Too short.",
     "INVALID_FORMAT": "Invalid format.",
     "INVALID_ENUM": "Invalid option.",
-    "UNKNOWN_FIELD": "Unknown field."
+    "UNKNOWN_FIELD": "Unknown field.",
+    "ALREADY_REGISTERED": "An organization with that tax ID already exists."
   },
   "pets": {
     "listTitle": "My pets",
@@ -128,7 +150,6 @@
     "inMemoriam": "In memoriam",
     "inMemoriamTitle": "In memoriam",
     "linksBadge": "{n} link(s)",
-    "linksComingSoon": "Clinic links and guardianship transfer are coming soon.",
     "photoAlt": "Photo of {name}",
     "photoAdd": "Add photo",
     "photoChange": "Change photo",
@@ -190,6 +211,177 @@
       "undoInfo": "You can undo it for 24 hours.",
       "undo": "Undo",
       "windowClosed": "The 24-hour window closed; contact support to revert."
+    },
+    "links": {
+      "title": "Linked clinics",
+      "add": "Link with a clinic",
+      "empty": "No linked clinics yet. Ask your clinic for its code so they can see the profile.",
+      "code": "Clinic code",
+      "search": "Search",
+      "codeInvalid": "The code has 6 characters (letters and numbers).",
+      "notFound": "We couldn't find an active clinic with that code.",
+      "confirmInfo": "The clinic will see {name}'s profile and your contact details. You can revoke it at any time.",
+      "confirm": "Confirm link",
+      "revoke": "Revoke",
+      "confirmRevoke": "Revoke this clinic's access?",
+      "since": "since {date}",
+      "suspended": "Clinic suspended",
+      "unnamed": "Clinic"
+    },
+    "transfer": {
+      "title": "Transfer guardianship",
+      "info": "Hand guardianship over to someone else; history and care links travel with the pet.",
+      "action": "Start transfer",
+      "email": "New guardian's email",
+      "hint": "They'll get a link valid for 7 days. Without an account they must sign up with that email.",
+      "send": "Send invitation",
+      "pending": "Pending transfer to {email} (expires {date}).",
+      "cancel": "Cancel transfer",
+      "acceptTitle": "Accept guardianship transfer",
+      "from": "{name} wants to transfer guardianship to you.",
+      "accept": "Accept guardianship",
+      "invalid": "The link is invalid or has expired."
+    }
+  },
+  "orgs": {
+    "publicCode": "Public code",
+    "publicCodeHint": "Share this code with your clients so they can link their pets with {name}.",
+    "copy": "Copy code",
+    "copied": "Copied!",
+    "print": "Print card",
+    "statusReason": "Reason",
+    "quickLinks": "Quick links",
+    "memberCount": "{n} member | {n} members",
+    "type": {
+      "clinic": "Veterinary clinic",
+      "pharmacy": "Pharmacy"
+    },
+    "typeHint": {
+      "clinic": "Sees patients and receives links from pet owners.",
+      "pharmacy": "Dispenses medication (prescriptions from F4)."
+    },
+    "role": {
+      "clinic_admin": "Administrator",
+      "veterinarian": "Veterinarian",
+      "receptionist": "Reception",
+      "pharmacy_admin": "Administrator",
+      "pharmacist": "Pharmacist"
+    },
+    "status": {
+      "pending_verification": "Pending verification",
+      "pending_verification_hint": "We're verifying the organization's legal existence (usually within 24 business hours). Meanwhile you can edit the profile and invite members, but it can't receive pet links yet.",
+      "active": "Active",
+      "active_hint": "",
+      "suspended": "Suspended",
+      "suspended_hint": "Members cannot access patients while the suspension lasts.",
+      "rejected": "Rejected",
+      "rejected_hint": "We couldn't verify the organization."
+    },
+    "nav": {
+      "label": "Organization navigation",
+      "summary": "Overview",
+      "patients": "Patients",
+      "patientsHint": "Linked pets and their profile",
+      "members": "Members",
+      "settings": "Settings",
+      "settingsHint": "Profile, address and contact"
+    },
+    "form": {
+      "type": "Organization type",
+      "legalName": "Legal name",
+      "displayName": "Trade name",
+      "taxCountry": "Tax country",
+      "taxValue": "Tax ID",
+      "taxHintCO": "NIT with check digit, e.g. 900123456-8.",
+      "taxHintGeneric": "5 to 20 characters: letters, numbers, dots and dashes.",
+      "address": "Address",
+      "country": "Country",
+      "region": "State / region",
+      "city": "City",
+      "line1": "Address",
+      "line2": "Address line 2",
+      "postalCode": "Postal code",
+      "contact": "Contact",
+      "email": "Contact email",
+      "phone": "Phone (international format)",
+      "website": "Website"
+    },
+    "register": {
+      "title": "Register an organization",
+      "steps": "Registration steps",
+      "step": {
+        "type": "Type",
+        "legal": "Legal data",
+        "address": "Address",
+        "contact": "Contact",
+        "review": "Review"
+      },
+      "reviewHint": "You'll become its administrator and the organization will be pending verification.",
+      "submit": "Create organization",
+      "created": "{name} is registered!",
+      "goToOrg": "Go to the organization"
+    },
+    "settings": {
+      "verificationWarning": "Changing the legal name or tax ID of a verified organization sends it back to \"pending verification\".",
+      "willReset": "When you save, the organization will be pending verification again.",
+      "saved": "Changes saved.",
+      "conflict": "The organization changed while you were editing."
+    },
+    "members": {
+      "tab": "Members",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "roleOf": "Role of {name}",
+      "since": "Since",
+      "actions": "Actions",
+      "remove": "Remove",
+      "confirmRemove": "Remove {name}? They'll lose access immediately.",
+      "lastAdmin": "This is the last administrator.",
+      "roleChanged": "Role updated.",
+      "removed": "Member removed."
+    },
+    "invitations": {
+      "tab": "Invitations",
+      "send": "Invite",
+      "sent": "Invitation sent.",
+      "resend": "Resend",
+      "resent": "Invitation resent.",
+      "revoke": "Revoke",
+      "revoked": "Invitation revoked.",
+      "empty": "No invitations.",
+      "expires": "expires {date}",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      }
+    },
+    "invite": {
+      "title": "Organization invitation",
+      "role": "You're invited as {role}.",
+      "for": "For {email}",
+      "accept": "Accept invitation",
+      "invalid": "The invitation link is invalid or has expired.",
+      "mismatch": "The invitation is for another email; you're signed in as {email}.",
+      "switchAccount": "Switch account"
+    },
+    "patients": {
+      "search": "Search",
+      "searchPlaceholder": "Pet or guardian name",
+      "empty": "No linked patients yet. Share your code {code} with your clients.",
+      "noResults": "No results for this search.",
+      "photo": "Photo",
+      "pet": "Pet",
+      "speciesBreed": "Species / breed",
+      "age": "Age",
+      "guardian": "Guardian",
+      "linkedAt": "Linked since",
+      "more": "Load more",
+      "guardianContact": "Guardian contact",
+      "history": "Clinical history",
+      "historySoon": "Coming soon."
     }
   }
 }

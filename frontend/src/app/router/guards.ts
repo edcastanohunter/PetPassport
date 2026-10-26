@@ -11,6 +11,10 @@ declare module 'vue-router' {
     requiresOnboarding?: boolean
     requiresMembership?: boolean
     requiresGlobalRole?: string
+    /** Con requiresMembership: rol de organización requerido (alguno de la lista). */
+    requiresOrgRole?: readonly string[]
+    /** Con requiresMembership: tipo de organización requerido. */
+    requiresOrgType?: 'clinic' | 'pharmacy'
   }
 }
 
@@ -44,7 +48,12 @@ export const authGuard: NavigationGuardWithThis<undefined> = async (to) => {
     }
     if (meta.requiresMembership) {
       const orgId = String(to.params.orgId ?? '')
-      if (!session.membershipFor(orgId)) return { name: 'not-found' }
+      const m = session.membershipFor(orgId)
+      if (!m) return { name: 'not-found' }
+      if (meta.requiresOrgType && m.type !== meta.requiresOrgType) return { name: 'forbidden' }
+      if (meta.requiresOrgRole && !meta.requiresOrgRole.includes(m.role)) {
+        return { name: 'forbidden' }
+      }
     }
     return true
   } catch (e) {

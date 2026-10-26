@@ -171,7 +171,7 @@ func CivilMinBirthDate(today kernel.CivilDate) kernel.CivilDate {
 type Microchip string
 
 var (
-	microchipISORe   = regexp.MustCompile(`^\d{15}$`)
+	microchipISORe    = regexp.MustCompile(`^\d{15}$`)
 	microchipLegacyRe = regexp.MustCompile(`^[A-Z0-9]{9,10}$`)
 )
 

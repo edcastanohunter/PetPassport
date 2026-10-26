@@ -37,17 +37,31 @@ const selectAccount = `
 SELECT id, email::text, email_verified, display_name, locale, country, phone, address, emergency_contact,
        status, COALESCE(status_reason, ''), global_roles, terms_version, privacy_version, consent_accepted_at,
        onboarding_completed_at, created_at, updated_at, last_login_at
-  FROM identity.user_accounts WHERE id = $1`
+  FROM identity.user_accounts`
 
 // Get devuelve la cuenta o *kernel.NotFoundError.
 func (r *PostgresRepository) Get(ctx context.Context, id uuid.UUID) (*domain.UserAccount, error) {
-	row := r.pool.QueryRow(ctx, selectAccount, id)
+	row := r.pool.QueryRow(ctx, selectAccount+` WHERE id = $1`, id)
 	acc, err := scanAccount(row)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, &kernel.NotFoundError{Resource: "user_account"}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("identity get: %w", err)
+	}
+	return acc, nil
+}
+
+// FindByEmail devuelve la cuenta por email (citext: comparación sin
+// mayúsculas) o *kernel.NotFoundError.
+func (r *PostgresRepository) FindByEmail(ctx context.Context, email kernel.Email) (*domain.UserAccount, error) {
+	row := r.pool.QueryRow(ctx, selectAccount+` WHERE email = $1`, email.String())
+	acc, err := scanAccount(row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, &kernel.NotFoundError{Resource: "user_account"}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("identity find by email: %w", err)
 	}
 	return acc, nil
 }

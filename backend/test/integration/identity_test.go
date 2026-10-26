@@ -22,8 +22,9 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
-	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
+	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
@@ -36,6 +37,7 @@ type handlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
 	*pethttp.PetHandlers
+	*orghttp.OrgHandlers
 }
 
 type nopWriter struct{}

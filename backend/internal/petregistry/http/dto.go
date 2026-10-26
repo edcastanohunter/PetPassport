@@ -23,7 +23,9 @@ import (
 )
 
 // presigner firma URLs de foto (nil = sin storage; sin campo photo).
-type presigner interface{ Presign(ctx context.Context, key string) (string, error) }
+type presigner interface {
+	Presign(ctx context.Context, key string) (string, error)
+}
 
 type minioPresigner struct{ o storage.ObjectStorage }
 
@@ -64,6 +66,10 @@ func toPet(v app.PetView, p presigner) gen.Pet {
 	}
 	if v.Microchip != "" {
 		pet.Microchip = &v.Microchip
+	}
+	pet.MicrochipCorrections = &v.Corrections
+	if v.PendingTransfer != nil {
+		pet.PendingTransfer = &gen.PendingTransfer{ToEmailMasked: v.PendingTransfer.ToEmailMasked, ExpiresAt: v.PendingTransfer.ExpiresAt}
 	}
 	if v.BirthDate != nil {
 		pet.BirthDate = &gen.BirthDate{Date: openapiDate(v.BirthDate.Date.String()), Approximate: v.BirthDate.Approximate}

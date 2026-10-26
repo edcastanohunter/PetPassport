@@ -16,7 +16,7 @@ import (
 type Registry struct {
 	mu        sync.RWMutex
 	factories map[string]func() Event
-	versions  map[string][]int // event_type → versiones registradas
+	versions  map[string][]int    // event_type → versiones registradas
 	upcasters map[string]Upcaster // key: event_type@fromVersion
 	frozen    bool
 }

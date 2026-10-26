@@ -21,6 +21,12 @@ tags:
     description: Mascotas del tutor (docs/phase-1/05-api.md §3.2)
   - name: legal
     description: Términos y privacidad vigentes
+  - name: care-links
+    description: Vínculos mascota–clínica y pacientes (docs/phase-1/05-api.md §3.3)
+  - name: organizations
+    description: Organizaciones y miembros (docs/phase-1/05-api.md §3.4)
+  - name: invitations
+    description: Invitaciones de miembros (docs/phase-1/05-api.md §3.5)
 security:
   - bearerAuth: []
 paths:
@@ -533,6 +539,640 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /pets/{petId}/transfer:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: initiatePetTransfer
+      summary: Iniciar transferencia de tutela
+      description: Solo el tutor. Envía un email al destinatario con un enlace de un solo uso que caduca en 7 días; si no tiene cuenta, se le invita a registrarse con ese email (PRD-010).
+      tags: [pets]
+      x-pp-action: pet:transfer
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+      responses:
+        "202":
+          description: Transferencia pendiente
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: cancelPetTransfer
+      summary: Cancelar transferencia pendiente
+      description: Cancela la transferencia pendiente de la mascota; el enlace enviado deja de ser válido. Solo el tutor actual. Sin transferencia pendiente → 404.
+      tags: [pets]
+      x-pp-action: pet:transfer
+      responses:
+        "200":
+          description: Transferencia cancelada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pet-transfers/{token}:
+    parameters:
+      - $ref: "#/components/parameters/Token"
+    get:
+      operationId: getPetTransfer
+      summary: Previsualizar una transferencia
+      description: Cualquier autenticado con el enlace. Token inválido, caducado o usado → 404 sin distinguir.
+      tags: [pets]
+      x-pp-action: pet:transfer:read
+      responses:
+        "200":
+          description: Previsualización
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferPreview"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pet-transfers/{token}/accept:
+    parameters:
+      - $ref: "#/components/parameters/Token"
+    post:
+      operationId: acceptPetTransfer
+      summary: Aceptar una transferencia
+      description: El email del principal debe coincidir con el destinatario (403 TRANSFER_EMAIL_MISMATCH). La mascota pasa al nuevo tutor con la misma PetID y sus vínculos.
+      tags: [pets]
+      x-pp-action: pet:transfer:accept
+      responses:
+        "200":
+          description: Mascota transferida (vista del nuevo tutor)
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-links:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: grantCareLink
+      summary: Vincular la mascota a una clínica
+      description: Solo clínicas activas (I5); máximo 20 vínculos activos (I8). Idempotente — si ya existe el vínculo activo responde 200 (PRD-015).
+      tags: [care-links]
+      x-pp-action: pet:carelink:grant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CareLinkRequest"
+      responses:
+        "200":
+          description: El vínculo ya estaba activo
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "201":
+          description: Vínculo creado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-links/{organizationId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/OrganizationId"
+    delete:
+      operationId: revokeCareLink
+      summary: Revocar un vínculo
+      description: La clínica deja de ver la mascota en el siguiente request.
+      tags: [care-links]
+      x-pp-action: pet:carelink:revoke
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeCareLinkRequest"
+      responses:
+        "200":
+          description: Vínculo revocado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations:
+    post:
+      operationId: createOrganization
+      summary: Registrar organización
+      description: El fundador queda como admin; la organización nace pending_verification con un PublicCode (PRD-011). tax_id duplicado → 422 {field tax_id, code ALREADY_REGISTERED}.
+      tags: [organizations]
+      x-pp-action: org:register
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationRequest"
+            examples:
+              clinica:
+                value:
+                  type: clinic
+                  legal_name: Clínica Veterinaria Sur S.A.S.
+                  display_name: Clínica Sur
+                  tax_id: { country: CO, value: 900123456-8 }
+                  address: { country: CO, region: Antioquia, city: Medellín, line1: "Calle 10 # 20-30" }
+                  contact: { email: contacto@clinicasur.co, phone: "+573001234567" }
+      responses:
+        "201":
+          description: Organización creada
+          headers:
+            Location:
+              description: URL del recurso creado.
+              schema:
+                type: string
+            ETag:
+              $ref: "#/components/headers/ETag"
+            X-Correlation-ID:
+              $ref: "#/components/headers/X-Correlation-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/lookup:
+    get:
+      operationId: lookupOrganization
+      summary: Buscar clínica por código público
+      description: Devuelve el resumen mínimo solo si la organización es una clínica activa; cualquier otra cosa → 404 (PRD-015).
+      tags: [care-links]
+      x-pp-action: org:lookup
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 6
+            maxLength: 6
+            pattern: "^[0-9A-Za-z]{6}$"
+      responses:
+        "200":
+          description: Resumen de la clínica
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgSummary"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrganization
+      summary: Ficha de la organización
+      description: Vista completa para miembros y super_admin; resumen público para el resto.
+      tags: [organizations]
+      x-pp-action: org:read
+      responses:
+        "200":
+          description: Organización o resumen
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationOrSummary"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateOrganization
+      summary: Editar el perfil
+      description: Admin de la organización. Cambiar legal_name o tax_id en una organización activa la devuelve a pending_verification (PRD-012). Requiere If-Match.
+      tags: [organizations]
+      x-pp-action: org:update
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizationRequest"
+      responses:
+        "200":
+          description: Organización actualizada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/members:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listOrganizationMembers
+      summary: Miembros activos
+      description: Solo miembros de la organización o super_admin.
+      tags: [organizations]
+      x-pp-action: org:read
+      responses:
+        "200":
+          description: Miembros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/members/{userId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/UserId"
+    patch:
+      operationId: changeMemberRole
+      summary: Cambiar el rol de un miembro
+      description: No se puede degradar al último admin (409 LAST_ADMIN_CANNOT_BE_REMOVED); el rol debe ser válido para el tipo (422 ROLE_NOT_ALLOWED_FOR_TYPE).
+      tags: [organizations]
+      x-pp-action: org:member:role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberRequest"
+      responses:
+        "200":
+          description: Miembro actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: removeMember
+      summary: Retirar un miembro
+      description: Pierde el acceso en el siguiente request (caché de membresías invalidada, PRD-014).
+      tags: [organizations]
+      x-pp-action: org:member:remove
+      responses:
+        "204":
+          description: Miembro retirado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/invitations:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: createInvitation
+      summary: Invitar un miembro
+      description: Re-invitar al mismo email revoca la invitación pendiente anterior (O4). Caduca a los 7 días.
+      tags: [invitations]
+      x-pp-action: org:member:invite
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationRequest"
+      responses:
+        "201":
+          description: Invitación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listInvitations
+      summary: Invitaciones de la organización
+      description: Lista las invitaciones de la organización (pendientes, aceptadas, revocadas y caducadas). Solo administradores de la organización.
+      tags: [invitations]
+      x-pp-action: org:member:invite
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, revoked, expired]
+      responses:
+        "200":
+          description: Invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/invitations/{invitationId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/InvitationId"
+    delete:
+      operationId: revokeInvitation
+      summary: Revocar una invitación pendiente
+      description: Revoca una invitación pendiente; su enlace deja de ser válido. Solo administradores de la organización. Inexistente o no pendiente → 404.
+      tags: [invitations]
+      x-pp-action: org:member:invite
+      responses:
+        "204":
+          description: Invitación revocada
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/invitations/{invitationId}/resend:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/InvitationId"
+    post:
+      operationId: resendInvitation
+      summary: Reenviar una invitación
+      description: Genera un enlace nuevo (el anterior deja de valer). Máximo 3 reenvíos en 24 h (429 INVITATION_RESEND_LIMIT).
+      tags: [invitations]
+      x-pp-action: org:member:invite
+      responses:
+        "204":
+          description: Invitación reenviada
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /invitations/{token}:
+    parameters:
+      - $ref: "#/components/parameters/Token"
+    get:
+      operationId: getInvitation
+      summary: Previsualizar una invitación
+      description: Cualquier autenticado con el enlace. Inválida o caducada → 404 sin distinguir.
+      tags: [invitations]
+      x-pp-action: org:invitation:read
+      responses:
+        "200":
+          description: Previsualización
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationPreview"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /invitations/{token}/accept:
+    parameters:
+      - $ref: "#/components/parameters/Token"
+    post:
+      operationId: acceptInvitation
+      summary: Aceptar una invitación
+      description: El email del principal debe coincidir (403 INVITATION_EMAIL_MISMATCH) y estar verificado. Devuelve Me con la nueva membresía.
+      tags: [invitations]
+      x-pp-action: org:invitation:accept
+      responses:
+        "200":
+          description: Membresía creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/patients:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listPatients
+      summary: Pacientes vinculados de la clínica
+      description: Miembros de clínica activa (clinic_admin, veterinarian, receptionist). Búsqueda simple por nombre de mascota o tutor; cursor. Org suspendida → 403 ORGANIZATION_SUSPENDED (PRD-016).
+      tags: [care-links]
+      x-pp-action: org:patients:list
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, deceased, all]
+            default: all
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página de pacientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/patients/{petId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPatient
+      summary: Ficha de un paciente (solo lectura)
+      description: Requiere vínculo activo de esta organización (L) y membresía de clínica; incluye guardian_contact (pet:guardian_contact:read). No visible → 404.
+      tags: [care-links]
+      x-pp-action: pet:read
+      responses:
+        "200":
+          description: Ficha con contacto del tutor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -573,6 +1213,44 @@ components:
       schema:
         type: string
         format: uuid
+    OrgId:
+      name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Token:
+      name: token
+      in: path
+      required: true
+      description: Token de un solo uso (32 bytes en base64url).
+      schema:
+        type: string
+        minLength: 20
+        maxLength: 64
+        pattern: "^[A-Za-z0-9_-]+$"
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -876,6 +1554,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CareLink"
+        pending_transfer:
+          description: Solo para el tutor.
+          oneOf:
+            - $ref: "#/components/schemas/PendingTransfer"
+            - type: "null"
+        guardian_contact:
+          description: Solo con pet:guardian_contact:read (ficha de paciente de clínica).
+          oneOf:
+            - $ref: "#/components/schemas/GuardianContact"
+            - type: "null"
         created_at:
           type: string
           format: date-time
@@ -1095,6 +1783,326 @@ components:
           type: string
         privacy_url:
           type: string
+    EmailAddress:
+      type: string
+      format: email
+      maxLength: 254
+    OrgRole:
+      type: string
+      enum: [clinic_admin, veterinarian, receptionist, pharmacy_admin, pharmacist]
+    OrgStatus:
+      type: string
+      enum: [pending_verification, active, suspended, rejected]
+    OrganizationType:
+      type: string
+      enum: [clinic, pharmacy]
+    TaxId:
+      type: object
+      additionalProperties: false
+      required: [country, value]
+      properties:
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        value:
+          type: string
+          description: "CO: NIT con dígito de verificación (NNNNNNNNN-D); otros países: ^[A-Z0-9.-]{5,20}$."
+          minLength: 3
+          maxLength: 32
+    OrgContact:
+      type: object
+      additionalProperties: false
+      required: [email, phone]
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        phone:
+          $ref: "#/components/schemas/Phone"
+        website:
+          type: [string, "null"]
+          description: URL https.
+          maxLength: 200
+    CreateOrganizationRequest:
+      type: object
+      additionalProperties: false
+      required: [type, legal_name, display_name, tax_id, address, contact]
+      properties:
+        type:
+          $ref: "#/components/schemas/OrganizationType"
+        legal_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        display_name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        tax_id:
+          $ref: "#/components/schemas/TaxId"
+        address:
+          $ref: "#/components/schemas/Address"
+        contact:
+          $ref: "#/components/schemas/OrgContact"
+    UpdateOrganizationRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        legal_name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        display_name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        tax_id:
+          $ref: "#/components/schemas/TaxId"
+        address:
+          $ref: "#/components/schemas/Address"
+        contact:
+          $ref: "#/components/schemas/OrgContact"
+    Organization:
+      type: object
+      additionalProperties: false
+      required: [id, version, type, legal_name, display_name, tax_id, address, contact, public_code, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/OrganizationType"
+        legal_name:
+          type: string
+        display_name:
+          type: string
+        tax_id:
+          $ref: "#/components/schemas/TaxId"
+        address:
+          $ref: "#/components/schemas/Address"
+        contact:
+          $ref: "#/components/schemas/OrgContact"
+        public_code:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrgStatus"
+        status_reason:
+          type: [string, "null"]
+        my_role:
+          oneOf:
+            - $ref: "#/components/schemas/OrgRole"
+            - type: "null"
+        member_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OrgSummary:
+      type: object
+      additionalProperties: false
+      required: [id, type, display_name, city, country, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/OrganizationType"
+        display_name:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrgStatus"
+    OrganizationOrSummary:
+      description: Organization para miembros y super_admin; OrgSummary para el resto.
+      oneOf:
+        - $ref: "#/components/schemas/Organization"
+        - $ref: "#/components/schemas/OrgSummary"
+    Member:
+      type: object
+      additionalProperties: false
+      required: [user_id, email, display_name, role, status, joined_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        display_name:
+          type: string
+        role:
+          $ref: "#/components/schemas/OrgRole"
+        status:
+          type: string
+          enum: [active, removed]
+        joined_at:
+          type: string
+          format: date-time
+    MemberList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Member"
+    UpdateMemberRequest:
+      type: object
+      additionalProperties: false
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/OrgRole"
+    CreateInvitationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, role]
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        role:
+          $ref: "#/components/schemas/OrgRole"
+    Invitation:
+      type: object
+      additionalProperties: false
+      required: [id, email, role, status, expires_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/OrgRole"
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    InvitationList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invitation"
+    InvitationPreview:
+      type: object
+      additionalProperties: false
+      required: [organization, role, email_masked, expires_at]
+      properties:
+        organization:
+          $ref: "#/components/schemas/OrgSummary"
+        role:
+          $ref: "#/components/schemas/OrgRole"
+        email_masked:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    TransferRequest:
+      type: object
+      additionalProperties: false
+      required: [to_email]
+      properties:
+        to_email:
+          $ref: "#/components/schemas/EmailAddress"
+    TransferPreview:
+      type: object
+      additionalProperties: false
+      required: [pet_name, species, from_guardian_display_name, expires_at]
+      properties:
+        pet_name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        from_guardian_display_name:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    PendingTransfer:
+      type: object
+      additionalProperties: false
+      required: [to_email_masked, expires_at]
+      properties:
+        to_email_masked:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    GuardianContact:
+      type: object
+      additionalProperties: false
+      required: [display_name, email]
+      properties:
+        display_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: [string, "null"]
+    CareLinkRequest:
+      type: object
+      additionalProperties: false
+      required: [organization_id]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+    RevokeCareLinkRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 200
+    PatientRow:
+      type: object
+      additionalProperties: false
+      required: [pet, guardian, linked_at]
+      properties:
+        pet:
+          $ref: "#/components/schemas/PetListItem"
+        guardian:
+          type: object
+          additionalProperties: false
+          required: [display_name]
+          properties:
+            display_name:
+              type: string
+            phone:
+              type: [string, "null"]
+        linked_at:
+          type: string
+          format: date-time
+    PatientPage:
+      type: object
+      additionalProperties: false
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatientRow"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
     HealthStatus:
       type: object
       additionalProperties: false

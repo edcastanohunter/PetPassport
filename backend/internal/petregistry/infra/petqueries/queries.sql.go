@@ -29,6 +29,29 @@ func (q *Queries) GetMicrochipReservation(ctx context.Context, microchip string)
 	return i, err
 }
 
+const getPendingTransferByToken = `-- name: GetPendingTransferByToken :one
+SELECT pet_id, expires_at
+  FROM read_petregistry.pet_transfers
+ WHERE token_hash = $1 AND status = 'pending' AND expires_at > $2::timestamptz
+`
+
+type GetPendingTransferByTokenParams struct {
+	TokenHash []byte
+	Now       pgtype.Timestamptz
+}
+
+type GetPendingTransferByTokenRow struct {
+	PetID     uuid.UUID
+	ExpiresAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetPendingTransferByToken(ctx context.Context, arg GetPendingTransferByTokenParams) (GetPendingTransferByTokenRow, error) {
+	row := q.db.QueryRow(ctx, getPendingTransferByToken, arg.TokenHash, arg.Now)
+	var i GetPendingTransferByTokenRow
+	err := row.Scan(&i.PetID, &i.ExpiresAt)
+	return i, err
+}
+
 const getPetByID = `-- name: GetPetByID :one
 SELECT id, version, guardian_id, guardian_display_name, name, species, species_other,
        breed, sex, neutered, birth_date, birth_date_approximate, markings, microchip,
@@ -128,6 +151,93 @@ func (q *Queries) ListCareLinks(ctx context.Context, petID uuid.UUID) ([]ListCar
 			&i.OrgSuspended,
 			&i.GrantedAt,
 			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPatients = `-- name: ListPatients :many
+SELECT p.id, p.name, p.species, p.breed, p.status, p.birth_date, p.birth_date_approximate,
+       p.photo_object_key, p.photo_thumb_key, p.photo_content_type,
+       p.guardian_id, p.guardian_display_name, l.granted_at
+  FROM read_petregistry.pet_care_links l
+  JOIN read_petregistry.pets p ON p.id = l.pet_id
+ WHERE l.organization_id = $1
+   AND l.status = 'active' AND NOT l.org_suspended
+   AND ($2::text IS NULL OR p.status = $2::text)
+   AND ($3::text IS NULL
+        OR p.name ILIKE '%' || $3::text || '%'
+        OR p.guardian_display_name ILIKE '%' || $3::text || '%')
+   AND ($4::timestamptz IS NULL
+        OR (l.granted_at, l.pet_id) < ($4::timestamptz, $5::uuid))
+ ORDER BY l.granted_at DESC, l.pet_id DESC
+ LIMIT $6
+`
+
+type ListPatientsParams struct {
+	OrganizationID uuid.UUID
+	Status         *string
+	Q              *string
+	GrantedAt      pgtype.Timestamptz
+	PetID          *uuid.UUID
+	Limit          int32
+}
+
+type ListPatientsRow struct {
+	ID                   uuid.UUID
+	Name                 string
+	Species              string
+	Breed                *string
+	Status               string
+	BirthDate            pgtype.Date
+	BirthDateApproximate *bool
+	PhotoObjectKey       *string
+	PhotoThumbKey        *string
+	PhotoContentType     *string
+	GuardianID           uuid.UUID
+	GuardianDisplayName  string
+	GrantedAt            pgtype.Timestamptz
+}
+
+// Pacientes de una clínica (PRD-016): vínculos activos de org no suspendida.
+// q busca por nombre de mascota o de tutor (ILIKE con trigram). Cursor por
+// (granted_at, pet_id) descendente.
+func (q *Queries) ListPatients(ctx context.Context, arg ListPatientsParams) ([]ListPatientsRow, error) {
+	rows, err := q.db.Query(ctx, listPatients,
+		arg.OrganizationID,
+		arg.Status,
+		arg.Q,
+		arg.GrantedAt,
+		arg.PetID,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatientsRow
+	for rows.Next() {
+		var i ListPatientsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Species,
+			&i.Breed,
+			&i.Status,
+			&i.BirthDate,
+			&i.BirthDateApproximate,
+			&i.PhotoObjectKey,
+			&i.PhotoThumbKey,
+			&i.PhotoContentType,
+			&i.GuardianID,
+			&i.GuardianDisplayName,
+			&i.GrantedAt,
 		); err != nil {
 			return nil, err
 		}

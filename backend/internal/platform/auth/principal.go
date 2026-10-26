@@ -56,9 +56,10 @@ func trimJoin(a, b string) string {
 }
 
 // Membership es la pertenencia a una organización con su rol (se carga desde
-// el read model de Partner Network, M1.3).
+// el read model de Partner Network, IAM-008).
 type Membership struct {
 	OrganizationID uuid.UUID
+	DisplayName    string
 	OrgType        string
 	Role           string
 	OrgStatus      string

@@ -42,8 +42,8 @@ var (
 
 // Result del pipeline.
 type Result struct {
-	Full  []byte
-	Thumb []byte
+	Full        []byte
+	Thumb       []byte
 	ContentType string // "image/jpeg"
 }
 

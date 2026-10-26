@@ -10,6 +10,16 @@ export type UpdateMeRequest = components['schemas']['UpdateMeRequest']
 export type Pet = components['schemas']['Pet']
 export type PetListItem = components['schemas']['PetListItem']
 export type PetPage = components['schemas']['PetPage']
+export type Organization = components['schemas']['Organization']
+export type OrgSummary = components['schemas']['OrgSummary']
+export type Member = components['schemas']['Member']
+export type Invitation = components['schemas']['Invitation']
+export type InvitationPreview = components['schemas']['InvitationPreview']
+export type TransferPreview = components['schemas']['TransferPreview']
+export type PatientRow = components['schemas']['PatientRow']
+export type PatientPage = components['schemas']['PatientPage']
+export type OrgRole = components['schemas']['OrgRole']
+export type Membership = components['schemas']['Membership']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

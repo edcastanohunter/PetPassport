@@ -21,7 +21,7 @@ type NewEvent struct {
 	ID            uuid.UUID // v7
 	Type          string    // "PetRegistered"
 	SchemaVersion int
-	Payload       any       // serializado por el registry
+	Payload       any // serializado por el registry
 	Metadata      Metadata
 	OccurredAt    time.Time
 }
@@ -43,24 +43,24 @@ type StoredEvent struct {
 // Metadata acompaña a todo evento (PP-F1-DOM-012, docs/phase-1/02 §8).
 // Los hashes se guardan en hex; nunca PII en claro.
 type Metadata struct {
-	ActorID       string   `json:"actor_id,omitempty"` // uuid o "system"
-	ActorRoles    []string `json:"actor_roles,omitempty"`
-	ActorOrgID    string   `json:"actor_org_id,omitempty"`
-	CorrelationID string   `json:"correlation_id,omitempty"`
-	CausationID   string   `json:"causation_id,omitempty"`
-	Source        string   `json:"source,omitempty"` // api | worker | migration | admin-cli
-	IPHash        string   `json:"ip_hash,omitempty"`
-	UserAgentHash string   `json:"user_agent_hash,omitempty"`
-	IdempotencyKey string  `json:"idempotency_key,omitempty"`
+	ActorID        string   `json:"actor_id,omitempty"` // uuid o "system"
+	ActorRoles     []string `json:"actor_roles,omitempty"`
+	ActorOrgID     string   `json:"actor_org_id,omitempty"`
+	CorrelationID  string   `json:"correlation_id,omitempty"`
+	CausationID    string   `json:"causation_id,omitempty"`
+	Source         string   `json:"source,omitempty"` // api | worker | migration | admin-cli
+	IPHash         string   `json:"ip_hash,omitempty"`
+	UserAgentHash  string   `json:"user_agent_hash,omitempty"`
+	IdempotencyKey string   `json:"idempotency_key,omitempty"`
 }
 
 // Orígenes admitidos en metadata.source.
 const (
-	SourceAPI      = "api"
-	SourceWorker   = "worker"
+	SourceAPI       = "api"
+	SourceWorker    = "worker"
 	SourceMigration = "migration"
-	SourceAdminCLI = "admin-cli"
-	SourceSystem   = "system"
+	SourceAdminCLI  = "admin-cli"
+	SourceSystem    = "system"
 )
 
 // Event es el contrato que cumple todo evento de dominio persistible:

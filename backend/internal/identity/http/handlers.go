@@ -82,6 +82,16 @@ func (h *Handlers) GetMe(ctx context.Context, _ gen.GetMeRequestObject) (gen.Get
 	return gen.GetMe200JSONResponse{Body: toMe(view, p)}, nil
 }
 
+// RenderMe construye el DTO Me para otros módulos (aceptar una invitación
+// devuelve Me con la membresía nueva). GetMe evalúa me:read.
+func (h *Handlers) RenderMe(ctx context.Context, p auth.Principal) (gen.Me, error) {
+	view, err := h.svc.GetMe(ctx, p)
+	if err != nil {
+		return gen.Me{}, err
+	}
+	return toMe(view, p), nil
+}
+
 // CompleteOnboarding ejecuta el onboarding.
 func (h *Handlers) CompleteOnboarding(ctx context.Context, req gen.CompleteOnboardingRequestObject) (gen.CompleteOnboardingResponseObject, error) {
 	p, err := h.principal(ctx)
@@ -206,7 +216,7 @@ func toMemberships(ms []auth.Membership) []gen.Membership {
 	out := make([]gen.Membership, 0, len(ms))
 	for _, m := range ms {
 		out = append(out, gen.Membership{
-			OrganizationId: openapi_types.UUID(m.OrganizationID), Type: gen.MembershipType(m.OrgType),
+			OrganizationId: openapi_types.UUID(m.OrganizationID), DisplayName: m.DisplayName, Type: gen.MembershipType(m.OrgType),
 			Role: gen.MembershipRole(m.Role), OrgStatus: gen.MembershipOrgStatus(m.OrgStatus),
 		})
 	}

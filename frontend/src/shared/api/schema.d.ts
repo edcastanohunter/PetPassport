@@ -234,6 +234,401 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pets/{petId}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Iniciar transferencia de tutela
+         * @description Solo el tutor. Envía un email al destinatario con un enlace de un solo uso que caduca en 7 días; si no tiene cuenta, se le invita a registrarse con ese email (PRD-010).
+         */
+        post: operations["initiatePetTransfer"];
+        /**
+         * Cancelar transferencia pendiente
+         * @description Cancela la transferencia pendiente de la mascota; el enlace enviado deja de ser válido. Solo el tutor actual. Sin transferencia pendiente → 404.
+         */
+        delete: operations["cancelPetTransfer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pet-transfers/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Previsualizar una transferencia
+         * @description Cualquier autenticado con el enlace. Token inválido, caducado o usado → 404 sin distinguir.
+         */
+        get: operations["getPetTransfer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pet-transfers/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar una transferencia
+         * @description El email del principal debe coincidir con el destinatario (403 TRANSFER_EMAIL_MISMATCH). La mascota pasa al nuevo tutor con la misma PetID y sus vínculos.
+         */
+        post: operations["acceptPetTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/care-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vincular la mascota a una clínica
+         * @description Solo clínicas activas (I5); máximo 20 vínculos activos (I8). Idempotente — si ya existe el vínculo activo responde 200 (PRD-015).
+         */
+        post: operations["grantCareLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/care-links/{organizationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                organizationId: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revocar un vínculo
+         * @description La clínica deja de ver la mascota en el siguiente request.
+         */
+        delete: operations["revokeCareLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar organización
+         * @description El fundador queda como admin; la organización nace pending_verification con un PublicCode (PRD-011). tax_id duplicado → 422 {field tax_id, code ALREADY_REGISTERED}.
+         */
+        post: operations["createOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar clínica por código público
+         * @description Devuelve el resumen mínimo solo si la organización es una clínica activa; cualquier otra cosa → 404 (PRD-015).
+         */
+        get: operations["lookupOrganization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Ficha de la organización
+         * @description Vista completa para miembros y super_admin; resumen público para el resto.
+         */
+        get: operations["getOrganization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Editar el perfil
+         * @description Admin de la organización. Cambiar legal_name o tax_id en una organización activa la devuelve a pending_verification (PRD-012). Requiere If-Match.
+         */
+        patch: operations["updateOrganization"];
+        trace?: never;
+    };
+    "/organizations/{orgId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Miembros activos
+         * @description Solo miembros de la organización o super_admin.
+         */
+        get: operations["listOrganizationMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retirar un miembro
+         * @description Pierde el acceso en el siguiente request (caché de membresías invalidada, PRD-014).
+         */
+        delete: operations["removeMember"];
+        options?: never;
+        head?: never;
+        /**
+         * Cambiar el rol de un miembro
+         * @description No se puede degradar al último admin (409 LAST_ADMIN_CANNOT_BE_REMOVED); el rol debe ser válido para el tipo (422 ROLE_NOT_ALLOWED_FOR_TYPE).
+         */
+        patch: operations["changeMemberRole"];
+        trace?: never;
+    };
+    "/organizations/{orgId}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Invitaciones de la organización
+         * @description Lista las invitaciones de la organización (pendientes, aceptadas, revocadas y caducadas). Solo administradores de la organización.
+         */
+        get: operations["listInvitations"];
+        put?: never;
+        /**
+         * Invitar un miembro
+         * @description Re-invitar al mismo email revoca la invitación pendiente anterior (O4). Caduca a los 7 días.
+         */
+        post: operations["createInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revocar una invitación pendiente
+         * @description Revoca una invitación pendiente; su enlace deja de ser válido. Solo administradores de la organización. Inexistente o no pendiente → 404.
+         */
+        delete: operations["revokeInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/invitations/{invitationId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reenviar una invitación
+         * @description Genera un enlace nuevo (el anterior deja de valer). Máximo 3 reenvíos en 24 h (429 INVITATION_RESEND_LIMIT).
+         */
+        post: operations["resendInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Previsualizar una invitación
+         * @description Cualquier autenticado con el enlace. Inválida o caducada → 404 sin distinguir.
+         */
+        get: operations["getInvitation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar una invitación
+         * @description El email del principal debe coincidir (403 INVITATION_EMAIL_MISMATCH) y estar verificado. Devuelve Me con la nueva membresía.
+         */
+        post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Pacientes vinculados de la clínica
+         * @description Miembros de clínica activa (clinic_admin, veterinarian, receptionist). Búsqueda simple por nombre de mascota o tutor; cursor. Org suspendida → 403 ORGANIZATION_SUSPENDED (PRD-016).
+         */
+        get: operations["listPatients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/patients/{petId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Ficha de un paciente (solo lectura)
+         * @description Requiere vínculo activo de esta organización (L) y membresía de clínica; incluye guardian_contact (pet:guardian_contact:read). No visible → 404.
+         */
+        get: operations["getPatient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -373,6 +768,10 @@ export interface components {
             /** Format: date */
             deceased_at?: string | null;
             care_links: components["schemas"]["CareLink"][];
+            /** @description Solo para el tutor. */
+            pending_transfer?: components["schemas"]["PendingTransfer"] | null;
+            /** @description Solo con pet:guardian_contact:read (ficha de paciente de clínica). */
+            guardian_contact?: components["schemas"]["GuardianContact"] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -469,6 +868,155 @@ export interface components {
             terms_url: string;
             privacy_url: string;
         };
+        /** Format: email */
+        EmailAddress: string;
+        /** @enum {string} */
+        OrgRole: "clinic_admin" | "veterinarian" | "receptionist" | "pharmacy_admin" | "pharmacist";
+        /** @enum {string} */
+        OrgStatus: "pending_verification" | "active" | "suspended" | "rejected";
+        /** @enum {string} */
+        OrganizationType: "clinic" | "pharmacy";
+        TaxId: {
+            country: components["schemas"]["CountryCode"];
+            /** @description CO: NIT con dígito de verificación (NNNNNNNNN-D); otros países: ^[A-Z0-9.-]{5,20}$. */
+            value: string;
+        };
+        OrgContact: {
+            email: components["schemas"]["EmailAddress"];
+            phone: components["schemas"]["Phone"];
+            /** @description URL https. */
+            website?: string | null;
+        };
+        CreateOrganizationRequest: {
+            type: components["schemas"]["OrganizationType"];
+            legal_name: string;
+            display_name: string;
+            tax_id: components["schemas"]["TaxId"];
+            address: components["schemas"]["Address"];
+            contact: components["schemas"]["OrgContact"];
+        };
+        UpdateOrganizationRequest: {
+            legal_name?: string;
+            display_name?: string;
+            tax_id?: components["schemas"]["TaxId"];
+            address?: components["schemas"]["Address"];
+            contact?: components["schemas"]["OrgContact"];
+        };
+        Organization: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            type: components["schemas"]["OrganizationType"];
+            legal_name: string;
+            display_name: string;
+            tax_id: components["schemas"]["TaxId"];
+            address: components["schemas"]["Address"];
+            contact: components["schemas"]["OrgContact"];
+            public_code: string;
+            status: components["schemas"]["OrgStatus"];
+            status_reason?: string | null;
+            my_role?: components["schemas"]["OrgRole"] | null;
+            member_count?: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        OrgSummary: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["OrganizationType"];
+            display_name: string;
+            city: string;
+            country: string;
+            status: components["schemas"]["OrgStatus"];
+        };
+        /** @description Organization para miembros y super_admin; OrgSummary para el resto. */
+        OrganizationOrSummary: components["schemas"]["Organization"] | components["schemas"]["OrgSummary"];
+        Member: {
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            display_name: string;
+            role: components["schemas"]["OrgRole"];
+            /** @enum {string} */
+            status: "active" | "removed";
+            /** Format: date-time */
+            joined_at: string;
+        };
+        MemberList: {
+            data: components["schemas"]["Member"][];
+        };
+        UpdateMemberRequest: {
+            role: components["schemas"]["OrgRole"];
+        };
+        CreateInvitationRequest: {
+            email: components["schemas"]["EmailAddress"];
+            role: components["schemas"]["OrgRole"];
+        };
+        Invitation: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            role: components["schemas"]["OrgRole"];
+            /** @enum {string} */
+            status: "pending" | "accepted" | "revoked" | "expired";
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        InvitationList: {
+            data: components["schemas"]["Invitation"][];
+        };
+        InvitationPreview: {
+            organization: components["schemas"]["OrgSummary"];
+            role: components["schemas"]["OrgRole"];
+            email_masked: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        TransferRequest: {
+            to_email: components["schemas"]["EmailAddress"];
+        };
+        TransferPreview: {
+            pet_name: string;
+            species: components["schemas"]["Species"];
+            from_guardian_display_name: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        PendingTransfer: {
+            to_email_masked: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        GuardianContact: {
+            display_name: string;
+            email: string;
+            phone?: string | null;
+        };
+        CareLinkRequest: {
+            /** Format: uuid */
+            organization_id: string;
+        };
+        RevokeCareLinkRequest: {
+            reason?: string;
+        };
+        PatientRow: {
+            pet: components["schemas"]["PetListItem"];
+            guardian: {
+                display_name: string;
+                phone?: string | null;
+            };
+            /** Format: date-time */
+            linked_at: string;
+        };
+        PatientPage: {
+            data: components["schemas"]["PatientRow"][];
+            next_cursor: string | null;
+        };
         HealthStatus: {
             /** @enum {string} */
             status: "ok";
@@ -504,6 +1052,12 @@ export interface components {
     };
     parameters: {
         PetId: string;
+        OrgId: string;
+        OrganizationId: string;
+        UserId: string;
+        InvitationId: string;
+        /** @description Token de un solo uso (32 bytes en base64url). */
+        Token: string;
         /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
         IdempotencyKey: string;
         /** @description Versión conocida del recurso (ETag de la última lectura). */
@@ -950,6 +1504,630 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    initiatePetTransfer: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Transferencia pendiente */
+            202: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelPetTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transferencia cancelada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Previsualización */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferPreview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptPetTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mascota transferida (vista del nuevo tutor) */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    grantCareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description El vínculo ya estaba activo */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            /** @description Vínculo creado */
+            201: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeCareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                organizationId: components["parameters"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RevokeCareLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Vínculo revocado */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización creada */
+            201: {
+                headers: {
+                    /** @description URL del recurso creado. */
+                    Location?: string;
+                    ETag: components["headers"]["ETag"];
+                    "X-Correlation-ID": components["headers"]["X-Correlation-ID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    lookupOrganization: {
+        parameters: {
+            query: {
+                code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumen de la clínica */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSummary"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organización o resumen */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationOrSummary"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateOrganization: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización actualizada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrganizationMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Miembros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Miembro retirado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    changeMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Miembro actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listInvitations: {
+        parameters: {
+            query?: {
+                status?: "pending" | "accepted" | "revoked" | "expired";
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitaciones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createInvitation: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationRequest"];
+            };
+        };
+        responses: {
+            /** @description Invitación creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invitation"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitación revocada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    resendInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                invitationId: components["parameters"]["InvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitación reenviada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Previsualización */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token de un solo uso (32 bytes en base64url). */
+                token: components["parameters"]["Token"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Membresía creada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPatients: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "active" | "deceased" | "all";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de pacientes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPatient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ficha con contacto del tutor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

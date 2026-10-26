@@ -64,6 +64,17 @@ func All() Fixture {
 				Valid:   []string{"7K3MQ2", "0189AB"},
 				Invalid: []string{"7K3MQ", "7K3MQ23", "7K3MQI", "7k3mq2"},
 			},
+			// TaxID (DOM-007, M1.3): CO = NIT con dígito de verificación DIAN;
+			// el resto de países usa el validador genérico. Los casos se
+			// ejecutan contra partnernetwork/domain.NewTaxID leyendo el fixture.
+			"taxIdCO": {
+				Valid:   []string{"900123456-8", "900.123.456-8", "800000001-1", " 860001022-7 "},
+				Invalid: []string{"900123456-7", "900123456", "900123456-X", "9001A3456-8", ""},
+			},
+			"taxIdGeneric": {
+				Valid:   []string{"ABC123456", "b-12345678", "RFC.123-45"},
+				Invalid: []string{"AB1", "ABC_12345", "ABCDEFGHIJKLMNOPQRSTU", ""},
+			},
 		},
 		Dates: map[string][]DateCase{
 			"birthDate": {

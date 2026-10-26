@@ -2,7 +2,9 @@ package infra
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
+	partnerapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra/petqueries"
@@ -22,7 +25,8 @@ import (
 // Toda lista filtra por guardian_id (el principal); GetPetByID solo se usa
 // tras evaluar authz con el recurso cargado.
 type Queries struct {
-	q *petqueries.Queries
+	q        *petqueries.Queries
+	guardian petapp.GuardianLookup // teléfono del tutor en la lista de pacientes (nil = vacío)
 }
 
 var _ petapp.PetQueries = (*Queries)(nil)
@@ -32,6 +36,12 @@ func NewQueries(pool *pgxpool.Pool) *Queries {
 	return &Queries{q: petqueries.New(pool)}
 }
 
+// WithGuardian inyecta el puerto de Identity para enriquecer pacientes.
+func (r *Queries) WithGuardian(g petapp.GuardianLookup) *Queries {
+	r.guardian = g
+	return r
+}
+
 // WithTx devuelve las consultas ligadas a la transacción (lecturas dentro del
 // UoW para read-your-writes, ARQ-003).
 func (r *Queries) WithTx(ctx context.Context) (*Queries, error) {
@@ -39,7 +49,7 @@ func (r *Queries) WithTx(ctx context.Context) (*Queries, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Queries{q: r.q.WithTx(tx)}, nil
+	return &Queries{q: r.q.WithTx(tx), guardian: r.guardian}, nil
 }
 
 // ErrPetNotFound lo devuelven GetPet y petView cuando el id no existe.
@@ -102,7 +112,7 @@ func (r *Queries) GetPet(ctx context.Context, petID uuid.UUID) (petapp.PetView, 
 	view := petapp.PetView{
 		ID: row.ID, Version: row.Version, GuardianID: row.GuardianID,
 		GuardianDisplayName: row.GuardianDisplayName,
-		Name: row.Name, Species: row.Species, SpeciesOther: pgStr(row.SpeciesOther),
+		Name:                row.Name, Species: row.Species, SpeciesOther: pgStr(row.SpeciesOther),
 		Breed: pgStr(row.Breed), Sex: row.Sex, Neutered: row.Neutered,
 		BirthDate: birthDate(row.BirthDate, row.BirthDateApproximate),
 		Markings:  pgStr(row.Markings), Microchip: pgStr(row.Microchip),
@@ -118,6 +128,13 @@ func (r *Queries) GetPet(ctx context.Context, petID uuid.UUID) (petapp.PetView, 
 	if row.DeceasedAt.Valid {
 		d := kernel.CivilDate(row.DeceasedAt.Time.Format("2006-01-02"))
 		view.DeceasedAt = &d
+	}
+	if len(row.PendingTransfer) > 0 {
+		var pt petapp.PendingTransferView
+		if err := json.Unmarshal(row.PendingTransfer, &pt); err != nil {
+			return petapp.PetView{}, err
+		}
+		view.PendingTransfer = &pt
 	}
 	for _, l := range links {
 		link := petapp.CareLinkView{
@@ -214,6 +231,104 @@ func (a *GuardianAdapter) DisplayName(ctx context.Context, id uuid.UUID) string 
 		return ""
 	}
 	return info.DisplayName
+}
+
+// Contact implementa el puerto (RN-05: el llamador ya evaluó
+// pet:guardian_contact:read).
+func (a *GuardianAdapter) Contact(ctx context.Context, id uuid.UUID) (petapp.GuardianContact, bool) {
+	info, err := a.svc.AccountInfoById(ctx, id)
+	if err != nil {
+		return petapp.GuardianContact{}, false
+	}
+	return petapp.GuardianContact{DisplayName: info.DisplayName, Email: info.Email.String(), Phone: info.Phone}, true
+}
+
+// OrganizationAdapter adapta partnernetwork.app.Queries al puerto
+// app.OrganizationLookup (DOM-010, in-process sobre el read model).
+type OrganizationAdapter struct {
+	q partnerapp.Queries
+}
+
+var _ petapp.OrganizationLookup = (*OrganizationAdapter)(nil)
+
+// NewOrganizationAdapter construye el adaptador.
+func NewOrganizationAdapter(q partnerapp.Queries) *OrganizationAdapter {
+	return &OrganizationAdapter{q: q}
+}
+
+// ActiveClinic implementa el puerto (I5).
+func (a *OrganizationAdapter) ActiveClinic(ctx context.Context, orgID uuid.UUID) (petapp.OrgSummary, error) {
+	s, err := a.q.ActiveClinic(ctx, orgID)
+	if errors.Is(err, partnerapp.ErrOrgNotEligible) {
+		return petapp.OrgSummary{}, petapp.ErrOrganizationNotEligible
+	}
+	if err != nil {
+		return petapp.OrgSummary{}, err
+	}
+	return petapp.OrgSummary{ID: s.ID, Type: s.Type, DisplayName: s.DisplayName, City: s.City, Status: s.Status}, nil
+}
+
+// ListPatients implementa la lista de pacientes de una clínica (PRD-016). El
+// teléfono del tutor se resuelve por el puerto de Identity (≤ 100 filas).
+func (r *Queries) ListPatients(ctx context.Context, orgID uuid.UUID, q, status string, cursor petapp.PatientCursor, limit int) ([]petapp.PatientRow, *petapp.PatientCursor, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	params := petqueries.ListPatientsParams{OrganizationID: orgID, Limit: int32(limit + 1)} //nolint:gosec // acotado arriba
+	if s := strings.TrimSpace(q); s != "" {
+		escaped := likeEscaper.Replace(s)
+		params.Q = &escaped
+	}
+	if status != "" && status != "all" {
+		params.Status = &status
+	}
+	if !cursor.LinkedAt.IsZero() {
+		params.GrantedAt = pgtypeTz(cursor.LinkedAt)
+		id := cursor.PetID
+		params.PetID = &id
+	}
+	rows, err := r.q.ListPatients(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	var next *petapp.PatientCursor
+	if len(rows) > limit {
+		rows = rows[:limit]
+		last := rows[len(rows)-1]
+		next = &petapp.PatientCursor{LinkedAt: last.GrantedAt.Time, PetID: last.ID}
+	}
+	out := make([]petapp.PatientRow, 0, len(rows))
+	for _, row := range rows {
+		p := petapp.PatientRow{
+			PetID: row.ID, Name: row.Name, Species: row.Species, Breed: pgStr(row.Breed), Status: row.Status,
+			BirthDate:  birthDate(row.BirthDate, row.BirthDateApproximate),
+			Photo:      photoRef(row.PhotoObjectKey, row.PhotoThumbKey, row.PhotoContentType),
+			GuardianID: row.GuardianID, GuardianDisplayName: row.GuardianDisplayName,
+			LinkedAt: row.GrantedAt.Time,
+		}
+		if r.guardian != nil {
+			if c, ok := r.guardian.Contact(ctx, row.GuardianID); ok {
+				p.GuardianPhone = c.Phone
+			}
+		}
+		out = append(out, p)
+	}
+	return out, next, nil
+}
+
+// likeEscaper escapa los comodines de ILIKE en la búsqueda del usuario.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// TransferByTokenHash resuelve una transferencia pendiente y vigente.
+func (r *Queries) TransferByTokenHash(ctx context.Context, hash []byte, now time.Time) (petapp.TransferView, error) {
+	row, err := r.q.GetPendingTransferByToken(ctx, petqueries.GetPendingTransferByTokenParams{TokenHash: hash, Now: pgtypeTz(now)})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return petapp.TransferView{}, &kernel.NotFoundError{Resource: "transfer"}
+	}
+	if err != nil {
+		return petapp.TransferView{}, err
+	}
+	return petapp.TransferView{PetID: row.PetID, ExpiresAt: row.ExpiresAt.Time}, nil
 }
 
 // helpers --------------------------------------------------------------------

@@ -51,14 +51,14 @@ type PetProfileUpdated struct {
 // Changes son los campos cambiados del perfil. nil = sin cambio; cadena
 // vacía = vaciar el campo opcional (los valores válidos nunca son vacíos).
 type Changes struct {
-	Name         *string `json:"name,omitempty"`
-	Species      *string `json:"species,omitempty"`
-	SpeciesOther *string `json:"species_other,omitempty"`
-	Breed        *string `json:"breed,omitempty"`
-	Sex          *string `json:"sex,omitempty"`
-	Neutered     *string `json:"neutered,omitempty"`
+	Name         *string           `json:"name,omitempty"`
+	Species      *string           `json:"species,omitempty"`
+	SpeciesOther *string           `json:"species_other,omitempty"`
+	Breed        *string           `json:"breed,omitempty"`
+	Sex          *string           `json:"sex,omitempty"`
+	Neutered     *string           `json:"neutered,omitempty"`
 	BirthDate    *BirthDatePayload `json:"birth_date,omitempty"`
-	Markings     *string `json:"markings,omitempty"`
+	Markings     *string           `json:"markings,omitempty"`
 }
 
 // EventName implementa eventstore.Event.
@@ -69,9 +69,9 @@ func (PetProfileUpdated) SchemaVersion() int { return 1 }
 
 // PetMicrochipAssigned incluye el anterior, si existía.
 type PetMicrochipAssigned struct {
-	PetID      uuid.UUID `json:"pet_id"`
-	Microchip  string    `json:"microchip"`
-	Previous   string    `json:"previous,omitempty"`
+	PetID     uuid.UUID `json:"pet_id"`
+	Microchip string    `json:"microchip"`
+	Previous  string    `json:"previous,omitempty"`
 }
 
 // EventName implementa eventstore.Event.
@@ -150,10 +150,10 @@ type TransferPII struct {
 
 // GuardianshipTransferInitiated: el email destino viaja solo en pii.
 type GuardianshipTransferInitiated struct {
-	PetID          uuid.UUID     `json:"pet_id"`
-	FromGuardianID uuid.UUID     `json:"from_guardian_id"`
-	ExpiresAt      time.Time     `json:"expires_at"`
-	PII            *TransferPII  `json:"pii,omitempty"`
+	PetID          uuid.UUID    `json:"pet_id"`
+	FromGuardianID uuid.UUID    `json:"from_guardian_id"`
+	ExpiresAt      time.Time    `json:"expires_at"`
+	PII            *TransferPII `json:"pii,omitempty"`
 }
 
 // EventName implementa eventstore.Event.

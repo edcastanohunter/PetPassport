@@ -1,0 +1,21 @@
+{
+  "organization_id": "01930000-0000-7000-8000-0000000000f1",
+  "type": "clinic",
+  "legal_name": "Clínica Veterinaria Sur S.A.S.",
+  "display_name": "Clínica Sur",
+  "tax_id": {
+    "country": "CO",
+    "value": "900123456-8"
+  },
+  "address": {
+    "country": "CO",
+    "city": "Medellín",
+    "line1": "Calle 10 # 20-30"
+  },
+  "contact": {
+    "email": "contacto@clinicasur.co",
+    "phone": "+573001234567"
+  },
+  "public_code": "7K3MQ2",
+  "founder_id": "01930000-0000-7000-8000-0000000000aa"
+}
