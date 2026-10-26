@@ -56,8 +56,8 @@ func (UpdatePetProfile) CommandName() string { return "petregistry.UpdatePetProf
 
 // AssignMicrochip asigna o corrige el microchip (I2 formato, I7 correcciones).
 type AssignMicrochip struct {
-	PetID      uuid.UUID
-	Microchip  string
+	PetID     uuid.UUID
+	Microchip string
 }
 
 // CommandName implementa bus.Command.
@@ -86,8 +86,8 @@ func (MarkPetDeceased) CommandName() string { return "petregistry.MarkPetDecease
 // con deceased_marked_at del read model (DAT-005); el dominio decide con las
 // banderas.
 type UndoDeceased struct {
-	PetID            uuid.UUID
-	WithinUndoWindow bool
+	PetID             uuid.UUID
+	WithinUndoWindow  bool
 	ActorIsSuperAdmin bool
 }
 

@@ -28,10 +28,10 @@ func TestPet_UnknownCommandRejected(t *testing.T) {
 
 func TestPet_RegisterValidationBranches(t *testing.T) {
 	bad := []RegisterPet{
-		{Name: "Luna", Species: "dog", Sex: "female", Neutered: "yes", Now: now},                                          // guardian nil
-		{GuardianID: guardianID, Name: "Luna", Species: "perro", Sex: "female", Neutered: "yes", Now: now},                // especie
-		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "noaplica", Neutered: "yes", Now: now},                // sexo
-		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "female", Neutered: "talvez", Now: now},               // esterilizado
+		{Name: "Luna", Species: "dog", Sex: "female", Neutered: "yes", Now: now},                            // guardian nil
+		{GuardianID: guardianID, Name: "Luna", Species: "perro", Sex: "female", Neutered: "yes", Now: now},  // especie
+		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "noaplica", Neutered: "yes", Now: now},  // sexo
+		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "female", Neutered: "talvez", Now: now}, // esterilizado
 		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "female", Neutered: "yes", Breed: ptr(repeat("b", 81)), Now: now},
 		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "female", Neutered: "yes", Markings: ptr(repeat("m", 201)), Now: now},
 		{GuardianID: guardianID, Name: "Luna", Species: "dog", Sex: "female", Neutered: "yes", BirthDate: &BirthDateInput{Date: "2030-01-01"}, Now: now},

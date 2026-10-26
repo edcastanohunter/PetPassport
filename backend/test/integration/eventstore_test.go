@@ -16,16 +16,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
-	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
+	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 )
 
 type testEvent struct {
 	Name string `json:"name"`
 }
 
-func (testEvent) EventName() string { return "TestEvent" }
+func (testEvent) EventName() string  { return "TestEvent" }
 func (testEvent) SchemaVersion() int { return 1 }
 
 func newEventStore(t *testing.T) (*eventstore.Store, *eventstore.Registry, *db.Pool, *db.UnitOfWork) {
