@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useSessionStore } from './sessionStore'
 import type { AppUserManager } from '@/shared/auth/userManager'
 import type { Me } from '@/shared/api/client'
+import { i18n, setLocale } from '@/app/i18n'
 
 const getMock = vi.fn()
 vi.mock('@/shared/api/client', async (importOriginal) => {
@@ -62,6 +63,24 @@ describe('sessionStore', () => {
     await s.login('/app/profile')
     expect(sessionStorage.getItem('pp.returnTo')).toBe('/app/profile')
     expect(f.manager.signinRedirect).toHaveBeenCalled()
+  })
+
+  it('PP-F1-FE-010 login envía ui_locales y me.locale fija idioma y <html lang>', async () => {
+    setLocale('en', false)
+    const f = fakeManager()
+    const s = useSessionStore()
+    s.init(f.manager)
+    await s.login()
+    expect(f.manager.signinRedirect).toHaveBeenCalledWith({
+      extraQueryParams: { ui_locales: 'en' },
+    })
+    await s.handleCallback()
+    getMock.mockResolvedValue({ data: { ...me, locale: 'es' } })
+    await s.loadMe()
+    expect(i18n.global.locale.value).toBe('es')
+    expect(document.documentElement.lang).toBe('es')
+    s.setMe({ ...me, locale: 'en' })
+    expect(document.documentElement.lang).toBe('en')
   })
 
   it('handleCallback restaura returnTo y loadMe carga /me', async () => {

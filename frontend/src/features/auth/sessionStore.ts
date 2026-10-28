@@ -3,6 +3,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { User } from 'oidc-client-ts'
 import { api, ApiError, setTokenProvider, type Me } from '@/shared/api/client'
 import type { AppUserManager } from '@/shared/auth/userManager'
+import { currentLocale, setLocale } from '@/app/i18n'
 
 const RETURN_TO_KEY = 'pp.returnTo'
 
@@ -59,7 +60,8 @@ export const useSessionStore = defineStore('session', () => {
   async function login(returnTo = '/app') {
     if (!manager.value) throw new Error('session no inicializada')
     sessionStorage.setItem(RETURN_TO_KEY, returnTo)
-    await manager.value.signinRedirect()
+    // ui_locales: login, registro y correos de Keycloak en el idioma de la SPA (FE-010, IAM-012).
+    await manager.value.signinRedirect({ extraQueryParams: { ui_locales: currentLocale() } })
   }
 
   /** Procesa /auth/callback y devuelve la ruta a la que volver. */
@@ -94,6 +96,7 @@ export const useSessionStore = defineStore('session', () => {
       const { data } = await api().GET('/me')
       me.value = data ?? null
       consentOutdated.value = !!data?.consent_outdated
+      if (data) setLocale(data.locale)
       return me.value
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) user.value = null
@@ -106,6 +109,7 @@ export const useSessionStore = defineStore('session', () => {
   function setMe(value: Me) {
     me.value = value
     consentOutdated.value = value.consent_outdated
+    setLocale(value.locale)
   }
 
   return {

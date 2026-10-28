@@ -6,7 +6,7 @@ import 'primeicons/primeicons.css'
 
 import App from './app/App.vue'
 import { createAppRouter } from './app/router'
-import { i18n } from './app/i18n'
+import { currentLocale, i18n, setLocale } from './app/i18n'
 import { loadRuntimeConfig } from './shared/config/runtime'
 import { createUserManager } from './shared/auth/userManager'
 import { onApiError } from './shared/api/client'
@@ -16,6 +16,7 @@ import './app/styles.css'
 // Arranque: la configuración de runtime se carga antes de montar (docs/phase-1/07 §9).
 async function bootstrap() {
   const config = await loadRuntimeConfig()
+  setLocale(currentLocale(), false) // <html lang> desde el arranque (FE-010)
   const app = createApp(App)
   const pinia = createPinia()
   const router = createAppRouter()

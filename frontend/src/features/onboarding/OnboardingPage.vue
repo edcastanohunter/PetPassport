@@ -5,13 +5,14 @@ import { useI18n } from 'vue-i18n'
 import { api, ApiError, type LegalCurrent } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { returnToFrom } from '@/app/router/guards'
-import { COUNTRIES } from '@/shared/i18n/countries'
+import { countries } from '@/shared/i18n/countries'
 import FieldError from '@/shared/ui/FieldError.vue'
 
 // Onboarding en 3 pasos (FE-005, PRD-003, PRD-020): consentimiento → datos
 // básicos → elección de camino: "Soy tutor" va a /app y "Registrar
 // organización" al asistente /org/new (M1.3, FE-007).
 const { t, locale } = useI18n()
+const COUNTRIES = computed(() => countries(locale.value))
 const router = useRouter()
 const route = useRoute()
 const session = useSessionStore()
@@ -80,7 +81,6 @@ async function submit(target?: string) {
     })
     if (data) {
       session.setMe(data)
-      locale.value = data.locale
     }
     await router.replace(target ?? returnToFrom(route))
   } catch (e) {
@@ -185,7 +185,7 @@ async function submit(target?: string) {
           required
           autocomplete="name"
         />
-        <FieldError :code="fieldErrors.display_name" />
+        <FieldError field="display_name" :code="fieldErrors.display_name" />
       </div>
       <div>
         <label for="country" class="label">{{ t('profile.country') }}</label>
@@ -193,13 +193,13 @@ async function submit(target?: string) {
           <option value="" disabled>{{ t('common.select') }}</option>
           <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
         </select>
-        <FieldError :code="fieldErrors.country" />
+        <FieldError field="country" :code="fieldErrors.country" />
       </div>
       <div>
         <label for="locale" class="label">{{ t('profile.locale') }}</label>
         <select id="locale" v-model="form.locale" class="input">
-          <option value="es">Español</option>
-          <option value="en">English</option>
+          <option value="es" lang="es">Español</option>
+          <option value="en" lang="en">English</option>
         </select>
       </div>
       <div>
@@ -215,7 +215,7 @@ async function submit(target?: string) {
           placeholder="+57 300 123 4567"
           autocomplete="tel"
         />
-        <FieldError :code="fieldErrors.phone" />
+        <FieldError field="phone" :code="fieldErrors.phone" />
       </div>
       <div class="flex justify-between">
         <button type="button" class="btn-secondary" @click="back">{{ t('common.back') }}</button>

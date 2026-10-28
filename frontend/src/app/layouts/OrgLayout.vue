@@ -6,6 +6,8 @@ import { useSessionStore } from '@/features/auth/sessionStore'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
 import ConsentDialog from '@/features/onboarding/ConsentDialog.vue'
 import AppFooter from '@/shared/ui/AppFooter.vue'
+import SkipLink from '@/shared/ui/SkipLink.vue'
+import ContextSwitcher from '@/shared/ui/ContextSwitcher.vue'
 
 // Layout Org (FE-004/FE-007): selector de contexto (Mis mascotas + una
 // entrada por organización + Administración) y navegación de la organización
@@ -45,6 +47,7 @@ const sections = computed(() => {
   <div
     class="flex min-h-screen flex-col bg-surface-0 text-surface-900 dark:bg-surface-950 dark:text-surface-0"
   >
+    <SkipLink />
     <header class="no-print border-b border-surface-200 dark:border-surface-800">
       <nav
         class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3"
@@ -52,13 +55,7 @@ const sections = computed(() => {
       >
         <div class="flex items-center gap-4">
           <RouterLink to="/app" class="text-lg font-semibold">PetPassport</RouterLink>
-          <ul class="hidden gap-3 text-sm sm:flex" data-testid="context-switcher">
-            <li v-for="c in contexts" :key="c.to">
-              <RouterLink :to="c.to" class="hover:underline" active-class="font-semibold">{{
-                c.label
-              }}</RouterLink>
-            </li>
-          </ul>
+          <ContextSwitcher :items="contexts" />
         </div>
         <ul class="flex items-center gap-3 text-sm">
           <li>
@@ -90,7 +87,7 @@ const sections = computed(() => {
         </ul>
       </nav>
     </header>
-    <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+    <main id="main" tabindex="-1" class="outline-none mx-auto w-full max-w-6xl flex-1 px-4 py-6">
       <slot />
     </main>
     <AppFooter />

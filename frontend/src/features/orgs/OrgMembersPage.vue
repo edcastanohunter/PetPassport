@@ -284,7 +284,7 @@ function revoke(id: string) {
         <div>
           <label class="label" for="invite-email">{{ t('orgs.members.email') }}</label>
           <input id="invite-email" v-model="invite.email" type="email" class="input" />
-          <FieldError :code="inviteErrors.email" />
+          <FieldError field="invite-email" :code="inviteErrors.email" />
         </div>
         <div>
           <label class="label" for="invite-role">{{ t('orgs.members.role') }}</label>
@@ -292,7 +292,7 @@ function revoke(id: string) {
             <option value="" disabled>{{ t('common.select') }}</option>
             <option v-for="r in roles" :key="r" :value="r">{{ t(`orgs.role.${r}`) }}</option>
           </select>
-          <FieldError :code="inviteErrors.role" />
+          <FieldError field="invite-role" :code="inviteErrors.role" />
         </div>
         <button type="submit" class="btn-primary" :disabled="busy" data-testid="send-invitation">
           {{ t('orgs.invitations.send') }}

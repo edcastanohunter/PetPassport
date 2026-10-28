@@ -115,7 +115,7 @@ onMounted(() => load())
 
     <p v-if="!store.audit.length" class="text-surface-500">{{ t('admin.audit.empty') }}</p>
     <div v-else class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
+      <table class="table-cards w-full text-left text-sm">
         <thead class="text-surface-500">
           <tr>
             <th class="py-2">{{ t('admin.audit.when') }}</th>
@@ -132,19 +132,21 @@ onMounted(() => load())
             class="border-t border-surface-200 align-top dark:border-surface-700"
             data-testid="audit-row"
           >
-            <td class="py-2 whitespace-nowrap">{{ d(new Date(e.occurred_at), 'long') }}</td>
-            <td class="font-mono text-xs">{{ e.action }}</td>
-            <td class="font-mono text-xs">
+            <td class="py-2 whitespace-nowrap" :data-label="t('admin.audit.when')">
+              {{ d(new Date(e.occurred_at), 'long') }}
+            </td>
+            <td class="font-mono text-xs" :data-label="t('admin.audit.action')">{{ e.action }}</td>
+            <td class="font-mono text-xs" :data-label="t('admin.audit.actor')">
               {{ e.actor_id ?? t('admin.audit.system') }}
               <span v-if="e.actor_roles.length" class="block text-surface-500">{{
                 e.actor_roles.join(', ')
               }}</span>
             </td>
-            <td class="font-mono text-xs">
+            <td class="font-mono text-xs" :data-label="t('admin.audit.target')">
               <span v-if="e.target_type" class="block text-surface-500">{{ e.target_type }}</span>
               {{ e.target_id ?? '—' }}
             </td>
-            <td>{{ e.reason ?? '—' }}</td>
+            <td :data-label="t('admin.audit.reason')">{{ e.reason ?? '—' }}</td>
           </tr>
         </tbody>
       </table>

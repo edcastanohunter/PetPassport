@@ -7,7 +7,10 @@
     "logout": "Sign out",
     "myPets": "My pets",
     "admin": "Administration",
-    "profile": "My profile"
+    "profile": "My profile",
+    "menu": "Menu",
+    "language": "Language",
+    "skipToContent": "Skip to content"
   },
   "common": {
     "loading": "Loading…",
@@ -28,7 +31,8 @@
   "legal": {
     "terms": "Terms of service",
     "privacy": "Privacy policy",
-    "version": "Version"
+    "version": "Version",
+    "pendingReview": "This text is under legal review. The final version will be published before the pilot opens."
   },
   "auth": {
     "signingIn": "Signing in…",
