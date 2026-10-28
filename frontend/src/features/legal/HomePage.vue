@@ -22,7 +22,7 @@ onMounted(async () => {
     <p class="text-lg text-surface-500">{{ t('home.subtitle') }}</p>
     <p class="text-sm" data-testid="api-status">
       {{ t('home.status') }}:
-      <span :class="apiStatus === 'ok' ? 'text-green-600' : 'text-red-600'">{{ apiStatus }}</span>
+      <span :class="apiStatus === 'ok' ? 'text-green-700' : 'text-red-700'">{{ apiStatus }}</span>
     </p>
   </section>
 </template>

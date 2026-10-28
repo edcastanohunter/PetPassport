@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { createPet, expectAccessible, signIn } from '../support/app'
-import { runId, uniqueEmail } from '../support/env'
+import { runTag, uniqueEmail } from '../support/env'
 import { createUser } from '../support/keycloak'
 import { waitForLink } from '../support/mailpit'
 
@@ -8,7 +8,7 @@ import { waitForLink } from '../support/mailpit'
 test('PP-F1-QA-005 flujo 5: transferencia de tutela con aceptación', async ({ browser }) => {
   const from = await createUser(uniqueEmail('from'), 'Lucía')
   const to = await createUser(uniqueEmail('to'), 'Pedro')
-  const petName = `Nala ${runId.slice(0, 4)}`
+  const petName = `Nala ${runTag}`
 
   const fromPage = await (await browser.newContext()).newPage()
   await signIn(fromPage, from)

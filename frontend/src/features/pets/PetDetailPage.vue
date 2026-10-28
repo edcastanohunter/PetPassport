@@ -225,7 +225,7 @@ function undoDeceased() {
           <button
             v-if="pet.photo"
             type="button"
-            class="rounded-lg px-3 py-1.5 text-sm text-red-600 dark:text-red-400"
+            class="rounded-lg px-3 py-1.5 text-sm text-red-700 dark:text-red-400"
             :disabled="busy"
             @click="removePhoto"
           >
@@ -315,7 +315,7 @@ function undoDeceased() {
           />
           <button
             type="submit"
-            class="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white"
+            class="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white"
             :disabled="busy"
           >
             {{ t('common.save') }}
@@ -323,7 +323,7 @@ function undoDeceased() {
           <button type="button" class="text-sm text-surface-500" @click="editingMicrochip = false">
             {{ t('common.cancel') }}
           </button>
-          <p v-if="microchipError" class="w-full text-sm text-red-600 dark:text-red-400">
+          <p v-if="microchipError" class="w-full text-sm text-red-700 dark:text-red-400">
             {{ microchipError }}
           </p>
           <p v-if="pet.microchip" class="w-full text-xs text-surface-500">

@@ -327,7 +327,7 @@ async function reload() {
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-lg bg-green-600 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
+          class="rounded-lg bg-green-700 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-800 disabled:opacity-50"
           data-testid="submit-pet"
         >
           {{ saving ? t('common.saving') : t('common.save') }}

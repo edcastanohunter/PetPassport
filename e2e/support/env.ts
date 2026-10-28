@@ -12,6 +12,9 @@ export const env = {
 /** Sufijo único por ejecución: los flujos no dependen de datos previos. */
 export const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
+// Sufijo solo con letras para campos que las reglas de nombre restringen (PRD-002).
+export const runTag = runId.replace(/[0-9]/g, (d) => 'abcdefghij'[Number(d)]!).slice(-6)
+
 export function uniqueEmail(role: string) {
   return `e2e-${role}-${runId}@e2e.petpassport.local`
 }

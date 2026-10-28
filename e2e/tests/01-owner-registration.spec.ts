@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { completeOnboarding, createPet, expectAccessible } from '../support/app'
-import { env, runId, uniqueEmail } from '../support/env'
+import { env, runTag, uniqueEmail } from '../support/env'
 import { waitForLink } from '../support/mailpit'
 
 // PP-F1-QA-005 flujo 1: registro de tutor → verificación por email (Mailpit) →
 // onboarding → crear mascota → verla en la lista.
 test('PP-F1-QA-005 flujo 1: registro de tutor hasta su primera mascota', async ({ page }) => {
   const email = uniqueEmail('owner')
-  const petName = `Luna ${runId.slice(0, 4)}`
+  const petName = `Luna ${runTag}`
 
   await page.goto('/')
   await expectAccessible(page, 'home')

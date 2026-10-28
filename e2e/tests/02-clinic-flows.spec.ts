@@ -6,7 +6,7 @@ import {
   loginConfiguringTotp,
   signIn,
 } from '../support/app'
-import { runId, uniqueEmail } from '../support/env'
+import { runId, runTag, uniqueEmail } from '../support/env'
 import { createUser, type TestUser } from '../support/keycloak'
 import { waitForLink } from '../support/mailpit'
 
@@ -123,7 +123,7 @@ test('PP-F1-QA-005 flujo 4: vincular mascota por código, ver como clínica y re
   test.skip(!publicCode || !vetPage, 'requiere los flujos 2 y 3')
   const owner = await createUser(uniqueEmail('linkowner'), 'Marta')
   const ownerPage = await newPage(browser)
-  const petName = `Toby ${runId.slice(0, 4)}`
+  const petName = `Toby ${runTag}`
 
   await signIn(ownerPage, owner, { phone: ownerPhone })
   await createPet(ownerPage, petName)
