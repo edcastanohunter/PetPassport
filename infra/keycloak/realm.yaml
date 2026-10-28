@@ -237,7 +237,9 @@ clients:
       pkce.code.challenge.method: S256
       post.logout.redirect.uris: "$(env:PP_WEB_ORIGIN)/auth/logout##$(env:PP_WEB_ORIGIN_DEV)/auth/logout"
       access.token.lifespan: "300"
-    defaultClientScopes: [openid, profile, email, roles, petpassport-api-audience]
+    # basic aporta sub y auth_time desde Keycloak 25 (sin él la API rechaza el token: "sin sub").
+    # `openid` no es un client scope: es el valor de `scope` que pide la SPA.
+    defaultClientScopes: [basic, profile, email, roles, petpassport-api-audience]
     optionalClientScopes: []
 
   - clientId: petpassport-api
@@ -265,6 +267,12 @@ clients:
     directAccessGrantsEnabled: false
     serviceAccountsEnabled: true
     fullScopeAllowed: false
+
+# Con fullScopeAllowed=false solo viajan en realm_access.roles los roles mapeados aquí;
+# sin este mapeo la API nunca ve super_admin ni pet_owner (global_roles vacío).
+scopeMappings:
+  - client: petpassport-web
+    roles: [pet_owner, super_admin]
 
 # Roles de realm-management de la service account (solo lo necesario, IAM-011).
 users:
