@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, ApiError, type Organization } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
-import { COUNTRIES } from '@/shared/i18n/countries'
+import { countries } from '@/shared/i18n/countries'
 import { organizationFormSchema, type OrganizationForm } from '@/shared/validation/schemas'
 import FieldError from '@/shared/ui/FieldError.vue'
 import { useOrgStore } from './orgStore'
@@ -12,7 +12,8 @@ import { useOrgStore } from './orgStore'
 // Ajustes de organización (FE-007, PRD-012): edición del perfil con If-Match.
 // Aviso: cambiar razón social o identificación fiscal de una organización
 // verificada la devuelve a pending_verification.
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const COUNTRIES = computed(() => countries(locale.value))
 const route = useRoute()
 const session = useSessionStore()
 const store = useOrgStore()
@@ -180,12 +181,12 @@ async function save() {
       <div>
         <label class="label" for="set-display">{{ t('orgs.form.displayName') }}</label>
         <input id="set-display" v-model="form.display_name" maxlength="80" class="input" />
-        <FieldError :code="fieldErrors['display_name']" />
+        <FieldError field="set-display" :code="fieldErrors['display_name']" />
       </div>
       <div>
         <label class="label" for="set-legal">{{ t('orgs.form.legalName') }}</label>
         <input id="set-legal" v-model="form.legal_name" maxlength="120" class="input" />
-        <FieldError :code="fieldErrors['legal_name']" />
+        <FieldError field="set-legal" :code="fieldErrors['legal_name']" />
       </div>
       <div class="grid grid-cols-3 gap-3">
         <div>
@@ -202,7 +203,7 @@ async function save() {
             maxlength="32"
             class="input font-mono"
           />
-          <FieldError :code="fieldErrors['tax_value']" />
+          <FieldError field="set-tax-value" :code="fieldErrors['tax_value']" />
         </div>
       </div>
       <p
@@ -217,7 +218,7 @@ async function save() {
         <div>
           <label class="label" for="set-city">{{ t('orgs.form.city') }}</label>
           <input id="set-city" v-model="form.address.city" maxlength="120" class="input" />
-          <FieldError :code="fieldErrors['address.city']" />
+          <FieldError field="set-city" :code="fieldErrors['address.city']" />
         </div>
         <div>
           <label class="label" for="set-region">{{ t('orgs.form.region') }}</label>
@@ -227,18 +228,18 @@ async function save() {
       <div>
         <label class="label" for="set-line1">{{ t('orgs.form.line1') }}</label>
         <input id="set-line1" v-model="form.address.line1" maxlength="200" class="input" />
-        <FieldError :code="fieldErrors['address.line1']" />
+        <FieldError field="set-line1" :code="fieldErrors['address.line1']" />
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="label" for="set-email">{{ t('orgs.form.email') }}</label>
           <input id="set-email" v-model="form.contact.email" type="email" class="input" />
-          <FieldError :code="fieldErrors['contact.email']" />
+          <FieldError field="set-email" :code="fieldErrors['contact.email']" />
         </div>
         <div>
           <label class="label" for="set-phone">{{ t('orgs.form.phone') }}</label>
           <input id="set-phone" v-model="form.contact.phone" type="tel" class="input" />
-          <FieldError :code="fieldErrors['contact.phone']" />
+          <FieldError field="set-phone" :code="fieldErrors['contact.phone']" />
         </div>
       </div>
       <div>
@@ -246,7 +247,7 @@ async function save() {
           >{{ t('orgs.form.website') }} ({{ t('common.optional') }})</label
         >
         <input id="set-web" v-model="form.contact.website" type="url" class="input" />
-        <FieldError :code="fieldErrors['contact.website']" />
+        <FieldError field="set-web" :code="fieldErrors['contact.website']" />
       </div>
       <button type="submit" class="btn-primary" :disabled="saving" data-testid="save-org">
         {{ saving ? t('common.saving') : t('common.save') }}

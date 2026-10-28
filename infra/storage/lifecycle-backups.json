@@ -1,0 +1,11 @@
+{
+  "Rules": [
+    {
+      "ID": "es-events-weekly-26w",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "es-events/" },
+      "Expiration": { "Days": 182 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 }
+    }
+  ]
+}

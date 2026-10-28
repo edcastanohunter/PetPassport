@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import AppFooter from '@/shared/ui/AppFooter.vue'
+import SkipLink from '@/shared/ui/SkipLink.vue'
 
 // Layout Admin (FE-004/FE-009): consola de super_admin con organizaciones,
 // usuarios y auditoría. El guard exige requiresGlobalRole('super_admin') y el
@@ -20,6 +21,7 @@ const sections = [
   <div
     class="flex min-h-screen flex-col bg-surface-0 text-surface-900 dark:bg-surface-950 dark:text-surface-0"
   >
+    <SkipLink />
     <header class="border-b border-surface-200 dark:border-surface-800">
       <nav
         class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3"
@@ -56,7 +58,7 @@ const sections = [
         </ul>
       </nav>
     </header>
-    <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+    <main id="main" tabindex="-1" class="outline-none mx-auto w-full max-w-6xl flex-1 px-4 py-6">
       <slot />
     </main>
     <AppFooter />

@@ -1,0 +1,12 @@
+# Domingo 03:00 UTC (valle de tráfico). Persistent: si la VM estaba apagada, se
+# ejecuta al arrancar.
+[Unit]
+Description=PetPassport: exportación semanal de es.events
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

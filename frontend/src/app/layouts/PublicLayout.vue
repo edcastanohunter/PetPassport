@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import AppFooter from '@/shared/ui/AppFooter.vue'
+import SkipLink from '@/shared/ui/SkipLink.vue'
 const { t } = useI18n()
 const session = useSessionStore()
 </script>
@@ -10,6 +11,7 @@ const session = useSessionStore()
   <div
     class="min-h-screen flex flex-col bg-surface-0 text-surface-900 dark:bg-surface-950 dark:text-surface-0"
   >
+    <SkipLink />
     <header class="border-b border-surface-200 dark:border-surface-800">
       <nav
         class="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between"
@@ -39,7 +41,7 @@ const session = useSessionStore()
         </ul>
       </nav>
     </header>
-    <main id="main" class="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
+    <main id="main" tabindex="-1" class="outline-none flex-1 mx-auto w-full max-w-5xl px-4 py-8">
       <slot />
     </main>
     <AppFooter />

@@ -214,12 +214,10 @@ async function reload() {
           maxlength="60"
           required
           class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-surface-600 dark:bg-surface-800"
-          :aria-describedby="fieldErrors['name'] ? 'pet-name-error' : undefined"
         />
         <FieldError
-          v-if="fieldErrors['name']"
-          id="pet-name-error"
-          :message="t(`pets.form.nameError`)"
+          field="pet-name"
+          :message="fieldErrors['name'] ? t('pets.form.nameError') : undefined"
         />
       </div>
 
@@ -248,8 +246,8 @@ async function reload() {
             class="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 dark:border-surface-600 dark:bg-surface-800"
           />
           <FieldError
-            v-if="fieldErrors['species_other']"
-            :message="t('pets.form.speciesOtherError')"
+            field="pet-species-other"
+            :message="fieldErrors['species_other'] ? t('pets.form.speciesOtherError') : undefined"
           />
         </div>
       </div>
@@ -294,8 +292,10 @@ async function reload() {
         <legend class="block text-sm font-medium">{{ t('pets.form.birthDate') }}</legend>
         <div class="flex items-center gap-3">
           <input
+            id="pet-birth-date"
             v-model="birthDate"
             type="date"
+            :aria-label="t('pets.form.birthDate')"
             :max="civilToday()"
             class="rounded-lg border border-surface-300 px-3 py-2 dark:border-surface-600 dark:bg-surface-800"
           />
@@ -305,8 +305,8 @@ async function reload() {
           </label>
         </div>
         <FieldError
-          v-if="fieldErrors['birth_date.date']"
-          :message="t('pets.form.birthDateError')"
+          field="pet-birth-date"
+          :message="fieldErrors['birth_date.date'] ? t('pets.form.birthDateError') : undefined"
         />
       </fieldset>
 
@@ -327,7 +327,7 @@ async function reload() {
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-lg bg-green-600 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
+          class="rounded-lg bg-green-700 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-800 disabled:opacity-50"
           data-testid="submit-pet"
         >
           {{ saving ? t('common.saving') : t('common.save') }}

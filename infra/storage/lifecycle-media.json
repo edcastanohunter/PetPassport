@@ -1,0 +1,16 @@
+{
+  "Rules": [
+    {
+      "ID": "media-old-photo-versions-30d",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "pets/" },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 }
+    },
+    {
+      "ID": "media-expired-delete-markers",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "Expiration": { "ExpiredObjectDeleteMarker": true }
+    }
+  ]
+}

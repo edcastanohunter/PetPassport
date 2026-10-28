@@ -23,7 +23,7 @@
 | PP-F1-PRD-016 | PRD | Lista de pacientes y ficha (clínica, solo lectura) | MUST | M1.3 | IMPLEMENTADO | | #9 | GET /organizations/{id}/patients (q ILIKE escapado + cursor) y /patients/{pet} con guardian_contact; org suspendida → 403 ORGANIZATION_SUSPENDED. FE: PatientsPage/PatientDetailPage. |
 | PP-F1-PRD-017 | PRD | SuperAdmin: verificación, rechazo, suspensión de organizaciones | MUST | M1.4 | IMPLEMENTADO | | #10 | Cola de verificación FIFO + verificar/rechazar/suspender/reactivar con motivo (≥10; opcional en verificar) y audit_log en la misma tx; FE /admin/organizations. |
 | PP-F1-PRD-018 | PRD | SuperAdmin: buscar y suspender usuarios | MUST | M1.4 | IMPLEMENTADO | | #10 | Búsqueda (email/nombre, ILIKE escapado, cursor) y suspender/reactivar con motivo: plataforma primero, luego Keycloak (503 si falla, reintento idempotente); auto-suspensión prohibida. |
-| PP-F1-PRD-019 | PRD | i18n es/en, responsive, accesibilidad | SHOULD | M1.5 | PENDIENTE | | | |
+| PP-F1-PRD-019 | PRD | i18n es/en, responsive, accesibilidad | SHOULD | M1.5 | IMPLEMENTADO | | #11 | Selector de idioma (pie) con locale de perfil; ui_locales a Keycloak; navegación móvil; E2E 5 flujos + axe AA en verde (dev). |
 | PP-F1-PRD-020 | PRD | Páginas legales y consentimiento versionado | MUST | M1.1 | IMPLEMENTADO | | #7 | identity.consent_versions con semilla 2026-10-draft; GET /legal/current; modal de re-consentimiento. |
 | PP-F1-DOM-001 | DOM | Glosario / lenguaje ubicuo aplicado en código | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-DOM-002 | DOM | Context map F1 como módulos aislados | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
@@ -60,7 +60,7 @@
 | PP-F1-IAM-009 | IAM | Aprovisionamiento JIT de UserAccount | MUST | M1.1 | IMPLEMENTADO | | #7 | identity/app.Service.Resolve: upsert JIT, throttle 5 min en memoria. |
 | PP-F1-IAM-010 | IAM | Modelo de autorización (paquete authz) | MUST | M1.2 | IMPLEMENTADO | | #8 | authz: políticas de pets (G/L/A) deny-by-default; métricas authz_decisions_total/authz_denied_total; sonda para cobertura de rutas (SEC-005 M1.3).
 | PP-F1-IAM-011 | IAM | Service account para operaciones admin | SHOULD | M1.4 | IMPLEMENTADO | | #10 | keycloakadmin: client credentials con caché (renueva 60 s antes), reintento ante 401; SetEnabled, logout, send-verify-email. |
-| PP-F1-IAM-012 | IAM | Tema de login, SMTP y localización | SHOULD | M1.5 | PENDIENTE | | | |
+| PP-F1-IAM-012 | IAM | Tema de login, SMTP y localización | SHOULD | M1.5 | IMPLEMENTADO | | #11 | Tema petpassport login/email es/en; SMTP autenticado por env; SPF/DKIM/DMARC en Terraform Cloudflare. Pendiente ops: credenciales SMTP reales y apply DNS en staging (RUNBOOK §13). |
 | PP-F1-IAM-013 | IAM | Cierre de sesión | MUST | M1.1 | IMPLEMENTADO | | #7 | signoutRedirect con id_token_hint; /auth/logout limpia estado. |
 | PP-F1-API-001 | API | Convenciones REST | MUST | M1.1 | IMPLEMENTADO | | #7 | Convenciones aplicadas en /me*; validación de contrato en tests. |
 | PP-F1-API-002 | API | OpenAPI 3.1 fuente + generación + oasdiff | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
@@ -81,7 +81,7 @@
 | PP-F1-DAT-006 | DAT | DDL read_partnernetwork + reservas | MUST | M1.3 | IMPLEMENTADO | | #9 | Migración 000006: organizations, org_members, invitations (+ventana de reenvíos), public_code_reservations; tax_id único por índice; proyector idempotente (rebuild en test/integration/orgs_test.go). |
 | PP-F1-DAT-007 | DAT | DDL platform (idempotencia, auditoría, checkpoints) | MUST | M1.1 | IMPLEMENTADO | | #7 | Migración 20261020000003 (idempotency_keys, audit_log, projection_checkpoints). |
 | PP-F1-DAT-008 | DAT | Convenciones de datos | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
-| PP-F1-DAT-009 | DAT | Backups y retención | MUST | M1.5 | PENDIENTE | | | |
+| PP-F1-DAT-009 | DAT | Backups y retención | MUST | M1.5 | IMPLEMENTADO | | #11 | cmd/backup export/verify/import de es.events (JSONL gzip + manifest sha256), timer semanal, lifecycle de buckets, RUNBOOK §9. Ensayo dev en RESTORE-LOG; pendiente ops: PITR del proveedor y simulacro mensual en staging. |
 | PP-F1-FE-001 | FE | Scaffold Vue 3 + stack | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-FE-002 | FE | Autenticación OIDC PKCE en SPA | MUST | M1.1 | IMPLEMENTADO | | #7 | shared/auth/userManager + features/auth/sessionStore. |
 | PP-F1-FE-003 | FE | Cliente API tipado y manejo de errores | MUST | M1.1 | IMPLEMENTADO | | #7 | ApiError + onApiError; Idempotency-Key la aporta useCommand en M1.2. |
@@ -91,9 +91,9 @@
 | PP-F1-FE-007 | FE | Pantallas de organización | MUST | M1.3 | IMPLEMENTADO | | #9 | Registro (wizard), resumen con código copiable/imprimible, miembros/invitaciones, ajustes, aceptar invitación; OrgLayout con navegación por rol/tipo; guards requiresOrgType/requiresOrgRole. |
 | PP-F1-FE-008 | FE | Pacientes (clínica) y vínculos (tutor) | MUST | M1.3 | IMPLEMENTADO | | #9 | Vínculos y transferencia en la ficha del tutor; lista de pacientes (búsqueda, cursor, tel:) y ficha de solo lectura; aviso de org suspendida sin llamar a la API. |
 | PP-F1-FE-009 | FE | Administración | MUST | M1.4 | IMPLEMENTADO | | #10 | Organizaciones (pestañas, detalle con fundador, modal de motivo), usuarios (roles, membresías, mascotas) y auditoría (filtros, cursor); rutas requiresGlobalRole super_admin. |
-| PP-F1-FE-010 | FE | i18n, accesibilidad y responsive | SHOULD | M1.5 | PENDIENTE | | | |
+| PP-F1-FE-010 | FE | i18n, accesibilidad y responsive | SHOULD | M1.5 | IMPLEMENTADO | | #11 | i18n completa con test de paridad; FieldError aria-*; skip link y foco en #main; tablas responsive; contraste AA validado con axe en E2E. |
 | PP-F1-FE-011 | FE | Validación zod espejo de VOs con fixture compartido | MUST | M1.2 | IMPLEMENTADO | | #8 | shared/validation/schemas.ts (zod) + validation-cases.spec.ts ejecutando el fixture de Go.
-| PP-F1-FE-012 | FE | Observabilidad en cliente | COULD | M1.5 | PENDIENTE | | | |
+| PP-F1-FE-012 | FE | Observabilidad en cliente | COULD | M1.5 | PENDIENTE | | | Aplazado: el endpoint de eventos de cliente es F2 y Sentry sería dependencia nueva sin ADR. |
 | PP-F1-SEC-001 | SEC | WAF gestionado y rate limiting en el borde | MUST | M1.4 | EN_PROGRESO | | #10 | Código listo: Terraform Cloudflare (OWASP+Managed log→block, rate limits, X-Origin-Auth) y Traefik de origen cerrado con todos los límites SEC-001. Pendiente: aprovisionar (dominio/cuenta) y pasar a block tras 1 semana. |
 | PP-F1-SEC-002 | SEC | Traefik: routers, middlewares, timeouts | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-SEC-003 | SEC | Cabeceras de seguridad y CORS | MUST | M1.1 | IMPLEMENTADO | | #7 | CSP en nginx.conf y Traefik; CORS en API desde M1.0. |
@@ -113,12 +113,12 @@
 | PP-F1-INF-006 | INF | Despliegue en staging y runbook | MUST | M1.4 | EN_PROGRESO | | #10 | deploy.sh (pull, migrate, realm, up --wait, smoke PKCE, rollback automático, anotación) + RUNBOOK/RESTORE-LOG. Pendiente: VM real, primer despliegue y ensayo por alguien distinto del autor. |
 | PP-F1-INF-007 | INF | Observabilidad: logs, trazas, métricas, dashboards, alertas | MUST | M1.4 | IMPLEMENTADO | | #10 | Dashboards API overview/Event Store/Auth & Authz/Keycloak; 6 alertas con pruebas promtool; Loki+Alloy; métricas commands/projection/idempotency añadidas. |
 | PP-F1-INF-008 | INF | Health checks y apagado ordenado | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
-| PP-F1-INF-009 | INF | PostgreSQL y storage gestionados con backups | MUST | M1.5 | PENDIENTE | | | |
+| PP-F1-INF-009 | INF | PostgreSQL y storage gestionados con backups | MUST | M1.5 | IMPLEMENTADO | | #11 | staging.env exige PG gestionado sslmode=verify-full (API, migrator, backup, Keycloak); MinIO/S3 versionado + ILM (30 d no actuales); alertas >80% en RUNBOOK §9.1. Pendiente ops: aprovisionar y registrar simulacro en RESTORE-LOG. |
 | PP-F1-QA-001 | QA | Estrategia de pruebas | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-QA-002 | QA | Harness Given/When/Then de dominio | MUST | M1.2 | IMPLEMENTADO | | #8 | shared/testkit Scenario Given/When/Then; todas las invariantes I1–I8 con prueba nombrada.
 | PP-F1-QA-003 | QA | Integración con testcontainers, concurrencia y rebuild | MUST | M1.2 | IMPLEMENTADO | | #8 | testcontainers: concurrencia del store (1 ganador por versión), microchip_reservations, rebuild idempotente, flujo HTTP con contrato.
 | PP-F1-QA-004 | QA | Pruebas de contrato OpenAPI | MUST | M1.1 | IMPLEMENTADO | | #7 | testkit.Contract (openapi3filter) en pruebas HTTP e integración. |
-| PP-F1-QA-005 | QA | E2E Playwright de flujos críticos | MUST | M1.5 | PENDIENTE | | | |
+| PP-F1-QA-005 | QA | E2E Playwright de flujos críticos | MUST | M1.5 | IMPLEMENTADO | | #11 | e2e/ Playwright: 5 flujos críticos con axe; workflow nightly e2e.yml; k6 50 VUs en tests/load (pendiente correr en staging). |
 | PP-F1-QA-006 | QA | Umbrales y quality gates | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-QA-007 | QA | Convenciones de trabajo y revisión | MUST | M1.0 | IMPLEMENTADO | | #6 |  |
 | PP-F1-QA-008 | QA | Definition of Done | MUST | M1.0 | IMPLEMENTADO | | #6 |  |

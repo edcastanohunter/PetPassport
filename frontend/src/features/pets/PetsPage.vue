@@ -33,7 +33,7 @@ function open(id: string) {
       <h1 class="text-2xl font-bold">{{ t('pets.listTitle') }}</h1>
       <button
         type="button"
-        class="rounded-lg bg-green-600 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-700"
+        class="rounded-lg bg-green-700 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-green-800"
         data-testid="new-pet"
         @click="router.push({ name: 'pet-new' })"
       >

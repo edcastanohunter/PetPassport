@@ -8,7 +8,8 @@ públicos son `app.`, `api.` y `auth.` bajo ese dominio.
 > §9 antes de M1.5 y anota el resultado al final del documento.
 
 Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
-§7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto.
+§7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto ·
+§13 Correo.
 
 ## 1. Preparación de la VM (una vez)
 
@@ -152,14 +153,75 @@ Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con u
 
 ## 9. Backups y restauración (INF-009, DAT-009)
 
-- PostgreSQL gestionado: backups automáticos con PITR (incluye la base `keycloak`).
-- **Prueba mensual**:
-  1. Restaurar en una instancia temporal a un punto de hace 24 h.
-  2. Conectar un `migrate status` (debe estar en la última versión).
-  3. Contar los eventos: `SELECT count(*) FROM es.events`.
-  4. Anotar el resultado en `infra/deploy/RESTORE-LOG.md`.
-- Tras una restauración real, antes de abrir tráfico, se reaplican las supresiones de privacidad
-  (docs/phase-1/security/privacy-runbook.md §5).
+### 9.1 Configuración del proveedor (una vez, verificar en cada revisión trimestral)
+
+| Recurso | Ajuste obligatorio | Cómo se comprueba |
+|---|---|---|
+| PostgreSQL 17 gestionado | `ssl` obligatorio; backups automáticos diarios; PITR 7 días (prod: 30) | consola del proveedor → Backups; `SHOW ssl` = `on` |
+| Bases | `petpassport` y `keycloak` en la misma instancia (ambas entran en el backup) | `\l` |
+| Alertas del proveedor | almacenamiento > 80 %, CPU > 80 % 15 min, backup fallido → canal del equipo | regla visible en la consola |
+| Rol de respaldo | `petpassport_backup` LOGIN, miembro de `pp_app_reader` (solo SELECT) | `\du petpassport_backup` |
+| Object storage | buckets `petpassport-media-<env>` y `petpassport-backups-<env>`, privados, versionados | `infra/storage/apply.sh` (abajo) |
+
+Rol de respaldo (con el usuario administrador del proveedor):
+
+```sql
+CREATE ROLE petpassport_backup LOGIN PASSWORD '<secreto>';
+GRANT pp_app_reader TO petpassport_backup;
+GRANT CONNECT ON DATABASE petpassport TO petpassport_backup;
+```
+
+Versionado y ciclo de vida (idempotente; fotos antiguas 30 días, exportaciones 26 semanas):
+
+```bash
+mc alias set pp https://<endpoint-s3> <access-key-admin> <secret-admin>
+infra/storage/apply.sh pp petpassport-media-staging petpassport-backups-staging
+```
+
+La credencial `PP_BACKUP_STORAGE_*` solo tiene `PutObject`/`GetObject` sobre el bucket de
+respaldos (no puede borrar versiones); la de la API no tiene acceso a ese bucket.
+
+### 9.2 Respaldo frío semanal de `es.events`
+
+`backup export-events` (imagen del backend) exporta `es.events` completo desde un snapshot
+REPEATABLE READ a `es-events/AAAA/AAAA-MM-DDTHHMMSSZ.jsonl.gz` + `.manifest.json` (recuento,
+rango de posiciones, sha256). Es independiente del proveedor de PostgreSQL.
+
+```bash
+sudo install -m 644 infra/deploy/systemd/pp-events-export.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now pp-events-export.timer
+systemctl list-timers pp-events-export.timer          # próxima ejecución (domingo 03:00 UTC)
+sudo systemctl start pp-events-export.service         # ejecución manual
+journalctl -u pp-events-export -n 50                  # resultado ("es.events uploaded")
+```
+
+Si falla, `events-export.sh` avisa por `TEAM_WEBHOOK_URL`. La exportación contiene PII de los
+eventos (`pii{}`): el bucket es privado y tras restaurarla se reaplican las supresiones de
+privacidad (abajo).
+
+### 9.3 Prueba mensual de restauración
+
+Dos partes; ambas se anotan en `infra/deploy/RESTORE-LOG.md`.
+
+**A. PITR del proveedor** (la restauración real ante incidente):
+
+1. Restaurar en una instancia **temporal** a un punto de hace 24 h (consola/CLI del proveedor).
+2. `docker run --rm -e PP_DB_URL=<url-temporal-migrador> <imagen-backend> /migrate version` → la
+   última migración desplegada.
+3. `SELECT count(*), max(global_position) FROM es.events;` y `\l` (existe `keycloak`).
+4. Destruir la instancia temporal.
+
+**B. Respaldo frío** (independiente del proveedor):
+
+1. Descargar la última exportación y su manifiesto:
+   `mc cp --recursive pp/petpassport-backups-staging/es-events/<AAAA>/<fichero>* ./`
+2. `backup verify-events <fichero>.jsonl.gz` → coincide con el manifiesto (sale ≠ 0 si no).
+3. En una PostgreSQL temporal vacía: `/migrate up` y después, con el rol migrador,
+   `backup import-events <fichero>.jsonl.gz` (solo INSERT; se niega si `es.events` tiene datos).
+4. `SELECT count(*), max(global_position) FROM es.events;` = `events`/`last_position` del manifiesto.
+
+Tras una restauración real, antes de abrir tráfico, se reaplican las supresiones de privacidad
+(docs/phase-1/security/privacy-runbook.md §5).
 
 ## 10. Keycloak
 
@@ -189,6 +251,31 @@ Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con u
 | Plataforma (primario) | _pendiente de asignar (PM)_ | |
 | Backend (secundario) | _pendiente de asignar (PM)_ | |
 | Seguridad / privacidad | _pendiente de asignar (PM)_ | |
+
+## 13. Correo transaccional (IAM-012)
+
+Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) envían como
+`no-reply@${PP_DOMAIN}` por el proveedor SMTP (STARTTLS, puerto 587). Tema de correo y de login:
+`infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
+
+1. **Proveedor**: verificar el dominio `${PP_DOMAIN}` y crear una credencial SMTP solo de envío.
+   `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2); `deploy.sh` las pasa a la API y a
+   `keycloak-config`, que las escribe en el realm.
+2. **DNS como código**: copiar los valores del proveedor en `staging.tfvars`
+   (`mail_spf_includes`, `mail_dkim_records`, `mail_dmarc_policy`, `mail_dmarc_rua`) y aplicar
+   `infra/waf/cloudflare` (§6). Comprobar:
+   ```bash
+   dig +short TXT ${PP_DOMAIN}                 # "v=spf1 include:<proveedor> -all"
+   dig +short TXT _dmarc.${PP_DOMAIN}          # "v=DMARC1; p=quarantine; adkim=s; aspf=s; ..."
+   dig +short CNAME <selector>._domainkey.${PP_DOMAIN}
+   ```
+3. **Prueba de envío** (antes de abrir el piloto): registrar una cuenta de prueba en
+   `https://app.${PP_DOMAIN}` con la SPA en español y otra en inglés hacia buzones de Gmail y
+   Outlook. Debe llegar a la bandeja de entrada (no spam) con el tema PetPassport en el idioma
+   elegido, y en "Mostrar original" verse `spf=pass`, `dkim=pass` y `dmarc=pass`. Anotar el
+   resultado en el PR de M1.5.
+4. **DMARC**: `quarantine` desde el inicio; pasar a `reject` tras 4 semanas de informes sin
+   fuentes legítimas fallando.
 
 ---
 

@@ -4,7 +4,7 @@ COMPOSE := docker compose -f infra/compose/docker-compose.yml
 COMPOSE_OBS := $(COMPOSE) -f infra/compose/docker-compose.observability.yml
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs migrate gen gen-check lint test test-integration e2e build images specs-status specs-check
+.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs migrate gen gen-check lint test test-integration e2e load-test build images specs-status specs-check
 
 help: ## Lista los objetivos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -55,14 +55,18 @@ test: ## Pruebas unitarias
 test-integration: ## Pruebas de integración (requiere Docker)
 	cd backend && go test -race -tags integration -count=1 ./test/integration/...
 
-e2e: ## E2E Playwright (se añade en M1.1)
-	@echo "e2e: pendiente (PP-F1-QA-005, M1.5)"
+e2e: ## E2E Playwright de los flujos críticos + axe (requiere make dev-up; PP-F1-QA-005)
+	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test
+
+load-test: ## k6 ligero contra staging: 50 VUs, 5 min, p95 < 300 ms (requiere k6 y K6_* ; ver tests/load)
+	k6 run tests/load/k6/api-smoke.js
 
 # --- Build ---
 build: ## Compila binarios y frontend
 	cd backend && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/api ./cmd/api && \
 	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/migrate ./cmd/migrate && \
-	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/worker ./cmd/worker
+	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/worker ./cmd/worker && \
+	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/backup ./cmd/backup
 	cd frontend && npm run build
 
 images: ## Construye imágenes Docker

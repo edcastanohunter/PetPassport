@@ -85,6 +85,8 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ../keycloak/themes/petpassport:/opt/keycloak/themes/petpassport:ro # IAM-012
     ports:
       - "8180:8080" # Admin API para scripts locales (dev-seed); en staging/prod solo vía Traefik
     depends_on:
@@ -117,6 +119,10 @@ services:
       PP_SMTP_HOST: mailpit
       PP_SMTP_PORT: "1025"
       PP_SMTP_FROM: no-reply@petpassport.local
+      PP_SMTP_AUTH: "false"
+      PP_SMTP_USER: ""
+      PP_SMTP_PASSWORD: ""
+      PP_SMTP_STARTTLS: "false"
     volumes:
       - ../keycloak:/config:ro
     depends_on:
@@ -125,8 +131,13 @@ services:
     restart: "no"
 
   minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+    # minio/minio dejó de publicarse en Docker Hub (404) y quay.io exige credenciales:
+    # se usa la build de Chainguard del mismo servidor. Corre como root solo en dev
+    # (el volumen con nombre se crea con dueño root) y sin healthcheck (la imagen no
+    # trae shell ni mc): minio-init espera a que responda.
+    image: cgr.dev/chainguard/minio:latest
+    user: "0:0"
+    command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
@@ -135,24 +146,38 @@ services:
       - "9001:9001"
     volumes:
       - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
 
   minio-init:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest-dev # variante con shell para init.sh
     entrypoint: ["/bin/sh", "/init.sh"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
     volumes:
       - ../minio/init.sh:/init.sh:ro
+      - ../storage:/policies:ro
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
     restart: "no"
+
+  events-export:
+    # Respaldo frío de es.events (DAT-009) contra MinIO local, para ensayar la
+    # restauración: docker compose … run --rm events-export
+    build:
+      context: ../../backend
+    entrypoint: ["/backup", "export-events"]
+    environment:
+      PP_DB_URL: postgres://petpassport_reader:${PP_API_PASSWORD:-api}@postgres:5432/petpassport?sslmode=disable
+      PP_BACKUP_STORAGE_ENDPOINT: minio:9000
+      PP_BACKUP_STORAGE_BUCKET: petpassport-backups
+      PP_BACKUP_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-minio}
+      PP_BACKUP_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio12345}
+      PP_BACKUP_STORAGE_USE_SSL: "false"
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    profiles: [oneshot]
 
   mailpit:
     image: axllent/mailpit:latest
@@ -200,6 +225,8 @@ services:
       migrate:
         condition: service_completed_successfully
       keycloak-config:
+        condition: service_completed_successfully
+      minio-init:
         condition: service_completed_successfully
 
   frontend:

@@ -1,3 +1,6 @@
 # Golden files de eventos (ARQ-007): bytes exactos en todas las plataformas
 # (con core.autocrlf=true en Windows se convertían a CRLF y el test fallaba).
 backend/**/testdata/golden/*.json text eol=lf
+
+# Scripts montados en contenedores Linux (compose, CI): siempre LF, también en Windows.
+*.sh text eol=lf

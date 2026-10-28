@@ -7,7 +7,10 @@
     "logout": "Cerrar sesión",
     "myPets": "Mis mascotas",
     "admin": "Administración",
-    "profile": "Mi perfil"
+    "profile": "Mi perfil",
+    "menu": "Menú",
+    "language": "Idioma",
+    "skipToContent": "Saltar al contenido"
   },
   "common": {
     "loading": "Cargando…",
@@ -28,7 +31,8 @@
   "legal": {
     "terms": "Términos del servicio",
     "privacy": "Política de privacidad",
-    "version": "Versión"
+    "version": "Versión",
+    "pendingReview": "Texto en revisión legal. La versión definitiva se publicará antes de la apertura del piloto."
   },
   "auth": {
     "signingIn": "Iniciando sesión…",

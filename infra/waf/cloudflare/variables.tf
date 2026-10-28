@@ -96,3 +96,39 @@ variable "rate_limits" {
     },
   ]
 }
+
+# --- Correo (IAM-012): autenticación del remitente no-reply@<domain> ----------
+variable "mail_spf_includes" {
+  description = "Mecanismos include: del proveedor SMTP para el SPF de var.domain (p. ej. [\"amazonses.com\"])."
+  type        = list(string)
+  default     = []
+}
+
+variable "mail_dkim_records" {
+  description = <<-EOT
+    Registros DKIM que entrega el proveedor SMTP al verificar el dominio:
+    name relativo a var.domain (p. ej. "s1._domainkey"), type CNAME o TXT y valor.
+  EOT
+  type = list(object({
+    name    = string
+    type    = string
+    content = string
+  }))
+  default = []
+}
+
+variable "mail_dmarc_policy" {
+  description = "Política DMARC: none (observación), quarantine o reject. Staging empieza en quarantine."
+  type        = string
+  default     = "quarantine"
+  validation {
+    condition     = contains(["none", "quarantine", "reject"], var.mail_dmarc_policy)
+    error_message = "mail_dmarc_policy debe ser none, quarantine o reject."
+  }
+}
+
+variable "mail_dmarc_rua" {
+  description = "Buzón de informes agregados DMARC (mailto:...). Vacío = sin informes."
+  type        = string
+  default     = ""
+}

@@ -4,12 +4,13 @@ import { useI18n } from 'vue-i18n'
 import { api, ApiError, type Me, type UpdateMeRequest } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { runtimeConfig } from '@/shared/config/runtime'
-import { COUNTRIES } from '@/shared/i18n/countries'
+import { countries } from '@/shared/i18n/countries'
 import FieldError from '@/shared/ui/FieldError.vue'
 
 // Perfil (FE-005, PRD-004): PATCH /me con semántica merge-patch (null vacía).
 // Email de solo lectura con enlace a la consola de cuenta de Keycloak.
 const { t, locale } = useI18n()
+const COUNTRIES = computed(() => countries(locale.value))
 const session = useSessionStore()
 
 const saving = ref(false)
@@ -116,7 +117,6 @@ async function save() {
     if (data) {
       session.setMe(data)
       fill(data)
-      locale.value = data.locale
     }
     saved.value = true
   } catch (e) {
@@ -170,7 +170,7 @@ async function save() {
           required
           autocomplete="name"
         />
-        <FieldError :code="fieldErrors.display_name" />
+        <FieldError field="display_name" :code="fieldErrors.display_name" />
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
@@ -179,13 +179,13 @@ async function save() {
             <option value="">—</option>
             <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
           </select>
-          <FieldError :code="fieldErrors.country" />
+          <FieldError field="country" :code="fieldErrors.country" />
         </div>
         <div>
           <label for="locale" class="label">{{ t('profile.locale') }}</label>
           <select id="locale" v-model="form.locale" class="input">
-            <option value="es">Español</option>
-            <option value="en">English</option>
+            <option value="es" lang="es">Español</option>
+            <option value="en" lang="en">English</option>
           </select>
         </div>
       </div>
@@ -200,7 +200,7 @@ async function save() {
           placeholder="+57 300 123 4567"
           autocomplete="tel"
         />
-        <FieldError :code="fieldErrors.phone" />
+        <FieldError field="phone" :code="fieldErrors.phone" />
       </div>
 
       <fieldset class="space-y-3 rounded border border-surface-200 p-4 dark:border-surface-800">
@@ -218,7 +218,7 @@ async function save() {
                 <option value="" disabled>{{ t('common.select') }}</option>
                 <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
               </select>
-              <FieldError :code="fieldErrors['address.country']" />
+              <FieldError field="addr_country" :code="fieldErrors['address.country']" />
             </div>
             <div>
               <label for="addr_region" class="label">{{ t('profile.region') }}</label>
@@ -233,7 +233,7 @@ async function save() {
                 maxlength="120"
                 required
               />
-              <FieldError :code="fieldErrors['address.city']" />
+              <FieldError field="addr_city" :code="fieldErrors['address.city']" />
             </div>
             <div>
               <label for="addr_postal" class="label">{{ t('profile.postalCode') }}</label>
@@ -254,7 +254,7 @@ async function save() {
               maxlength="200"
               required
             />
-            <FieldError :code="fieldErrors['address.line1']" />
+            <FieldError field="addr_line1" :code="fieldErrors['address.line1']" />
           </div>
           <div>
             <label for="addr_line2" class="label">{{ t('profile.line2') }}</label>
@@ -280,13 +280,13 @@ async function save() {
               maxlength="120"
               required
             />
-            <FieldError :code="fieldErrors['emergency_contact.name']" />
+            <FieldError field="ec_name" :code="fieldErrors['emergency_contact.name']" />
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <div>
               <label for="ec_phone" class="label">{{ t('profile.phone') }}</label>
               <input id="ec_phone" v-model="form.contact.phone" class="input" type="tel" required />
-              <FieldError :code="fieldErrors['emergency_contact.phone']" />
+              <FieldError field="ec_phone" :code="fieldErrors['emergency_contact.phone']" />
             </div>
             <div>
               <label for="ec_rel" class="label">{{ t('profile.relationship') }}</label>

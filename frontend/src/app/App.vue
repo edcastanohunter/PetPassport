@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PublicLayout from './layouts/PublicLayout.vue'
 import OwnerLayout from './layouts/OwnerLayout.vue'
 import OrgLayout from './layouts/OrgLayout.vue'
@@ -16,6 +16,15 @@ const layouts = {
 type LayoutKey = keyof typeof layouts
 
 const route = useRoute()
+const router = useRouter()
+
+// Navegación SPA accesible (FE-010, WCAG 2.4.3): tras cambiar de ruta el foco va
+// a <main> para que lectores de pantalla y teclado empiecen por el contenido.
+router.afterEach((to, from) => {
+  if (!from.matched.length || to.path === from.path) return
+  void nextTick(() => document.getElementById('main')?.focus({ preventScroll: true }))
+})
+
 const layout = computed(() => layouts[(route.meta.layout as LayoutKey) ?? 'public'])
 </script>
 

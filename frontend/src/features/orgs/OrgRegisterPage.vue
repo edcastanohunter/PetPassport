@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { api, ApiError, type Organization } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { useCommand } from '@/shared/composables/useCommand'
-import { COUNTRIES } from '@/shared/i18n/countries'
+import { countries } from '@/shared/i18n/countries'
 import {
   organizationFormSchema,
   ORG_TYPES,
@@ -16,7 +16,8 @@ import FieldError from '@/shared/ui/FieldError.vue'
 // Registro de organización (FE-007, PRD-011): asistente tipo → datos legales
 // y fiscales (validación por país) → dirección → contacto → revisión. Al
 // crear muestra el PublicCode y el estado "pendiente de verificación".
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const COUNTRIES = computed(() => countries(locale.value))
 const router = useRouter()
 const session = useSessionStore()
 const { key: idempotencyKey, renew } = useCommand()
@@ -215,14 +216,14 @@ function err(field: string) {
               t('orgs.form.legalName')
             }}</label>
             <input id="org-legal" v-model="form.legal_name" maxlength="120" class="input" />
-            <FieldError :code="err('legal_name')" />
+            <FieldError field="org-legal" :code="err('legal_name')" />
           </div>
           <div>
             <label class="block text-sm font-medium" for="org-display">{{
               t('orgs.form.displayName')
             }}</label>
             <input id="org-display" v-model="form.display_name" maxlength="80" class="input" />
-            <FieldError :code="err('display_name')" />
+            <FieldError field="org-display" :code="err('display_name')" />
           </div>
           <div class="grid grid-cols-3 gap-3">
             <div>
@@ -252,7 +253,7 @@ function err(field: string) {
                     : t('orgs.form.taxHintGeneric')
                 }}
               </p>
-              <FieldError :code="err('tax_value')" />
+              <FieldError field="org-tax-value" :code="err('tax_value')" />
             </div>
           </div>
         </template>
@@ -279,14 +280,14 @@ function err(field: string) {
               t('orgs.form.city')
             }}</label>
             <input id="org-city" v-model="form.address.city" maxlength="120" class="input" />
-            <FieldError :code="err('address.city')" />
+            <FieldError field="org-city" :code="err('address.city')" />
           </div>
           <div>
             <label class="block text-sm font-medium" for="org-line1">{{
               t('orgs.form.line1')
             }}</label>
             <input id="org-line1" v-model="form.address.line1" maxlength="200" class="input" />
-            <FieldError :code="err('address.line1')" />
+            <FieldError field="org-line1" :code="err('address.line1')" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -315,7 +316,7 @@ function err(field: string) {
               t('orgs.form.email')
             }}</label>
             <input id="org-email" v-model="form.contact.email" type="email" class="input" />
-            <FieldError :code="err('contact.email')" />
+            <FieldError field="org-email" :code="err('contact.email')" />
           </div>
           <div>
             <label class="block text-sm font-medium" for="org-phone">{{
@@ -328,7 +329,7 @@ function err(field: string) {
               placeholder="+573001234567"
               class="input"
             />
-            <FieldError :code="err('contact.phone')" />
+            <FieldError field="org-phone" :code="err('contact.phone')" />
           </div>
           <div>
             <label class="block text-sm font-medium" for="org-web">
@@ -341,7 +342,7 @@ function err(field: string) {
               placeholder="https://"
               class="input"
             />
-            <FieldError :code="err('contact.website')" />
+            <FieldError field="org-web" :code="err('contact.website')" />
           </div>
         </template>
 

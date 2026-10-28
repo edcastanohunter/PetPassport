@@ -95,7 +95,7 @@ async function confirm(reason: string) {
 
     <p v-if="!store.users.length" class="text-surface-500">{{ t('admin.users.empty') }}</p>
     <div v-else class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
+      <table class="table-cards w-full text-left text-sm">
         <thead class="text-surface-500">
           <tr>
             <th class="py-2">{{ t('admin.users.user') }}</th>
@@ -116,11 +116,11 @@ async function confirm(reason: string) {
             class="border-t border-surface-200 align-top dark:border-surface-700"
             data-testid="user-row"
           >
-            <td class="py-2">
+            <td class="py-2" :data-label="t('admin.users.user')">
               <span class="block font-medium">{{ u.display_name || '—' }}</span>
               <span class="block text-surface-500">{{ u.email }}</span>
             </td>
-            <td>
+            <td :data-label="t('admin.users.roles')">
               <span
                 v-for="r in u.global_roles"
                 :key="r"
@@ -128,15 +128,17 @@ async function confirm(reason: string) {
                 >{{ r }}</span
               >
             </td>
-            <td>
+            <td :data-label="t('admin.users.memberships')">
               <span v-if="!u.memberships.length">—</span>
               <span v-for="m in u.memberships" :key="m.organization_id" class="block">
                 {{ m.display_name }} · {{ t(`orgs.role.${m.role}`) }}
               </span>
             </td>
-            <td>{{ u.pet_count }}</td>
-            <td>{{ u.last_login_at ? d(new Date(u.last_login_at), 'short') : '—' }}</td>
-            <td>
+            <td :data-label="t('admin.users.pets')">{{ u.pet_count }}</td>
+            <td :data-label="t('admin.users.lastLogin')">
+              {{ u.last_login_at ? d(new Date(u.last_login_at), 'short') : '—' }}
+            </td>
+            <td :data-label="t('admin.users.status')">
               {{ t(`admin.users.statusValue.${u.status}`) }}
               <span v-if="u.status_reason" class="block text-xs text-surface-500">{{
                 u.status_reason

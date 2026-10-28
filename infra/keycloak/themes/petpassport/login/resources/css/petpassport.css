@@ -1,0 +1,54 @@
+/* Marca PetPassport sobre PatternFly v5 (keycloak.v2). Mismos tonos que la SPA (styles.css):
+   azul primario #1d4ed8 (contraste AA sobre blanco) y superficies neutras. */
+:root {
+  --pf-v5-global--primary-color--100: #1d4ed8;
+  --pf-v5-global--primary-color--200: #1e40af;
+  --pf-v5-global--link--Color: #1d4ed8;
+  --pf-v5-global--link--Color--hover: #1e40af;
+}
+
+.pf-v5-c-login {
+  background: #f8fafc;
+}
+
+#kc-header-wrapper .pp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+#kc-header-wrapper .pp-brand::before {
+  content: '';
+  width: 2.25rem;
+  height: 2.25rem;
+  background: url('../img/logo.svg') no-repeat center / contain;
+}
+
+.pp-legal {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+.pp-legal a {
+  color: #374151;
+  text-decoration: underline;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf-v5-c-login {
+    background: #030712;
+  }
+  #kc-header-wrapper .pp-brand {
+    color: #f9fafb;
+  }
+  .pp-legal a {
+    color: #d1d5db;
+  }
+}

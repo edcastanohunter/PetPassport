@@ -27,3 +27,12 @@ frontend/tsconfig.app.tsbuildinfo
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+
+# E2E (Playwright)
+e2e/playwright-report/
+e2e/test-results/
+e2e/results/
+
+# k6
+tests/load/k6/report.md
+tests/load/k6/summary.json
