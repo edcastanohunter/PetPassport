@@ -8,7 +8,8 @@ públicos son `app.`, `api.` y `auth.` bajo ese dominio.
 > §9 antes de M1.5 y anota el resultado al final del documento.
 
 Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
-§7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto.
+§7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto ·
+§13 Correo.
 
 ## 1. Preparación de la VM (una vez)
 
@@ -250,6 +251,31 @@ Tras una restauración real, antes de abrir tráfico, se reaplican las supresion
 | Plataforma (primario) | _pendiente de asignar (PM)_ | |
 | Backend (secundario) | _pendiente de asignar (PM)_ | |
 | Seguridad / privacidad | _pendiente de asignar (PM)_ | |
+
+## 13. Correo transaccional (IAM-012)
+
+Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) envían como
+`no-reply@${PP_DOMAIN}` por el proveedor SMTP (STARTTLS, puerto 587). Tema de correo y de login:
+`infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
+
+1. **Proveedor**: verificar el dominio `${PP_DOMAIN}` y crear una credencial SMTP solo de envío.
+   `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2); `deploy.sh` las pasa a la API y a
+   `keycloak-config`, que las escribe en el realm.
+2. **DNS como código**: copiar los valores del proveedor en `staging.tfvars`
+   (`mail_spf_includes`, `mail_dkim_records`, `mail_dmarc_policy`, `mail_dmarc_rua`) y aplicar
+   `infra/waf/cloudflare` (§6). Comprobar:
+   ```bash
+   dig +short TXT ${PP_DOMAIN}                 # "v=spf1 include:<proveedor> -all"
+   dig +short TXT _dmarc.${PP_DOMAIN}          # "v=DMARC1; p=quarantine; adkim=s; aspf=s; ..."
+   dig +short CNAME <selector>._domainkey.${PP_DOMAIN}
+   ```
+3. **Prueba de envío** (antes de abrir el piloto): registrar una cuenta de prueba en
+   `https://app.${PP_DOMAIN}` con la SPA en español y otra en inglés hacia buzones de Gmail y
+   Outlook. Debe llegar a la bandeja de entrada (no spam) con el tema PetPassport en el idioma
+   elegido, y en "Mostrar original" verse `spf=pass`, `dkim=pass` y `dmarc=pass`. Anotar el
+   resultado en el PR de M1.5.
+4. **DMARC**: `quarantine` desde el inicio; pasar a `reject` tras 4 semanas de informes sin
+   fuentes legítimas fallando.
 
 ---
 

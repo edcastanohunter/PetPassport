@@ -151,7 +151,10 @@ attributes:
   actionTokenGeneratedByUserLifespan.verify-email: "43200"
   actionTokenGeneratedByUserLifespan.reset-credentials: "1800"
 
-# --- Internacionalización ---
+# --- Tema, correo e internacionalización (IAM-012) ---
+# Tema infra/keycloak/themes/petpassport montado en /opt/keycloak/themes.
+loginTheme: petpassport
+emailTheme: petpassport
 internationalizationEnabled: true
 supportedLocales: [es, en]
 defaultLocale: es
@@ -163,15 +166,20 @@ enabledEventTypes: [LOGIN, LOGIN_ERROR, LOGOUT, REGISTER, REGISTER_ERROR, UPDATE
 adminEventsEnabled: true
 adminEventsDetailsEnabled: true
 
-# --- SMTP (dev: Mailpit) ---
+# --- SMTP (IAM-012): dev = Mailpit sin auth; staging/prod = proveedor transaccional con
+# STARTTLS y credenciales desde el entorno de keycloak-config (nunca en el repo).
+# Remitente no-reply del dominio, con SPF/DKIM/DMARC (infra/waf/cloudflare, RUNBOOK §13).
 smtpServer:
   host: $(env:PP_SMTP_HOST)
   port: $(env:PP_SMTP_PORT)
   from: $(env:PP_SMTP_FROM)
   fromDisplayName: PetPassport
-  auth: "false"
+  replyTo: $(env:PP_SMTP_FROM)
+  auth: "$(env:PP_SMTP_AUTH)"
+  user: $(env:PP_SMTP_USER)
+  password: $(env:PP_SMTP_PASSWORD)
   ssl: "false"
-  starttls: "false"
+  starttls: "$(env:PP_SMTP_STARTTLS)"
 
 # --- Roles de realm (IAM-003) ---
 roles:

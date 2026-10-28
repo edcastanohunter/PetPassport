@@ -85,6 +85,8 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ../keycloak/themes/petpassport:/opt/keycloak/themes/petpassport:ro # IAM-012
     ports:
       - "8180:8080" # Admin API para scripts locales (dev-seed); en staging/prod solo vía Traefik
     depends_on:
@@ -117,6 +119,10 @@ services:
       PP_SMTP_HOST: mailpit
       PP_SMTP_PORT: "1025"
       PP_SMTP_FROM: no-reply@petpassport.local
+      PP_SMTP_AUTH: "false"
+      PP_SMTP_USER: ""
+      PP_SMTP_PASSWORD: ""
+      PP_SMTP_STARTTLS: "false"
     volumes:
       - ../keycloak:/config:ro
     depends_on:

@@ -202,3 +202,38 @@ resource "cloudflare_ruleset" "origin_auth" {
     }
   }
 }
+
+# --- Autenticación del correo saliente (IAM-012) -----------------------------
+# Solo se crean cuando el proveedor SMTP está configurado (mail_spf_includes).
+# SPF: solo el proveedor envía por el dominio; -all rechaza el resto. DKIM: los
+# registros que entrega el proveedor. DMARC: alineación estricta de SPF y DKIM.
+resource "cloudflare_record" "mail_spf" {
+  count   = length(var.mail_spf_includes) > 0 ? 1 : 0
+  zone_id = var.zone_id
+  name    = var.domain
+  type    = "TXT"
+  content = "\"v=spf1 ${join(" ", [for i in var.mail_spf_includes : "include:${i}"])} -all\""
+  ttl     = 3600
+  comment = "PetPassport ${var.environment} SPF (gestionado por Terraform)"
+}
+
+resource "cloudflare_record" "mail_dkim" {
+  for_each = { for r in var.mail_dkim_records : r.name => r }
+  zone_id  = var.zone_id
+  name     = "${each.value.name}.${var.domain}"
+  type     = each.value.type
+  content  = each.value.content
+  proxied  = false
+  ttl      = 3600
+  comment  = "PetPassport ${var.environment} DKIM (gestionado por Terraform)"
+}
+
+resource "cloudflare_record" "mail_dmarc" {
+  count   = length(var.mail_spf_includes) > 0 ? 1 : 0
+  zone_id = var.zone_id
+  name    = "_dmarc.${var.domain}"
+  type    = "TXT"
+  content = "\"v=DMARC1; p=${var.mail_dmarc_policy}; adkim=s; aspf=s${var.mail_dmarc_rua != "" ? "; rua=${var.mail_dmarc_rua}" : ""}\""
+  ttl     = 3600
+  comment = "PetPassport ${var.environment} DMARC (gestionado por Terraform)"
+}

@@ -20,3 +20,11 @@ waf_mode = "log"
 #   { name = "api-read", requests = 300, period = 60,
 #     expression = "(http.host eq \"api.$${domain}\" and starts_with(http.request.uri.path, \"/api/v1/\") and http.request.method eq \"GET\")" },
 # ]
+
+# Correo (IAM-012): valores que entrega el proveedor SMTP al verificar el dominio.
+# mail_spf_includes = ["<include-del-proveedor>"]
+# mail_dkim_records = [
+#   { name = "<selector>._domainkey", type = "CNAME", content = "<valor-del-proveedor>" },
+# ]
+# mail_dmarc_policy = "quarantine"
+# mail_dmarc_rua    = "mailto:dmarc@<dominio>"
