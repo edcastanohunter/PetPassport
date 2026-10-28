@@ -1,12 +1,10 @@
-# Observabilidad (docs/phase-1/09 §7, PP-F1-INF-007). Se combina con el
-# compose del entorno:
-#   dev:     docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
-#   staging: lo añade infra/deploy/deploy.sh
-# Puertos solo en 127.0.0.1: en staging se accede por túnel SSH (RUNBOOK §8).
-# Variables de staging (PP_ENV, PP_STATE_DIR, GRAFANA_*) con valores de dev por defecto.
+# Observabilidad de desarrollo (docs/phase-1/09 §7, PP-F1-INF-007): `make dev-obs`
+#   podman compose -f compose.yaml -f compose.observability.yaml up -d
+# En staging/prod son unidades Quadlet (infra/quadlet/pp-{prometheus,grafana,…}.container,
+# ADR-026) con los mismos ficheros de infra/observability. Puertos solo en 127.0.0.1.
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0
+    image: docker.io/otel/opentelemetry-collector-contrib:0.120.0
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ../observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
@@ -15,46 +13,46 @@ services:
     restart: unless-stopped
 
   tempo:
-    image: grafana/tempo:2.7.0
+    image: docker.io/grafana/tempo:2.7.0
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ../observability/tempo.yaml:/etc/tempo.yaml:ro
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:v3.2.0
+    image: docker.io/prom/prometheus:v3.2.0
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
       - --enable-feature=expand-external-labels
     environment:
-      PP_ENV: ${PP_ENV:-dev}
+      PP_ENV: dev
     volumes:
       - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../observability/alerts.yml:/etc/prometheus/alerts.yml:ro
-      - ${PP_PROM_TARGETS_DIR:-../observability/targets}:/etc/prometheus/targets:ro
+      - ../observability/targets:/etc/prometheus/targets:ro
       - promdata:/prometheus
     ports:
       - "127.0.0.1:9091:9090"
     restart: unless-stopped
 
   alertmanager:
-    image: prom/alertmanager:v0.28.0
+    image: docker.io/prom/alertmanager:v0.28.0
     command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
     volumes:
       - ../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ${PP_ALERT_WEBHOOK_FILE:-../observability/alertmanager-dev-webhook}:/etc/alertmanager/secrets/slack_webhook_url:ro
+      - ../observability/alertmanager-dev-webhook:/etc/alertmanager/secrets/slack_webhook_url:ro
     restart: unless-stopped
 
   blackbox:
-    image: prom/blackbox-exporter:v0.25.0
+    image: docker.io/prom/blackbox-exporter:v0.25.0
     command: ["--config.file=/etc/blackbox/blackbox.yml"]
     volumes:
       - ../observability/blackbox.yml:/etc/blackbox/blackbox.yml:ro
     restart: unless-stopped
 
   loki:
-    image: grafana/loki:3.4.2
+    image: docker.io/grafana/loki:3.4.2
     command: ["-config.file=/etc/loki/loki.yaml"]
     volumes:
       - ../observability/loki.yaml:/etc/loki/loki.yaml:ro
@@ -62,18 +60,20 @@ services:
     restart: unless-stopped
 
   alloy:
-    image: grafana/alloy:v1.7.1
+    image: docker.io/grafana/alloy:v1.7.1
     command: ["run", "/etc/alloy/config.alloy", "--storage.path=/var/lib/alloy"]
     volumes:
       - ../observability/alloy.alloy:/etc/alloy/config.alloy:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Journal del host de Podman (en Windows/macOS, el de la podman machine), solo lectura.
+      - /var/log/journal:/var/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:11.5.0
+    image: docker.io/grafana/grafana:11.5.0
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      GF_AUTH_ANONYMOUS_ENABLED: ${GRAFANA_ANONYMOUS:-true}
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
     volumes:

@@ -1,7 +1,14 @@
 # PetPassport — objetivos de desarrollo (docs/phase-1/09 §1).
 SHELL := /bin/bash
-COMPOSE := docker compose -f infra/compose/docker-compose.yml
-COMPOSE_OBS := $(COMPOSE) -f infra/compose/docker-compose.observability.yml
+# Motor de contenedores: Podman (ADR-026). `podman compose` delega en el proveedor
+# instalado (docker-compose v2 o podman-compose); el fichero Compose no depende del motor.
+ENGINE ?= podman
+COMPOSE := $(ENGINE) compose -f infra/compose/compose.yaml
+COMPOSE_OBS := $(COMPOSE) -f infra/compose/compose.observability.yaml
+# testcontainers usa la API compatible de Podman. En Linux, el socket del servicio
+# (`systemctl --user enable --now podman.socket`); con podman machine (Windows/macOS)
+# la máquina ya expone la API en la ruta por defecto y no se fija DOCKER_HOST.
+PODMAN_SOCKET := $(shell [ "$$($(ENGINE) info --format '{{.Host.ServiceIsRemote}}' 2>/dev/null)" = false ] && $(ENGINE) info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
 .PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs migrate gen gen-check lint test test-integration e2e load-test build images specs-status specs-check
@@ -52,8 +59,8 @@ test: ## Pruebas unitarias
 	cd backend && go test -race -cover ./...
 	cd frontend && npm test
 
-test-integration: ## Pruebas de integración (requiere Docker)
-	cd backend && go test -race -tags integration -count=1 ./test/integration/...
+test-integration: ## Pruebas de integración (requiere Podman con su API activa; testcontainers)
+	cd backend && DOCKER_HOST=$${DOCKER_HOST:-$(PODMAN_SOCKET)} TESTCONTAINERS_RYUK_DISABLED=true \n	  go test -race -tags integration -count=1 ./test/integration/...
 
 e2e: ## E2E Playwright de los flujos críticos + axe (requiere make dev-up; PP-F1-QA-005)
 	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test
@@ -69,9 +76,9 @@ build: ## Compila binarios y frontend
 	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/backup ./cmd/backup
 	cd frontend && npm run build
 
-images: ## Construye imágenes Docker
-	docker build --build-arg VERSION=$(VERSION) -t petpassport/backend:$(VERSION) backend
-	docker build -f frontend/Dockerfile -t petpassport/frontend:$(VERSION) .
+images: ## Construye las imágenes OCI con Podman
+	$(ENGINE) build --build-arg VERSION=$(VERSION) -t localhost/petpassport-backend:$(VERSION) backend
+	$(ENGINE) build -f frontend/Dockerfile -t localhost/petpassport-frontend:$(VERSION) .
 
 # --- Specs ---
 specs-status: ## Avance de las specs

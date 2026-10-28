@@ -1,0 +1,23 @@
+# Alloy: logs de los contenedores (journald) → Loki (INF-007). Puertos solo en 127.0.0.1: acceso por túnel SSH (RUNBOOK §8).
+# Plantilla: deploy.sh sustituye @…@ e instala en /etc/containers/systemd (ADR-026).
+[Unit]
+Description=PetPassport: alloy
+
+[Container]
+Image=docker.io/grafana/alloy:v1.7.1
+ContainerName=pp-alloy
+Network=pp-obs.network
+Exec=run /etc/alloy/config.alloy --storage.path=/var/lib/alloy
+Volume=@REPO_DIR@/infra/observability/alloy.alloy:/etc/alloy/config.alloy:ro,z
+# Journal del host en solo lectura (sin socket del motor; threat model §2.7).
+Volume=/var/log/journal:/var/log/journal:ro
+Volume=/etc/machine-id:/etc/machine-id:ro
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

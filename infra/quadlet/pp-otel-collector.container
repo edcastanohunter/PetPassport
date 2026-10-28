@@ -1,0 +1,21 @@
+# Recolector OpenTelemetry: trazas OTLP de la API → Tempo (INF-007). Puertos solo en 127.0.0.1: acceso por túnel SSH (RUNBOOK §8).
+# Plantilla: deploy.sh sustituye @…@ e instala en /etc/containers/systemd (ADR-026).
+[Unit]
+Description=PetPassport: otel-collector
+
+[Container]
+Image=docker.io/otel/opentelemetry-collector-contrib:0.120.0
+ContainerName=pp-otel-collector
+Network=pp-obs.network
+NetworkAlias=otel-collector
+Exec=--config=/etc/otelcol/config.yaml
+Volume=@REPO_DIR@/infra/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro,z
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

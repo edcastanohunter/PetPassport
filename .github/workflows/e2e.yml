@@ -31,8 +31,16 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq libnss3-tools mkcert
           make dev-certs
 
+      # Mismo motor que el equipo (ADR-026). Podman rootful: el compose publica
+      # 80/443, y `podman compose` delega en el docker-compose v2 del runner.
+      - name: Podman y proveedor de Compose
+        run: |
+          podman --version
+          sudo systemctl start podman.socket
+          sudo podman compose version
+
       - name: Levantar compose completo
-        run: make dev-up
+        run: make dev-up ENGINE="sudo podman"
 
       - name: Esperar a la app, la API y el realm
         run: |
@@ -63,7 +71,7 @@ jobs:
 
       - name: Logs del compose (si falla)
         if: failure()
-        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail=300 api keycloak keycloak-config frontend > compose.log
+        run: sudo podman compose -f infra/compose/compose.yaml logs --no-color --tail=300 api keycloak keycloak-config frontend > compose.log
 
       - name: Publicar informe
         if: always()

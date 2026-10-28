@@ -1,0 +1,3 @@
+# Datos persistentes de Prometheus (sobreviven a reinicios y despliegues).
+[Volume]
+VolumeName=pp-promdata

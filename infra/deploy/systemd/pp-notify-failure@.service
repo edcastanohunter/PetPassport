@@ -1,0 +1,10 @@
+# Aviso al canal del equipo cuando falla una unidad de PetPassport
+# (OnFailure=pp-notify-failure@%n.service; hoy: pp-events-export, DAT-009).
+# Plantilla: deploy.sh sustituye @…@ e instala en /etc/systemd/system (ADR-026).
+[Unit]
+Description=PetPassport: aviso de fallo de %i
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/petpassport/@PP_ENV@.env
+ExecStart=@REPO_DIR@/infra/deploy/notify-failure.sh @PP_ENV@ %i

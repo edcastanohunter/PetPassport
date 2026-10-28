@@ -1,0 +1,32 @@
+# SPA (nginx no privilegiado) con /config.json por entorno (INF-005), que genera deploy.sh.
+# Plantilla: deploy.sh sustituye @…@ e instala en /etc/containers/systemd (ADR-026).
+[Unit]
+Description=PetPassport: frontend (@PP_VERSION@)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=@IMAGE_PREFIX@-frontend:@PP_VERSION@
+ContainerName=pp-frontend
+Network=pp-edge.network
+NetworkAlias=frontend
+Volume=@STATE_DIR@/config.json:/usr/share/nginx/html/config.json:ro,z
+Tmpfs=/tmp
+Tmpfs=/var/cache/nginx
+HealthCmd=["wget","-q","--spider","http://127.0.0.1:8080/config.json"]
+HealthInterval=10s
+HealthTimeout=3s
+HealthRetries=6
+HealthStartPeriod=5s
+Notify=healthy
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,7 @@
-# Entorno de desarrollo (docs/phase-1/09 §2). Uso: `make dev-up` desde la raíz.
+# Entorno de desarrollo (docs/phase-1/09 §2). Uso: `make dev-up` desde la raíz
+# (`podman compose`, ADR-026). Imágenes con registro explícito: Podman no
+# resuelve nombres cortos igual en todas las distribuciones.
+# Staging/prod no usan este fichero: unidades Quadlet en infra/quadlet.
 # Hosts: https://app.pp.localhost · https://api.pp.localhost · https://auth.pp.localhost
 name: petpassport
 
@@ -8,7 +11,7 @@ x-pg-env: &pg-env
 
 services:
   traefik:
-    image: traefik:v3.3
+    image: docker.io/library/traefik:v3.3
     command:
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
@@ -38,7 +41,7 @@ services:
       - keycloak
 
   postgres:
-    image: postgres:17-alpine
+    image: docker.io/library/postgres:17-alpine
     environment:
       <<: *pg-env
       POSTGRES_DB: petpassport
@@ -102,7 +105,7 @@ services:
 
   keycloak-config:
     # Aplica infra/keycloak/realm.yaml de forma idempotente (PP-F1-IAM-001).
-    image: adorsys/keycloak-config-cli:latest-26
+    image: docker.io/adorsys/keycloak-config-cli:latest-26
     environment:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_USER: ${KC_ADMIN_USER:-admin}
@@ -131,7 +134,7 @@ services:
     restart: "no"
 
   minio:
-    # minio/minio dejó de publicarse en Docker Hub (404) y quay.io exige credenciales:
+    # minio/minio dejó de publicarse en docker.io (404) y quay.io exige credenciales:
     # se usa la build de Chainguard del mismo servidor. Corre como root solo en dev
     # (el volumen con nombre se crea con dueño root) y sin healthcheck (la imagen no
     # trae shell ni mc): minio-init espera a que responda.
@@ -162,7 +165,7 @@ services:
 
   events-export:
     # Respaldo frío de es.events (DAT-009) contra MinIO local, para ensayar la
-    # restauración: docker compose … run --rm events-export
+    # restauración: podman compose -f infra/compose/compose.yaml run --rm events-export
     build:
       context: ../../backend
     entrypoint: ["/backup", "export-events"]
@@ -180,7 +183,7 @@ services:
     profiles: [oneshot]
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: docker.io/axllent/mailpit:latest
     ports:
       - "8025:8025"
       - "1025:1025"
@@ -230,7 +233,7 @@ services:
         condition: service_completed_successfully
 
   frontend:
-    image: node:22-alpine
+    image: docker.io/library/node:22-alpine
     working_dir: /src
     command: ["sh", "-c", "npm install --no-audit --no-fund && npm run gen:api && npm run dev"]
     environment:

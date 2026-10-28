@@ -1,4 +1,4 @@
-# Hot reload del servidor api en desarrollo (docker compose).
+# Hot reload del servidor api en desarrollo (podman compose, infra/compose/compose.yaml).
 root = "."
 tmp_dir = "tmp"
 

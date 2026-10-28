@@ -1,0 +1,3 @@
+# Red pp-internal: api/keycloak ↔ procesos oneshot (migrate, keycloak-config, events-export) (ADR-026).
+[Network]
+NetworkName=pp-internal

@@ -1,0 +1,3 @@
+# Red pp-edge: Traefik ↔ servicios publicados (frontend, api, keycloak) (ADR-026).
+[Network]
+NetworkName=pp-edge

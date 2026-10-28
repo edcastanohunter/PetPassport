@@ -1,0 +1,3 @@
+# Datos persistentes de Grafana (sobreviven a reinicios y despliegues).
+[Volume]
+VolumeName=pp-grafanadata
