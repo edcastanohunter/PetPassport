@@ -162,6 +162,11 @@ func (GuardianshipTransferInitiated) EventName() string { return "GuardianshipTr
 // SchemaVersion implementa eventstore.Event.
 func (GuardianshipTransferInitiated) SchemaVersion() int { return 1 }
 
+// PIISubjects: el sujeto de la PII es el destinatario, identificado solo por
+// email (puede no tener cuenta aún); sin UserID que declarar. El cifrado se
+// activa en F5 (SEC-009, docs/phase-1/security/privacy-runbook.md §4).
+func (e GuardianshipTransferInitiated) PIISubjects() []uuid.UUID { return nil }
+
 // GuardianshipTransferCancelled cancela la transferencia pendiente.
 type GuardianshipTransferCancelled struct {
 	PetID uuid.UUID `json:"pet_id"`

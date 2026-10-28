@@ -1,0 +1,51 @@
+# Alertas mínimas de staging (docs/phase-1/09 §7, PP-F1-INF-007). Cada una
+# enlaza su sección del runbook (infra/deploy/RUNBOOK.md §7).
+groups:
+  - name: petpassport
+    rules:
+      - alert: ApiHigh5xxRate
+        expr: |
+          sum(rate(http_server_requests_total{status=~"5.."}[5m]))
+            / sum(rate(http_server_requests_total[5m])) > 0.01
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Error rate 5xx > 1% (5 min): {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#71-apihigh5xxrate"
+      - alert: ApiHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m]))) > 0.5
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: "p95 > 500 ms (10 min): {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#72-apihighlatencyp95"
+      - alert: ApiNotReady
+        expr: min(probe_success{job="readyz"}) == 0 or absent(probe_success{job="readyz"})
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: "/readyz caído 2 min"
+          runbook: "infra/deploy/RUNBOOK.md#73-apinotready"
+      - alert: OutboxPendingGrowing
+        # En F1 no hay consumidor (llega en F2): informativa, no despierta a nadie.
+        expr: delta(outbox_pending[1h]) > 0 and min_over_time(outbox_pending[1h]) > 0
+        for: 1h
+        labels: { severity: info }
+        annotations:
+          summary: "outbox_pending crece desde hace > 1 h ({{ $value }} en la última hora)"
+          runbook: "infra/deploy/RUNBOOK.md#74-outboxpendinggrowing"
+      - alert: CertificateExpiringSoon
+        expr: (min by (instance) (probe_ssl_earliest_cert_expiry) - time()) / 86400 < 14
+        for: 1h
+        labels: { severity: ticket }
+        annotations:
+          summary: "Certificado de {{ $labels.instance }} caduca en {{ $value | humanize }} días"
+          runbook: "infra/deploy/RUNBOOK.md#75-certificateexpiringsoon"
+      - alert: ScrapeTargetDown
+        expr: up{job=~"api|keycloak|traefik"} == 0
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Prometheus no puede leer {{ $labels.job }}"
+          runbook: "infra/deploy/RUNBOOK.md#76-scrapetargetdown"

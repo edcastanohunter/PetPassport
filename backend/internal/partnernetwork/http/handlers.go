@@ -2,7 +2,8 @@
 // invitaciones del contrato OpenAPI (PP-F1-API-006/007) y el lookup por
 // código público (API-005). Cada handler: principal → authz.Can con la
 // x-pp-action del contrato → comando por el bus (Idempotency-Key o
-// If-Match) → respuesta. Errores → problem+json (ARQ-010).
+// If-Match) → respuesta. Las operaciones /admin/organizations (API-008)
+// viven en admin.go. Errores → problem+json (ARQ-010).
 package http
 
 import (
@@ -41,6 +42,7 @@ type OrgHandlers struct {
 	memberships auth.MembershipLoader // recarga tras aceptar invitación (caché invalidada)
 	me          MeRenderer
 	logger      *slog.Logger
+	ipHashSalt  string // ip_hash del audit log en acciones admin
 }
 
 // NewOrgHandlers construye los handlers.

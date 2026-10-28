@@ -20,6 +20,8 @@ export type PatientRow = components['schemas']['PatientRow']
 export type PatientPage = components['schemas']['PatientPage']
 export type OrgRole = components['schemas']['OrgRole']
 export type Membership = components['schemas']['Membership']
+export type AdminUserRow = components['schemas']['AdminUserRow']
+export type AuditEntry = components['schemas']['AuditEntry']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

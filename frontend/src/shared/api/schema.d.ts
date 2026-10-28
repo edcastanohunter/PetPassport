@@ -629,6 +629,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Organizaciones por estado (cola de verificación)
+         * @description Solo super_admin (PRD-017). Por defecto la cola pending_verification, de la más antigua a la más reciente; q busca por nombre, razón social o código público. Incluye founder y member_count.
+         */
+        get: operations["adminListOrganizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations/{orgId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verificar una organización
+         * @description Solo super_admin. pending_verification → active; notifica por email al contacto. reason opcional (≥ 10 caracteres si se envía). Auditado (RN-06).
+         */
+        post: operations["adminVerifyOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations/{orgId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechazar una organización
+         * @description Solo super_admin. pending_verification → rejected; el motivo (≥ 10 caracteres, REASON_REQUIRED) se muestra al admin de la organización. Auditado.
+         */
+        post: operations["adminRejectOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations/{orgId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspender una organización
+         * @description Solo super_admin. active → suspended; los miembros pierden acceso a pacientes y la organización desaparece de la búsqueda por código (PRD-017). Motivo obligatorio. Auditado.
+         */
+        post: operations["adminSuspendOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/organizations/{orgId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar una organización
+         * @description Solo super_admin. suspended → active. Motivo obligatorio. Auditado.
+         */
+        post: operations["adminReactivateOrganization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar usuarios
+         * @description Solo super_admin (PRD-018). q busca por email o nombre (subcadena, sin distinguir mayúsculas). Orden por fecha de alta descendente.
+         */
+        get: operations["adminListUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{userId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspender un usuario
+         * @description Solo super_admin. Marca la cuenta como suspended (la API responde 403 ACCOUNT_SUSPENDED desde el siguiente request), deshabilita el usuario en Keycloak y revoca sus sesiones (service account, IAM-011). Si Keycloak no responde → 503 y la cuenta queda suspendida en la plataforma; reintentar es seguro. No se puede suspender la propia cuenta. Auditado.
+         */
+        post: operations["adminSuspendUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{userId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar un usuario
+         * @description Solo super_admin. Reactiva la cuenta y la habilita en Keycloak. Auditado.
+         */
+        post: operations["adminReactivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Registro de auditoría
+         * @description Solo super_admin. Entradas de platform.audit_log (sin PII en claro), más recientes primero, filtrables por actor, objetivo y rango de fechas [from, to).
+         */
+        get: operations["adminListAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -918,6 +1110,8 @@ export interface components {
             status_reason?: string | null;
             my_role?: components["schemas"]["OrgRole"] | null;
             member_count?: number;
+            /** @description Solo en las vistas de administración (API-008). */
+            founder?: components["schemas"]["OrgFounder"] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -1015,6 +1209,64 @@ export interface components {
         };
         PatientPage: {
             data: components["schemas"]["PatientRow"][];
+            next_cursor: string | null;
+        };
+        AdminReasonRequest: {
+            /** @description Motivo de la acción (≥ 10 caracteres; más corto → 422 REASON_REQUIRED). Queda en el audit log. */
+            reason: string;
+        };
+        AdminOptionalReasonRequest: {
+            /** @description Motivo opcional (≥ 10 caracteres si se envía). */
+            reason?: string;
+        };
+        OrgFounder: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            display_name: string;
+        };
+        AdminOrganizationPage: {
+            data: components["schemas"]["Organization"][];
+            next_cursor: string | null;
+        };
+        AdminUserRow: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            display_name: string;
+            /** @enum {string} */
+            status: "active" | "suspended";
+            status_reason?: string | null;
+            global_roles: string[];
+            /** Format: date-time */
+            created_at: string;
+            last_login_at: string | null;
+            pet_count: number;
+            memberships: components["schemas"]["Membership"][];
+        };
+        AdminUserPage: {
+            data: components["schemas"]["AdminUserRow"][];
+            next_cursor: string | null;
+        };
+        AuditEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurred_at: string;
+            actor_id: string | null;
+            actor_roles: string[];
+            action: string;
+            target_type: string | null;
+            target_id: string | null;
+            reason: string | null;
+            /** @description Detalles sin PII en claro (nombres de campos, versiones, estados). */
+            details?: {
+                [key: string]: unknown;
+            };
+            correlation_id: string | null;
+        };
+        AuditPage: {
+            data: components["schemas"]["AuditEntry"][];
             next_cursor: string | null;
         };
         HealthStatus: {
@@ -2128,6 +2380,291 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListOrganizations: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["OrgStatus"];
+                q?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de organizaciones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOrganizationPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminVerifyOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminOptionalReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización tras la transición */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminRejectOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización tras la transición */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminSuspendOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización tras la transición */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminReactivateOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Organización tras la transición */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListUsers: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "active" | "suspended";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de usuarios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminSuspendUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Usuario tras la acción */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserRow"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminReactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Usuario tras la acción */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserRow"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListAuditLog: {
+        parameters: {
+            query?: {
+                actor_id?: string;
+                target_id?: string;
+                from?: string;
+                to?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de auditoría */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

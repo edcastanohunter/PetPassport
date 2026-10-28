@@ -4,8 +4,14 @@ import en from './locales/en.json'
 
 // Formatos de fecha con Intl (FE-010): `d(fecha, 'short')`.
 const datetimeFormats = {
-  es: { short: { year: 'numeric', month: 'short', day: 'numeric' } },
-  en: { short: { year: 'numeric', month: 'short', day: 'numeric' } },
+  es: {
+    short: { year: 'numeric', month: 'short', day: 'numeric' },
+    long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+  },
+  en: {
+    short: { year: 'numeric', month: 'short', day: 'numeric' },
+    long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+  },
 } as const
 
 // Idioma: preferencia del usuario (M1.1) > navegador > es (docs/phase-1/07 §6).

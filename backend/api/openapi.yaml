@@ -27,6 +27,8 @@ tags:
     description: Organizaciones y miembros (docs/phase-1/05-api.md §3.4)
   - name: invitations
     description: Invitaciones de miembros (docs/phase-1/05-api.md §3.5)
+  - name: admin
+    description: Administración de plataforma, solo super_admin (docs/phase-1/05-api.md §3.6)
 security:
   - bearerAuth: []
 paths:
@@ -1173,6 +1175,366 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /admin/organizations:
+    get:
+      operationId: adminListOrganizations
+      summary: Organizaciones por estado (cola de verificación)
+      description: Solo super_admin (PRD-017). Por defecto la cola pending_verification, de la más antigua a la más reciente; q busca por nombre, razón social o código público. Incluye founder y member_count.
+      tags: [admin]
+      x-pp-action: admin:org:list
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrgStatus"
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página de organizaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganizationPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/organizations/{orgId}/verify:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminVerifyOrganization
+      summary: Verificar una organización
+      description: Solo super_admin. pending_verification → active; notifica por email al contacto. reason opcional (≥ 10 caracteres si se envía). Auditado (RN-06).
+      tags: [admin]
+      x-pp-action: admin:org:verify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOptionalReasonRequest"
+      responses:
+        "200":
+          description: Organización tras la transición
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/organizations/{orgId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminRejectOrganization
+      summary: Rechazar una organización
+      description: Solo super_admin. pending_verification → rejected; el motivo (≥ 10 caracteres, REASON_REQUIRED) se muestra al admin de la organización. Auditado.
+      tags: [admin]
+      x-pp-action: admin:org:reject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Organización tras la transición
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/organizations/{orgId}/suspend:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminSuspendOrganization
+      summary: Suspender una organización
+      description: Solo super_admin. active → suspended; los miembros pierden acceso a pacientes y la organización desaparece de la búsqueda por código (PRD-017). Motivo obligatorio. Auditado.
+      tags: [admin]
+      x-pp-action: admin:org:suspend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Organización tras la transición
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/organizations/{orgId}/reactivate:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminReactivateOrganization
+      summary: Reactivar una organización
+      description: Solo super_admin. suspended → active. Motivo obligatorio. Auditado.
+      tags: [admin]
+      x-pp-action: admin:org:reactivate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Organización tras la transición
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      summary: Buscar usuarios
+      description: Solo super_admin (PRD-018). q busca por email o nombre (subcadena, sin distinguir mayúsculas). Orden por fecha de alta descendente.
+      tags: [admin]
+      x-pp-action: admin:user:list
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended]
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/users/{userId}/suspend:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    post:
+      operationId: adminSuspendUser
+      summary: Suspender un usuario
+      description: Solo super_admin. Marca la cuenta como suspended (la API responde 403 ACCOUNT_SUSPENDED desde el siguiente request), deshabilita el usuario en Keycloak y revoca sus sesiones (service account, IAM-011). Si Keycloak no responde → 503 y la cuenta queda suspendida en la plataforma; reintentar es seguro. No se puede suspender la propia cuenta. Auditado.
+      tags: [admin]
+      x-pp-action: admin:user:suspend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Usuario tras la acción
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserRow"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/users/{userId}/reactivate:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    post:
+      operationId: adminReactivateUser
+      summary: Reactivar un usuario
+      description: Solo super_admin. Reactiva la cuenta y la habilita en Keycloak. Auditado.
+      tags: [admin]
+      x-pp-action: admin:user:reactivate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Usuario tras la acción
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserRow"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/audit-log:
+    get:
+      operationId: adminListAuditLog
+      summary: Registro de auditoría
+      description: Solo super_admin. Entradas de platform.audit_log (sin PII en claro), más recientes primero, filtrables por actor, objetivo y rango de fechas [from, to).
+      tags: [admin]
+      x-pp-action: admin:audit:read
+      parameters:
+        - name: actor_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: target_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Página de auditoría
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -1896,6 +2258,11 @@ components:
             - type: "null"
         member_count:
           type: integer
+        founder:
+          description: Solo en las vistas de administración (API-008).
+          oneOf:
+            - $ref: "#/components/schemas/OrgFounder"
+            - type: "null"
         created_at:
           type: string
           format: date-time
@@ -2099,6 +2466,154 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PatientRow"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    AdminReasonRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Motivo de la acción (≥ 10 caracteres; más corto → 422 REASON_REQUIRED). Queda en el audit log.
+          maxLength: 500
+    AdminOptionalReasonRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          description: Motivo opcional (≥ 10 caracteres si se envía).
+          maxLength: 500
+    OrgFounder:
+      type: object
+      additionalProperties: false
+      required: [id, email, display_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        display_name:
+          type: string
+    AdminOrganizationPage:
+      type: object
+      additionalProperties: false
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Organization"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    AdminUserRow:
+      type: object
+      additionalProperties: false
+      required: [id, email, display_name, status, global_roles, created_at, last_login_at, pet_count, memberships]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        display_name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+        status_reason:
+          type: [string, "null"]
+        global_roles:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        last_login_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        pet_count:
+          type: integer
+        memberships:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Membership"
+    AdminUserPage:
+      type: object
+      additionalProperties: false
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/AdminUserRow"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    AuditEntry:
+      type: object
+      additionalProperties: false
+      required: [id, occurred_at, actor_id, actor_roles, action, target_type, target_id, reason, correlation_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        actor_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        actor_roles:
+          type: array
+          items:
+            type: string
+        action:
+          type: string
+        target_type:
+          type: [string, "null"]
+        target_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        reason:
+          type: [string, "null"]
+        details:
+          type: object
+          description: Detalles sin PII en claro (nombres de campos, versiones, estados).
+          additionalProperties: true
+        correlation_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+    AuditPage:
+      type: object
+      additionalProperties: false
+      required: [data, next_cursor]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/AuditEntry"
         next_cursor:
           oneOf:
             - type: string

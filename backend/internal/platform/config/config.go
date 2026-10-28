@@ -42,7 +42,11 @@ type Config struct {
 	// IPHashSalt sala el hash de IP del audit log (SEC-007). Obligatoria fuera de dev.
 	IPHashSalt string
 
+	// Keycloak Admin API con la service account (IAM-011). BaseURL y Realm se
+	// derivan de PP_OIDC_DISCOVERY_URL / PP_OIDC_ISSUER salvo PP_KC_ADMIN_URL.
 	Keycloak struct {
+		BaseURL           string
+		Realm             string
 		AdminClientID     string
 		AdminClientSecret string
 	}
@@ -120,6 +124,17 @@ func Load() (*Config, error) {
 
 	cfg.Keycloak.AdminClientID = getenv("PP_KC_ADMIN_CLIENT_ID", "petpassport-backend")
 	cfg.Keycloak.AdminClientSecret = os.Getenv("PP_KC_ADMIN_CLIENT_SECRET")
+	issuerURL := cfg.OIDC.DiscoveryURL
+	if issuerURL == "" {
+		issuerURL = cfg.OIDC.Issuer
+	}
+	cfg.Keycloak.BaseURL, cfg.Keycloak.Realm = splitRealmURL(issuerURL)
+	if v := os.Getenv("PP_KC_ADMIN_URL"); v != "" {
+		cfg.Keycloak.BaseURL = strings.TrimRight(v, "/")
+	}
+	if cfg.Env != EnvDev && (cfg.Keycloak.AdminClientSecret == "" || cfg.Keycloak.BaseURL == "") {
+		errs = append(errs, errors.New("PP_KC_ADMIN_CLIENT_SECRET y la URL de Keycloak son obligatorias fuera de dev (IAM-011)"))
+	}
 
 	cfg.Storage.Endpoint = os.Getenv("PP_STORAGE_ENDPOINT")
 	cfg.Storage.Bucket = getenv("PP_STORAGE_BUCKET", "petpassport-media")
@@ -162,6 +177,16 @@ func Load() (*Config, error) {
 
 // IsDev indica si el proceso corre en desarrollo.
 func (c *Config) IsDev() bool { return c.Env == EnvDev }
+
+// splitRealmURL separa https://host/realms/<realm> en (https://host, realm).
+func splitRealmURL(u string) (base, realm string) {
+	u = strings.TrimRight(u, "/")
+	i := strings.LastIndex(u, "/realms/")
+	if i < 0 {
+		return "", ""
+	}
+	return u[:i], u[i+len("/realms/"):]
+}
 
 func getenv(key, def string) string {
 	if v, ok := os.LookupEnv(key); ok && v != "" {

@@ -72,6 +72,8 @@ var titles = map[Code]string{
 	RoleNotAllowedForType:   "Rol no permitido",
 	InvitationEmailMismatch: "Invitación para otro email",
 	InvitationResendLimit:   "Límite de reenvíos",
+	ReasonRequired:          "Motivo obligatorio",
+	Unavailable:             "No disponible",
 }
 
 func titleFor(c Code) string {

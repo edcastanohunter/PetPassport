@@ -16,6 +16,7 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	"github.com/edcastanohunter/petpassport/backend/internal/identity/infra/keycloakadmin"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
@@ -41,6 +42,9 @@ import (
 var version = "dev"
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		os.Exit(healthcheck())
+	}
 	if err := run(); err != nil {
 		slog.Error("api terminated", "error", err)
 		os.Exit(1)
@@ -104,14 +108,16 @@ func run() error {
 	store := eventstore.NewStore(registry, pool, tel.Registry)
 	tel.Registry.MustRegister(outbox.PendingGauge(pool))
 
-	// 7. Módulos. Identity (M1.1); Pet Registry (M1.2); Partner Network (M1.3).
+	// 7. Módulos. Identity (M1.1); Pet Registry (M1.2); Partner Network (M1.3);
+	// administración (M1.4).
 	// Un único runner de proyecciones: las reacciones entre contextos (p. ej.
 	// OrganizationSuspended → pet_care_links) ocurren en la misma tx (DOM-011).
-	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
+	identityRepo := identityinfra.NewPostgresRepository(pool)
+	identitySvc := identityapp.NewService(identityRepo, logger)
 	unit := db.NewUnitOfWork(pool)
-	runner := projection.NewRunner()
-	commands := bus.New()
-	idemStore := idempotency.NewStore(pool, 0)
+	runner := projection.NewRunner().Instrument(tel.Registry)
+	commands := bus.New().Instrument(tel.Registry)
+	idemStore := idempotency.NewStore(pool, 0).Instrument(tel.Registry)
 	var mailer *mail.SMTP
 	if cfg.SMTP.Host != "" {
 		mailer = mail.NewSMTP(mail.Options{
@@ -136,6 +142,7 @@ func run() error {
 		Queries:     orgQueries,
 		Users:       userAdapter,
 		Memberships: membershipCache,
+		Auditor:     orginfra.TxAuditor{},
 		BaseURL:     cfg.PublicBaseURL,
 		Logger:      logger,
 	}
@@ -183,6 +190,27 @@ func run() error {
 	}
 	authz.InitMetrics(tel.Registry)
 
+	// Administración (API-008): service account de Keycloak (IAM-011). Sin
+	// secreto (solo dev) la suspensión queda solo en la plataforma.
+	adminOpts := identityapp.AdminOptions{
+		Repo: identityRepo, Directory: identityRepo, Pets: petQueries,
+		Memberships: orginfra.NewMembershipProvider(orgQueries),
+		Audit:       identityinfra.NewAuditLog(pool), Logger: logger,
+	}
+	if cfg.Keycloak.AdminClientSecret != "" {
+		kc, err := keycloakadmin.New(keycloakadmin.Options{
+			BaseURL: cfg.Keycloak.BaseURL, Realm: cfg.Keycloak.Realm,
+			ClientID: cfg.Keycloak.AdminClientID, ClientSecret: cfg.Keycloak.AdminClientSecret,
+		})
+		if err != nil {
+			return fmt.Errorf("keycloak admin: %w", err)
+		}
+		adminOpts.Keycloak = kc
+	} else {
+		logger.Warn("PP_KC_ADMIN_CLIENT_SECRET vacío: suspensión de usuarios sin sincronizar con Keycloak (solo dev)")
+	}
+	adminSvc := identityapp.NewAdminService(adminOpts)
+
 	spec, err := gen.GetSpec()
 	if err != nil {
 		return fmt.Errorf("openapi: %w", err)
@@ -202,9 +230,11 @@ func run() error {
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
 		Handlers: apiHandlers{
-			Handlers:    identityHandlers,
-			PetHandlers: pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
-			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger),
+			Handlers:      identityHandlers,
+			AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
+			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
+				WithIPHashSalt(cfg.IPHashSalt),
 		},
 		Guard: guard.Middleware,
 	})

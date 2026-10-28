@@ -53,6 +53,20 @@ const (
 	OrgInvitationJoin Action = "org:invitation:accept"
 )
 
+// Acciones de administración de plataforma (IAM-010 última fila, API-008).
+// Solo super_admin; los comandos exigen motivo y se auditan (RN-06).
+const (
+	AdminOrgList        Action = "admin:org:list"
+	AdminOrgVerify      Action = "admin:org:verify"
+	AdminOrgReject      Action = "admin:org:reject"
+	AdminOrgSuspend     Action = "admin:org:suspend"
+	AdminOrgReactivate  Action = "admin:org:reactivate"
+	AdminUserList       Action = "admin:user:list"
+	AdminUserSuspend    Action = "admin:user:suspend"
+	AdminUserReactivate Action = "admin:user:reactivate"
+	AdminAuditRead      Action = "admin:audit:read"
+)
+
 // ReasonOrgSuspended es el motivo de denegación de org:patients:list cuando
 // la organización del miembro está suspendida (→ 403 ORGANIZATION_SUSPENDED).
 const ReasonOrgSuspended = "organization suspended"
@@ -275,6 +289,17 @@ func orgPatientsList(p auth.Principal, res Resource) Decision {
 	return deny("not a clinic member")
 }
 
+// superAdminOnly: acciones de administración de plataforma (admin:*).
+func superAdminOnly(p auth.Principal, _ Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	if isSuperAdmin(p) {
+		return Decision{Allow: true, Reason: "super_admin"}
+	}
+	return deny("super_admin required")
+}
+
 var policies = map[Action]Policy{
 	MeRead:             authenticatedOnly,
 	MeUpdate:           authenticatedOnly,
@@ -303,6 +328,16 @@ var policies = map[Action]Policy{
 	OrgPatientsList:   orgPatientsList,
 	OrgInvitationRead: authenticatedOnly,
 	OrgInvitationJoin: authenticatedOnly,
+
+	AdminOrgList:        superAdminOnly,
+	AdminOrgVerify:      superAdminOnly,
+	AdminOrgReject:      superAdminOnly,
+	AdminOrgSuspend:     superAdminOnly,
+	AdminOrgReactivate:  superAdminOnly,
+	AdminUserList:       superAdminOnly,
+	AdminUserSuspend:    superAdminOnly,
+	AdminUserReactivate: superAdminOnly,
+	AdminAuditRead:      superAdminOnly,
 }
 
 // Can evalúa la política de la acción. Acciones sin política → deny.

@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Errores del protocolo; la capa http los mapea a problem+json.
@@ -40,6 +41,18 @@ type Store struct {
 	pool RowQuerier
 	ttl  time.Duration
 	now  func() time.Time
+
+	replays prometheus.Counter
+}
+
+// Instrument registra idempotency_replays_total (INF-007). Sin llamar = sin métricas.
+func (s *Store) Instrument(reg prometheus.Registerer) *Store {
+	s.replays = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "idempotency_replays_total",
+		Help: "Respuestas devueltas desde una Idempotency-Key ya completada.",
+	})
+	reg.MustRegister(s.replays)
+	return s
 }
 
 // NewStore construye el almacén. ttl 0 = DefaultTTL.
@@ -85,6 +98,9 @@ func (s *Store) Begin(ctx context.Context, actorID, key uuid.UUID, requestHash [
 		case row.status == "completed":
 			if string(row.requestHash) != string(requestHash) {
 				return Outcome{}, ErrKeyReused
+			}
+			if s.replays != nil {
+				s.replays.Inc()
 			}
 			return Outcome{Replay: true, Status: row.responseStatus, Body: row.responseBody}, nil
 		default: // in_progress

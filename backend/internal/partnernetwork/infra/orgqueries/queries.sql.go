@@ -12,6 +12,104 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminListOrganizations = `-- name: AdminListOrganizations :many
+SELECT id, version, type, legal_name, display_name, tax_country, tax_value, address, city, country,
+       contact_email::text AS contact_email, contact_phone, website, public_code, status, status_reason,
+       founder_id, member_count, created_at, updated_at
+  FROM read_partnernetwork.organizations
+ WHERE status = $1::text
+   AND ($2::text IS NULL
+        OR display_name ILIKE '%' || $2::text || '%'
+        OR legal_name ILIKE '%' || $2::text || '%'
+        OR public_code = upper($2::text))
+   AND ($3::timestamptz IS NULL
+        OR (created_at, id) > ($3::timestamptz, $4::uuid))
+ ORDER BY created_at, id
+ LIMIT $5
+`
+
+type AdminListOrganizationsParams struct {
+	Status    string
+	Q         *string
+	CreatedAt pgtype.Timestamptz
+	ID        *uuid.UUID
+	Limit     int32
+}
+
+type AdminListOrganizationsRow struct {
+	ID           uuid.UUID
+	Version      int64
+	Type         string
+	LegalName    string
+	DisplayName  string
+	TaxCountry   string
+	TaxValue     string
+	Address      []byte
+	City         string
+	Country      string
+	ContactEmail string
+	ContactPhone string
+	Website      *string
+	PublicCode   string
+	Status       string
+	StatusReason *string
+	FounderID    uuid.UUID
+	MemberCount  int32
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+// Panel admin (PRD-017, API-008): organizaciones por estado, de la más
+// antigua a la más reciente (cola de verificación FIFO). q busca por nombre,
+// razón social o código público (ILIKE escapado por el adaptador). Cursor por
+// (created_at, id) ascendente.
+func (q *Queries) AdminListOrganizations(ctx context.Context, arg AdminListOrganizationsParams) ([]AdminListOrganizationsRow, error) {
+	rows, err := q.db.Query(ctx, adminListOrganizations,
+		arg.Status,
+		arg.Q,
+		arg.CreatedAt,
+		arg.ID,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminListOrganizationsRow
+	for rows.Next() {
+		var i AdminListOrganizationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Version,
+			&i.Type,
+			&i.LegalName,
+			&i.DisplayName,
+			&i.TaxCountry,
+			&i.TaxValue,
+			&i.Address,
+			&i.City,
+			&i.Country,
+			&i.ContactEmail,
+			&i.ContactPhone,
+			&i.Website,
+			&i.PublicCode,
+			&i.Status,
+			&i.StatusReason,
+			&i.FounderID,
+			&i.MemberCount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrgSummaryByCode = `-- name: GetOrgSummaryByCode :one
 SELECT id, type, display_name, city, country, status
   FROM read_partnernetwork.organizations

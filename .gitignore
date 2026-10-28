@@ -20,3 +20,10 @@ infra/traefik/certs/*.pem
 .vscode/
 *.swp
 frontend/tsconfig.app.tsbuildinfo
+
+# Terraform (infra/waf): estado y variables reales nunca en el repo
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
+import AppFooter from '@/shared/ui/AppFooter.vue'
 const { t } = useI18n()
 const session = useSessionStore()
 </script>
@@ -41,8 +42,6 @@ const session = useSessionStore()
     <main id="main" class="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
       <slot />
     </main>
-    <footer class="border-t border-surface-200 dark:border-surface-800 text-xs text-surface-500">
-      <div class="mx-auto max-w-5xl px-4 py-4">© PetPassport</div>
-    </footer>
+    <AppFooter />
   </div>
 </template>

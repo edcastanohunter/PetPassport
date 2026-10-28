@@ -108,6 +108,17 @@ var suite = map[Action][]suiteRow{
 	OrgMemberRole:   {{orgRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}}},
 	OrgMemberRemove: {{orgRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}}},
 	OrgPatientsList: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
+
+	// Administración de plataforma (API-008): solo super_admin.
+	AdminOrgList:        {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminOrgVerify:      {{orgRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminOrgReject:      {{orgRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminOrgSuspend:     {{orgRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminOrgReactivate:  {{orgRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminUserList:       {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminUserSuspend:    {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminUserReactivate: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminAuditRead:      {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

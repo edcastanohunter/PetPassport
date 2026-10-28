@@ -8,7 +8,8 @@ package main
 //     decisiones de platform/authz).
 //  2. TestRoutes_AuthzMatrix ejecuta cada operación de mascotas, vínculos y
 //     organizaciones con cada persona (tutor / vinculado / no vinculado / org
-//     suspendida / farmacia / ajeno / super_admin) y comprueba el código:
+//     suspendida / farmacia / ajeno / super_admin) y comprueba el código
+//     (incluye las rutas /admin de API-008: solo super_admin):
 //     403 o 404 cuando la política deniega; cualquier otro (la ejecución pasa
 //     de authz y sigue contra fakes) cuando permite. Una fila por operación ×
 //     persona; una operación nueva sin fila hace fallar la prueba.
@@ -37,12 +38,14 @@ import (
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
+	identitydomain "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orgdomain "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
@@ -60,6 +63,7 @@ var (
 	orgSusp   = uuid.MustParse("01930000-0000-7000-8000-00000000c002") // clínica suspendida con vínculo
 	orgOther  = uuid.MustParse("01930000-0000-7000-8000-00000000c003") // clínica activa sin vínculo
 	orgPharma = uuid.MustParse("01930000-0000-7000-8000-00000000c004") // farmacia activa
+	targetID  = uuid.MustParse("01930000-0000-7000-8000-00000000d001") // usuario objetivo de /admin/users y de miembros
 )
 
 type persona struct {
@@ -177,6 +181,23 @@ func (fakeOrgQueries) MembershipsOf(context.Context, uuid.UUID) ([]orgapp.Member
 	return nil, nil
 }
 
+func (fakeOrgQueries) AdminListOrgs(context.Context, orgapp.AdminOrgFilter) ([]orgapp.OrgView, *orgapp.OrgCursor, error) {
+	return nil, nil, nil
+}
+
+// fakeDirectory / fakeAuditLog: lectura admin vacía (la persistencia se prueba en integración).
+type fakeDirectory struct{}
+
+func (fakeDirectory) SearchAccounts(context.Context, identityapp.AccountSearch) ([]*identitydomain.UserAccount, *identityapp.AccountCursor, error) {
+	return nil, nil, nil
+}
+
+type fakeAuditLog struct{}
+
+func (fakeAuditLog) List(context.Context, audit.Filter) ([]audit.Row, *audit.Cursor, error) {
+	return nil, nil, nil
+}
+
 type failingTokens struct{}
 
 func (failingTokens) Rotate(context.Context, uuid.UUID, uuid.UUID, []byte, time.Time) (string, string, error) {
@@ -199,14 +220,21 @@ func (failingRow) Scan(...any) error { return errors.New("db no disponible en la
 func newSuiteHandlers() apiHandlers {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	idem := idempotency.NewStore(failingDB{}, 0)
-	identitySvc := identityapp.NewService(testkit.NewMemoryIdentityRepo(), logger)
+	identityRepo := testkit.NewMemoryIdentityRepo()
+	_ = identityRepo.Insert(context.Background(), identitydomain.Provision(targetID,
+		identitydomain.TokenSnapshot{Email: "target@example.com", EmailVerified: true, Roles: []string{"pet_owner"}}, time.Now()))
+	identitySvc := identityapp.NewService(identityRepo, logger)
 	identityHandlers := identityhttp.NewHandlers(identitySvc, "salt")
+	adminSvc := identityapp.NewAdminService(identityapp.AdminOptions{
+		Repo: identityRepo, Directory: fakeDirectory{}, Audit: fakeAuditLog{}, Logger: logger,
+	})
 	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, Logger: logger})
 	orgSvc := orgapp.NewService(orgapp.Options{Queries: fakeOrgQueries{}, Tokens: failingTokens{}, Logger: logger})
 	return apiHandlers{
-		Handlers:    identityHandlers,
-		PetHandlers: pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
-		OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		Handlers:      identityHandlers,
+		AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+		PetHandlers:   pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
+		OrgHandlers:   orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
 	}
 }
 
@@ -259,7 +287,9 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(who.homeOrg).Convert(f.Type))
 		case f.Name == "OrganizationId":
 			field.Set(reflect.ValueOf(orgActive).Convert(f.Type))
-		case f.Name == "UserId", f.Name == "InvitationId":
+		case f.Name == "UserId":
+			field.Set(reflect.ValueOf(targetID).Convert(f.Type))
+		case f.Name == "InvitationId":
 			field.Set(reflect.ValueOf(uuid.New()).Convert(f.Type))
 		case f.Name == "Token":
 			field.SetString("tok_tok_tok_tok_tok_tok_tok")
@@ -373,6 +403,17 @@ var matrix = map[string][9]int{
 	"acceptInvitation":        {ok, ok, ok, ok, ok, ok, ok, ok, ok},
 	"listPatients":            {403, ok, ok, ok, 403, 403, 403, 403, ok},
 	"getPatient":              {404, ok, ok, ok, 404, 403, 404, 404, ok},
+
+	// Administración de plataforma (API-008): solo super_admin; el resto 403.
+	"adminListOrganizations":      {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminVerifyOrganization":     {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminRejectOrganization":     {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminSuspendOrganization":    {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminReactivateOrganization": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminListUsers":              {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminSuspendUser":            {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminReactivateUser":         {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminListAuditLog":           {403, 403, 403, 403, 403, 403, 403, 403, ok},
 }
 
 // Operaciones de cuenta propia: su autorización (authenticatedOnly) se prueba
@@ -412,5 +453,27 @@ func TestRoutes_SuspendedOrgCode(t *testing.T) {
 		gen.ListPatientsRequestObject{OrgId: orgSusp})
 	if p := problem.From(err); p.Code != problem.OrganizationSuspended || p.Status != http.StatusForbidden {
 		t.Fatalf("problem: %+v", p)
+	}
+}
+
+// TestRoutes_AdminReasonRequired: los comandos admin sin motivo suficiente
+// responden 422 REASON_REQUIRED (API-008) después de authz.
+func TestRoutes_AdminReasonRequired(t *testing.T) {
+	h := newSuiteHandlers()
+	ctx := auth.WithPrincipal(context.Background(), personas[len(personas)-1].p)
+	_, err := h.AdminSuspendOrganization(ctx, gen.AdminSuspendOrganizationRequestObject{
+		OrgId: orgActive, Body: &gen.AdminReasonRequest{Reason: "corto"}})
+	if p := problem.From(err); p.Code != problem.ReasonRequired || p.Status != http.StatusUnprocessableEntity {
+		t.Fatalf("org: %+v", p)
+	}
+	_, err = h.AdminSuspendUser(ctx, gen.AdminSuspendUserRequestObject{UserId: targetID, Body: &gen.AdminReasonRequest{Reason: "   "}})
+	if p := problem.From(err); p.Code != problem.ReasonRequired {
+		t.Fatalf("user: %+v", p)
+	}
+	verify := "corto"
+	_, err = h.AdminVerifyOrganization(ctx, gen.AdminVerifyOrganizationRequestObject{
+		OrgId: orgActive, Body: &gen.AdminOptionalReasonRequest{Reason: &verify}})
+	if p := problem.From(err); p.Code != problem.ReasonRequired {
+		t.Fatalf("verify con motivo corto: %+v", p)
 	}
 }

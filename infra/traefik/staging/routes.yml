@@ -1,0 +1,167 @@
+# Enrutamiento de staging (SEC-001/SEC-002, ADR-006). Plantilla Go del file
+# provider de Traefik: PP_DOMAIN, PP_ORIGIN_AUTH_SECRET y TEAM_IP_RANGES llegan
+# por entorno desde /etc/petpassport/<env>.env (nunca del repo).
+#
+# Origen cerrado: TODOS los routers exigen la cabecera X-Origin-Auth que solo
+# Cloudflare inyecta (transform rule en infra/waf/cloudflare). Sin ella no hay
+# router que coincida → 404. El firewall de la VM, además, solo admite 443
+# desde los rangos de Cloudflare (RUNBOOK §1).
+{{ $domain := env "PP_DOMAIN" }}
+{{ $origin := printf "Header(`X-Origin-Auth`, `%s`)" (env "PP_ORIGIN_AUTH_SECRET") }}
+http:
+  routers:
+    frontend:
+      rule: Host(`app.{{ $domain }}`) && {{ $origin }}
+      entryPoints: [websecure]
+      service: frontend
+      middlewares: [strip-origin-auth, security-headers, compress]
+      tls: {}
+
+    # API: límites por método y ruta (SEC-001). El WAF aplica los de login/token
+    # en el borde; aquí se aplican todos de nuevo por IP real (CF-Connecting-IP).
+    api-read:
+      rule: Host(`api.{{ $domain }}`) && PathPrefix(`/api/`) && (Method(`GET`) || Method(`HEAD`) || Method(`OPTIONS`)) && {{ $origin }}
+      priority: 500
+      entryPoints: [websecure]
+      service: api
+      middlewares: [strip-origin-auth, api-headers, rl-api-read, inflight, compress]
+      tls: {}
+    api-write:
+      # Resto de métodos (POST/PUT/PATCH/DELETE): prioridad menor que api-read.
+      rule: Host(`api.{{ $domain }}`) && PathPrefix(`/api/`) && {{ $origin }}
+      priority: 100
+      entryPoints: [websecure]
+      service: api
+      middlewares: [strip-origin-auth, api-headers, api-buffering, rl-api-write, inflight, compress]
+      tls: {}
+    api-lookup:
+      rule: Host(`api.{{ $domain }}`) && Path(`/api/v1/organizations/lookup`) && {{ $origin }}
+      priority: 1000
+      entryPoints: [websecure]
+      service: api
+      middlewares: [strip-origin-auth, api-headers, rl-lookup, inflight, compress]
+      tls: {}
+
+    keycloak:
+      rule: Host(`auth.{{ $domain }}`) && (PathPrefix(`/realms/petpassport/`) || PathPrefix(`/resources/`)) && {{ $origin }}
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [strip-origin-auth, compress]
+      tls: {}
+    keycloak-login:
+      # Login, registro, recuperación y token: 10/min/IP (SEC-001, IAM-004).
+      rule: Host(`auth.{{ $domain }}`) && Method(`POST`) && (PathPrefix(`/realms/petpassport/login-actions/`) || Path(`/realms/petpassport/protocol/openid-connect/token`)) && {{ $origin }}
+      priority: 1000
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [strip-origin-auth, rl-login]
+      tls: {}
+    keycloak-admin:
+      # Consola y realm master solo desde IP/VPN del equipo (SEC-001). El WAF
+      # bloquea lo mismo en el borde; esto es la segunda capa.
+      rule: Host(`auth.{{ $domain }}`) && (PathPrefix(`/admin/`) || PathPrefix(`/realms/master/`) || Path(`/`)) && {{ $origin }}
+      priority: 900
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [strip-origin-auth, team-allowlist]
+      tls: {}
+
+  services:
+    frontend:
+      loadBalancer:
+        servers: [{ url: "http://frontend:8080" }]
+    api:
+      loadBalancer:
+        servers: [{ url: "http://api:8080" }]
+        healthCheck:
+          path: /api/v1/healthz
+          interval: 5s
+        responseForwarding:
+          flushInterval: 100ms
+    keycloak:
+      loadBalancer:
+        servers: [{ url: "http://keycloak:8080" }]
+
+  middlewares:
+    strip-origin-auth:
+      headers:
+        customRequestHeaders:
+          X-Origin-Auth: ""
+    security-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        # preload se activa tras validar HSTS en staging (SEC-001).
+        stsPreload: false
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        frameDeny: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.{{ $domain }} https://auth.{{ $domain }}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.{{ $domain }}; object-src 'none'; upgrade-insecure-requests"
+        customResponseHeaders:
+          Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
+          Cross-Origin-Opener-Policy: same-origin
+    api-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        contentTypeNosniff: true
+        customResponseHeaders:
+          Cache-Control: no-store
+    api-buffering:
+      buffering:
+        maxRequestBodyBytes: 6291456
+        memRequestBodyBytes: 1048576
+    inflight:
+      inFlightReq:
+        amount: 100
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
+    # Límites SEC-001 (por minuto y por IP real). Traefik responde 429 con Retry-After.
+    rl-api-read:
+      rateLimit:
+        average: 300
+        period: 1m
+        burst: 60
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
+    rl-api-write:
+      rateLimit:
+        average: 60
+        period: 1m
+        burst: 20
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
+    rl-lookup:
+      rateLimit:
+        average: 20
+        period: 1m
+        burst: 5
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
+    rl-login:
+      rateLimit:
+        average: 10
+        period: 1m
+        burst: 5
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
+    compress:
+      compress: {}
+    team-allowlist:
+      ipAllowList:
+        sourceRange:
+{{- range $r := splitList "," (env "TEAM_IP_RANGES") }}
+          - "{{ trim $r }}"
+{{- end }}
+        # IP real: la añade Cloudflare al final de X-Forwarded-For (origen cerrado).
+        ipStrategy:
+          depth: 1
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/origin.pem
+      keyFile: /etc/traefik/certs/origin-key.pem
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true

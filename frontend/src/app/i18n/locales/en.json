@@ -122,7 +122,8 @@
     "INVALID_STATUS_TRANSITION": "The organization is not in a state that allows this action.",
     "IDEMPOTENCY_KEY_REUSED": "A previous attempt was reused with different data. Please try again.",
     "REQUEST_IN_PROGRESS": "The previous request is still in progress.",
-    "INTERNAL": "An unexpected error occurred."
+    "INTERNAL": "An unexpected error occurred.",
+    "REASON_REQUIRED": "Provide a reason of at least 10 characters."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -382,6 +383,83 @@
       "guardianContact": "Guardian contact",
       "history": "Clinical history",
       "historySoon": "Coming soon."
+    }
+  },
+  "admin": {
+    "nav": {
+      "label": "Administration navigation",
+      "organizations": "Organizations",
+      "users": "Users",
+      "audit": "Audit"
+    },
+    "search": "Search",
+    "loadMore": "Load more",
+    "reason": {
+      "label": "Reason (at least 10 characters)",
+      "labelOptional": "Reason (optional; at least 10 characters if provided)",
+      "hint": "{n} characters · minimum {min}. Recorded in the audit log: do not include personal data.",
+      "confirm": "Confirm"
+    },
+    "orgs": {
+      "search": "Name, legal name or code",
+      "empty": "No organizations in this status.",
+      "detail": "Organization details",
+      "createdAt": "created {date}",
+      "legalName": "Legal name",
+      "taxId": "Tax ID",
+      "address": "Address",
+      "contact": "Contact",
+      "founder": "Founder",
+      "members": "Members",
+      "action": {
+        "verify": "Verify",
+        "reject": "Reject",
+        "suspend": "Suspend",
+        "reactivate": "Reactivate"
+      },
+      "done": {
+        "verify": "{name} verified. The founder was notified.",
+        "reject": "{name} rejected.",
+        "suspend": "{name} suspended.",
+        "reactivate": "{name} reactivated."
+      }
+    },
+    "users": {
+      "search": "Email or name",
+      "status": "Status",
+      "anyStatus": "Any status",
+      "empty": "No matching users.",
+      "user": "User",
+      "roles": "Global roles",
+      "memberships": "Memberships",
+      "pets": "Pets",
+      "lastLogin": "Last login",
+      "self": "You cannot suspend your own account.",
+      "statusValue": {
+        "active": "Active",
+        "suspended": "Suspended"
+      },
+      "action": {
+        "suspend": "Suspend",
+        "reactivate": "Reactivate"
+      },
+      "done": {
+        "suspend": "{email} suspended: their sessions were closed.",
+        "reactivate": "{email} reactivated."
+      }
+    },
+    "audit": {
+      "actor": "Actor (id)",
+      "target": "Target (id)",
+      "from": "From",
+      "to": "To",
+      "filter": "Filter",
+      "badRange": "The end date must be after the start date.",
+      "empty": "No entries for these filters.",
+      "when": "Date",
+      "action": "Action",
+      "reason": "Reason",
+      "system": "system"
     }
   }
 }

@@ -27,6 +27,7 @@ const aud = "petpassport-api"
 type handlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
+	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 }
