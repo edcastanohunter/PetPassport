@@ -21,12 +21,12 @@ func healthcheck() int {
 	target := "http://" + net.JoinHostPort("127.0.0.1", port) + "/readyz"
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil) //nolint:gosec // G704: host fijo 127.0.0.1
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil) // #nosec G704 -- host fijo 127.0.0.1
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	resp, err := http.DefaultClient.Do(req) //nolint:gosec // G704: host fijo 127.0.0.1
+	resp, err := http.DefaultClient.Do(req) // #nosec G704 -- host fijo 127.0.0.1
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
