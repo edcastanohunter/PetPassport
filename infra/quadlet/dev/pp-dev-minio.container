@@ -1,0 +1,24 @@
+# Almacenamiento S3 de desarrollo. minio/minio dejó de publicarse en docker.io y
+# quay.io exige credenciales: build de Chainguard del mismo servidor. Corre como
+# root del contenedor (en rootless, el propio usuario del host) y sin healthcheck
+# (la imagen no trae shell ni mc): pp-dev-minio-init espera a que responda.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: minio
+
+[Container]
+Image=cgr.dev/chainguard/minio:latest
+ContainerName=pp-dev-minio
+Network=pp-dev.network
+NetworkAlias=minio
+User=0:0
+PublishPort=9000:9000
+PublishPort=9001:9001
+Exec=server /data --console-address :9001
+Environment=MINIO_ROOT_USER=minio MINIO_ROOT_PASSWORD=minio12345
+Volume=pp-dev-miniodata.volume:/data
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

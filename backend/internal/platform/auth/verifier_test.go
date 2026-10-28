@@ -68,7 +68,7 @@ func TestVerifier_RejectsInvalidTokens(t *testing.T) {
 func TestVerifier_DiscoveryDistinctFromIssuer(t *testing.T) {
 	j := testkit.NewJWKS(t)
 	// El documento interno anuncia j.Issuer; configuramos ese issuer pero con una
-	// URL de descubrimiento explícita (misma en pruebas), como en compose.
+	// URL de descubrimiento explícita (misma en pruebas), como en el entorno dev.
 	v, err := auth.NewVerifier(context.Background(), auth.VerifierConfig{
 		Issuer: j.Issuer, DiscoveryURL: j.Issuer + "/", Audience: aud,
 	})

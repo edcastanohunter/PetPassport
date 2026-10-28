@@ -1,0 +1,21 @@
+# Alloy: logs de los contenedores (journald) → Loki (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: alloy
+
+[Container]
+Image=docker.io/grafana/alloy:v1.7.1
+ContainerName=pp-dev-alloy
+Network=pp-dev.network
+Exec=run /etc/alloy/config.alloy --storage.path=/var/lib/alloy
+Volume=@REPO_DIR@/infra/observability/alloy.alloy:/etc/alloy/config.alloy:ro,z
+# Journal del host en solo lectura (sin socket del motor; threat model §2.7).
+Volume=/var/log/journal:/var/log/journal:ro
+Volume=/etc/machine-id:/etc/machine-id:ro
+# Alloy corre como root sin capabilities: :U deja el volumen a su nombre (la
+# imagen lo trae del usuario alloy y sin CAP_DAC_OVERRIDE no podría escribir).
+Volume=pp-dev-alloydata.volume:/var/lib/alloy:U
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

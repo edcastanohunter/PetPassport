@@ -57,7 +57,8 @@ jobs:
           path: backend/coverage.out
 
   integration:
-    # testcontainers usa el Docker del runner (migraciones up/down/up, PP-F1-DAT-002).
+    # testcontainers usa el Docker que trae el runner de GitHub (migraciones up/down/up, PP-F1-DAT-002).
+    # En local, `make test-integration` usa la API de Podman (ADR-026).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

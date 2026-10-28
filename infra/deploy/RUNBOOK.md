@@ -1,47 +1,67 @@
 # Runbook de operación: staging (PP-F1-INF-006)
 
-Entorno: una VM Ubuntu LTS con Docker y servicios gestionados (PostgreSQL, object storage, SMTP)
-detrás de Cloudflare (ADR-006, ADR-008). El dominio es un parámetro (`PP_DOMAIN`). Los hosts
-públicos son `app.`, `api.` y `auth.` bajo ese dominio.
+Entorno: una VM Linux con Podman **rootless** y systemd, y servicios gestionados (PostgreSQL, object storage,
+SMTP), detrás de Cloudflare (ADR-006, ADR-008, ADR-026). Cada servicio es una unidad Quadlet
+(`infra/quadlet/deploy/`) del systemd de usuario de la cuenta de servicio `petpassport`: `deploy.sh` las
+renderiza e instala en `~petpassport/.config/containers/systemd/petpassport/`. Se opera como ese usuario con
+`systemctl --user` y `journalctl --user` (`pp-api.service`, `pp-keycloak.service`, …). Root solo interviene en
+la preparación del host (`host-setup.sh`, §1). El dominio es un parámetro (`PP_DOMAIN`). Los hosts públicos
+son `app.`, `api.` y `auth.` bajo ese dominio.
+
+> Convención: los comandos de §3–§14 se ejecutan como `petpassport` (`sudo -iu petpassport`). `host-setup.sh`
+> deja `XDG_RUNTIME_DIR` en su perfil, que es lo que necesitan `systemctl --user` y `journalctl --user`.
 
 > **Ensayo obligatorio**: alguien distinto de quien escribió este runbook ejecuta una vez §3, §4 y
 > §9 antes de M1.5 y anota el resultado al final del documento.
 
-Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
+Contenido: §1 VM y host-setup · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
 §7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto ·
-§13 Correo.
+§13 Correo · §14 Operación con systemd.
 
 ## 1. Preparación de la VM (una vez)
 
 1. VM con 2–4 vCPU y 8 GB. Acceso SSH solo por clave más MFA del proveedor, sin contraseñas
    (`PasswordAuthentication no`) y con registro de sesiones del proveedor activo.
-2. Paquetes: `docker-ce`, `docker-compose-plugin`, `curl`, `jq`, `openssl`, `util-linux` (`flock`), `git`, `ufw`.
-3. Firewall: solo SSH desde la VPN del equipo y 443 desde Cloudflare.
+2. SO con **Podman ≥ 5.4** y systemd (p. ej. Debian 13 o RHEL/Alma 10; en Ubuntu, comprobar la versión del
+   paquete de la LTS elegida: la 24.04 trae 4.9 y no sirve). `host-setup.sh` y `deploy.sh` rechazan versiones
+   anteriores. Paquetes: `podman`, `passt` (red rootless), `netavark`, `aardvark-dns`, `nftables`, `curl`,
+   `jq`, `openssl`, `util-linux` (`flock`), `git`. No hace falta Docker ni ningún proveedor de Compose.
    ```bash
-   ufw default deny incoming && ufw default allow outgoing
-   ufw allow from <ip-vpn>/32 to any port 22 proto tcp
-   for r in $(grep -v '^#' infra/waf/cloudflare-ips.txt); do ufw allow from "$r" to any port 443 proto tcp; done
-   ufw enable
+   podman version --format '{{.Client.Version}}'      # ≥ 5.4
+   podman info --format '{{.Host.NetworkBackend}}'    # netavark
    ```
-   Docker publica puertos saltándose las reglas `INPUT` de ufw. Por eso se replica la restricción
-   en la cadena `DOCKER-USER`:
-   ```bash
-   iptables -I DOCKER-USER -p tcp --dport 8443 -j DROP
-   for r in $(grep -v '^#' infra/waf/cloudflare-ips.txt | grep -v ':'); do
-     iptables -I DOCKER-USER -p tcp --dport 8443 -s "$r" -j RETURN; done
-   netfilter-persistent save
-   ```
-   (Puerto 8443 = destino del 443 publicado tras el DNAT. Para IPv6, lo mismo con `ip6tables`.)
-4. Certificado de origen de Cloudflare (SSL/TLS → Origin Server, 15 años, `*.${PP_DOMAIN}`):
-   `/var/lib/petpassport/staging/certs/origin.pem` y `origin-key.pem` (dueño root, `600`).
-5. Clonar el repo en `/opt/petpassport` (solo lectura para el despliegue; `git pull` del tag a desplegar).
-6. `docker login ghcr.io` con un token de solo lectura de paquetes.
+3. Clonar el repo en `/opt/petpassport` (`git pull` del tag a desplegar). Las unidades montan ficheros de ahí
+   (`infra/traefik/staging`, `infra/keycloak`, `infra/observability`). Tras el paso 4, dárselo a `petpassport`
+   (`chown -R petpassport: /opt/petpassport`): con SELinux, el reetiquetado `:z` lo exige.
+4. Como root, una vez: `/opt/petpassport/infra/deploy/host-setup.sh staging`. Es lo único que necesita root
+   y es idempotente:
+   - crea el usuario de servicio `petpassport` (UID normal, sin contraseña: journald solo da journal propio a
+     UIDs ≥ 1000, y sin él ni `journalctl --user` ni Alloy verían los logs), con rangos subuid/subgid y
+     **linger** (su systemd de usuario arranca con la VM aunque nadie haya iniciado sesión);
+   - `net.ipv4.ip_unprivileged_port_start=443` en `/etc/sysctl.d/90-petpassport.conf`: el 443 lo abre
+     `pp-traefik.socket` como usuario sin privilegios;
+   - journal persistente (`/var/log/journal`);
+   - la tabla nftables `pp-origin` (`infra/deploy/host/pp-origin.nft`) con los rangos vigentes de Cloudflare,
+     en `/etc/pp-origin/`, cargada por `pp-origin-firewall.service` (unidad de sistema);
+   - `/etc/petpassport/` y `/var/lib/petpassport/staging/` con dueño `petpassport` (700).
+5. Firewall en dos capas:
+   - **Proveedor** (security group): entrada solo SSH desde la VPN del equipo y 443 desde los rangos de
+     `infra/waf/cloudflare-ips.txt`; el resto, denegado.
+   - **Host**: la tabla `pp-origin` del paso 4. Filtra en `input`: el socket del 443 vive en el propio host
+     (activación por socket, sin DNAT), así que el tráfico pasa por esa cadena. Acepta loopback. Si Cloudflare
+     publica rangos nuevos, `deploy.sh` avisa y hay que volver a ejecutar `host-setup.sh staging` como root.
+     Comprobar: `nft list table inet pp-origin` (contadores de `drop`).
+6. Certificado de origen de Cloudflare (SSL/TLS → Origin Server, 15 años, `*.${PP_DOMAIN}`):
+   `/var/lib/petpassport/staging/certs/origin.pem` y `origin-key.pem` (dueño `petpassport`, `600`).
+7. Acceso de `petpassport` a ghcr.io con un token de solo lectura de paquetes, en un fichero persistente:
+   `podman login --authfile ~/.config/containers/auth.json ghcr.io` (Podman lo consulta si no existe el de
+   `$XDG_RUNTIME_DIR`, que se borra al reiniciar).
 
 ## 2. Secretos y configuración (INF-005, SEC-006)
 
 - Fuente de verdad: el secret manager del proveedor (o SOPS+age). En la VM se genera
   `/etc/petpassport/staging.env` a partir de `infra/deploy/staging.env.example`:
-  `install -m 600 -o root -g root /dev/null /etc/petpassport/staging.env` y se rellenan los valores.
+  `install -m 600 -o petpassport -g petpassport /dev/null /etc/petpassport/staging.env` y se rellenan los valores.
   `deploy.sh` se niega a usarlo si los permisos no son 600/400.
 - Prerrequisitos humanos: dominio y zona en Cloudflare; Postgres gestionado con las bases
   `petpassport` y `keycloak` y los roles de `infra/postgres/init/` (creados por el DBA con contraseñas
@@ -54,13 +74,29 @@ Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotac
 ## 3. Despliegue
 
 ```bash
+sudo -iu petpassport
 cd /opt/petpassport && git fetch --tags && git checkout <tag-o-sha>
-sudo infra/deploy/deploy.sh staging sha-<sha-largo>
+infra/deploy/deploy.sh staging sha-<sha-largo>       # se niega a correr como root
 ```
 
-Pasos del script: pull → `migrate up` → Traefik, Keycloak y realm → observabilidad → `api`/`frontend`
-con `--wait` → smoke → anotación en Grafana y aviso al canal del equipo. Volver a ejecutarlo con la
-misma versión no cambia nada.
+Pasos del script:
+
+0. Comprueba lo que deja `host-setup.sh`: linger, el 443 abrible sin privilegios y `pp-origin-firewall` activo.
+1. Renderiza las unidades de `infra/quadlet/deploy/` para la versión: imagen, rutas y rangos de Cloudflare.
+   Genera un `EnvironmentFile` por servicio en `/var/lib/petpassport/staging/env/` (600), porque las
+   unidades no llevan secretos. Valida todo con el generador de Quadlet (`-user -dryrun`) y hace
+   `podman pull` de las imágenes.
+2. Instala solo `pp-migrate` y ejecuta `systemctl --user start pp-migrate`.
+3. Instala las unidades que cambiaron (`~/.config/containers/systemd/petpassport/` y, para el socket, el timer
+   y el aviso de fallos, `~/.config/systemd/user/`) y hace `daemon-reload`. Activa `pp-traefik.socket` y el
+   timer de respaldo. Reinicia `pp-traefik`/`pp-keycloak` y la observabilidad si cambiaron, y después ejecuta
+   `pp-keycloak-config`.
+4. Ejecuta `systemctl --user restart pp-api pp-frontend`. Con `Notify=healthy` no termina hasta que pasan su
+   health check.
+5. Smoke, anotación en Grafana y aviso al canal del equipo.
+
+Volver a ejecutarlo con la misma versión no reinicia nada: solo se reinicia lo que cambió, y la última
+línea del log lo enumera.
 
 - Si `migrate` falla, el despliegue se aborta y la versión anterior sigue sirviendo. Revisar el log y
   corregir con una migración nueva; nunca se edita una migración aplicada.
@@ -71,13 +107,13 @@ misma versión no cambia nada.
 ## 4. Rollback
 
 ```bash
-sudo infra/deploy/deploy.sh staging "$(tail -2 /var/lib/petpassport/staging/history | head -1 | cut -d' ' -f2)"
+infra/deploy/deploy.sh staging "$(tail -2 /var/lib/petpassport/staging/history | head -1 | cut -d' ' -f2)"
 ```
 
 Las migraciones son compatibles hacia atrás una versión (DAT-002), así que el rollback no ejecuta
 `down`. Si la versión a la que se vuelve es dos o más versiones anterior, primero hay que comprobar en
 las notas de las migraciones intermedias que no haya cambios incompatibles. Si el rollback tampoco
-llega a healthy: `docker compose … logs api`, contrastar con la alerta activa (§7) y escalar (§12).
+llega a healthy: `journalctl --user -u pp-api -n 200`, contrastar con la alerta activa (§7) y escalar (§12).
 
 ## 5. Rotación de secretos (cada 6 meses o ante incidente)
 
@@ -85,7 +121,7 @@ llega a healthy: `docker compose … logs api`, contrastar con la alerta activa 
 |---|---|
 | `PP_BACKEND_CLIENT_SECRET` | Keycloak → clients → `petpassport-backend` → Credentials → Regenerate. Actualizar el secret manager y el `.env`. `deploy.sh staging <versión-actual>` (keycloak-config reaplica el valor y la API se reinicia). |
 | Contraseñas de BD | Crear contraseña nueva en el proveedor (`ALTER ROLE … PASSWORD`), actualizar el `.env` y redeplegar la versión actual. |
-| `PP_ORIGIN_AUTH_SECRET` | 1) `terraform apply` con el nuevo `TF_VAR_origin_auth_secret`. 2) Inmediatamente después, actualizar el `.env` y ejecutar `docker compose … up -d traefik`. Entre 1 y 2 el origen responde 404 (unos segundos): hacerlo en una ventana de bajo tráfico. |
+| `PP_ORIGIN_AUTH_SECRET` | 1) `terraform apply` con el nuevo `TF_VAR_origin_auth_secret`. 2) Inmediatamente después, actualizar el `.env` y redeplegar la versión actual (`deploy.sh` regenera `env/traefik.env` y reinicia `pp-traefik`). Entre 1 y 2 el origen responde 404 (unos segundos): hacerlo en una ventana de bajo tráfico. |
 | `PP_IP_HASH_SALT` | No rotar salvo incidente: cambia los hashes de IP del `audit_log` (se pierde la correlación histórica). |
 | Admin de Keycloak | Admin nominal con OTP. El usuario bootstrap se elimina tras el primer arranque. |
 
@@ -127,7 +163,7 @@ el pool está saturado, revisar consultas lentas (`log_min_duration_statement`) 
 Tempo da las trazas de las requests lentas.
 
 ### 7.3 ApiNotReady
-`/readyz` lleva 2 min caído. Ejecutar `docker compose … ps` y `logs api`. Normalmente es la BD o
+`/readyz` lleva 2 min caído. Ejecutar `systemctl --user status pp-api` y `journalctl --user -u pp-api -n 200`. Normalmente es la BD o
 Keycloak (JWKS). Si la API está en bucle de reinicios tras un despliegue, rollback (§4).
 
 ### 7.4 OutboxPendingGrowing
@@ -140,8 +176,8 @@ revisar el estado del certificado en SSL/TLS → Edge Certificates. El de origen
 (aviso en cada despliegue): regenerarlo (§1.4) y redeplegar.
 
 ### 7.6 ScrapeTargetDown
-Prometheus no puede leer api, keycloak o traefik. Comprobar la red `default` del proyecto y el
-contenedor afectado.
+Prometheus no puede leer api, keycloak o traefik. Comprobar la red `pp-obs`
+(`podman network inspect pp-obs`) y la unidad afectada (`systemctl --user status pp-<servicio>`).
 
 ## 8. Observabilidad
 
@@ -183,19 +219,20 @@ respaldos (no puede borrar versiones); la de la API no tiene acceso a ese bucket
 
 ### 9.2 Respaldo frío semanal de `es.events`
 
-`backup export-events` (imagen del backend) exporta `es.events` completo desde un snapshot
+`backup export-events` (imagen del backend, unidad Quadlet `pp-events-export`) exporta `es.events` completo desde un snapshot
 REPEATABLE READ a `es-events/AAAA/AAAA-MM-DDTHHMMSSZ.jsonl.gz` + `.manifest.json` (recuento,
 rango de posiciones, sha256). Es independiente del proveedor de PostgreSQL.
 
+`deploy.sh` instala y activa `pp-events-export.timer` en cada despliegue, con la misma versión de la imagen
+que la API.
+
 ```bash
-sudo install -m 644 infra/deploy/systemd/pp-events-export.{service,timer} /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now pp-events-export.timer
-systemctl list-timers pp-events-export.timer          # próxima ejecución (domingo 03:00 UTC)
-sudo systemctl start pp-events-export.service         # ejecución manual
-journalctl -u pp-events-export -n 50                  # resultado ("es.events uploaded")
+systemctl --user list-timers pp-events-export.timer   # próxima ejecución (domingo 03:00 UTC)
+systemctl --user start pp-events-export.service       # ejecución manual
+journalctl --user -u pp-events-export -n 50           # resultado ("es.events uploaded")
 ```
 
-Si falla, `events-export.sh` avisa por `TEAM_WEBHOOK_URL`. La exportación contiene PII de los
+Si falla, `OnFailure=` lanza `pp-notify-failure@pp-events-export.service`, que avisa por `TEAM_WEBHOOK_URL`. La exportación contiene PII de los
 eventos (`pii{}`): el bucket es privado y tras restaurarla se reaplican las supresiones de
 privacidad (abajo).
 
@@ -206,7 +243,7 @@ Dos partes; ambas se anotan en `infra/deploy/RESTORE-LOG.md`.
 **A. PITR del proveedor** (la restauración real ante incidente):
 
 1. Restaurar en una instancia **temporal** a un punto de hace 24 h (consola/CLI del proveedor).
-2. `docker run --rm -e PP_DB_URL=<url-temporal-migrador> <imagen-backend> /migrate version` → la
+2. `podman run --rm -e PP_DB_URL=<url-temporal-migrador> --entrypoint /migrate <imagen-backend> version` → la
    última migración desplegada.
 3. `SELECT count(*), max(global_position) FROM es.events;` y `\l` (existe `keycloak`).
 4. Destruir la instancia temporal.
@@ -225,9 +262,9 @@ Tras una restauración real, antes de abrir tráfico, se reaplican las supresion
 
 ## 10. Keycloak
 
-- **Reinicio**: `docker compose … restart keycloak`. Las sesiones viven en la BD, así que los usuarios
-  no tienen que volver a entrar. Después: `docker compose … run --rm keycloak-config` si se tocó el
-  realm.
+- **Reinicio**: `systemctl --user restart pp-keycloak`, que vuelve cuando Keycloak está sano. Las sesiones viven
+  en la BD, así que los usuarios no tienen que volver a entrar. Después, si se tocó el realm:
+  `systemctl --user start pp-keycloak-config`.
 - **Consola**: `https://auth.${PP_DOMAIN}/admin/`, solo desde `TEAM_IP_RANGES` (WAF y Traefik).
 - **Usuario bloqueado por brute force**: Users → el usuario → "Unlock" (solo tras verificar la
   identidad).
@@ -259,8 +296,8 @@ Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) 
 `infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
 
 1. **Proveedor**: verificar el dominio `${PP_DOMAIN}` y crear una credencial SMTP solo de envío.
-   `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2); `deploy.sh` las pasa a la API y a
-   `keycloak-config`, que las escribe en el realm.
+   `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2). `deploy.sh` las copia a los `EnvironmentFile`
+   de `pp-api` y `pp-keycloak-config`, y este último las escribe en el realm.
 2. **DNS como código**: copiar los valores del proveedor en `staging.tfvars`
    (`mail_spf_includes`, `mail_dkim_records`, `mail_dmarc_policy`, `mail_dmarc_rua`) y aplicar
    `infra/waf/cloudflare` (§6). Comprobar:
@@ -276,6 +313,32 @@ Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) 
    resultado en el PR de M1.5.
 4. **DMARC**: `quarantine` desde el inicio; pasar a `reject` tras 4 semanas de informes sin
    fuentes legítimas fallando.
+
+## 14. Operación con systemd (ADR-026)
+
+Como `petpassport` (`sudo -iu petpassport`):
+
+| Tarea | Comando |
+|---|---|
+| Estado de todo | `systemctl --user list-units 'pp-*'` · `podman ps` |
+| Logs de un servicio | `journalctl --user -u pp-api -f` (también en Loki: `{service="api"}`) |
+| Reiniciar un servicio | `systemctl --user restart pp-<servicio>` (espera al health check si tiene `Notify=healthy`) |
+| Ver la unidad generada | `systemctl --user cat pp-api` · fuente: `~/.config/containers/systemd/petpassport/pp-api.container` |
+| Validar las unidades instaladas | `QUADLET_UNIT_DIRS=~/.config/containers/systemd/petpassport /usr/libexec/podman/quadlet -user -dryrun` |
+| Entorno de un servicio | `/var/lib/petpassport/<env>/env/<servicio>.env` (600; no copiar a tickets) |
+| Health check a mano | `podman healthcheck run pp-api && echo sano` |
+| Socket del 443 | `systemctl --user status pp-traefik.socket` (si cambia el `.socket`: `systemctl --user restart pp-traefik.socket`) |
+
+Solo como root: `systemctl status pp-origin-firewall`, `nft list table inet pp-origin`,
+`loginctl show-user petpassport -p Linger` (debe ser `yes`) y volver a ejecutar `host-setup.sh`.
+
+- Las unidades instaladas son **generadas**: no se editan en la VM. Los cambios van por PR en
+  `infra/quadlet/deploy/` y se aplican con `deploy.sh`; el siguiente despliegue sobrescribe cualquier edición local.
+- Todas las unidades de larga duración tienen `Restart=always` y arrancan en el boot (`WantedBy=default.target`
+  del systemd de usuario, que arranca gracias a linger). Tras un reinicio de la VM no hay que hacer nada;
+  comprobar con la primera fila de la tabla.
+- Reiniciar `pp-traefik` corta las conexiones nuevas durante unos segundos (en el ensayo fallaron 4 de 60
+  peticiones durante el reinicio): el socket sigue abierto, pero no es un reinicio sin cortes.
 
 ---
 

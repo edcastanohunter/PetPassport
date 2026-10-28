@@ -1,0 +1,26 @@
+# PostgreSQL de desarrollo; init/ crea los roles api, migrator, reader y keycloak.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: postgres
+
+[Container]
+Image=docker.io/library/postgres:17-alpine
+ContainerName=pp-dev-postgres
+Network=pp-dev.network
+NetworkAlias=postgres
+PublishPort=5432:5432
+Environment=POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres POSTGRES_DB=petpassport
+Environment=PP_API_PASSWORD=api PP_MIGRATOR_PASSWORD=migrator KC_DB_PASSWORD=keycloak
+Exec=postgres -c shared_preload_libraries=pg_stat_statements -c log_min_duration_statement=200
+Volume=pp-dev-pgdata.volume:/var/lib/postgresql/data
+Volume=@REPO_DIR@/infra/postgres/init:/docker-entrypoint-initdb.d:ro,z
+HealthCmd=pg_isready -U postgres -d petpassport
+HealthInterval=5s
+HealthTimeout=3s
+HealthRetries=20
+Notify=healthy
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

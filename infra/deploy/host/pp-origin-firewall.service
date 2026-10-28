@@ -1,0 +1,17 @@
+# Carga la tabla nftables pp-origin (solo Cloudflare hacia el 443 de origen).
+# Unidad de sistema (root): la instala host-setup.sh, que también regenera la
+# tabla con los rangos vigentes. Es lo único del despliegue que corre como root.
+[Unit]
+Description=PetPassport: filtro de origen nftables (solo Cloudflare)
+Wants=network-pre.target
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/pp-origin/pp-origin.nft
+ExecReload=/usr/sbin/nft -f /etc/pp-origin/pp-origin.nft
+ExecStop=/usr/sbin/nft delete table inet pp-origin
+
+[Install]
+WantedBy=multi-user.target

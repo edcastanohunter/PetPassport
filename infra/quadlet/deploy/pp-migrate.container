@@ -1,0 +1,23 @@
+# Migraciones goose (DAT-002) con el rol migrador. Oneshot: deploy.sh lo ejecuta
+# antes de tocar nada más; si falla, el despliegue se aborta y la versión
+# anterior sigue sirviendo.
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/containers/systemd/petpassport (rootless, ADR-026).
+[Unit]
+Description=PetPassport: migrate up (@PP_VERSION@)
+
+[Container]
+Image=@IMAGE_PREFIX@-backend:@PP_VERSION@
+ContainerName=pp-migrate
+Network=pp-internal.network
+Entrypoint=/migrate
+Exec=up
+# PP_DB_URL = PP_MIGRATOR_DB_URL.
+EnvironmentFile=@STATE_DIR@/env/migrate.env
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Type=oneshot
+TimeoutStartSec=600

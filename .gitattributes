@@ -2,5 +2,10 @@
 # (con core.autocrlf=true en Windows se convertían a CRLF y el test fallaba).
 backend/**/testdata/golden/*.json text eol=lf
 
-# Scripts montados en contenedores Linux (compose, CI): siempre LF, también en Windows.
+# Scripts montados en contenedores Linux (Quadlet, CI): siempre LF, también en Windows.
 *.sh text eol=lf
+# Unidades Quadlet/systemd y reglas nftables se instalan en Linux tal cual (ADR-026).
+infra/quadlet/** text eol=lf
+infra/deploy/systemd/** text eol=lf
+infra/deploy/host/** text eol=lf
+*.nft text eol=lf

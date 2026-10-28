@@ -1,0 +1,16 @@
+# Blackbox exporter: readyz interno y certificados públicos (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: blackbox
+
+[Container]
+Image=docker.io/prom/blackbox-exporter:v0.25.0
+ContainerName=pp-dev-blackbox
+Network=pp-dev.network
+NetworkAlias=blackbox
+Exec=--config.file=/etc/blackbox/blackbox.yml
+Volume=@REPO_DIR@/infra/observability/blackbox.yml:/etc/blackbox/blackbox.yml:ro,z
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

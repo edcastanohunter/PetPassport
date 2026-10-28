@@ -1,0 +1,18 @@
+# SMTP de desarrollo; los correos se leen en http://localhost:8025.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: mailpit
+
+[Container]
+Image=docker.io/axllent/mailpit:latest
+ContainerName=pp-dev-mailpit
+Network=pp-dev.network
+NetworkAlias=mailpit
+PublishPort=8025:8025
+PublishPort=1025:1025
+Environment=MP_SMTP_AUTH_ACCEPT_ANY=1 MP_SMTP_AUTH_ALLOW_INSECURE=1
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

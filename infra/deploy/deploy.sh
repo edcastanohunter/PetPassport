@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
-# Despliegue idempotente (PP-F1-INF-006): deploy.sh <env> <version>
+# Despliegue idempotente (PP-F1-INF-006, ADR-026): deploy.sh <env> <version>
 #
-#   1. pull de la versión (imágenes ghcr.io inmutables, misma imagen promovida)
-#   2. migrate up (one-shot; si falla, se aborta sin tocar lo que corre)
-#   3. keycloak-config (realm declarativo, idempotente)
-#   4. up -d --wait de api y frontend (readyz vía healthcheck)
+# Corre como el usuario de servicio petpassport (Podman rootless): las unidades
+# son de su systemd de usuario (`systemctl --user`). La parte que exige root
+# (usuario, linger, puerto 443, nftables) la hace una vez host-setup.sh.
+#
+#   1. renderiza las unidades Quadlet de infra/quadlet/deploy para <version>, las valida
+#      con el generador (-dryrun) y hace podman pull de sus imágenes
+#   2. migrate up (unidad oneshot; si falla, se aborta sin tocar lo que corre)
+#   3. instala las unidades que cambiaron; reinicia Traefik, Keycloak y
+#      observabilidad si cambiaron; aplica el realm (keycloak-config)
+#   4. reinicia api y frontend si cambiaron; Notify=healthy espera a /readyz
 #   5. smoke test; si falla y hay versión anterior → rollback automático
 #   6. anotación en Grafana y aviso al canal del equipo
 #
 # Rollback manual: deploy.sh <env> <version-anterior> (las migraciones son
 # compatibles hacia atrás una versión, DAT-002; nunca se ejecuta `down`).
-# Volver a ejecutar con la misma versión no cambia nada (idempotente).
+# Volver a ejecutar con la misma versión no reinicia nada (idempotente).
 set -euo pipefail
 
 usage() { echo "uso: $0 <env> <version> (p. ej. staging sha-3f2a…)" >&2; exit 2; }
@@ -22,18 +28,44 @@ VERSION=$2
 
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 ENV_FILE=${PP_ENV_FILE:-/etc/petpassport/$ENV_NAME.env}
-STATE_DIR=${PP_STATE_DIR:-/var/lib/petpassport/$ENV_NAME}
-COMPOSE_FILE=$REPO_DIR/infra/compose/docker-compose.staging.yml
-OBS_FILE=$REPO_DIR/infra/compose/docker-compose.observability.yml
+STATE_DIR=${PP_STATE_DIR:-$HOME/$ENV_NAME}
+QUADLET_DIR=${PP_QUADLET_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/containers/systemd/petpassport}
+SYSTEMD_DIR=${PP_SYSTEMD_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user}
+CF_INSTALLED=/etc/pp-origin/cf-ips
+MIN_PODMAN=5.4.0
+
+# Servicios de larga duración por grupo (unidades pp-<nombre>.service).
+EDGE_UNITS=(traefik keycloak)
+OBS_UNITS=(otel-collector tempo prometheus alertmanager blackbox loki alloy grafana)
+APP_UNITS=(api frontend)
 
 log() { printf '%s [deploy:%s] %s\n' "$(date -u +%FT%TZ)" "$ENV_NAME" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
 
 # --- Precondiciones ---------------------------------------------------------
+[[ $EUID -ne 0 ]] || die "no ejecutar como root: sudo -iu petpassport (rootless, ADR-026)"
+command -v podman >/dev/null || die "falta podman (RUNBOOK §1)"
+podman_version=$(podman version --format '{{.Client.Version}}')
+[[ $(printf '%s\n%s\n' "$MIN_PODMAN" "$podman_version" | sort -V | head -1) == "$MIN_PODMAN" ]] ||
+  die "podman $podman_version < $MIN_PODMAN (Notify=healthy, NetworkAlias; ADR-026)"
+QUADLET_BIN=
+for q in /usr/libexec/podman/quadlet /usr/lib/podman/quadlet /usr/lib/systemd/user-generators/podman-user-generator; do
+  [[ -x $q ]] && { QUADLET_BIN=$q; break; }
+done
+[[ -n $QUADLET_BIN ]] || die "no se encuentra el generador de Quadlet"
+# `sudo -iu petpassport` no abre sesión: el bus del usuario existe gracias a linger.
+export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+systemctl --user show-environment >/dev/null 2>&1 ||
+  die "sin systemd de usuario para $(id -un) (host-setup.sh activa linger)"
+(($(sysctl -n net.ipv4.ip_unprivileged_port_start) <= 443)) ||
+  die "rootless no puede abrir el 443 (host-setup.sh fija ip_unprivileged_port_start)"
+systemctl is-active -q pp-origin-firewall.service ||
+  die "pp-origin-firewall.service no está activo: ejecutar host-setup.sh como root"
+
 [[ -f $ENV_FILE ]] || die "no existe $ENV_FILE (se genera desde el secret manager, RUNBOOK §2)"
 perms=$(stat -c '%a' "$ENV_FILE")
 [[ $perms == 600 || $perms == 400 ]] || die "$ENV_FILE debe tener permisos 600 (tiene $perms)"
-mkdir -p "$STATE_DIR"
+mkdir -p "$STATE_DIR" "$QUADLET_DIR" "$SYSTEMD_DIR"
 [[ -f $STATE_DIR/certs/origin.pem && -f $STATE_DIR/certs/origin-key.pem ]] ||
   die "falta el certificado de origen en $STATE_DIR/certs (RUNBOOK §1)"
 # El certificado de origen no lo ve el blackbox (está tras Cloudflare): se
@@ -49,35 +81,199 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
-: "${PP_DOMAIN:?PP_DOMAIN en $ENV_FILE}"
+: "${PP_DOMAIN:?PP_DOMAIN en $ENV_FILE}" "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD en $ENV_FILE}"
+IMAGE_PREFIX=${IMAGE_PREFIX:-ghcr.io/edcastanohunter/petpassport}
+[[ $PP_DOMAIN =~ ^[a-z0-9.-]+$ ]] || die "PP_DOMAIN inválido"
+[[ $IMAGE_PREFIX =~ ^[a-z0-9./:_-]+$ ]] || die "IMAGE_PREFIX inválido"
 
-export PP_ENV=$ENV_NAME PP_VERSION=$VERSION PP_STATE_DIR=$STATE_DIR
-export GRAFANA_ANONYMOUS=false
-: "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD en $ENV_FILE}"
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
 
-# Observabilidad: targets de certificados públicos y webhook de alertas (600).
-mkdir -p "$STATE_DIR/prom-targets"
-printf '[{"targets":["https://app.%s/","https://api.%s/api/v1/healthz","https://auth.%s/realms/petpassport/.well-known/openid-configuration"]}]
-'   "$PP_DOMAIN" "$PP_DOMAIN" "$PP_DOMAIN" >"$STATE_DIR/prom-targets/tls.json"
-(umask 077 && printf '%s
-' "${ALERT_SLACK_WEBHOOK_URL:-https://hooks.invalid/unset}" >"$STATE_DIR/alert-webhook-url")
-export PP_PROM_TARGETS_DIR=$STATE_DIR/prom-targets PP_ALERT_WEBHOOK_FILE=$STATE_DIR/alert-webhook-url
+# Rangos de Cloudflare para trustedIPs de Traefik. nftables los carga
+# host-setup.sh (root): si Cloudflare publicó rangos nuevos, se avisa.
+# shellcheck source=lib/cloudflare.sh
+source "$REPO_DIR/infra/deploy/lib/cloudflare.sh"
+cf_ips "$REPO_DIR" >"$WORK/cf-ips" || die "rangos de Cloudflare no disponibles"
+CF_TRUSTED_IPS=$(paste -sd, - <"$WORK/cf-ips")
+cmp -s <(sort "$WORK/cf-ips") <(sort "$CF_INSTALLED" 2>/dev/null) ||
+  echo "AVISO: los rangos de Cloudflare difieren de los de nftables; ejecutar host-setup.sh $ENV_NAME como root (RUNBOOK §1)" >&2
 
-# Rangos de Cloudflare: se refrescan si es posible; si no, la lista del repo.
-cf_ips() {
-  local fresh
-  if fresh=$( { curl -fsS --max-time 5 https://www.cloudflare.com/ips-v4 && echo &&
-               curl -fsS --max-time 5 https://www.cloudflare.com/ips-v6; } 2>/dev/null ) &&
-     [[ $(grep -c '/' <<<"$fresh") -ge 10 ]]; then
-    grep '/' <<<"$fresh"
-  else
-    grep -v '^#' "$REPO_DIR/infra/waf/cloudflare-ips.txt" | grep '/'
+# --- Renderizado -------------------------------------------------------------
+# Las unidades (644, legibles por todos) solo llevan versión, rutas y rangos;
+# los secretos van en un EnvironmentFile por servicio (600).
+subst() {
+  sed -e "s|@PP_VERSION@|$1|g" -e "s|@PP_ENV@|$ENV_NAME|g" -e "s|@IMAGE_PREFIX@|$IMAGE_PREFIX|g" \
+      -e "s|@STATE_DIR@|$STATE_DIR|g" -e "s|@REPO_DIR@|$REPO_DIR|g" -e "s|@CF_TRUSTED_IPS@|$CF_TRUSTED_IPS|g"
+}
+
+render_units() {
+  local version=$1 out=$2 f
+  mkdir -p "$out/quadlet" "$out/systemd"
+  for f in "$REPO_DIR"/infra/quadlet/deploy/pp-*; do subst "$version" <"$f" >"$out/quadlet/${f##*/}"; done
+  for f in "$REPO_DIR"/infra/deploy/systemd/pp-*; do subst "$version" <"$f" >"$out/systemd/${f##*/}"; done
+  ! grep -rEl '@[A-Z0-9_]+@' "$out/quadlet" "$out/systemd" || die "marcadores sin sustituir en las unidades"
+  QUADLET_UNIT_DIRS=$out/quadlet "$QUADLET_BIN" -user -dryrun >/dev/null 2>"$out/quadlet.log" ||
+    { cat "$out/quadlet.log" >&2; die "el generador de Quadlet rechaza las unidades de $version"; }
+}
+
+kv() { printf '%s=%s\n' "$1" "$2"; }
+write_envs() {
+  local out=$1
+  mkdir -p "$out"
+  {
+    kv PP_DOMAIN "$PP_DOMAIN"
+    kv PP_ORIGIN_AUTH_SECRET "${PP_ORIGIN_AUTH_SECRET:?PP_ORIGIN_AUTH_SECRET}"
+    kv TEAM_IP_RANGES "${TEAM_IP_RANGES:?TEAM_IP_RANGES}"
+  } >"$out/traefik.env"
+  {
+    kv KC_DB postgres
+    kv KC_DB_URL "${KC_DB_URL:?KC_DB_URL}"
+    kv KC_DB_USERNAME "${KC_DB_USERNAME:-keycloak}"
+    kv KC_DB_PASSWORD "${KC_DB_PASSWORD:?KC_DB_PASSWORD}"
+    kv KC_HOSTNAME "https://auth.$PP_DOMAIN"
+    kv KC_HOSTNAME_BACKCHANNEL_DYNAMIC true
+    kv KC_PROXY_HEADERS xforwarded
+    kv KC_HTTP_ENABLED true
+    kv KC_BOOTSTRAP_ADMIN_USERNAME "${KC_ADMIN_USER:?KC_ADMIN_USER}"
+    kv KC_BOOTSTRAP_ADMIN_PASSWORD "${KC_ADMIN_PASSWORD:?KC_ADMIN_PASSWORD}"
+  } >"$out/keycloak.env"
+  {
+    kv KEYCLOAK_URL http://keycloak:8080
+    kv KEYCLOAK_USER "$KC_ADMIN_USER"
+    kv KEYCLOAK_PASSWORD "$KC_ADMIN_PASSWORD"
+    kv KEYCLOAK_AVAILABILITYCHECK_ENABLED true
+    kv KEYCLOAK_AVAILABILITYCHECK_TIMEOUT 180s
+    kv IMPORT_FILES_LOCATIONS /config/realm.yaml
+    kv IMPORT_VARSUBSTITUTION_ENABLED true
+    kv IMPORT_MANAGED_CLIENT full
+    kv IMPORT_MANAGED_ROLE full
+    kv PP_WEB_ORIGIN "https://app.$PP_DOMAIN"
+    # Sin origen de desarrollo fuera de dev: se repite el de la app.
+    kv PP_WEB_ORIGIN_DEV "https://app.$PP_DOMAIN"
+    kv PP_BACKEND_CLIENT_SECRET "${PP_BACKEND_CLIENT_SECRET:?PP_BACKEND_CLIENT_SECRET}"
+    kv PP_SMTP_HOST "${PP_SMTP_HOST:?PP_SMTP_HOST}"
+    kv PP_SMTP_PORT "${PP_SMTP_PORT:-587}"
+    kv PP_SMTP_FROM "${PP_SMTP_FROM:-no-reply@$PP_DOMAIN}"
+    kv PP_SMTP_AUTH true
+    kv PP_SMTP_USER "${PP_SMTP_USER:?PP_SMTP_USER}"
+    kv PP_SMTP_PASSWORD "${PP_SMTP_PASSWORD:?PP_SMTP_PASSWORD}"
+    kv PP_SMTP_STARTTLS true
+  } >"$out/keycloak-config.env"
+  kv PP_DB_URL "${PP_MIGRATOR_DB_URL:?PP_MIGRATOR_DB_URL}" >"$out/migrate.env"
+  {
+    kv PP_DB_URL "${PP_BACKUP_DB_URL:?PP_BACKUP_DB_URL}"
+    kv PP_BACKUP_STORAGE_ENDPOINT "${PP_BACKUP_STORAGE_ENDPOINT:?PP_BACKUP_STORAGE_ENDPOINT}"
+    kv PP_BACKUP_STORAGE_BUCKET "${PP_BACKUP_STORAGE_BUCKET:?PP_BACKUP_STORAGE_BUCKET}"
+    kv PP_BACKUP_STORAGE_ACCESS_KEY "${PP_BACKUP_STORAGE_ACCESS_KEY:?PP_BACKUP_STORAGE_ACCESS_KEY}"
+    kv PP_BACKUP_STORAGE_SECRET_KEY "${PP_BACKUP_STORAGE_SECRET_KEY:?PP_BACKUP_STORAGE_SECRET_KEY}"
+    kv PP_BACKUP_STORAGE_USE_SSL "${PP_BACKUP_STORAGE_USE_SSL:-true}"
+  } >"$out/events-export.env"
+  {
+    kv PP_ENV "$ENV_NAME"
+    kv PP_HTTP_ADDR :8080
+    kv PP_INTERNAL_ADDR :9090
+    kv PP_DB_URL "${PP_DB_URL:?PP_DB_URL}"
+    kv PP_DB_MAX_CONNS "${PP_DB_MAX_CONNS:-20}"
+    kv PP_OIDC_ISSUER "https://auth.$PP_DOMAIN/realms/petpassport"
+    kv PP_OIDC_DISCOVERY_URL http://keycloak:8080/realms/petpassport
+    kv PP_OIDC_AUDIENCE petpassport-api
+    kv PP_OIDC_ALLOWED_AZP petpassport-web
+    kv PP_KC_ADMIN_URL http://keycloak:8080
+    kv PP_KC_ADMIN_CLIENT_ID petpassport-backend
+    kv PP_KC_ADMIN_CLIENT_SECRET "$PP_BACKEND_CLIENT_SECRET"
+    kv PP_IP_HASH_SALT "${PP_IP_HASH_SALT:?PP_IP_HASH_SALT}"
+    kv PP_STORAGE_ENDPOINT "${PP_STORAGE_ENDPOINT:?PP_STORAGE_ENDPOINT}"
+    kv PP_STORAGE_BUCKET "${PP_STORAGE_BUCKET:-petpassport-media}"
+    kv PP_STORAGE_ACCESS_KEY "${PP_STORAGE_ACCESS_KEY:?PP_STORAGE_ACCESS_KEY}"
+    kv PP_STORAGE_SECRET_KEY "${PP_STORAGE_SECRET_KEY:?PP_STORAGE_SECRET_KEY}"
+    kv PP_STORAGE_USE_SSL "${PP_STORAGE_USE_SSL:-true}"
+    kv PP_SMTP_HOST "$PP_SMTP_HOST"
+    kv PP_SMTP_PORT "${PP_SMTP_PORT:-587}"
+    kv PP_SMTP_USER "$PP_SMTP_USER"
+    kv PP_SMTP_PASSWORD "$PP_SMTP_PASSWORD"
+    kv PP_SMTP_FROM "${PP_SMTP_FROM:-no-reply@$PP_DOMAIN}"
+    kv PP_CORS_ORIGINS "https://app.$PP_DOMAIN"
+    kv PP_PUBLIC_BASE_URL "https://app.$PP_DOMAIN"
+    kv PP_LOG_LEVEL info
+    kv PP_OTEL_EXPORTER_OTLP_ENDPOINT http://otel-collector:4318
+  } >"$out/api.env"
+  {
+    kv GF_SECURITY_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
+    kv GF_AUTH_ANONYMOUS_ENABLED false
+    kv GF_USERS_ALLOW_SIGN_UP false
+    kv GF_ANALYTICS_REPORTING_ENABLED false
+  } >"$out/grafana.env"
+}
+
+# Instala los ficheros de <src> en <dst> que difieran y añade a CHANGED el
+# servicio afectado (pp-api.container o env/api.env → api).
+sc() { systemctl --user "$@"; }
+
+CHANGED=()
+install_changed() {
+  local src=$1 dst=$2 mode=$3 f name
+  mkdir -p "$dst"
+  for f in "$src"/*; do
+    name=${f##*/}
+    cmp -s "$f" "$dst/$name" && continue
+    install -m "$mode" "$f" "$dst/$name"
+    name=${name#pp-}
+    CHANGED+=("${name%.*}")
+  done
+}
+changed() { local s; for s in "${CHANGED[@]}"; do [[ $s == "$1" ]] && return 0; done; return 1; }
+
+# Reinicia los servicios que cambiaron y arranca los que no corren. Con
+# Notify=healthy, systemctl no vuelve hasta que el contenedor está sano.
+apply_units() {
+  local restart=() start=() s
+  for s in "$@"; do
+    if changed "$s"; then restart+=("pp-$s.service"); else start+=("pp-$s.service"); fi
+  done
+  if ((${#restart[@]})); then log "  reinicio: ${restart[*]}"; sc restart "${restart[@]}" || return 1; fi
+  if ((${#start[@]})); then sc start "${start[@]}" || return 1; fi
+}
+
+# Unidades pp-* instaladas que ya no existen en el repo: se detienen y se borran.
+prune_units() {
+  local f name
+  for f in "$QUADLET_DIR"/pp-*; do
+    [[ -e $f ]] || continue
+    name=${f##*/}
+    [[ -e $WORK/new/quadlet/$name ]] && continue
+    log "  retirada: $name"
+    sc stop "${name%.*}.service" 2>/dev/null || true
+    rm -f "$f"
+  done
+}
+
+PREVIOUS=$(cat "$STATE_DIR/current-version" 2>/dev/null || true)
+log "versión actual: ${PREVIOUS:-ninguna} → objetivo: $VERSION"
+
+notify() {
+  local text=$1
+  if [[ -n ${GRAFANA_URL:-} && -n ${GRAFANA_TOKEN:-} ]]; then
+    jq -cn --arg env "$ENV_NAME" --arg text "$text" '{tags: ["deploy", $env], text: $text}' |
+      curl -fsS --max-time 5 -X POST "$GRAFANA_URL/api/annotations" \
+        -H "Authorization: Bearer $GRAFANA_TOKEN" -H 'Content-Type: application/json' -d @- >/dev/null ||
+      log "aviso: no se pudo anotar en Grafana"
+  fi
+  if [[ -n ${TEAM_WEBHOOK_URL:-} ]]; then
+    jq -cn --arg text "[$ENV_NAME] $text" '{text: $text}' |
+      curl -fsS --max-time 5 -X POST "$TEAM_WEBHOOK_URL" -H 'Content-Type: application/json' -d @- >/dev/null ||
+      log "aviso: no se pudo avisar al canal"
   fi
 }
-CF_TRUSTED_IPS=$(cf_ips | paste -sd, -)
-export CF_TRUSTED_IPS
 
-# /config.json del frontend por entorno (INF-005).
+# --- 1. Render, validación y pull -------------------------------------------
+log "1/6 render + validación Quadlet + pull $VERSION"
+render_units "$VERSION" "$WORK/new"
+(umask 077 && write_envs "$WORK/new/env")
+grep -h '^Image=' "$WORK"/new/quadlet/*.container | cut -d= -f2- | sort -u | while read -r image; do
+  podman pull -q "$image" >/dev/null || die "pull fallido: $image"
+done
+
+# Ficheros de estado que montan los contenedores.
 cat >"$STATE_DIR/config.json.tmp" <<EOF
 {
   "apiBaseUrl": "https://api.$PP_DOMAIN/api/v1",
@@ -86,44 +282,44 @@ cat >"$STATE_DIR/config.json.tmp" <<EOF
 }
 EOF
 mv "$STATE_DIR/config.json.tmp" "$STATE_DIR/config.json"
-
-compose() { docker compose --project-directory "$REPO_DIR/infra/compose" -f "$COMPOSE_FILE" -f "$OBS_FILE" "$@"; }
-
-PREVIOUS=$(cat "$STATE_DIR/current-version" 2>/dev/null || true)
-log "versión actual: ${PREVIOUS:-ninguna} → objetivo: $VERSION"
-
-notify() {
-  local text=$1
-  if [[ -n ${GRAFANA_URL:-} && -n ${GRAFANA_TOKEN:-} ]]; then
-    curl -fsS --max-time 5 -X POST "$GRAFANA_URL/api/annotations" \
-      -H "Authorization: Bearer $GRAFANA_TOKEN" -H 'Content-Type: application/json' \
-      -d "{\"tags\":[\"deploy\",\"$ENV_NAME\"],\"text\":\"$text\"}" >/dev/null ||
-      log "aviso: no se pudo anotar en Grafana"
-  fi
-  if [[ -n ${TEAM_WEBHOOK_URL:-} ]]; then
-    curl -fsS --max-time 5 -X POST "$TEAM_WEBHOOK_URL" -H 'Content-Type: application/json' \
-      -d "{\"text\":\"[$ENV_NAME] $text\"}" >/dev/null || log "aviso: no se pudo avisar al canal"
-  fi
-}
-
-# --- 1. Pull ------------------------------------------------------------------
-log "1/6 pull $VERSION"
-compose --profile oneshot pull --quiet migrate api frontend traefik keycloak keycloak-config
+mkdir -p "$STATE_DIR/prom-targets"
+jq -cn --arg d "$PP_DOMAIN" \
+  '[{targets: ["https://app.\($d)/", "https://api.\($d)/api/v1/healthz", "https://auth.\($d)/realms/petpassport/.well-known/openid-configuration"]}]' \
+  >"$STATE_DIR/prom-targets/tls.json"
+(umask 077 && printf '%s\n' "${ALERT_SLACK_WEBHOOK_URL:-https://hooks.invalid/unset}" >"$STATE_DIR/alert-webhook-url")
 
 # --- 2. Migraciones (aborta si fallan; lo desplegado sigue corriendo) ---------
+# Solo se instalan las redes, la unidad de migrate y su entorno: si fallan,
+# las unidades de api/frontend siguen apuntando a la versión anterior.
 log "2/6 migrate up"
-compose --profile oneshot run --rm migrate || die "migraciones fallidas: despliegue abortado, $PREVIOUS sigue activo"
+mkdir -p "$WORK/stage1"
+cp "$WORK"/new/quadlet/pp-*.network "$WORK/new/quadlet/pp-migrate.container" "$WORK/stage1/"
+install_changed "$WORK/stage1" "$QUADLET_DIR" 644
+(umask 077 && mkdir -p "$STATE_DIR/env" && install -m 600 "$WORK/new/env/migrate.env" "$STATE_DIR/env/migrate.env")
+sc daemon-reload
+sc start pp-migrate.service ||
+  die "migraciones fallidas (journalctl --user -u pp-migrate): despliegue abortado, ${PREVIOUS:-nada} sigue activo"
 
-# --- 3. Infra de borde + Keycloak y realm ------------------------------------
-log "3/6 traefik + keycloak + realm + observabilidad"
-compose up -d --wait --wait-timeout 300 traefik keycloak
-compose up -d otel-collector tempo prometheus alertmanager blackbox loki alloy grafana
-compose --profile oneshot run --rm keycloak-config || die "keycloak-config falló"
+# --- 3. Unidades, borde, Keycloak, realm y observabilidad --------------------
+log "3/6 unidades + traefik + keycloak + realm + observabilidad"
+install_changed "$WORK/new/quadlet" "$QUADLET_DIR" 644
+install_changed "$WORK/new/systemd" "$SYSTEMD_DIR" 644
+install_changed "$WORK/new/env" "$STATE_DIR/env" 600
+prune_units
+sc daemon-reload
+# El socket del 443 lo mantiene systemd entre reinicios de Traefik. Cambiar el
+# propio .socket exige `systemctl --user restart pp-traefik.socket`.
+sc enable --now pp-traefik.socket pp-events-export.timer >/dev/null 2>&1 ||
+  die "no se pudo activar pp-traefik.socket o pp-events-export.timer"
+
+apply_units "${EDGE_UNITS[@]}" || die "traefik/keycloak no llegaron a healthy (journalctl --user -u pp-keycloak)"
+apply_units "${OBS_UNITS[@]}" || log "aviso: algún servicio de observabilidad no arrancó"
+sc start pp-keycloak-config.service || die "keycloak-config falló (journalctl --user -u pp-keycloak-config)"
 
 # --- 4. Aplicación -----------------------------------------------------------
-log "4/6 up api frontend"
-if ! compose up -d --wait --wait-timeout 180 api frontend; then
-  compose logs --tail 50 api >&2 || true
+log "4/6 api frontend"
+if ! apply_units "${APP_UNITS[@]}"; then
+  journalctl --user -u pp-api.service -n 50 --no-pager >&2 || true
   ROLLBACK_REASON="readyz no llegó a healthy"
 fi
 
@@ -136,7 +332,12 @@ fi
 if [[ -n ${ROLLBACK_REASON:-} ]]; then
   if [[ -n $PREVIOUS && $PREVIOUS != "$VERSION" && ${PP_NO_AUTO_ROLLBACK:-0} != 1 ]]; then
     log "ROLLBACK a $PREVIOUS: $ROLLBACK_REASON"
-    PP_VERSION=$PREVIOUS compose up -d --wait --wait-timeout 180 api frontend ||
+    render_units "$PREVIOUS" "$WORK/rollback"
+    CHANGED=()
+    install_changed "$WORK/rollback/quadlet" "$QUADLET_DIR" 644
+    install_changed "$WORK/rollback/systemd" "$SYSTEMD_DIR" 644
+    sc daemon-reload
+    sc restart pp-api.service pp-frontend.service ||
       log "ERROR: el rollback no llegó a healthy; intervención manual (RUNBOOK §4)"
     notify "deploy $VERSION FALLIDO ($ROLLBACK_REASON); rollback a $PREVIOUS"
   else
@@ -148,5 +349,5 @@ fi
 # --- 6. Registro y avisos ----------------------------------------------------
 echo "$VERSION" >"$STATE_DIR/current-version"
 echo "$(date -u +%FT%TZ) $VERSION ${PREVIOUS:-none}" >>"$STATE_DIR/history"
-log "6/6 OK: $VERSION desplegada"
+log "6/6 OK: $VERSION desplegada (servicios reiniciados: ${CHANGED[*]:-ninguno})"
 notify "deploy $VERSION OK (anterior: ${PREVIOUS:-ninguna})"

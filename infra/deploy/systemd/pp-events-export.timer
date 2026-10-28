@@ -1,5 +1,5 @@
 # Domingo 03:00 UTC (valle de tráfico). Persistent: si la VM estaba apagada, se
-# ejecuta al arrancar.
+# ejecuta al arrancar. Activa pp-events-export.service (unidad Quadlet, ADR-026).
 [Unit]
 Description=PetPassport: exportación semanal de es.events
 

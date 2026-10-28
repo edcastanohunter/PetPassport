@@ -1,7 +1,7 @@
 name: e2e
 
-# PP-F1-QA-005: Playwright de los cinco flujos críticos + axe contra el compose
-# completo (Keycloak real, Mailpit). Nightly y a demanda (docs/phase-1/09 §3).
+# PP-F1-QA-005: Playwright de los cinco flujos críticos + axe contra el entorno
+# completo de desarrollo (unidades Quadlet rootless, Keycloak real, Mailpit). Nightly y a demanda (docs/phase-1/09 §3).
 on:
   schedule:
     - cron: "0 5 * * *" # 00:00 America/Bogota
@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Etiqueta fija: la imagen 24.04 trae Podman 5.8 (Quadlet .build, Notify=healthy);
+    # ubuntu-latest migra a 26.04 en oct–nov 2026.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +33,18 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq libnss3-tools mkcert
           make dev-certs
 
-      - name: Levantar compose completo
+      # Mismo motor y modo que el equipo (ADR-026): Podman rootless con Quadlet
+      # bajo el systemd de usuario del runner. Rootless publica 80/443 solo con
+      # ip_unprivileged_port_start <= 80.
+      - name: Podman rootless y sesión systemd de usuario
+        run: |
+          podman --version
+          sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80
+          sudo loginctl enable-linger "$USER"
+          for _ in $(seq 1 30); do [ -S "/run/user/$(id -u)/bus" ] && break; sleep 1; done
+          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+
+      - name: Levantar el entorno completo
         run: make dev-up
 
       - name: Esperar a la app, la API y el realm
@@ -61,9 +74,13 @@ jobs:
           CI: "true"
         run: npx playwright test
 
-      - name: Logs del compose (si falla)
+      - name: Logs del entorno (si falla)
         if: failure()
-        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail=300 api keycloak keycloak-config frontend > compose.log
+        run: |
+          make dev-status > dev.log 2>&1 || true
+          for s in api keycloak keycloak-config migrate frontend traefik; do
+            journalctl --user -u "pp-dev-$s.service" -n 300 --no-pager -o cat >> dev.log 2>&1 || true
+          done
 
       - name: Publicar informe
         if: always()
@@ -74,6 +91,6 @@ jobs:
             e2e/playwright-report/
             e2e/results/
             e2e/test-results/
-            compose.log
+            dev.log
           retention-days: 14
           if-no-files-found: ignore

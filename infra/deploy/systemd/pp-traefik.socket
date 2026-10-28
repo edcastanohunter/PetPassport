@@ -1,0 +1,14 @@
+# Socket del 443 de origen para pp-traefik (activación por socket, ADR-026).
+# FileDescriptorName coincide con el entrypoint websecure de Traefik. El usuario
+# petpassport puede abrir el 443 porque host-setup.sh fija
+# net.ipv4.ip_unprivileged_port_start=443; nftables (pp-origin) lo limita a Cloudflare.
+[Unit]
+Description=PetPassport: socket 443 de Traefik
+
+[Socket]
+ListenStream=443
+FileDescriptorName=websecure
+Service=pp-traefik.service
+
+[Install]
+WantedBy=sockets.target

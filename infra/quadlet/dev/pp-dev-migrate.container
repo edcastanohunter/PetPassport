@@ -1,0 +1,21 @@
+# migrate up (DAT-002) con el rol migrador. Oneshot: `make migrate` lo relanza.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: migrate up
+Requires=pp-dev-postgres.service
+After=pp-dev-postgres.service
+
+[Container]
+Image=pp-dev-backend.build
+ContainerName=pp-dev-migrate
+Network=pp-dev.network
+Entrypoint=/migrate
+Exec=up
+Environment=PP_DB_URL=postgres://petpassport_migrator:migrator@postgres:5432/petpassport?sslmode=disable
+LogDriver=journald
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=300

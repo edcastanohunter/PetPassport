@@ -1,0 +1,22 @@
+# Aplica infra/keycloak/realm.yaml de forma idempotente (IAM-001). Oneshot: lo
+# lanza deploy.sh en cada despliegue (`systemctl start pp-keycloak-config`).
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/containers/systemd/petpassport (rootless, ADR-026).
+[Unit]
+Description=PetPassport: keycloak-config (realm como código)
+Wants=pp-keycloak.service
+After=pp-keycloak.service
+
+[Container]
+Image=docker.io/adorsys/keycloak-config-cli:latest-26
+ContainerName=pp-keycloak-config
+Network=pp-internal.network
+# KEYCLOAK_*, IMPORT_*, PP_WEB_ORIGIN*, PP_BACKEND_CLIENT_SECRET y PP_SMTP_* del realm.
+EnvironmentFile=@STATE_DIR@/env/keycloak-config.env
+Volume=@REPO_DIR@/infra/keycloak:/config:ro,z
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Type=oneshot
+TimeoutStartSec=300

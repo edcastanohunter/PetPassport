@@ -1,4 +1,4 @@
-// Endpoints del compose de desarrollo (infra/compose/docker-compose.yml). Se pueden
+// Endpoints del entorno de desarrollo (infra/quadlet/dev). Se pueden
 // sobrescribir por entorno para apuntar a otro despliegue con Mailpit.
 export const env = {
   keycloakAdminUrl: process.env.E2E_KC_ADMIN_URL ?? 'http://localhost:8180',

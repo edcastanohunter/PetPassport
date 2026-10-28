@@ -1,0 +1,18 @@
+# Alertmanager: enruta alertas al canal del equipo (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: alertmanager
+
+[Container]
+Image=docker.io/prom/alertmanager:v0.28.0
+ContainerName=pp-dev-alertmanager
+Network=pp-dev.network
+NetworkAlias=alertmanager
+Exec=--config.file=/etc/alertmanager/alertmanager.yml
+Volume=@REPO_DIR@/infra/observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro,z
+# Webhook ficticio de dev (en staging/prod lo genera deploy.sh).
+Volume=@REPO_DIR@/infra/observability/alertmanager-dev-webhook:/etc/alertmanager/secrets/slack_webhook_url:ro,z
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

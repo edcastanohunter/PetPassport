@@ -1,0 +1,22 @@
+# Loki: logs (retención 30 días) (INF-007). Puertos solo en 127.0.0.1: acceso por túnel SSH (RUNBOOK §8).
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/containers/systemd/petpassport (rootless, ADR-026).
+[Unit]
+Description=PetPassport: loki
+
+[Container]
+Image=docker.io/grafana/loki:3.4.2
+ContainerName=pp-loki
+Network=pp-obs.network
+NetworkAlias=loki
+Exec=-config.file=/etc/loki/loki.yaml
+Volume=@REPO_DIR@/infra/observability/loki.yaml:/etc/loki/loki.yaml:ro,z
+Volume=pp-lokidata.volume:/loki
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
