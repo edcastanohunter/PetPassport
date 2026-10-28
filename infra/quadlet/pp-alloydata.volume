@@ -1,0 +1,3 @@
+# Estado de Alloy (posición en el journal): sin él, cada reinicio reenvía logs a Loki.
+[Volume]
+VolumeName=pp-alloydata

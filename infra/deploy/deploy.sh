@@ -72,7 +72,7 @@ set +a
 : "${PP_DOMAIN:?PP_DOMAIN en $ENV_FILE}" "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD en $ENV_FILE}"
 IMAGE_PREFIX=${IMAGE_PREFIX:-ghcr.io/edcastanohunter/petpassport}
 [[ $PP_DOMAIN =~ ^[a-z0-9.-]+$ ]] || die "PP_DOMAIN inválido"
-[[ $IMAGE_PREFIX =~ ^[a-z0-9./_-]+$ ]] || die "IMAGE_PREFIX inválido"
+[[ $IMAGE_PREFIX =~ ^[a-z0-9./:_-]+$ ]] || die "IMAGE_PREFIX inválido"
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT

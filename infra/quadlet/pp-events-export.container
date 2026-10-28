@@ -6,7 +6,7 @@
 Description=PetPassport: exportación semanal de es.events (@PP_VERSION@)
 Wants=network-online.target
 After=network-online.target
-OnFailure=pp-notify-failure@%n.service
+OnFailure=pp-notify-failure@%N.service
 
 [Container]
 Image=@IMAGE_PREFIX@-backend:@PP_VERSION@

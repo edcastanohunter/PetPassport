@@ -60,7 +60,8 @@ test: ## Pruebas unitarias
 	cd frontend && npm test
 
 test-integration: ## Pruebas de integración (requiere Podman con su API activa; testcontainers)
-	cd backend && DOCKER_HOST=$${DOCKER_HOST:-$(PODMAN_SOCKET)} TESTCONTAINERS_RYUK_DISABLED=true \n	  go test -race -tags integration -count=1 ./test/integration/...
+	cd backend && DOCKER_HOST=$${DOCKER_HOST:-$(PODMAN_SOCKET)} TESTCONTAINERS_RYUK_DISABLED=true \
+	  go test -race -tags integration -count=1 ./test/integration/...
 
 e2e: ## E2E Playwright de los flujos críticos + axe (requiere make dev-up; PP-F1-QA-005)
 	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test

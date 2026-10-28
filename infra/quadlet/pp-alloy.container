@@ -12,6 +12,9 @@ Volume=@REPO_DIR@/infra/observability/alloy.alloy:/etc/alloy/config.alloy:ro,z
 # Journal del host en solo lectura (sin socket del motor; threat model §2.7).
 Volume=/var/log/journal:/var/log/journal:ro
 Volume=/etc/machine-id:/etc/machine-id:ro
+# Alloy corre como root sin capabilities: :U deja el volumen a su nombre (la
+# imagen lo trae del usuario alloy y sin CAP_DAC_OVERRIDE no podría escribir).
+Volume=pp-alloydata.volume:/var/lib/alloy:U
 NoNewPrivileges=true
 DropCapability=ALL
 LogDriver=journald
