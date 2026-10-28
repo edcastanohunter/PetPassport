@@ -1,0 +1,11 @@
+# Respaldo frío semanal de es.events (PP-F1-DAT-009). Instalación: RUNBOOK §9.
+[Unit]
+Description=PetPassport: exportación semanal de es.events a object storage
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/petpassport/infra/deploy/events-export.sh staging
+TimeoutStartSec=1h
+Nice=10

@@ -65,7 +65,8 @@ load-test: ## k6 ligero contra staging: 50 VUs, 5 min, p95 < 300 ms (requiere k6
 build: ## Compila binarios y frontend
 	cd backend && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/api ./cmd/api && \
 	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/migrate ./cmd/migrate && \
-	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/worker ./cmd/worker
+	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/worker ./cmd/worker && \
+	  CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/backup ./cmd/backup
 	cd frontend && npm run build
 
 images: ## Construye imágenes Docker

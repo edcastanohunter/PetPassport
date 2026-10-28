@@ -106,6 +106,26 @@ services:
     restart: "no"
     profiles: [oneshot]
 
+  events-export:
+    # Respaldo frío semanal de es.events (DAT-009): lo lanza el timer
+    # pp-events-export (infra/deploy/systemd). Rol de solo lectura y bucket propio.
+    image: ${IMAGE_PREFIX:-ghcr.io/edcastanohunter/petpassport}-backend:${PP_VERSION:?PP_VERSION}
+    entrypoint: ["/backup", "export-events"]
+    environment:
+      PP_DB_URL: ${PP_BACKUP_DB_URL:?PP_BACKUP_DB_URL}
+      PP_BACKUP_STORAGE_ENDPOINT: ${PP_BACKUP_STORAGE_ENDPOINT:?PP_BACKUP_STORAGE_ENDPOINT}
+      PP_BACKUP_STORAGE_BUCKET: ${PP_BACKUP_STORAGE_BUCKET:?PP_BACKUP_STORAGE_BUCKET}
+      PP_BACKUP_STORAGE_ACCESS_KEY: ${PP_BACKUP_STORAGE_ACCESS_KEY:?PP_BACKUP_STORAGE_ACCESS_KEY}
+      PP_BACKUP_STORAGE_SECRET_KEY: ${PP_BACKUP_STORAGE_SECRET_KEY:?PP_BACKUP_STORAGE_SECRET_KEY}
+      PP_BACKUP_STORAGE_USE_SSL: "true"
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    networks: [internal]
+    restart: "no"
+    profiles: [oneshot]
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
     <<: *hardening
