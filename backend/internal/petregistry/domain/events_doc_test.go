@@ -23,8 +23,9 @@ func TestPetRegistered_DocExample(t *testing.T) {
 		e.Neutered != TristateYes || e.BirthDate == nil || e.BirthDate.Date != "2021-05-10" || e.BirthDate.Approximate {
 		t.Fatalf("pérdida al deserializar: %+v", e)
 	}
-	// El nombre y la versión son estables.
-	if e.EventName() != "PetRegistered" || e.SchemaVersion() != 1 {
+	// El nombre es estable; el ejemplo es v1 y la versión vigente es v2
+	// (alerts, PP-F2-ARQ-005): un v1 persistido pasa por el upcaster.
+	if e.EventName() != "PetRegistered" || e.SchemaVersion() != 2 {
 		t.Fatalf("sobre: %s@%d", e.EventName(), e.SchemaVersion())
 	}
 }

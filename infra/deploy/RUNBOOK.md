@@ -167,8 +167,11 @@ Tempo da las trazas de las requests lentas.
 Keycloak (JWKS). Si la API está en bucle de reinicios tras un despliegue, rollback (§4).
 
 ### 7.4 OutboxPendingGrowing
-Informativa en F1: no hay consumidor del outbox hasta F2. Solo se actúa si el crecimiento es
-anómalo (tamaño de la tabla).
+Desde F2 M2.0 el worker consume el outbox: un crecimiento sostenido indica un worker caído
+(ver §7.8) o un stream bloqueado por un evento en reintento. Inspección:
+`SELECT global_position, event_type, attempts, last_error, next_attempt_at FROM es.outbox
+WHERE published_at IS NULL ORDER BY global_position LIMIT 20;`. Los eventos en
+`dead_letter = true` no bloquean y no cuentan como pendientes.
 
 ### 7.5 CertificateExpiringSoon
 Un certificado público caduca en menos de 14 días. Los del borde los renueva Cloudflare: si salta,
@@ -176,15 +179,38 @@ revisar el estado del certificado en SSL/TLS → Edge Certificates. El de origen
 (aviso en cada despliegue): regenerarlo (§1.4) y redeplegar.
 
 ### 7.6 ScrapeTargetDown
-Prometheus no puede leer api, keycloak o traefik. Comprobar la red `pp-obs`
+Prometheus no puede leer api, worker, keycloak o traefik. Comprobar la red `pp-obs`
 (`podman network inspect pp-obs`) y la unidad afectada (`systemctl --user status pp-<servicio>`).
+
+### 7.7 ProjectionFailed
+Una proyección asíncrona agotó sus 5 reintentos y está en *fail-stop* (ADR-009 §4): su read model
+deja de actualizarse (la UI muestra "Actualizando…"), las demás siguen. Diagnóstico:
+`podman exec pp-worker /worker status` (columna `LAST_ERROR`) y Loki
+`{service="petpassport-worker"} | json | projection="<nombre>"`. El error indica la posición y el
+tipo de evento. Corregir el código (nuevo despliegue) o los datos del read model y reanudar:
+`podman exec pp-worker /worker resume --projection <nombre>`. Nunca se salta un evento ni se edita
+`es.events`. Si el read model quedó inconsistente: `rebuild` (§15).
+
+### 7.8 WorkerDown
+Ningún worker tiene el lock de instancia: proyecciones asíncronas, outbox y comandos programados
+parados (los comandos de la API siguen funcionando). `systemctl --user status pp-worker` y
+`journalctl --user -u pp-worker -n 200`. Si el proceso corre pero espera el lock, hay una sesión
+huérfana con él: `SELECT * FROM platform.worker_instances;` (ver `heartbeat_at`) y
+`SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND ((classid::bigint << 32) | objid::bigint) = hashtext('worker.default');`
+→ `SELECT pg_terminate_backend(<pid>);` solo si su `heartbeat_at` tiene más de 1 min.
+
+### 7.9 AppendLockContention
+p95 de espera del lock de orden total de `Append` > 20 ms durante 10 min: umbral de revisión de
+ADR-009 §3 (pasar a lectura tolerante a huecos en F3). Revisar en *Worker & Projections* el
+throughput de appends y en *API overview* qué comandos alargan su transacción (el lock se retiene
+hasta el commit). Abrir issue con los datos; no es una caída.
 
 ## 8. Observabilidad
 
 Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con un túnel:
 `ssh -L 3000:127.0.0.1:3000 <vm>` y después `http://localhost:3000` (usuario admin con
 `GRAFANA_ADMIN_PASSWORD`; en staging no hay acceso anónimo). Los dashboards están en la carpeta
-*PetPassport*: API overview, Event Store, Auth & Authz y Keycloak. `deploy.sh` usa el
+*PetPassport*: API overview, Event Store, Worker & Projections, Auth & Authz y Keycloak. `deploy.sh` usa el
 `GRAFANA_TOKEN` (service account con rol Editor) solo para las anotaciones de despliegue.
 
 ## 9. Backups y restauración (INF-009, DAT-009)
@@ -347,3 +373,62 @@ Solo como root: `systemctl status pp-origin-firewall`, `nft list table inet pp-o
 | Fecha | Quién (≠ autor) | Secciones | Resultado / incidencias |
 |---|---|---|---|
 | | | | |
+
+## 15. Worker y proyecciones asíncronas (F2 M2.0, ADR-009)
+
+El worker (`pp-worker`, misma imagen que el api) ejecuta las proyecciones asíncronas, el consumidor
+del outbox y el scheduler de comandos. Una réplica por grupo (lock de instancia). Los modos
+administrativos se ejecutan en el contenedor en marcha y se coordinan con él por el checkpoint:
+
+| Acción | Comando |
+|---|---|
+| Estado | `podman exec pp-worker /worker status` |
+| Pausar / reanudar | `podman exec pp-worker /worker pause\|resume --projection <nombre>` |
+| Rebuild de una proyección | `podman exec pp-worker /worker rebuild --projection <nombre>` |
+| Rebuild de todas | `podman exec pp-worker /worker rebuild --all` |
+| Rebuild parcial | `… rebuild --projection <nombre> --to-position <N>` |
+| Borrar snapshots | `podman exec pp-worker /worker snapshots --drop` (sin pérdida) |
+| Rebuild de primarias F1 (desastre) | `podman exec pp-worker /worker rebuild --sync` (ver §15.1) |
+| Modo mantenimiento de la API | `podman exec pp-worker /worker maintenance on --reason "<motivo>"\|off\|status` |
+
+Rebuild = pausa → borrado de las tablas de la proyección + checkpoint a 0 → replay por lotes de 500
+→ reanuda; no toca `es.events`. Progreso en logs y en `projection_rebuild_progress`. Durante el
+rebuild la API sirve la tabla parcial y las vistas muestran "Actualizando…".
+
+`deploy.sh` detecta las migraciones con cabecera `-- rebuild: <nombre>` no aplicadas aún: detiene el
+worker antes de migrar, lo arranca después y recuerda en el log el `rebuild` pendiente. El runbook
+completo de F2 (tiempos esperados, dead-letter, restauración con replay) es INF-005 (M2.5).
+
+### 15.1 Rebuild de las proyecciones primarias (`rebuild --sync`, solo desastre)
+
+Para un read model primario de F1 corrupto o perdido (`read_petregistry.*`,
+`read_partnernetwork.*`), con `es.events` intacto. Reconstruye **todas** las primarias a la vez,
+en orden global (dependen entre sí: `org_reactions` actualiza `pet_care_links`).
+
+1. Avisar en el canal: la API responderá 503 ("Servicio no disponible temporalmente") mientras dure.
+2. `podman exec pp-worker /worker rebuild --sync`. El comando:
+   - activa el modo mantenimiento (fila en `platform.maintenance`; cada api lo ve en ≤ 2 s) y espera 5 s;
+   - en **una sola transacción** con el lock de orden total (ningún comando puede confirmar):
+     guarda los datos operativos que no están en los eventos (hash de token y contadores de
+     reenvío de invitaciones, `pet_transfers`, `reserved_at` de microchips), vacía las tablas,
+     reproyecta todos los eventos y restaura esos datos;
+   - confirma y desactiva el mantenimiento. Si algo falla, la transacción se revierte, los read
+     models quedan como estaban y el mantenimiento se desactiva igualmente.
+3. Comprobar: `podman exec pp-worker /worker maintenance status` → `off`; smoke de §5.
+
+Si el proceso muere a mitad (OOM, reinicio del host), la transacción se revierte sola; el modo
+mantenimiento puede quedar activo: `podman exec pp-worker /worker maintenance off`. Si el
+mantenimiento ya estaba activo antes (activado a mano), `rebuild --sync` no lo desactiva.
+
+Denormalizaciones (nombre del tutor, nombre y ciudad de la clínica en los vínculos) se resuelven
+con el estado **actual** de Identity y Partner Network, como en cualquier replay de F1.
+
+### 15.2 Ventana de la migración de M2.0 (`20261028000008_event_store_v1`)
+
+La migración rellena `es.outbox.stream_id` y crea un índice sobre `es.events` dentro de una única
+transacción: mientras dura, los comandos del api anterior **esperan** (no fallan). Medido con
+`PP_MIGRATION_EVENTS` (test `TestMigration_EventStoreV1Backfill`): **5,1 s con 500 000 eventos**
+(~1 s por 100 000). Con el timeout de petición de 30 s, el despliegue normal es seguro hasta
+~2 M de eventos; por encima, desplegar en una ventana de bajo tráfico anunciada (algunos comandos
+pueden agotar el timeout y el usuario reintenta). El modo mantenimiento no sirve aquí: lo crea esta
+misma migración y el api anterior no lo conoce. Consultar el volumen: `SELECT count(*) FROM es.events;`.

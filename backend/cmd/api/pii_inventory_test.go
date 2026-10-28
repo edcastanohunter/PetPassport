@@ -19,6 +19,7 @@ import (
 func TestRegistry_PIIInventory(t *testing.T) {
 	reg := eventstore.NewRegistry()
 	petinfra.RegisterEvents(reg)
+	petinfra.RegisterUpcasters(reg)
 	orginfra.RegisterEvents(reg)
 
 	var withPII []string

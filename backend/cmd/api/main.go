@@ -32,6 +32,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
@@ -101,6 +102,7 @@ func run() error {
 	// store con métricas.
 	registry := eventstore.NewRegistry()
 	petinfra.RegisterEvents(registry)
+	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
@@ -151,7 +153,7 @@ func run() error {
 	}
 	orgSvc := orgapp.NewService(orgOpts)
 	orgSvc.RegisterCommands(commands)
-	runner.Register(orginfra.NewOrgsProjector(registry))
+	orginfra.RegisterSyncProjectors(runner, registry)
 
 	// Pet Registry.
 	guardianAdapter := petinfra.NewGuardianAdapter(identitySvc)
@@ -174,8 +176,7 @@ func run() error {
 	}
 	petSvc := petapp.NewService(petOpts)
 	petSvc.RegisterCommands(commands)
-	runner.Register(petinfra.NewPetsProjector(registry, guardianAdapter).WithOrganizations(orgAdapter))
-	runner.Register(petinfra.OrgReactionsProjector{})
+	petinfra.RegisterSyncProjectors(runner, registry, guardianAdapter, orgAdapter)
 	var objects storage.ObjectStorage
 	if cfg.Storage.Endpoint != "" {
 		objects, err = storage.NewMinIO(ctx, storage.MinIOOptions{
@@ -236,7 +237,8 @@ func run() error {
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
 		},
-		Guard: guard.Middleware,
+		Guard:       guard.Middleware,
+		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
 	})
 	errs := servers.Start()
 	health.SetReady(true)

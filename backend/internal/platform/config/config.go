@@ -231,3 +231,56 @@ func parseLevel(s string) (slog.Level, error) {
 	}
 	return 0, fmt.Errorf("PP_LOG_LEVEL inválido: %q", s)
 }
+
+// Worker es la configuración de `cmd/worker` (PP-F2-ARQ-001): solo lo que el
+// worker necesita; no exige OIDC ni Keycloak.
+type Worker struct {
+	Env          Env
+	InternalAddr string // /healthz, /readyz, /metrics
+	DBURL        string
+	DBMaxConns   int32
+	Group        string // lock de instancia worker.<group>
+	OTLPEndpoint string
+	LogLevel     slog.Level
+}
+
+// LoadWorker lee PP_* del worker y valida.
+func LoadWorker() (*Worker, error) {
+	var cfg Worker
+	var errs []error
+	cfg.Env = Env(getenv("PP_ENV", string(EnvDev)))
+	switch cfg.Env {
+	case EnvDev, EnvStaging, EnvProd:
+	default:
+		errs = append(errs, fmt.Errorf("PP_ENV inválido: %q", cfg.Env))
+	}
+	cfg.InternalAddr = getenv("PP_INTERNAL_ADDR", ":9090")
+	cfg.DBURL = os.Getenv("PP_DB_URL")
+	if cfg.DBURL == "" {
+		errs = append(errs, errors.New("PP_DB_URL es obligatoria"))
+	}
+	maxConns, err := getenvInt("PP_DB_MAX_CONNS", 10)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	if maxConns < 4 || maxConns > 200 {
+		// Lock de instancia + runners de proyección, outbox y scheduler.
+		errs = append(errs, fmt.Errorf("PP_DB_MAX_CONNS del worker fuera de rango [4,200]: %d", maxConns))
+		maxConns = 10
+	}
+	cfg.DBMaxConns = int32(maxConns) //nolint:gosec // rango validado arriba
+	cfg.Group = getenv("PP_WORKER_GROUP", "default")
+	cfg.OTLPEndpoint = os.Getenv("PP_OTEL_EXPORTER_OTLP_ENDPOINT")
+	level, err := parseLevel(getenv("PP_LOG_LEVEL", "info"))
+	if err != nil {
+		errs = append(errs, err)
+	}
+	cfg.LogLevel = level
+	if cfg.Env == EnvProd && level == slog.LevelDebug {
+		errs = append(errs, errors.New("PP_LOG_LEVEL=debug no está permitido en prod"))
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	return &cfg, nil
+}

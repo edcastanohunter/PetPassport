@@ -18,6 +18,10 @@ scrape_configs:
   - job_name: api
     static_configs:
       - targets: ["api:9090"]
+  # Worker (F2 M2.0, INF-002): proyecciones, outbox, scheduler de comandos.
+  - job_name: worker
+    static_configs:
+      - targets: ["worker:9090"]
   - job_name: keycloak
     metrics_path: /metrics
     static_configs:

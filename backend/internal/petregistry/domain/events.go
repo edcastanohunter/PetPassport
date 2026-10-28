@@ -22,7 +22,9 @@ type BirthDatePayload struct {
 // PhotoRefPayload es la foto en eventos (nil = sin foto).
 type PhotoRefPayload = PhotoRef
 
-// PetRegistered: nace el agregado.
+// PetRegistered: nace el agregado. v2 (PP-F2-ARQ-005) añade alerts (perfil
+// ampliado, DOM-013): los eventos v1 persistidos se leen con el upcaster
+// infra.PetRegisteredV1toV2, que añade `alerts: []`.
 type PetRegistered struct {
 	PetID        uuid.UUID         `json:"pet_id"`
 	GuardianID   uuid.UUID         `json:"guardian_id"`
@@ -34,13 +36,22 @@ type PetRegistered struct {
 	Neutered     Tristate          `json:"neutered"`
 	BirthDate    *BirthDatePayload `json:"birth_date,omitempty"`
 	Markings     string            `json:"markings,omitempty"`
+	Alerts       []PetAlert        `json:"alerts"`
+}
+
+// PetAlert es una alerta clínica del perfil (DOM-013: allergy |
+// chronic_condition | behavior | other, texto ≤ 200). Los comandos que las
+// editan llegan en M2.5; hasta entonces el registro emite siempre `[]`.
+type PetAlert struct {
+	Kind string `json:"kind"`
+	Text string `json:"text"`
 }
 
 // EventName implementa eventstore.Event.
 func (PetRegistered) EventName() string { return "PetRegistered" }
 
 // SchemaVersion implementa eventstore.Event.
-func (PetRegistered) SchemaVersion() int { return 1 }
+func (PetRegistered) SchemaVersion() int { return 2 }
 
 // PetProfileUpdated: solo campos cambiados.
 type PetProfileUpdated struct {

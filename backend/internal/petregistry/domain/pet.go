@@ -348,7 +348,7 @@ func (p *Pet) handleRegister(c RegisterPet) ([]any, error) {
 	evt := PetRegistered{
 		PetID: id, GuardianID: c.GuardianID, Name: string(name), Species: species,
 		SpeciesOther: strings.TrimSpace(c.SpeciesOther), Breed: breed, Sex: sex,
-		Neutered: neutered, BirthDate: birth, Markings: markings,
+		Neutered: neutered, BirthDate: birth, Markings: markings, Alerts: []PetAlert{},
 	}
 	p.record(evt)
 	return p.uncommitted, nil

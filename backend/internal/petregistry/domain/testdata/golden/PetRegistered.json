@@ -9,5 +9,6 @@
   "birth_date": {
     "date": "2021-05-10",
     "approximate": false
-  }
+  },
+  "alerts": []
 }

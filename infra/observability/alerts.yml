@@ -28,7 +28,8 @@ groups:
           summary: "/readyz caído 2 min"
           runbook: "infra/deploy/RUNBOOK.md#73-apinotready"
       - alert: OutboxPendingGrowing
-        # En F1 no hay consumidor (llega en F2): informativa, no despierta a nadie.
+        # Con consumidor desde F2 M2.0 (ARQ-008): crecimiento sostenido = consumidor
+        # atascado o caído. OutboxStuck (edad del más antiguo, INF-003) llega en M2.4.
         expr: delta(outbox_pending[1h]) > 0 and min_over_time(outbox_pending[1h]) > 0
         for: 1h
         labels: { severity: info }
@@ -43,9 +44,35 @@ groups:
           summary: "Certificado de {{ $labels.instance }} caduca en {{ $value | humanize }} días"
           runbook: "infra/deploy/RUNBOOK.md#75-certificateexpiringsoon"
       - alert: ScrapeTargetDown
-        expr: up{job=~"api|keycloak|traefik"} == 0
+        expr: up{job=~"api|worker|keycloak|traefik"} == 0
         for: 5m
         labels: { severity: ticket }
         annotations:
           summary: "Prometheus no puede leer {{ $labels.job }}"
           runbook: "infra/deploy/RUNBOOK.md#76-scrapetargetdown"
+
+  # F2 M2.0: worker y proyecciones asíncronas (ADR-009; PP-F2-ARQ-001/003/007,
+  # INF-002). El resto de alertas F2 (lag, outbox, recordatorios, PDF) es INF-003, M2.4.
+  - name: petpassport-worker
+    rules:
+      - alert: ProjectionFailed
+        expr: max by (name) (projection_status{status="failed"}) == 1
+        labels: { severity: page }
+        annotations:
+          summary: "Proyección {{ $labels.name }} detenida (fail-stop): read model sin actualizar"
+          runbook: "infra/deploy/RUNBOOK.md#77-projectionfailed"
+      - alert: WorkerDown
+        expr: max(worker_instance_lock) == 0 or absent(worker_instance_lock)
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: "Ningún worker tiene el lock de instancia desde hace 2 min"
+          runbook: "infra/deploy/RUNBOOK.md#78-workerdown"
+      - alert: AppendLockContention
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(eventstore_append_lock_wait_seconds_bucket[5m]))) > 0.02
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "p95 de espera del lock de orden total > 20 ms (10 min): {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#79-appendlockcontention"

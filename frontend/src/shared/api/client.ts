@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './schema'
 import { runtimeConfig } from '@/shared/config/runtime'
+import { emitFreshness, freshnessOf, resetFreshnessListeners } from './freshness'
 
 export type Problem = components['schemas']['Problem']
 export type Me = components['schemas']['Me']
@@ -77,8 +78,9 @@ function correlationId() {
 }
 
 // Cliente tipado desde el contrato OpenAPI (ADR-005). Middlewares: Authorization,
-// X-Correlation-ID e Idempotency-Key (si el llamador la pasa en headers) y
-// conversión de problem+json a ApiError.
+// X-Correlation-ID e Idempotency-Key (si el llamador la pasa en headers),
+// cabecera X-PP-Freshness de vistas derivadas (FE-014) y conversión de
+// problem+json a ApiError.
 export function createApiClient(deps: ClientDeps) {
   const client = createClient<paths>({ baseUrl: deps.baseUrl ?? runtimeConfig().apiBaseUrl })
   const auth: Middleware = {
@@ -91,7 +93,11 @@ export function createApiClient(deps: ClientDeps) {
       return request
     },
     async onResponse({ response }) {
-      if (response.ok) return response
+      if (response.ok) {
+        const lagSeconds = freshnessOf(response)
+        if (lagSeconds !== null) emitFreshness({ url: response.url, lagSeconds })
+        return response
+      }
       let problem: Partial<Problem> = {}
       const type = response.headers.get('Content-Type') ?? ''
       if (type.includes('json')) {
@@ -130,4 +136,5 @@ export function api(): ApiClient {
 export function resetApiClient() {
   shared = null
   handlers.length = 0
+  resetFreshnessListeners()
 }

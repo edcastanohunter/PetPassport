@@ -27,6 +27,7 @@ type Projector interface {
 type Runner struct {
 	byType map[string][]Projector
 	names  map[string]bool
+	order  []Projector // orden de registro (rebuild --sync)
 
 	duration *prometheus.HistogramVec
 }
@@ -54,6 +55,7 @@ func (r *Runner) Register(p Projector) {
 		panic("projection: proyector ya registrado: " + p.Name())
 	}
 	r.names[p.Name()] = true
+	r.order = append(r.order, p)
 	for _, t := range p.Handles() {
 		r.byType[t] = append(r.byType[t], p)
 	}

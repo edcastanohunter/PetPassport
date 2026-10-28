@@ -96,6 +96,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 
 	registry := eventstore.NewRegistry()
 	petinfra.RegisterEvents(registry)
+	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		t.Fatal(err)
@@ -116,7 +117,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 		Users: users, Memberships: cache, Mailer: box, Auditor: orginfra.TxAuditor{}, BaseURL: "https://app.test", Logger: logger,
 	})
 	orgSvc.RegisterCommands(commands)
-	runner.Register(orginfra.NewOrgsProjector(registry))
+	orginfra.RegisterSyncProjectors(runner, registry)
 
 	guardian := petinfra.NewGuardianAdapter(identitySvc)
 	orgAdapter := petinfra.NewOrganizationAdapter(orgQ)
@@ -127,8 +128,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 		Mailer: box, BaseURL: "https://app.test", Logger: logger,
 	})
 	petSvc.RegisterCommands(commands)
-	runner.Register(petinfra.NewPetsProjector(registry, guardian).WithOrganizations(orgAdapter))
-	runner.Register(petinfra.OrgReactionsProjector{})
+	petinfra.RegisterSyncProjectors(runner, registry, guardian, orgAdapter)
 
 	return &orgEnv{pool: pool, unit: unit, store: store, runner: runner, identity: identitySvc,
 		orgs: orgSvc, orgQ: orgQ, pets: petSvc, petQ: petQ, cache: cache, mail: box}

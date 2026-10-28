@@ -1,0 +1,37 @@
+# Worker (PP-F2-ARQ-001, INF-001, ADR-009): misma imagen que el api, una réplica
+# (lock de instancia worker.<group>). deploy.sh lo arranca tras las migraciones
+# y antes del api. Notify=healthy: /readyz exige lock + BD + runners vivos.
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/containers/systemd/petpassport (rootless, ADR-026).
+[Unit]
+Description=PetPassport: worker (@PP_VERSION@)
+
+[Container]
+Image=@IMAGE_PREFIX@-backend:@PP_VERSION@
+ContainerName=pp-worker
+Network=pp-internal.network
+Network=pp-obs.network
+NetworkAlias=worker
+Entrypoint=/worker
+Exec=run
+# PP_* del worker (deploy.sh, desde /etc/petpassport/<env>.env).
+EnvironmentFile=@STATE_DIR@/env/worker.env
+HealthCmd=["/worker","healthcheck"]
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=6
+HealthStartPeriod=30s
+Notify=healthy
+# SIGTERM: cada runner termina su lote en curso (≤ 30 s).
+StopTimeout=40
+PodmanArgs=--cpus=1 --memory=1g
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Restart=always
+TimeoutStartSec=180
+
+[Install]
+WantedBy=default.target

@@ -30,3 +30,25 @@ make load-test
 
 Genera `tests/load/k6/report.md` (tabla para pegar en el PR) y `summary.json` (no se commitean).
 Contrastar con el panel de latencia de Grafana (`api-overview`) para la misma ventana.
+
+## Gate de F2 (PP-F2-QA-007): `k6/f2-mix.js`
+
+100 VUs, 30 s de rampa + 5 min sostenidos (`K6_DURATION`) + 30 s de bajada; mezcla 70 % lecturas
+(`GET /me`, `/pets`, `/pets/{id}`) / 30 % comandos (`PATCH /pets/{id}` con `If-Match`). Un VU aparte
+consulta cada 5 s `projection_lag_seconds{name}` en el Prometheus de staging (que raspa el worker
+cada 15 s).
+
+Umbrales: p95 de `kind:api` < 300 ms, **p95 del retraso de proyección < 2 s**, > 30 muestras de
+retraso (para que el gate no pase en vacío), 0 respuestas 5xx y 0 429, > 99 % de checks OK. Los 409
+por edición concurrente de la misma mascota son válidos y se informan aparte.
+
+Precondiciones adicionales a las de F1: los usuarios de carga tienen mascotas (el script falla si no)
+y el Prometheus de la VM (publicado solo en `127.0.0.1:9091`) es accesible por túnel SSH:
+
+```bash
+ssh -N -L 9091:127.0.0.1:9091 <usuario>@<vm-staging>
+K6_DOMAIN=staging.<dominio> K6_USERS='…' K6_PROMETHEUS=http://localhost:9091 make load-test-f2
+```
+
+Genera `report-f2.md` y `summary-f2.json` (no se commitean). El PATCH cambia la raza de las mascotas de los usuarios de carga (`k6-<vu>-<iter>`): solo usuarios
+sintéticos.

@@ -2,7 +2,7 @@ name: backend
 
 on:
   pull_request:
-    paths: ["backend/**", ".github/workflows/backend.yml"]
+    paths: ["backend/**", "scripts/domain-coverage.sh", ".github/workflows/backend.yml"]
   push:
     branches: [main]
     paths: ["backend/**"]
@@ -51,6 +51,9 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
       - run: go test -race -coverprofile=coverage.out ./...
+      - name: cobertura domain/ >= 90 % en contextos F2 (PP-F2-QA-007)
+        working-directory: .
+        run: scripts/domain-coverage.sh 90
       - uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
@@ -67,6 +70,22 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
       - run: go test -race -tags integration -count=1 ./test/integration/...
+
+  event-store-gates:
+    # Gates F2 obligatorios (PP-F2-QA-007): orden total (QA-001) y rebuild con
+    # dumps iguales (QA-002), en un job propio para exigirlo en la protección de
+    # rama y repetido para detectar intermitencias.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: >-
+          go test -race -tags integration -count=3
+          -run 'TestEventStore_QA001_TotalOrder|TestProjection_QA002_RebuildDumpsEqual|TestProjection_FailStopAndResume'
+          ./test/integration/...
 
   security:
     runs-on: ubuntu-latest
