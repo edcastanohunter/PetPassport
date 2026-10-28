@@ -11,7 +11,7 @@ DEV := infra/scripts/dev-quadlet.sh
 PODMAN_SOCKET := $(shell [ "$$($(ENGINE) info --format '{{.Host.ServiceIsRemote}}' 2>/dev/null)" = false ] && $(ENGINE) info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs dev-status dev-export migrate gen gen-check lint test test-integration e2e load-test build images specs-status specs-check
+.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs dev-status dev-export migrate gen gen-check lint test test-integration e2e load-test load-test-f2 build images specs-status specs-check
 
 help: ## Lista los objetivos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -73,6 +73,9 @@ e2e: ## E2E Playwright de los flujos críticos + axe (requiere make dev-up; PP-F
 
 load-test: ## k6 ligero contra staging: 50 VUs, 5 min, p95 < 300 ms (requiere k6 y K6_* ; ver tests/load)
 	k6 run tests/load/k6/api-smoke.js
+
+load-test-f2: ## k6 gate F2: 100 VUs 70/30, p95 API < 300 ms y lag < 2 s (requiere K6_PROMETHEUS; ver tests/load)
+	k6 run tests/load/k6/f2-mix.js
 
 # --- Build ---
 build: ## Compila binarios y frontend

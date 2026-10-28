@@ -1,0 +1,30 @@
+# Worker (PP-F2-INF-001, ADR-009): proyecciones asíncronas, outbox y comandos
+# programados. Imagen construida desde el código local (pp-dev-backend.build);
+# tras cambiar el código del worker: `systemctl --user restart pp-dev-worker`.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: worker
+Requires=pp-dev-migrate.service
+After=pp-dev-migrate.service
+
+[Container]
+Image=pp-dev-backend.build
+ContainerName=pp-dev-worker
+Network=pp-dev.network
+NetworkAlias=worker
+Entrypoint=/worker
+Exec=run
+# /metrics y /readyz del worker (el api usa 9090).
+PublishPort=9091:9090
+Environment=PP_ENV=dev PP_INTERNAL_ADDR=:9090 PP_LOG_LEVEL=debug PP_WORKER_GROUP=default
+Environment=PP_DB_URL=postgres://petpassport_api:api@postgres:5432/petpassport?sslmode=disable PP_DB_MAX_CONNS=8
+HealthCmd=["/worker","healthcheck"]
+HealthInterval=10s
+HealthRetries=6
+HealthStartPeriod=20s
+LogDriver=journald
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900

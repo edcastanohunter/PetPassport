@@ -25,6 +25,7 @@ func registered() PetRegistered {
 		PetID: petID, GuardianID: guardianID, Name: "Luna", Species: SpeciesDog,
 		Breed: "Beagle", Sex: SexFemale, Neutered: TristateYes,
 		BirthDate: &BirthDatePayload{Date: "2021-05-10", Approximate: false},
+		Alerts:    []PetAlert{},
 	}
 }
 
@@ -43,7 +44,7 @@ func TestPet_I1_NameValidation(t *testing.T) {
 	// Trim y colapso de espacios al persistir.
 	testkit.Scenario[*Pet](t, newPet).
 		When(RegisterPet{PetID: petID, GuardianID: guardianID, Name: "  Luna   Sol ", Species: "dog", Sex: "female", Neutered: "yes", Now: now}).
-		Then(PetRegistered{PetID: petID, GuardianID: guardianID, Name: "Luna Sol", Species: SpeciesDog, Sex: SexFemale, Neutered: TristateYes})
+		Then(PetRegistered{PetID: petID, GuardianID: guardianID, Name: "Luna Sol", Species: SpeciesDog, Sex: SexFemale, Neutered: TristateYes, Alerts: []PetAlert{}})
 }
 
 // --- I3: fallecida solo admite revocar/deshacer/foto ------------------------
@@ -127,7 +128,7 @@ func TestPet_I8_CareLinkLimit(t *testing.T) {
 func TestPet_RegisterPet_EmitsEventWithDefaults(t *testing.T) {
 	testkit.Scenario[*Pet](t, newPet).
 		When(RegisterPet{PetID: petID, GuardianID: guardianID, Name: "Rex", Species: "other", SpeciesOther: "Erizo", Sex: "unknown", Neutered: "unknown", Now: now}).
-		Then(PetRegistered{PetID: petID, GuardianID: guardianID, Name: "Rex", Species: SpeciesOther, SpeciesOther: "Erizo", Sex: SexUnknown, Neutered: TristateUnknown})
+		Then(PetRegistered{PetID: petID, GuardianID: guardianID, Name: "Rex", Species: SpeciesOther, SpeciesOther: "Erizo", Sex: SexUnknown, Neutered: TristateUnknown, Alerts: []PetAlert{}})
 }
 
 func TestPet_RegisterPet_SpeciesOtherRequired(t *testing.T) {

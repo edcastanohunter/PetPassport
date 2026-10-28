@@ -1,0 +1,21 @@
+name: observability
+
+on:
+  pull_request:
+    paths: ["infra/observability/**", ".github/workflows/observability.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  promtool:
+    # Reglas y pruebas de alertas (PP-F1-INF-007, PP-F2-INF-002/QA-007) con la
+    # misma versión de Prometheus que se despliega (infra/quadlet).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: promtool check + test
+        run: |
+          docker run --rm -v "$PWD/infra/observability:/w:ro" -w /w --entrypoint /bin/sh \
+            docker.io/prom/prometheus:v3.2.0 -c \
+            'promtool check rules alerts.yml && promtool test rules alerts_test.yml'

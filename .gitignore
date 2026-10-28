@@ -36,3 +36,5 @@ e2e/results/
 # k6
 tests/load/k6/report.md
 tests/load/k6/summary.json
+tests/load/k6/report-f2.md
+tests/load/k6/summary-f2.json

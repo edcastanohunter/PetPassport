@@ -36,7 +36,8 @@ func TestCommandNames(t *testing.T) {
 	}
 }
 
-// TestEventNamesAndVersions: los 11 eventos v1 declaran nombre y versión.
+// TestEventNamesAndVersions: los 11 eventos declaran nombre y versión (v1
+// salvo PetRegistered, v2 desde F2 por el upcaster de alerts).
 func TestEventNamesAndVersions(t *testing.T) {
 	events := []interface {
 		EventName() string
@@ -48,7 +49,11 @@ func TestEventNamesAndVersions(t *testing.T) {
 	}
 	names := map[string]bool{}
 	for _, e := range events {
-		if e.SchemaVersion() != 1 {
+		want := 1
+		if e.EventName() == "PetRegistered" {
+			want = 2
+		}
+		if e.SchemaVersion() != want {
 			t.Errorf("%s: schema_version %d", e.EventName(), e.SchemaVersion())
 		}
 		names[e.EventName()] = true

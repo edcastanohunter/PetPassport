@@ -69,14 +69,18 @@ func TestEvents_Golden(t *testing.T) {
 	}
 }
 
-// TestEvents_SchemaVersion: todo evento declara v1 y nombre estable.
+// TestEvents_SchemaVersion: versión vigente declarada por evento. PetRegistered
+// pasó a v2 en F2 (ARQ-005, upcaster en infra con golden v1→v2).
 func TestEvents_SchemaVersion(t *testing.T) {
-	for _, e := range []interface {
-		EventName() string
-		SchemaVersion() int
-	}{registered()} {
-		if e.SchemaVersion() != 1 {
-			t.Errorf("%s: schema_version %d, want 1", e.EventName(), e.SchemaVersion())
+	for _, tc := range []struct {
+		e interface {
+			EventName() string
+			SchemaVersion() int
+		}
+		want int
+	}{{registered(), 2}, {PetMarkedDeceased{}, 1}} {
+		if tc.e.SchemaVersion() != tc.want {
+			t.Errorf("%s: schema_version %d, want %d", tc.e.EventName(), tc.e.SchemaVersion(), tc.want)
 		}
 	}
 }

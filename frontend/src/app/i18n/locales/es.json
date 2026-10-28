@@ -465,5 +465,9 @@
       "reason": "Motivo",
       "system": "sistema"
     }
+  },
+  "freshness": {
+    "updating": "Actualizando… (hace {seconds} s)",
+    "reload": "Recargar"
   }
 }

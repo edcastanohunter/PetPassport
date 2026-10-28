@@ -6,7 +6,7 @@
 Description=PetPassport dev: api (air)
 Requires=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
 After=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
-Wants=pp-dev-mailpit.service
+Wants=pp-dev-mailpit.service pp-dev-worker.service
 After=pp-dev-mailpit.service
 
 [Container]

@@ -10,7 +10,12 @@
 #   2. migrate up (unidad oneshot; si falla, se aborta sin tocar lo que corre)
 #   3. instala las unidades que cambiaron; reinicia Traefik, Keycloak y
 #      observabilidad si cambiaron; aplica el realm (keycloak-config)
-#   4. reinicia api y frontend si cambiaron; Notify=healthy espera a /readyz
+#   4. reinicia worker (antes que el api, ADR-009) y después api y frontend si
+#      cambiaron; Notify=healthy espera a /readyz
+#
+# Proyecciones asíncronas (PP-F2-INF-001): si alguna migración aún no desplegada
+# lleva la cabecera `-- rebuild: <nombre>`, el worker se detiene antes de migrar
+# y al final se recuerda en el log el `worker rebuild` pendiente (RUNBOOK §15).
 #   5. smoke test; si falla y hay versión anterior → rollback automático
 #   6. anotación en Grafana y aviso al canal del equipo
 #
@@ -37,7 +42,7 @@ MIN_PODMAN=5.4.0
 # Servicios de larga duración por grupo (unidades pp-<nombre>.service).
 EDGE_UNITS=(traefik keycloak)
 OBS_UNITS=(otel-collector tempo prometheus alertmanager blackbox loki alloy grafana)
-APP_UNITS=(api frontend)
+APP_UNITS=(api frontend) # el worker se aplica antes, por separado
 
 log() { printf '%s [deploy:%s] %s\n' "$(date -u +%FT%TZ)" "$ENV_NAME" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
@@ -198,6 +203,15 @@ write_envs() {
     kv PP_OTEL_EXPORTER_OTLP_ENDPOINT http://otel-collector:4318
   } >"$out/api.env"
   {
+    kv PP_ENV "$ENV_NAME"
+    kv PP_INTERNAL_ADDR :9090
+    kv PP_DB_URL "$PP_DB_URL"
+    kv PP_DB_MAX_CONNS "${PP_WORKER_DB_MAX_CONNS:-10}"
+    kv PP_WORKER_GROUP default
+    kv PP_LOG_LEVEL info
+    kv PP_OTEL_EXPORTER_OTLP_ENDPOINT http://otel-collector:4318
+  } >"$out/worker.env"
+  {
     kv GF_SECURITY_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
     kv GF_AUTH_ANONYMOUS_ENABLED false
     kv GF_USERS_ALLOW_SIGN_UP false
@@ -292,6 +306,18 @@ jq -cn --arg d "$PP_DOMAIN" \
 # Solo se instalan las redes, la unidad de migrate y su entorno: si fallan,
 # las unidades de api/frontend siguen apuntando a la versión anterior.
 log "2/6 migrate up"
+# Proyecciones con cambios: cabeceras `-- rebuild:` aún no registradas en este
+# entorno. El worker no debe proyectar con el esquema a medio migrar.
+REBUILD_MARKERS=$STATE_DIR/rebuild-markers
+NEW_REBUILDS=()
+while read -r name; do
+  [[ -n $name ]] || continue
+  grep -qxF "$name" "$REBUILD_MARKERS" 2>/dev/null || NEW_REBUILDS+=("$name")
+done < <(grep -h '^-- rebuild:' "$REPO_DIR"/backend/migrations/*.sql | sed 's/^-- rebuild:[[:space:]]*//' | sort -u)
+if ((${#NEW_REBUILDS[@]})) && sc is-active -q pp-worker.service; then
+  log "  proyecciones con cambios (${NEW_REBUILDS[*]}): se detiene el worker antes de migrar"
+  sc stop pp-worker.service
+fi
 mkdir -p "$WORK/stage1"
 cp "$WORK"/new/quadlet/pp-*.network "$WORK/new/quadlet/pp-migrate.container" "$WORK/stage1/"
 install_changed "$WORK/stage1" "$QUADLET_DIR" 644
@@ -317,8 +343,11 @@ apply_units "${OBS_UNITS[@]}" || log "aviso: algún servicio de observabilidad n
 sc start pp-keycloak-config.service || die "keycloak-config falló (journalctl --user -u pp-keycloak-config)"
 
 # --- 4. Aplicación -----------------------------------------------------------
-log "4/6 api frontend"
-if ! apply_units "${APP_UNITS[@]}"; then
+log "4/6 worker api frontend"
+if ! apply_units worker; then
+  journalctl --user -u pp-worker.service -n 50 --no-pager >&2 || true
+  ROLLBACK_REASON="worker: readyz no llegó a healthy"
+elif ! apply_units "${APP_UNITS[@]}"; then
   journalctl --user -u pp-api.service -n 50 --no-pager >&2 || true
   ROLLBACK_REASON="readyz no llegó a healthy"
 fi
@@ -337,7 +366,7 @@ if [[ -n ${ROLLBACK_REASON:-} ]]; then
     install_changed "$WORK/rollback/quadlet" "$QUADLET_DIR" 644
     install_changed "$WORK/rollback/systemd" "$SYSTEMD_DIR" 644
     sc daemon-reload
-    sc restart pp-api.service pp-frontend.service ||
+    sc restart pp-worker.service pp-api.service pp-frontend.service ||
       log "ERROR: el rollback no llegó a healthy; intervención manual (RUNBOOK §4)"
     notify "deploy $VERSION FALLIDO ($ROLLBACK_REASON); rollback a $PREVIOUS"
   else
@@ -347,6 +376,10 @@ if [[ -n ${ROLLBACK_REASON:-} ]]; then
 fi
 
 # --- 6. Registro y avisos ----------------------------------------------------
+for name in "${NEW_REBUILDS[@]}"; do
+  log "RECORDATORIO: la proyección $name cambió; si ya tenía datos: podman exec pp-worker /worker rebuild --projection $name (RUNBOOK §15)"
+  echo "$name" >>"$REBUILD_MARKERS"
+done
 echo "$VERSION" >"$STATE_DIR/current-version"
 echo "$(date -u +%FT%TZ) $VERSION ${PREVIOUS:-none}" >>"$STATE_DIR/history"
 log "6/6 OK: $VERSION desplegada (servicios reiniciados: ${CHANGED[*]:-ninguno})"

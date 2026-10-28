@@ -64,6 +64,7 @@ func newPetEnv(t *testing.T) *petEnv {
 
 	registry := eventstore.NewRegistry()
 	petinfra.RegisterEvents(registry)
+	petinfra.RegisterUpcasters(registry)
 	if err := registry.Validate(); err != nil {
 		t.Fatal(err)
 	}

@@ -38,6 +38,7 @@ type StoredEvent struct {
 	Payload        json.RawMessage
 	Metadata       Metadata
 	OccurredAt     time.Time
+	RecordedAt     time.Time // asignado bajo el lock de orden total: monótono con GlobalPosition
 }
 
 // Metadata acompaña a todo evento (PP-F1-DOM-012, docs/phase-1/02 §8).
@@ -78,11 +79,12 @@ type PIICarrier interface {
 	PIISubjects() []uuid.UUID
 }
 
-// Upcaster transforma un evento persistido en schema_version N a su forma
-// N+1 (ARQ-007). Interfaz definida en F1; primer uso en F2. Nunca se renombra
-// un campo ya persistido: se crea una versión nueva y un upcaster.
+// Upcaster transforma el payload persistido de un evento en schema_version N
+// a su forma N+1 (PP-F2-ARQ-005, docs/phase-2/03 §6). El Registry encadena
+// upcasters al leer (Load y ReadAll: v1→v2→v3); los eventos almacenados nunca
+// se reescriben. Nunca se renombra un campo ya persistido: se crea una versión
+// nueva y su upcaster, con golden de entrada y salida.
 type Upcaster interface {
-	EventType() string
-	FromVersion() int
-	Upcast(e StoredEvent) (any, error)
+	From() (eventType string, schemaVersion int)
+	Upcast(payload json.RawMessage) (newPayload json.RawMessage, newSchemaVersion int, err error)
 }

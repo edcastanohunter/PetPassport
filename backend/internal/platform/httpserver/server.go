@@ -39,6 +39,9 @@ type Options struct {
 	Guard func(http.Handler) http.Handler
 	// Mount registra rutas adicionales fuera del contrato bajo /api/v1 (opcional).
 	Mount func(r chi.Router)
+	// Maintenance responde 503 en /api/v1 durante el modo mantenimiento
+	// (maintenance.Gate.Middleware, PP-F2-ARQ-006). nil = sin modo mantenimiento.
+	Maintenance func(http.Handler) http.Handler
 }
 
 // Servers agrupa el servidor público y el interno.
@@ -65,7 +68,7 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 		AllowedOrigins:   o.CORSOrigins,
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID"},
-		ExposedHeaders:   []string{"ETag", "X-Correlation-ID", "X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset", "Retry-After"},
+		ExposedHeaders:   []string{"ETag", "X-Correlation-ID", "X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset", "Retry-After", "X-PP-Freshness"},
 		AllowCredentials: false,
 		MaxAge:           600,
 	}))
@@ -79,6 +82,9 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 	})
 
 	r.Route("/api/v1", func(api chi.Router) {
+		if o.Maintenance != nil {
+			api.Use(o.Maintenance)
+		}
 		api.Use(middleware.RequestSize(MaxJSONBody))
 		handlers := o.Handlers
 		if handlers == nil {

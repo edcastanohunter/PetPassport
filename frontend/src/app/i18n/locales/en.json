@@ -465,5 +465,9 @@
       "reason": "Reason",
       "system": "system"
     }
+  },
+  "freshness": {
+    "updating": "Updating… ({seconds} s behind)",
+    "reload": "Reload"
   }
 }

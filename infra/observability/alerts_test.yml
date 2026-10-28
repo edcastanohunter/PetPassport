@@ -86,3 +86,62 @@ tests:
             exp_annotations:
               summary: "Certificado de https://app.example/ caduca en 9.951 días"
               runbook: "infra/deploy/RUNBOOK.md#75-certificateexpiringsoon"
+
+  # F2 M2.0: proyección en fail-stop → dispara al instante; la otra no.
+  - interval: 1m
+    input_series:
+      - series: 'projection_status{job="worker",name="clinical.medical_timeline",status="failed"}'
+        values: "0 0 1 1"
+      - series: 'projection_status{job="worker",name="clinical.weight_history",status="failed"}'
+        values: "0 0 0 0"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: ProjectionFailed
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: ProjectionFailed
+        exp_alerts:
+          - exp_labels: { severity: page, name: "clinical.medical_timeline" }
+            exp_annotations:
+              summary: "Proyección clinical.medical_timeline detenida (fail-stop): read model sin actualizar"
+              runbook: "infra/deploy/RUNBOOK.md#77-projectionfailed"
+
+  # Worker sin lock 3 min → dispara (for: 2m); con lock no.
+  - interval: 1m
+    input_series:
+      - series: 'worker_instance_lock{job="worker",group="default"}'
+        values: "1 1 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: WorkerDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: WorkerDown
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Ningún worker tiene el lock de instancia desde hace 2 min"
+              runbook: "infra/deploy/RUNBOOK.md#78-workerdown"
+
+  # Espera del lock de Append: todas las observaciones entre 50 y 100 ms → p95 > 20 ms.
+  - interval: 1m
+    input_series:
+      - series: 'eventstore_append_lock_wait_seconds_bucket{le="0.02"}'
+        values: "0+0x20"
+      - series: 'eventstore_append_lock_wait_seconds_bucket{le="0.05"}'
+        values: "0+0x20"
+      - series: 'eventstore_append_lock_wait_seconds_bucket{le="0.1"}'
+        values: "0+60x20"
+      - series: 'eventstore_append_lock_wait_seconds_bucket{le="+Inf"}'
+        values: "0+60x20"
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: AppendLockContention
+        exp_alerts: []
+      - eval_time: 17m
+        alertname: AppendLockContention
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: "p95 de espera del lock de orden total > 20 ms (10 min): 97.5ms"
+              runbook: "infra/deploy/RUNBOOK.md#79-appendlockcontention"

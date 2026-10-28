@@ -39,6 +39,12 @@ linters:
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
             - pkg: "github.com/jackc/pgx"
               desc: "app define puertos, no adaptadores (ADR-001 §2)"
         no-cross-context-domain:
@@ -62,12 +68,60 @@ linters:
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+        # F2 (PP-F2-DOM-002): los contextos se comunican por puertos y por el
+        # JSON publicado de los eventos, nunca importando el dominio ajeno.
+        no-cross-context-domain-cl:
+          files: ["**/internal/clinical/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
+        # F2 (PP-F2-DOM-002): los contextos se comunican por puertos y por el
+        # JSON publicado de los eventos, nunca importando el dominio ajeno.
+        no-cross-context-domain-sc:
+          files: ["**/internal/scheduling/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
+        # F2 (PP-F2-DOM-002): los contextos se comunican por puertos y por el
+        # JSON publicado de los eventos, nunca importando el dominio ajeno.
+        no-cross-context-domain-nt:
+          files: ["**/internal/notifications/**"]
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/domain"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
         platform-has-no-business:
           files: ["**/internal/platform/**"]
           deny:
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/identity"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork"
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/petregistry"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/clinical"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/scheduling"
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications"
     revive:
       rules:
         - name: exported

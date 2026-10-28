@@ -65,6 +65,31 @@ func (b *Bus) Register(cmd Command, h Handler) {
 	b.handlers[name] = h
 }
 
+// SystemOrigin identifica un comando despachado por el worker con
+// `Principal = system` (scheduler de comandos, PP-F2-ARQ-009). system no pasa
+// por authz: solo puede despachar los comandos de scheduler.AllowedCommands
+// (SEC-007). Los PM propagan correlation_id del evento origen y
+// causation_id = event_id (INF-002).
+type SystemOrigin struct {
+	CorrelationID string
+	CausationID   string
+	JobID         uuid.UUID
+}
+
+type systemOriginKey struct{}
+
+// WithSystemOrigin marca el contexto como despacho del sistema.
+func WithSystemOrigin(ctx context.Context, o SystemOrigin) context.Context {
+	return context.WithValue(ctx, systemOriginKey{}, o)
+}
+
+// SystemOriginFrom devuelve el origen de sistema, si el comando lo tiene.
+// Los módulos lo usan para construir la metadata (actor "system", source "worker").
+func SystemOriginFrom(ctx context.Context) (SystemOrigin, bool) {
+	o, ok := ctx.Value(systemOriginKey{}).(SystemOrigin)
+	return o, ok
+}
+
 // Dispatch ejecuta el handler del comando. Comando desconocido → error
 // (error de programación: falta registro en el arranque del módulo).
 func (b *Bus) Dispatch(ctx context.Context, cmd Command) (Result, error) {
