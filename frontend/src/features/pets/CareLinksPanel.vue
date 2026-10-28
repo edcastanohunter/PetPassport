@@ -156,6 +156,7 @@ async function revoke(orgId: string) {
           type="button"
           class="text-sm text-red-600 underline dark:text-red-400"
           :disabled="busy"
+          data-testid="revoke-link"
           @click="confirmRevoke = l.organization_id"
         >
           {{ t('pets.links.revoke') }}

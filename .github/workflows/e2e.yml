@@ -1,0 +1,79 @@
+name: e2e
+
+# PP-F1-QA-005: Playwright de los cinco flujos críticos + axe contra el compose
+# completo (Keycloak real, Mailpit). Nightly y a demanda (docs/phase-1/09 §3).
+on:
+  schedule:
+    - cron: "0 5 * * *" # 00:00 America/Bogota
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Certificados locales (mkcert)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libnss3-tools mkcert
+          make dev-certs
+
+      - name: Levantar compose completo
+        run: make dev-up
+
+      - name: Esperar a la app, la API y el realm
+        run: |
+          wait_for() { # url [curl-args]
+            for _ in $(seq 1 90); do curl -fsSk "$@" >/dev/null 2>&1 && return 0; sleep 5; done
+            echo "timeout esperando $1" >&2; return 1
+          }
+          wait_for http://localhost:8180/realms/petpassport/.well-known/openid-configuration
+          wait_for http://localhost:9090/readyz
+          wait_for https://app.pp.localhost/config.json --resolve app.pp.localhost:443:127.0.0.1
+          wait_for http://localhost:8025/api/v1/info
+
+      - name: Instalar dependencias y navegador
+        working-directory: e2e
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Typecheck de la suite
+        working-directory: e2e
+        run: npm run typecheck
+
+      - name: Playwright
+        working-directory: e2e
+        env:
+          CI: "true"
+        run: npx playwright test
+
+      - name: Logs del compose (si falla)
+        if: failure()
+        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail=300 api keycloak keycloak-config frontend > compose.log
+
+      - name: Publicar informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/results/
+            e2e/test-results/
+            compose.log
+          retention-days: 14
+          if-no-files-found: ignore
