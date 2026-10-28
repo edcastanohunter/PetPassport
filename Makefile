@@ -1,17 +1,17 @@
 # PetPassport — objetivos de desarrollo (docs/phase-1/09 §1).
 SHELL := /bin/bash
-# Motor de contenedores: Podman (ADR-026). `podman compose` delega en el proveedor
-# instalado (docker-compose v2 o podman-compose); el fichero Compose no depende del motor.
+# Motor de contenedores: Podman rootless (ADR-026). El entorno dev son unidades
+# Quadlet (infra/quadlet/dev) bajo `systemctl --user`; sin compose ni root. En
+# Windows/macOS dev-quadlet.sh se reejecuta dentro de la podman machine.
 ENGINE ?= podman
-COMPOSE := $(ENGINE) compose -f infra/compose/compose.yaml
-COMPOSE_OBS := $(COMPOSE) -f infra/compose/compose.observability.yaml
+DEV := infra/scripts/dev-quadlet.sh
 # testcontainers usa la API compatible de Podman. En Linux, el socket del servicio
 # (`systemctl --user enable --now podman.socket`); con podman machine (Windows/macOS)
 # la máquina ya expone la API en la ruta por defecto y no se fija DOCKER_HOST.
 PODMAN_SOCKET := $(shell [ "$$($(ENGINE) info --format '{{.Host.ServiceIsRemote}}' 2>/dev/null)" = false ] && $(ENGINE) info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs migrate gen gen-check lint test test-integration e2e load-test build images specs-status specs-check
+.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs dev-status dev-export migrate gen gen-check lint test test-integration e2e load-test build images specs-status specs-check
 
 help: ## Lista los objetivos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -21,26 +21,31 @@ dev-certs: ## Genera certificados TLS locales (mkcert)
 	infra/scripts/dev-certs.sh
 
 dev-up: ## Levanta todo el entorno (traefik, postgres, keycloak, minio, mailpit, api, frontend)
-	$(COMPOSE) up -d --build
-	@echo "app: https://app.pp.localhost  api: https://api.pp.localhost  auth: https://auth.pp.localhost  mail: http://localhost:8025"
+	$(DEV) up
 
 dev-down: ## Detiene el entorno
-	$(COMPOSE) down
+	$(DEV) down
 
 dev-reset: ## Detiene y borra volúmenes (datos, caches)
-	$(COMPOSE) down -v
+	$(DEV) reset
 
-dev-logs: ## Logs de api y frontend
-	$(COMPOSE) logs -f api frontend
+dev-logs: ## Logs de api y frontend (journal)
+	$(DEV) logs api frontend
 
-dev-obs: ## Levanta el perfil de observabilidad (otel, prometheus, grafana, tempo)
-	$(COMPOSE_OBS) up -d otel-collector prometheus grafana tempo
+dev-status: ## Estado de las unidades del entorno
+	$(DEV) status
+
+dev-obs: ## Levanta la observabilidad (otel, tempo, prometheus, alertmanager, blackbox, loki, alloy, grafana)
+	$(DEV) obs
+
+dev-export: ## Respaldo de es.events contra el MinIO local (DAT-009)
+	$(DEV) export
 
 dev-seed: ## Crea usuarios semilla en Keycloak (owner@, vet@, admin@dev.local)
 	infra/scripts/dev-seed.sh http://localhost:8180
 
-migrate: ## Aplica migraciones (contenedor one-shot)
-	$(COMPOSE) run --rm migrate
+migrate: ## Aplica migraciones (unidad oneshot pp-dev-migrate)
+	$(DEV) migrate
 
 # --- Generación de código ---
 gen: ## Regenera servidor Go y tipos TS desde OpenAPI

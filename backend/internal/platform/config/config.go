@@ -34,7 +34,7 @@ type Config struct {
 
 	OIDC struct {
 		Issuer       string
-		DiscoveryURL string // red interna (compose: http://keycloak:8080/realms/petpassport); vacío = Issuer
+		DiscoveryURL string // red interna (dev y Quadlet: http://keycloak:8080/realms/petpassport); vacío = Issuer
 		Audience     string
 		AllowedAZP   []string // azp permitidos (IAM-007)
 	}

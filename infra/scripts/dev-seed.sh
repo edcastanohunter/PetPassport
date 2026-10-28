@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Semillas de desarrollo (docs/phase-1/09 §2): usuarios en Keycloak vía Admin API.
 # Las mascotas y organizaciones se siembran por la API de negocio desde M1.2/M1.3.
-# Uso: infra/scripts/dev-seed.sh [keycloak_url] (por defecto http://localhost:8080 vía compose exec)
+# Uso: infra/scripts/dev-seed.sh [keycloak_url] (por defecto http://localhost:8080; con make dev-seed, el 8180 publicado)
 set -euo pipefail
 
 KC_URL="${1:-http://localhost:8080}"

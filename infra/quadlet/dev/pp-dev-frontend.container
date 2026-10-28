@@ -1,0 +1,23 @@
+# Vite en modo dev sobre el código montado (http://localhost:5173 o, vía Traefik,
+# https://app.pp.localhost). Regenera los tipos desde backend/api/openapi.yaml.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: frontend (vite)
+
+[Container]
+Image=docker.io/library/node:22-alpine
+ContainerName=pp-dev-frontend
+Network=pp-dev.network
+NetworkAlias=frontend
+PublishPort=5173:5173
+WorkingDir=/src
+Exec=sh -c "npm install --no-audit --no-fund && npm run gen:api && npm run dev"
+Environment=CHOKIDAR_USEPOLLING=true
+Volume=@REPO_DIR@/frontend:/src:z
+Volume=@REPO_DIR@/backend/api/openapi.yaml:/backend/api/openapi.yaml:ro,z
+Volume=pp-dev-nodemodules.volume:/src/node_modules
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

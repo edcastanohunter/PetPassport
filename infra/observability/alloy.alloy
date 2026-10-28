@@ -2,20 +2,20 @@
 // La app ya emite logs sin PII (SEC-007); aquí no se transforma el contenido.
 // Podman escribe los logs de los contenedores en journald (LogDriver=journald,
 // ADR-026): Alloy lee el journal en solo lectura, sin socket del motor.
-// Nombres: pp-<servicio> (Quadlet, staging/prod) o petpassport-<servicio>-<n>
-// (podman compose, dev). El resto del journal del host se descarta.
+// Nombres: pp-<servicio> (staging/prod) o pp-dev-<servicio> (dev); el label
+// service es el mismo en ambos. El resto del journal se descarta.
 loki.relabel "containers" {
   forward_to = []
 
   rule {
     source_labels = ["__journal_container_name"]
-    regex         = "(?:pp|petpassport)-.+"
+    regex         = "pp-.+"
     action        = "keep"
   }
 
   rule {
     source_labels = ["__journal_container_name"]
-    regex         = "(?:pp|petpassport)-(.+?)(?:-[0-9]+)?"
+    regex         = "pp-(?:dev-)?(.+)"
     target_label  = "service"
   }
 }

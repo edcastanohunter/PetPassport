@@ -1,0 +1,30 @@
+#!/usr/sbin/nft -f
+# Filtro de origen (SEC-001, ADR-026): el 443 solo acepta conexiones de
+# Cloudflare. Lo abre pp-traefik.socket en el propio host (activación por socket
+# del usuario petpassport, sin DNAT), así que se filtra en la cadena input.
+# Loopback se acepta para comprobaciones locales.
+# Plantilla: host-setup.sh la rellena con los rangos de Cloudflare vigentes, la
+# instala en /etc/pp-origin/pp-origin.nft y la carga pp-origin-firewall.service.
+table inet pp-origin
+delete table inet pp-origin
+
+table inet pp-origin {
+  set cloudflare4 {
+    type ipv4_addr
+    flags interval
+    elements = { @CF_IPV4@ }
+  }
+
+  set cloudflare6 {
+    type ipv6_addr
+    flags interval
+    elements = { @CF_IPV6@ }
+  }
+
+  chain input {
+    type filter hook input priority filter - 10; policy accept;
+    iif "lo" accept
+    tcp dport 443 meta nfproto ipv4 ip saddr != @cloudflare4 counter drop
+    tcp dport 443 meta nfproto ipv6 ip6 saddr != @cloudflare6 counter drop
+  }
+}

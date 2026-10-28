@@ -1,0 +1,24 @@
+# Respaldo frío de es.events (DAT-009) contra el MinIO local, para ensayar la
+# restauración: `make dev-export`. Oneshot; no forma parte de `make dev-up`.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: exportación de es.events
+Requires=pp-dev-postgres.service pp-dev-minio-init.service
+After=pp-dev-postgres.service pp-dev-minio-init.service
+
+[Container]
+Image=pp-dev-backend.build
+ContainerName=pp-dev-events-export
+Network=pp-dev.network
+Entrypoint=/backup
+Exec=export-events
+Environment=PP_DB_URL=postgres://petpassport_reader:api@postgres:5432/petpassport?sslmode=disable
+Environment=PP_BACKUP_STORAGE_ENDPOINT=minio:9000 PP_BACKUP_STORAGE_BUCKET=petpassport-backups
+Environment=PP_BACKUP_STORAGE_ACCESS_KEY=minio PP_BACKUP_STORAGE_SECRET_KEY=minio12345
+Environment=PP_BACKUP_STORAGE_USE_SSL=false
+LogDriver=journald
+
+[Service]
+Type=oneshot
+TimeoutStartSec=900

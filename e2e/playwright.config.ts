@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E de flujos críticos (PP-F1-QA-005) contra el compose completo de desarrollo
+// E2E de flujos críticos (PP-F1-QA-005) contra el entorno completo de desarrollo
 // (Keycloak real, Mailpit para leer correos). Ver e2e/README.md.
 export default defineConfig({
   testDir: './tests',

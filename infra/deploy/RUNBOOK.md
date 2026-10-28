@@ -1,15 +1,20 @@
 # Runbook de operación: staging (PP-F1-INF-006)
 
-Entorno: una VM Linux con Podman y systemd, y servicios gestionados (PostgreSQL, object storage, SMTP),
-detrás de Cloudflare (ADR-006, ADR-008, ADR-026). Cada servicio es una unidad Quadlet (`infra/quadlet/`)
-que `deploy.sh` renderiza e instala en `/etc/containers/systemd/`: se opera con `systemctl` y `journalctl`
-(`pp-api.service`, `pp-keycloak.service`, …). El dominio es un parámetro (`PP_DOMAIN`). Los hosts
-públicos son `app.`, `api.` y `auth.` bajo ese dominio.
+Entorno: una VM Linux con Podman **rootless** y systemd, y servicios gestionados (PostgreSQL, object storage,
+SMTP), detrás de Cloudflare (ADR-006, ADR-008, ADR-026). Cada servicio es una unidad Quadlet
+(`infra/quadlet/deploy/`) del systemd de usuario de la cuenta de servicio `petpassport`: `deploy.sh` las
+renderiza e instala en `~petpassport/.config/containers/systemd/petpassport/`. Se opera como ese usuario con
+`systemctl --user` y `journalctl --user` (`pp-api.service`, `pp-keycloak.service`, …). Root solo interviene en
+la preparación del host (`host-setup.sh`, §1). El dominio es un parámetro (`PP_DOMAIN`). Los hosts públicos
+son `app.`, `api.` y `auth.` bajo ese dominio.
+
+> Convención: los comandos de §3–§14 se ejecutan como `petpassport` (`sudo -iu petpassport`). `host-setup.sh`
+> deja `XDG_RUNTIME_DIR` en su perfil, que es lo que necesitan `systemctl --user` y `journalctl --user`.
 
 > **Ensayo obligatorio**: alguien distinto de quien escribió este runbook ejecuta una vez §3, §4 y
 > §9 antes de M1.5 y anota el resultado al final del documento.
 
-Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
+Contenido: §1 VM y host-setup · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
 §7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto ·
 §13 Correo · §14 Operación con systemd.
 
@@ -18,37 +23,45 @@ Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotac
 1. VM con 2–4 vCPU y 8 GB. Acceso SSH solo por clave más MFA del proveedor, sin contraseñas
    (`PasswordAuthentication no`) y con registro de sesiones del proveedor activo.
 2. SO con **Podman ≥ 5.4** y systemd (p. ej. Debian 13 o RHEL/Alma 10; en Ubuntu, comprobar la versión del
-   paquete de la LTS elegida: la 24.04 trae 4.9 y no sirve). `deploy.sh` rechaza versiones anteriores.
-   Paquetes: `podman`, `netavark`, `aardvark-dns`, `nftables`, `curl`, `jq`, `openssl`, `util-linux`
-   (`flock`), `git`. No hace falta Docker ni ningún proveedor de Compose.
+   paquete de la LTS elegida: la 24.04 trae 4.9 y no sirve). `host-setup.sh` y `deploy.sh` rechazan versiones
+   anteriores. Paquetes: `podman`, `passt` (red rootless), `netavark`, `aardvark-dns`, `nftables`, `curl`,
+   `jq`, `openssl`, `util-linux` (`flock`), `git`. No hace falta Docker ni ningún proveedor de Compose.
    ```bash
    podman version --format '{{.Client.Version}}'      # ≥ 5.4
    podman info --format '{{.Host.NetworkBackend}}'    # netavark
    ```
-3. Journal persistente (Alloy lee los logs de los contenedores desde journald):
-   `mkdir -p /var/log/journal && systemd-tmpfiles --create --prefix /var/log/journal && systemctl restart systemd-journald`.
-4. Firewall en dos capas:
+3. Clonar el repo en `/opt/petpassport` (`git pull` del tag a desplegar). Las unidades montan ficheros de ahí
+   (`infra/traefik/staging`, `infra/keycloak`, `infra/observability`). Tras el paso 4, dárselo a `petpassport`
+   (`chown -R petpassport: /opt/petpassport`): con SELinux, el reetiquetado `:z` lo exige.
+4. Como root, una vez: `/opt/petpassport/infra/deploy/host-setup.sh staging`. Es lo único que necesita root
+   y es idempotente:
+   - crea el usuario de servicio `petpassport` (UID normal, sin contraseña: journald solo da journal propio a
+     UIDs ≥ 1000, y sin él ni `journalctl --user` ni Alloy verían los logs), con rangos subuid/subgid y
+     **linger** (su systemd de usuario arranca con la VM aunque nadie haya iniciado sesión);
+   - `net.ipv4.ip_unprivileged_port_start=443` en `/etc/sysctl.d/90-petpassport.conf`: el 443 lo abre
+     `pp-traefik.socket` como usuario sin privilegios;
+   - journal persistente (`/var/log/journal`);
+   - la tabla nftables `pp-origin` (`infra/deploy/host/pp-origin.nft`) con los rangos vigentes de Cloudflare,
+     en `/etc/pp-origin/`, cargada por `pp-origin-firewall.service` (unidad de sistema);
+   - `/etc/petpassport/` y `/var/lib/petpassport/staging/` con dueño `petpassport` (700).
+5. Firewall en dos capas:
    - **Proveedor** (security group): entrada solo SSH desde la VPN del equipo y 443 desde los rangos de
      `infra/waf/cloudflare-ips.txt`; el resto, denegado.
-   - **Host**: tabla nftables `pp-origin` (`infra/deploy/nftables/pp-origin.nft`). `deploy.sh` la rellena con
-     los rangos vigentes de Cloudflare, la instala en `/etc/petpassport/pp-origin.nft` y la carga con
-     `pp-origin-firewall.service` en cada despliegue. Filtra en `forward` porque el 443 publicado por Podman
-     (DNAT al 8443 de `pp-traefik`) no pasa por la cadena `input` del host. No se usa la cadena `DOCKER-USER`.
-     Comprobar: `nft list table inet pp-origin` (contadores de `drop`). No activar ufw sin revisar antes que
-     no bloquee el reenvío hacia las redes de Podman.
-5. Certificado de origen de Cloudflare (SSL/TLS → Origin Server, 15 años, `*.${PP_DOMAIN}`):
-   `/var/lib/petpassport/staging/certs/origin.pem` y `origin-key.pem` (dueño root, `600`).
-6. Clonar el repo en `/opt/petpassport` (solo lectura para el despliegue; `git pull` del tag a desplegar). Las
-   unidades montan ficheros de ahí (`infra/traefik/staging`, `infra/keycloak`, `infra/observability`).
-7. Acceso de root a ghcr.io con un token de solo lectura de paquetes, en un fichero persistente:
-   `podman login --authfile /root/.config/containers/auth.json ghcr.io` (Podman lo consulta si no existe el de
-   `/run`, que se borra al reiniciar).
+   - **Host**: la tabla `pp-origin` del paso 4. Filtra en `input`: el socket del 443 vive en el propio host
+     (activación por socket, sin DNAT), así que el tráfico pasa por esa cadena. Acepta loopback. Si Cloudflare
+     publica rangos nuevos, `deploy.sh` avisa y hay que volver a ejecutar `host-setup.sh staging` como root.
+     Comprobar: `nft list table inet pp-origin` (contadores de `drop`).
+6. Certificado de origen de Cloudflare (SSL/TLS → Origin Server, 15 años, `*.${PP_DOMAIN}`):
+   `/var/lib/petpassport/staging/certs/origin.pem` y `origin-key.pem` (dueño `petpassport`, `600`).
+7. Acceso de `petpassport` a ghcr.io con un token de solo lectura de paquetes, en un fichero persistente:
+   `podman login --authfile ~/.config/containers/auth.json ghcr.io` (Podman lo consulta si no existe el de
+   `$XDG_RUNTIME_DIR`, que se borra al reiniciar).
 
 ## 2. Secretos y configuración (INF-005, SEC-006)
 
 - Fuente de verdad: el secret manager del proveedor (o SOPS+age). En la VM se genera
   `/etc/petpassport/staging.env` a partir de `infra/deploy/staging.env.example`:
-  `install -m 600 -o root -g root /dev/null /etc/petpassport/staging.env` y se rellenan los valores.
+  `install -m 600 -o petpassport -g petpassport /dev/null /etc/petpassport/staging.env` y se rellenan los valores.
   `deploy.sh` se niega a usarlo si los permisos no son 600/400.
 - Prerrequisitos humanos: dominio y zona en Cloudflare; Postgres gestionado con las bases
   `petpassport` y `keycloak` y los roles de `infra/postgres/init/` (creados por el DBA con contraseñas
@@ -61,21 +74,24 @@ Contenido: §1 VM · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotac
 ## 3. Despliegue
 
 ```bash
+sudo -iu petpassport
 cd /opt/petpassport && git fetch --tags && git checkout <tag-o-sha>
-sudo infra/deploy/deploy.sh staging sha-<sha-largo>
+infra/deploy/deploy.sh staging sha-<sha-largo>       # se niega a correr como root
 ```
 
 Pasos del script:
 
-1. Renderiza las unidades de `infra/quadlet/` para la versión: imagen, rutas y rangos de Cloudflare.
+0. Comprueba lo que deja `host-setup.sh`: linger, el 443 abrible sin privilegios y `pp-origin-firewall` activo.
+1. Renderiza las unidades de `infra/quadlet/deploy/` para la versión: imagen, rutas y rangos de Cloudflare.
    Genera un `EnvironmentFile` por servicio en `/var/lib/petpassport/staging/env/` (600), porque las
-   unidades no llevan secretos. Valida todo con el generador de Quadlet (`-dryrun`) y hace `podman pull`
-   de las imágenes.
-2. Instala solo `pp-migrate` y ejecuta `systemctl start pp-migrate`.
-3. Instala las unidades que cambiaron y hace `daemon-reload`. Recarga el filtro `pp-origin` y el timer de
-   respaldo. Reinicia `pp-traefik`/`pp-keycloak` y la observabilidad si cambiaron, y después ejecuta
+   unidades no llevan secretos. Valida todo con el generador de Quadlet (`-user -dryrun`) y hace
+   `podman pull` de las imágenes.
+2. Instala solo `pp-migrate` y ejecuta `systemctl --user start pp-migrate`.
+3. Instala las unidades que cambiaron (`~/.config/containers/systemd/petpassport/` y, para el socket, el timer
+   y el aviso de fallos, `~/.config/systemd/user/`) y hace `daemon-reload`. Activa `pp-traefik.socket` y el
+   timer de respaldo. Reinicia `pp-traefik`/`pp-keycloak` y la observabilidad si cambiaron, y después ejecuta
    `pp-keycloak-config`.
-4. Ejecuta `systemctl restart pp-api pp-frontend`. Con `Notify=healthy` no termina hasta que pasan su
+4. Ejecuta `systemctl --user restart pp-api pp-frontend`. Con `Notify=healthy` no termina hasta que pasan su
    health check.
 5. Smoke, anotación en Grafana y aviso al canal del equipo.
 
@@ -91,13 +107,13 @@ línea del log lo enumera.
 ## 4. Rollback
 
 ```bash
-sudo infra/deploy/deploy.sh staging "$(tail -2 /var/lib/petpassport/staging/history | head -1 | cut -d' ' -f2)"
+infra/deploy/deploy.sh staging "$(tail -2 /var/lib/petpassport/staging/history | head -1 | cut -d' ' -f2)"
 ```
 
 Las migraciones son compatibles hacia atrás una versión (DAT-002), así que el rollback no ejecuta
 `down`. Si la versión a la que se vuelve es dos o más versiones anterior, primero hay que comprobar en
 las notas de las migraciones intermedias que no haya cambios incompatibles. Si el rollback tampoco
-llega a healthy: `journalctl -u pp-api -n 200`, contrastar con la alerta activa (§7) y escalar (§12).
+llega a healthy: `journalctl --user -u pp-api -n 200`, contrastar con la alerta activa (§7) y escalar (§12).
 
 ## 5. Rotación de secretos (cada 6 meses o ante incidente)
 
@@ -147,7 +163,7 @@ el pool está saturado, revisar consultas lentas (`log_min_duration_statement`) 
 Tempo da las trazas de las requests lentas.
 
 ### 7.3 ApiNotReady
-`/readyz` lleva 2 min caído. Ejecutar `systemctl status pp-api` y `journalctl -u pp-api -n 200`. Normalmente es la BD o
+`/readyz` lleva 2 min caído. Ejecutar `systemctl --user status pp-api` y `journalctl --user -u pp-api -n 200`. Normalmente es la BD o
 Keycloak (JWKS). Si la API está en bucle de reinicios tras un despliegue, rollback (§4).
 
 ### 7.4 OutboxPendingGrowing
@@ -161,7 +177,7 @@ revisar el estado del certificado en SSL/TLS → Edge Certificates. El de origen
 
 ### 7.6 ScrapeTargetDown
 Prometheus no puede leer api, keycloak o traefik. Comprobar la red `pp-obs`
-(`podman network inspect pp-obs`) y la unidad afectada (`systemctl status pp-<servicio>`).
+(`podman network inspect pp-obs`) y la unidad afectada (`systemctl --user status pp-<servicio>`).
 
 ## 8. Observabilidad
 
@@ -211,9 +227,9 @@ rango de posiciones, sha256). Es independiente del proveedor de PostgreSQL.
 que la API.
 
 ```bash
-systemctl list-timers pp-events-export.timer          # próxima ejecución (domingo 03:00 UTC)
-sudo systemctl start pp-events-export.service         # ejecución manual
-journalctl -u pp-events-export -n 50                  # resultado ("es.events uploaded")
+systemctl --user list-timers pp-events-export.timer   # próxima ejecución (domingo 03:00 UTC)
+systemctl --user start pp-events-export.service       # ejecución manual
+journalctl --user -u pp-events-export -n 50           # resultado ("es.events uploaded")
 ```
 
 Si falla, `OnFailure=` lanza `pp-notify-failure@pp-events-export.service`, que avisa por `TEAM_WEBHOOK_URL`. La exportación contiene PII de los
@@ -246,9 +262,9 @@ Tras una restauración real, antes de abrir tráfico, se reaplican las supresion
 
 ## 10. Keycloak
 
-- **Reinicio**: `systemctl restart pp-keycloak`, que vuelve cuando Keycloak está sano. Las sesiones viven
+- **Reinicio**: `systemctl --user restart pp-keycloak`, que vuelve cuando Keycloak está sano. Las sesiones viven
   en la BD, así que los usuarios no tienen que volver a entrar. Después, si se tocó el realm:
-  `systemctl start pp-keycloak-config`.
+  `systemctl --user start pp-keycloak-config`.
 - **Consola**: `https://auth.${PP_DOMAIN}/admin/`, solo desde `TEAM_IP_RANGES` (WAF y Traefik).
 - **Usuario bloqueado por brute force**: Users → el usuario → "Unlock" (solo tras verificar la
   identidad).
@@ -300,21 +316,29 @@ Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) 
 
 ## 14. Operación con systemd (ADR-026)
 
+Como `petpassport` (`sudo -iu petpassport`):
+
 | Tarea | Comando |
 |---|---|
-| Estado de todo | `systemctl list-units 'pp-*'` · `podman ps` |
-| Logs de un servicio | `journalctl -u pp-api -f` (también en Loki: `{service="api"}`) |
-| Reiniciar un servicio | `systemctl restart pp-<servicio>` (espera al health check si tiene `Notify=healthy`) |
-| Ver la unidad generada | `systemctl cat pp-api` · fuente: `/etc/containers/systemd/pp-api.container` |
-| Validar las unidades instaladas | `/usr/lib/systemd/system-generators/podman-system-generator -dryrun` |
+| Estado de todo | `systemctl --user list-units 'pp-*'` · `podman ps` |
+| Logs de un servicio | `journalctl --user -u pp-api -f` (también en Loki: `{service="api"}`) |
+| Reiniciar un servicio | `systemctl --user restart pp-<servicio>` (espera al health check si tiene `Notify=healthy`) |
+| Ver la unidad generada | `systemctl --user cat pp-api` · fuente: `~/.config/containers/systemd/petpassport/pp-api.container` |
+| Validar las unidades instaladas | `QUADLET_UNIT_DIRS=~/.config/containers/systemd/petpassport /usr/libexec/podman/quadlet -user -dryrun` |
 | Entorno de un servicio | `/var/lib/petpassport/<env>/env/<servicio>.env` (600; no copiar a tickets) |
 | Health check a mano | `podman healthcheck run pp-api && echo sano` |
+| Socket del 443 | `systemctl --user status pp-traefik.socket` (si cambia el `.socket`: `systemctl --user restart pp-traefik.socket`) |
 
-- Las unidades instaladas son **generadas**: no se editan en la VM. Los cambios van por PR en `infra/quadlet/`
-  y se aplican con `deploy.sh`; el siguiente despliegue sobrescribe cualquier edición local.
-- Todas las unidades de larga duración tienen `Restart=always` y arrancan en el boot
-  (`WantedBy=multi-user.target`). Tras un reinicio de la VM no hay que hacer nada; comprobar con la primera
-  fila de la tabla.
+Solo como root: `systemctl status pp-origin-firewall`, `nft list table inet pp-origin`,
+`loginctl show-user petpassport -p Linger` (debe ser `yes`) y volver a ejecutar `host-setup.sh`.
+
+- Las unidades instaladas son **generadas**: no se editan en la VM. Los cambios van por PR en
+  `infra/quadlet/deploy/` y se aplican con `deploy.sh`; el siguiente despliegue sobrescribe cualquier edición local.
+- Todas las unidades de larga duración tienen `Restart=always` y arrancan en el boot (`WantedBy=default.target`
+  del systemd de usuario, que arranca gracias a linger). Tras un reinicio de la VM no hay que hacer nada;
+  comprobar con la primera fila de la tabla.
+- Reiniciar `pp-traefik` corta las conexiones nuevas durante unos segundos (en el ensayo fallaron 4 de 60
+  peticiones durante el reinicio): el socket sigue abierto, pero no es un reinicio sin cortes.
 
 ---
 

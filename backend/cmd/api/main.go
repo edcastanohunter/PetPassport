@@ -261,7 +261,7 @@ func run() error {
 }
 
 // newVerifierWithRetry espera al proveedor OIDC hasta ~60 s (Keycloak tarda en
-// arrancar en compose); después falla y el proceso no arranca (IAM-007 §1).
+// arrancar en el entorno dev); después falla y el proceso no arranca (IAM-007 §1).
 func newVerifierWithRetry(ctx context.Context, logger *slog.Logger, cfg auth.VerifierConfig) (*auth.Verifier, error) {
 	const attempts = 20
 	var lastErr error

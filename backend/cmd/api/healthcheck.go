@@ -11,7 +11,7 @@ import (
 
 // healthcheck implementa `api healthcheck`: GET a /readyz del listener
 // interno. La imagen es distroless (sin shell ni curl), así que el
-// `healthcheck` de compose invoca el propio binario (INF-006/INF-008).
+// `HealthCmd` de Quadlet invoca el propio binario (INF-006/INF-008).
 func healthcheck() int {
 	// Siempre loopback: de la configuración solo se toma el puerto.
 	port := "9090"

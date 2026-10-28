@@ -1,6 +1,6 @@
 # Aviso al canal del equipo cuando falla una unidad de PetPassport
 # (OnFailure=pp-notify-failure@%N.service; hoy: pp-events-export, DAT-009).
-# Plantilla: deploy.sh sustituye @…@ e instala en /etc/systemd/system (ADR-026).
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/systemd/user (rootless, ADR-026).
 [Unit]
 Description=PetPassport: aviso de fallo de %i
 

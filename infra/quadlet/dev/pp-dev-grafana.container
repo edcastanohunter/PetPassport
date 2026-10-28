@@ -1,0 +1,20 @@
+# Grafana: dashboards provisionados; acceso anónimo en dev (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: grafana
+
+[Container]
+Image=docker.io/grafana/grafana:11.5.0
+ContainerName=pp-dev-grafana
+Network=pp-dev.network
+NetworkAlias=grafana
+PublishPort=127.0.0.1:3000:3000
+Environment=GF_SECURITY_ADMIN_PASSWORD=admin GF_AUTH_ANONYMOUS_ENABLED=true
+Environment=GF_USERS_ALLOW_SIGN_UP=false GF_ANALYTICS_REPORTING_ENABLED=false
+Volume=@REPO_DIR@/infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro,z
+Volume=@REPO_DIR@/infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro,z
+Volume=pp-dev-grafanadata.volume:/var/lib/grafana
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

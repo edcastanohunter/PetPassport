@@ -1,0 +1,40 @@
+# Borde de desarrollo: https://app|api|auth.pp.localhost con los certificados de
+# mkcert (make dev-certs). Rootless: publicar 80/443 exige
+# net.ipv4.ip_unprivileged_port_start<=80 (dev-quadlet.sh lo comprueba).
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: traefik
+Wants=pp-dev-api.service pp-dev-frontend.service pp-dev-keycloak.service
+After=pp-dev-api.service pp-dev-frontend.service pp-dev-keycloak.service
+
+[Container]
+Image=docker.io/library/traefik:v3.3
+ContainerName=pp-dev-traefik
+Network=pp-dev.network
+NetworkAlias=traefik
+PublishPort=80:80
+PublishPort=443:443
+# Dashboard (solo dev).
+PublishPort=8081:8080
+Exec=--providers.file.directory=/etc/traefik/dynamic \
+  --providers.file.watch=true \
+  --entrypoints.web.address=:80 \
+  --entrypoints.web.http.redirections.entrypoint.to=websecure \
+  --entrypoints.web.http.redirections.entrypoint.scheme=https \
+  --entrypoints.websecure.address=:443 \
+  --entrypoints.websecure.transport.respondingTimeouts.readTimeout=30s \
+  --entrypoints.websecure.transport.respondingTimeouts.writeTimeout=60s \
+  --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=180s \
+  --api.dashboard=true \
+  --api.insecure=true \
+  --metrics.prometheus=true \
+  --log.level=INFO \
+  --accesslog=true \
+  --accesslog.fields.headers.names.Authorization=drop
+Volume=@REPO_DIR@/infra/traefik/dynamic:/etc/traefik/dynamic:ro,z
+Volume=@REPO_DIR@/infra/traefik/certs:/etc/traefik/certs:ro,z
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

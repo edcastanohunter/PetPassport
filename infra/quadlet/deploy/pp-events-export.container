@@ -1,0 +1,26 @@
+# Respaldo frío semanal de es.events (DAT-009): lo lanza pp-events-export.timer
+# (domingo 03:00 UTC). Rol de solo lectura y bucket propio (RUNBOOK §9.2). Si
+# falla, pp-notify-failure@ avisa al canal del equipo.
+# Plantilla: deploy.sh sustituye @…@ e instala en ~petpassport/.config/containers/systemd/petpassport (rootless, ADR-026).
+[Unit]
+Description=PetPassport: exportación semanal de es.events (@PP_VERSION@)
+OnFailure=pp-notify-failure@%N.service
+
+[Container]
+Image=@IMAGE_PREFIX@-backend:@PP_VERSION@
+ContainerName=pp-events-export
+Network=pp-internal.network
+Entrypoint=/backup
+Exec=export-events
+# PP_DB_URL = PP_BACKUP_DB_URL y PP_BACKUP_STORAGE_*.
+EnvironmentFile=@STATE_DIR@/env/events-export.env
+ReadOnly=true
+Tmpfs=/tmp
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+
+[Service]
+Type=oneshot
+TimeoutStartSec=1h
+Nice=10

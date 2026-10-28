@@ -1,0 +1,11 @@
+# Imagen del backend (migrate, export) construida desde el código local en cada
+# arranque de sus dependientes (equivale a `up --build`; la caché la abarata).
+# Entorno de desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye
+# @REPO_DIR@ e instala en ~/.config/containers/systemd/petpassport-dev.
+[Build]
+ImageTag=localhost/petpassport-backend:dev
+SetWorkingDirectory=@REPO_DIR@/backend
+PodmanArgs=--build-arg=VERSION=dev
+
+[Service]
+TimeoutStartSec=900

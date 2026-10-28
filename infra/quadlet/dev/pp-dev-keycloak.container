@@ -1,0 +1,35 @@
+# Keycloak en modo dev. La API descubre el realm por la red interna
+# (http://keycloak:8080) mientras los tokens llevan iss=https://auth.pp.localhost.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: keycloak
+Requires=pp-dev-postgres.service
+After=pp-dev-postgres.service
+
+[Container]
+Image=quay.io/keycloak/keycloak:26.1
+ContainerName=pp-dev-keycloak
+Network=pp-dev.network
+NetworkAlias=keycloak
+# Admin API para scripts locales (dev-seed); en staging/prod solo vía Traefik.
+PublishPort=8180:8080
+Exec=start-dev --http-port=8080 --metrics-enabled=true --health-enabled=true
+Environment=KC_DB=postgres KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+Environment=KC_DB_USERNAME=keycloak KC_DB_PASSWORD=keycloak
+Environment=KC_HOSTNAME=https://auth.pp.localhost KC_HOSTNAME_STRICT=false
+Environment=KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true KC_PROXY_HEADERS=xforwarded KC_HTTP_ENABLED=true
+Environment=KC_BOOTSTRAP_ADMIN_USERNAME=admin KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+# Tema de IAM-012.
+Volume=@REPO_DIR@/infra/keycloak/themes/petpassport:/opt/keycloak/themes/petpassport:ro,z
+# La imagen no trae curl; el health endpoint vive en el puerto de gestión 9000.
+HealthCmd=["/bin/bash","-c","exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=30
+HealthStartPeriod=40s
+Notify=healthy
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=600

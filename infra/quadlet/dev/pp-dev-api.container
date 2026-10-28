@@ -1,0 +1,40 @@
+# API con recarga en caliente (air, backend/.air.toml) sobre el código montado.
+# Arranca tras migraciones, realm y buckets.
+# Desarrollo rootless (ADR-026): infra/scripts/dev-quadlet.sh sustituye @REPO_DIR@
+# e instala en ~/.config/containers/systemd/petpassport-dev. Credenciales solo de dev.
+[Unit]
+Description=PetPassport dev: api (air)
+Requires=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
+After=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
+Wants=pp-dev-mailpit.service
+After=pp-dev-mailpit.service
+
+[Container]
+Image=ghcr.io/air-verse/air:latest
+ContainerName=pp-dev-api
+Network=pp-dev.network
+NetworkAlias=api
+# /metrics, /readyz, pprof (solo dev).
+PublishPort=9090:9090
+WorkingDir=/src
+Exec=-c .air.toml
+Environment=PP_ENV=dev PP_HTTP_ADDR=:8080 PP_INTERNAL_ADDR=:9090 PP_LOG_LEVEL=debug
+Environment=PP_DB_URL=postgres://petpassport_api:api@postgres:5432/petpassport?sslmode=disable PP_DB_MAX_CONNS=10
+Environment=PP_OIDC_ISSUER=https://auth.pp.localhost/realms/petpassport
+Environment=PP_OIDC_DISCOVERY_URL=http://keycloak:8080/realms/petpassport
+Environment=PP_OIDC_AUDIENCE=petpassport-api PP_OIDC_ALLOWED_AZP=petpassport-web
+Environment=PP_IP_HASH_SALT=dev-ip-hash-salt-change-me
+Environment=PP_KC_ADMIN_CLIENT_ID=petpassport-backend PP_KC_ADMIN_CLIENT_SECRET=dev-backend-secret-change-me
+Environment=PP_STORAGE_ENDPOINT=minio:9000 PP_STORAGE_BUCKET=petpassport-media
+Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
+Environment=PP_SMTP_HOST=mailpit PP_SMTP_PORT=1025
+Environment=PP_CORS_ORIGINS=https://app.pp.localhost,http://localhost:5173
+Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost
+Environment=GOFLAGS=-buildvcs=false
+Volume=@REPO_DIR@/backend:/src:z
+Volume=pp-dev-gomod.volume:/go/pkg/mod
+Volume=pp-dev-gocache.volume:/root/.cache/go-build
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=300

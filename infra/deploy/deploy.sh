@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Despliegue idempotente (PP-F1-INF-006, ADR-026): deploy.sh <env> <version>
 #
-#   1. renderiza las unidades Quadlet de infra/quadlet para <version>, las valida
+# Corre como el usuario de servicio petpassport (Podman rootless): las unidades
+# son de su systemd de usuario (`systemctl --user`). La parte que exige root
+# (usuario, linger, puerto 443, nftables) la hace una vez host-setup.sh.
+#
+#   1. renderiza las unidades Quadlet de infra/quadlet/deploy para <version>, las valida
 #      con el generador (-dryrun) y hace podman pull de sus imágenes
 #   2. migrate up (unidad oneshot; si falla, se aborta sin tocar lo que corre)
 #   3. instala las unidades que cambiaron; reinicia Traefik, Keycloak y
@@ -24,10 +28,10 @@ VERSION=$2
 
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 ENV_FILE=${PP_ENV_FILE:-/etc/petpassport/$ENV_NAME.env}
-STATE_DIR=${PP_STATE_DIR:-/var/lib/petpassport/$ENV_NAME}
-QUADLET_DIR=${PP_QUADLET_DIR:-/etc/containers/systemd}
-SYSTEMD_DIR=${PP_SYSTEMD_DIR:-/etc/systemd/system}
-NFT_FILE=/etc/petpassport/pp-origin.nft
+STATE_DIR=${PP_STATE_DIR:-$HOME/$ENV_NAME}
+QUADLET_DIR=${PP_QUADLET_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/containers/systemd/petpassport}
+SYSTEMD_DIR=${PP_SYSTEMD_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user}
+CF_INSTALLED=/etc/pp-origin/cf-ips
 MIN_PODMAN=5.4.0
 
 # Servicios de larga duración por grupo (unidades pp-<nombre>.service).
@@ -39,21 +43,29 @@ log() { printf '%s [deploy:%s] %s\n' "$(date -u +%FT%TZ)" "$ENV_NAME" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
 
 # --- Precondiciones ---------------------------------------------------------
-[[ $EUID -eq 0 ]] || die "ejecutar como root (unidades Quadlet de sistema, ADR-026)"
+[[ $EUID -ne 0 ]] || die "no ejecutar como root: sudo -iu petpassport (rootless, ADR-026)"
 command -v podman >/dev/null || die "falta podman (RUNBOOK §1)"
 podman_version=$(podman version --format '{{.Client.Version}}')
 [[ $(printf '%s\n%s\n' "$MIN_PODMAN" "$podman_version" | sort -V | head -1) == "$MIN_PODMAN" ]] ||
   die "podman $podman_version < $MIN_PODMAN (Notify=healthy, NetworkAlias; ADR-026)"
 QUADLET_BIN=
-for q in /usr/lib/systemd/system-generators/podman-system-generator /usr/libexec/podman/quadlet /usr/lib/podman/quadlet; do
+for q in /usr/libexec/podman/quadlet /usr/lib/podman/quadlet /usr/lib/systemd/user-generators/podman-user-generator; do
   [[ -x $q ]] && { QUADLET_BIN=$q; break; }
 done
 [[ -n $QUADLET_BIN ]] || die "no se encuentra el generador de Quadlet"
+# `sudo -iu petpassport` no abre sesión: el bus del usuario existe gracias a linger.
+export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+systemctl --user show-environment >/dev/null 2>&1 ||
+  die "sin systemd de usuario para $(id -un) (host-setup.sh activa linger)"
+(($(sysctl -n net.ipv4.ip_unprivileged_port_start) <= 443)) ||
+  die "rootless no puede abrir el 443 (host-setup.sh fija ip_unprivileged_port_start)"
+systemctl is-active -q pp-origin-firewall.service ||
+  die "pp-origin-firewall.service no está activo: ejecutar host-setup.sh como root"
 
 [[ -f $ENV_FILE ]] || die "no existe $ENV_FILE (se genera desde el secret manager, RUNBOOK §2)"
 perms=$(stat -c '%a' "$ENV_FILE")
 [[ $perms == 600 || $perms == 400 ]] || die "$ENV_FILE debe tener permisos 600 (tiene $perms)"
-mkdir -p "$STATE_DIR" "$QUADLET_DIR"
+mkdir -p "$STATE_DIR" "$QUADLET_DIR" "$SYSTEMD_DIR"
 [[ -f $STATE_DIR/certs/origin.pem && -f $STATE_DIR/certs/origin-key.pem ]] ||
   die "falta el certificado de origen en $STATE_DIR/certs (RUNBOOK §1)"
 # El certificado de origen no lo ve el blackbox (está tras Cloudflare): se
@@ -77,20 +89,14 @@ IMAGE_PREFIX=${IMAGE_PREFIX:-ghcr.io/edcastanohunter/petpassport}
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-# Rangos de Cloudflare: se refrescan si es posible; si no, la lista del repo.
-cf_ips() {
-  local fresh
-  if fresh=$( { curl -fsS --max-time 5 https://www.cloudflare.com/ips-v4 && echo &&
-               curl -fsS --max-time 5 https://www.cloudflare.com/ips-v6; } 2>/dev/null ) &&
-     [[ $(grep -c '/' <<<"$fresh") -ge 10 ]]; then
-    grep '/' <<<"$fresh"
-  else
-    grep -v '^#' "$REPO_DIR/infra/waf/cloudflare-ips.txt" | grep '/'
-  fi
-}
-cf_ips >"$WORK/cf-ips"
-grep -Eqv '^[0-9a-fA-F:./]+$' "$WORK/cf-ips" && die "rangos de Cloudflare con formato inesperado"
+# Rangos de Cloudflare para trustedIPs de Traefik. nftables los carga
+# host-setup.sh (root): si Cloudflare publicó rangos nuevos, se avisa.
+# shellcheck source=lib/cloudflare.sh
+source "$REPO_DIR/infra/deploy/lib/cloudflare.sh"
+cf_ips "$REPO_DIR" >"$WORK/cf-ips" || die "rangos de Cloudflare no disponibles"
 CF_TRUSTED_IPS=$(paste -sd, - <"$WORK/cf-ips")
+cmp -s <(sort "$WORK/cf-ips") <(sort "$CF_INSTALLED" 2>/dev/null) ||
+  echo "AVISO: los rangos de Cloudflare difieren de los de nftables; ejecutar host-setup.sh $ENV_NAME como root (RUNBOOK §1)" >&2
 
 # --- Renderizado -------------------------------------------------------------
 # Las unidades (644, legibles por todos) solo llevan versión, rutas y rangos;
@@ -103,10 +109,10 @@ subst() {
 render_units() {
   local version=$1 out=$2 f
   mkdir -p "$out/quadlet" "$out/systemd"
-  for f in "$REPO_DIR"/infra/quadlet/pp-*; do subst "$version" <"$f" >"$out/quadlet/${f##*/}"; done
+  for f in "$REPO_DIR"/infra/quadlet/deploy/pp-*; do subst "$version" <"$f" >"$out/quadlet/${f##*/}"; done
   for f in "$REPO_DIR"/infra/deploy/systemd/pp-*; do subst "$version" <"$f" >"$out/systemd/${f##*/}"; done
   ! grep -rEl '@[A-Z0-9_]+@' "$out/quadlet" "$out/systemd" || die "marcadores sin sustituir en las unidades"
-  QUADLET_UNIT_DIRS=$out/quadlet "$QUADLET_BIN" -dryrun >/dev/null 2>"$out/quadlet.log" ||
+  QUADLET_UNIT_DIRS=$out/quadlet "$QUADLET_BIN" -user -dryrun >/dev/null 2>"$out/quadlet.log" ||
     { cat "$out/quadlet.log" >&2; die "el generador de Quadlet rechaza las unidades de $version"; }
 }
 
@@ -201,6 +207,8 @@ write_envs() {
 
 # Instala los ficheros de <src> en <dst> que difieran y añade a CHANGED el
 # servicio afectado (pp-api.container o env/api.env → api).
+sc() { systemctl --user "$@"; }
+
 CHANGED=()
 install_changed() {
   local src=$1 dst=$2 mode=$3 f name
@@ -222,8 +230,8 @@ apply_units() {
   for s in "$@"; do
     if changed "$s"; then restart+=("pp-$s.service"); else start+=("pp-$s.service"); fi
   done
-  if ((${#restart[@]})); then log "  reinicio: ${restart[*]}"; systemctl restart "${restart[@]}" || return 1; fi
-  if ((${#start[@]})); then systemctl start "${start[@]}" || return 1; fi
+  if ((${#restart[@]})); then log "  reinicio: ${restart[*]}"; sc restart "${restart[@]}" || return 1; fi
+  if ((${#start[@]})); then sc start "${start[@]}" || return 1; fi
 }
 
 # Unidades pp-* instaladas que ya no existen en el repo: se detienen y se borran.
@@ -234,7 +242,7 @@ prune_units() {
     name=${f##*/}
     [[ -e $WORK/new/quadlet/$name ]] && continue
     log "  retirada: $name"
-    systemctl stop "${name%.*}.service" 2>/dev/null || true
+    sc stop "${name%.*}.service" 2>/dev/null || true
     rm -f "$f"
   done
 }
@@ -288,9 +296,9 @@ mkdir -p "$WORK/stage1"
 cp "$WORK"/new/quadlet/pp-*.network "$WORK/new/quadlet/pp-migrate.container" "$WORK/stage1/"
 install_changed "$WORK/stage1" "$QUADLET_DIR" 644
 (umask 077 && mkdir -p "$STATE_DIR/env" && install -m 600 "$WORK/new/env/migrate.env" "$STATE_DIR/env/migrate.env")
-systemctl daemon-reload
-systemctl start pp-migrate.service ||
-  die "migraciones fallidas (journalctl -u pp-migrate): despliegue abortado, ${PREVIOUS:-nada} sigue activo"
+sc daemon-reload
+sc start pp-migrate.service ||
+  die "migraciones fallidas (journalctl --user -u pp-migrate): despliegue abortado, ${PREVIOUS:-nada} sigue activo"
 
 # --- 3. Unidades, borde, Keycloak, realm y observabilidad --------------------
 log "3/6 unidades + traefik + keycloak + realm + observabilidad"
@@ -298,27 +306,20 @@ install_changed "$WORK/new/quadlet" "$QUADLET_DIR" 644
 install_changed "$WORK/new/systemd" "$SYSTEMD_DIR" 644
 install_changed "$WORK/new/env" "$STATE_DIR/env" 600
 prune_units
-systemctl daemon-reload
+sc daemon-reload
+# El socket del 443 lo mantiene systemd entre reinicios de Traefik. Cambiar el
+# propio .socket exige `systemctl --user restart pp-traefik.socket`.
+sc enable --now pp-traefik.socket pp-events-export.timer >/dev/null 2>&1 ||
+  die "no se pudo activar pp-traefik.socket o pp-events-export.timer"
 
-# Filtro de origen con los rangos de Cloudflare vigentes (SEC-001).
-grep -v ':' "$WORK/cf-ips" | paste -sd, - | sed 's/,/, /g' >"$WORK/cf4"
-grep ':' "$WORK/cf-ips" | paste -sd, - | sed 's/,/, /g' >"$WORK/cf6"
-sed -e "s|@CF_IPV4@|$(cat "$WORK/cf4")|" -e "s|@CF_IPV6@|$(cat "$WORK/cf6")|" \
-  "$REPO_DIR/infra/deploy/nftables/pp-origin.nft" >"$WORK/pp-origin.nft"
-nft -c -f "$WORK/pp-origin.nft" || die "tabla nftables pp-origin inválida"
-install -m 644 "$WORK/pp-origin.nft" "$NFT_FILE"
-systemctl enable pp-origin-firewall.service pp-events-export.timer >/dev/null 2>&1
-systemctl reload-or-restart pp-origin-firewall.service
-systemctl start pp-events-export.timer
-
-apply_units "${EDGE_UNITS[@]}" || die "traefik/keycloak no llegaron a healthy (journalctl -u pp-keycloak)"
+apply_units "${EDGE_UNITS[@]}" || die "traefik/keycloak no llegaron a healthy (journalctl --user -u pp-keycloak)"
 apply_units "${OBS_UNITS[@]}" || log "aviso: algún servicio de observabilidad no arrancó"
-systemctl start pp-keycloak-config.service || die "keycloak-config falló (journalctl -u pp-keycloak-config)"
+sc start pp-keycloak-config.service || die "keycloak-config falló (journalctl --user -u pp-keycloak-config)"
 
 # --- 4. Aplicación -----------------------------------------------------------
 log "4/6 api frontend"
 if ! apply_units "${APP_UNITS[@]}"; then
-  journalctl -u pp-api.service -n 50 --no-pager >&2 || true
+  journalctl --user -u pp-api.service -n 50 --no-pager >&2 || true
   ROLLBACK_REASON="readyz no llegó a healthy"
 fi
 
@@ -335,8 +336,8 @@ if [[ -n ${ROLLBACK_REASON:-} ]]; then
     CHANGED=()
     install_changed "$WORK/rollback/quadlet" "$QUADLET_DIR" 644
     install_changed "$WORK/rollback/systemd" "$SYSTEMD_DIR" 644
-    systemctl daemon-reload
-    systemctl restart pp-api.service pp-frontend.service ||
+    sc daemon-reload
+    sc restart pp-api.service pp-frontend.service ||
       log "ERROR: el rollback no llegó a healthy; intervención manual (RUNBOOK §4)"
     notify "deploy $VERSION FALLIDO ($ROLLBACK_REASON); rollback a $PREVIOUS"
   else

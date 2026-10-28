@@ -1,0 +1,17 @@
+# Recolector OpenTelemetry: trazas OTLP de la API → Tempo (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: otel-collector
+
+[Container]
+Image=docker.io/otel/opentelemetry-collector-contrib:0.120.0
+ContainerName=pp-dev-otel-collector
+Network=pp-dev.network
+NetworkAlias=otel-collector
+PublishPort=127.0.0.1:4318:4318
+Exec=--config=/etc/otelcol/config.yaml
+Volume=@REPO_DIR@/infra/observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro,z
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

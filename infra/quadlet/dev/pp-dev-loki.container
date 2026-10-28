@@ -1,0 +1,17 @@
+# Loki: logs (retención 30 días) (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: loki
+
+[Container]
+Image=docker.io/grafana/loki:3.4.2
+ContainerName=pp-dev-loki
+Network=pp-dev.network
+NetworkAlias=loki
+Exec=-config.file=/etc/loki/loki.yaml
+Volume=@REPO_DIR@/infra/observability/loki.yaml:/etc/loki/loki.yaml:ro,z
+Volume=pp-dev-lokidata.volume:/loki
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

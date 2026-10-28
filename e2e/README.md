@@ -1,6 +1,6 @@
 # E2E (PP-F1-QA-005)
 
-Playwright contra el compose completo de desarrollo: Keycloak real, Mailpit para leer correos.
+Playwright contra el entorno completo de desarrollo (unidades Quadlet rootless): Keycloak real, Mailpit para leer correos.
 
 | Spec | Flujo crítico (docs/phase-1/10 §5) |
 |---|---|
@@ -17,7 +17,7 @@ aceptación de transferencia y consola de organizaciones: cero violaciones *seri
 ## Ejecutar en local
 
 ```bash
-make dev-certs && make dev-up        # compose completo (https://app.pp.localhost)
+make dev-certs && make dev-up        # entorno completo (https://app.pp.localhost)
 make e2e                             # npm ci + playwright install chromium + playwright test
 cd e2e && npx playwright show-report # informe HTML
 ```

@@ -1,0 +1,26 @@
+# Prometheus: métricas y reglas de alerta (INF-007). Puertos solo en 127.0.0.1.
+# Desarrollo rootless (ADR-026): `make dev-obs` (infra/scripts/dev-quadlet.sh obs).
+[Unit]
+Description=PetPassport dev: prometheus
+
+[Container]
+Image=docker.io/prom/prometheus:v3.2.0
+ContainerName=pp-dev-prometheus
+Network=pp-dev.network
+NetworkAlias=prometheus
+PublishPort=127.0.0.1:9091:9090
+# ${PP_ENV} en external_labels (--enable-feature=expand-external-labels).
+Environment=PP_ENV=dev
+Exec=--config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/prometheus \
+  --storage.tsdb.retention.time=30d \
+  --enable-feature=expand-external-labels
+Volume=@REPO_DIR@/infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z
+Volume=@REPO_DIR@/infra/observability/alerts.yml:/etc/prometheus/alerts.yml:ro,z
+# En dev el directorio de targets TLS está vacío.
+Volume=@REPO_DIR@/infra/observability/targets:/etc/prometheus/targets:ro,z
+Volume=pp-dev-promdata.volume:/prometheus
+NoNewPrivileges=true
+DropCapability=ALL
+LogDriver=journald
+

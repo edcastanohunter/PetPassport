@@ -1,0 +1,3 @@
+# Red única de desarrollo: cada servicio se resuelve por su alias (postgres, api…).
+[Network]
+NetworkName=pp-dev

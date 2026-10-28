@@ -1,4 +1,4 @@
-# Hot reload del servidor api en desarrollo (podman compose, infra/compose/compose.yaml).
+# Hot reload del servidor api en desarrollo (unidad Quadlet pp-dev-api, infra/quadlet/dev).
 root = "."
 tmp_dir = "tmp"
 
