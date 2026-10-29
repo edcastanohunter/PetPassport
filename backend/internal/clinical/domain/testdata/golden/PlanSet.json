@@ -1,0 +1,24 @@
+{
+  "encounter_id": "0192f3a1-7a10-7f0b-8c3e-0a1b2c3d4e01",
+  "plan": {
+    "medications": [
+      {
+        "medication_name": "Meloxicam",
+        "dose": 0.2,
+        "dose_unit": "mg_per_kg",
+        "route": "oral",
+        "frequency": {
+          "once": true
+        },
+        "instructions": "Con alimento"
+      }
+    ],
+    "procedures": [
+      {
+        "name": "Radiografía",
+        "notes": "Proyección lateral"
+      }
+    ],
+    "recommendations": "Reposo relativo"
+  }
+}

@@ -129,6 +129,11 @@ func (s *ScenarioCtx[A]) Prepare(fn func(A)) *ScenarioCtx[A] {
 // Agg devuelve el agregado rehidratado tras ejecutar el escenario.
 func (s *ScenarioCtx[A]) Agg() A { return s.agg }
 
+// Capture rehidrata Given, ejecuta When y devuelve los eventos y el error sin
+// aserciones: para pruebas que inspeccionan errores tipados (IncompleteError,
+// ValidationError…) además de la igualdad.
+func (s *ScenarioCtx[A]) Capture() ([]any, error) { return s.run() }
+
 func typeNames(events []any) []string {
 	out := make([]string, len(events))
 	for i, e := range events {
