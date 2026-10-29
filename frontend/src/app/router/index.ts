@@ -19,6 +19,11 @@ import OrgSettingsPage from '@/features/orgs/OrgSettingsPage.vue'
 import AcceptInvitationPage from '@/features/orgs/AcceptInvitationPage.vue'
 import PatientsPage from '@/features/orgs/PatientsPage.vue'
 import PatientDetailPage from '@/features/orgs/PatientDetailPage.vue'
+import EncountersPage from '@/features/encounters/EncountersPage.vue'
+import EncounterEditorPage from '@/features/encounters/EncounterEditorPage.vue'
+import PetHistoryPage from '@/features/records/PetHistoryPage.vue'
+import PetEncounterPage from '@/features/records/PetEncounterPage.vue'
+import VerifyEncounterPage from '@/features/records/VerifyEncounterPage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
@@ -27,7 +32,8 @@ import { authGuard } from './guards'
 
 // Tabla de rutas de docs/phase-1/07 §4: mascotas con vínculos y transferencia
 // (FE-006/FE-008), organizaciones y pacientes (FE-007/FE-008, M1.3); admin
-// (M1.4) se añade con su hito.
+// (M1.4); consultas, ficha clínica e historial del tutor (F2 M2.1,
+// FE-003/004/005/009) y verificación pública de consultas (API-013).
 const orgMeta = {
   layout: 'org',
   requiresAuth: true,
@@ -108,6 +114,18 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/pets/:petId/history',
+        name: 'pet-history',
+        component: PetHistoryPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/pets/:petId/history/:encounterId',
+        name: 'pet-encounter',
+        component: PetEncounterPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/profile',
         name: 'profile',
         component: ProfilePage,
@@ -145,6 +163,18 @@ export function createAppRouter() {
         meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
       },
       {
+        path: '/org/:orgId/encounters',
+        name: 'org-encounters',
+        component: EncountersPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
+        path: '/org/:orgId/encounters/:encounterId',
+        name: 'org-encounter',
+        component: EncounterEditorPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
         path: '/org/:orgId/members',
         name: 'org-members',
         component: OrgMembersPage,
@@ -165,6 +195,12 @@ export function createAppRouter() {
       },
       { path: '/admin/users', name: 'admin-users', component: AdminUsersPage, meta: adminMeta },
       { path: '/admin/audit', name: 'admin-audit', component: AdminAuditPage, meta: adminMeta },
+      {
+        path: '/verify/encounters/:encounterId',
+        name: 'verify-encounter',
+        component: VerifyEncounterPage,
+        meta: { layout: 'public' },
+      },
       { path: '/403', name: 'forbidden', component: ForbiddenPage, meta: { layout: 'public' } },
       {
         path: '/:pathMatch(.*)*',

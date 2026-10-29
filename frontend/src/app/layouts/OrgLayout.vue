@@ -34,6 +34,7 @@ const sections = computed(() => {
   const items = [{ name: 'org-summary', label: t('orgs.nav.summary') }]
   if (m.type === 'clinic' && CLINIC_ROLES.includes(m.role)) {
     items.push({ name: 'org-patients', label: t('orgs.nav.patients') })
+    items.push({ name: 'org-encounters', label: t('orgs.nav.encounters') })
   }
   if (ADMIN_ROLES.includes(m.role)) {
     items.push({ name: 'org-members', label: t('orgs.nav.members') })

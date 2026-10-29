@@ -10,10 +10,12 @@ const datetimeFormats = {
   es: {
     short: { year: 'numeric', month: 'short', day: 'numeric' },
     long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+    time: { hour: '2-digit', minute: '2-digit', second: '2-digit' },
   },
   en: {
     short: { year: 'numeric', month: 'short', day: 'numeric' },
     long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+    time: { hour: '2-digit', minute: '2-digit', second: '2-digit' },
   },
 } as const
 

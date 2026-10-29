@@ -394,6 +394,18 @@ function undoDeceased() {
         </p>
       </div>
 
+      <RouterLink
+        :to="{ name: 'pet-history', params: { petId } }"
+        class="card flex items-center gap-3"
+        data-testid="history-link"
+      >
+        <span class="pi pi-book" aria-hidden="true" />
+        <span>
+          <span class="block font-semibold">{{ t('records.history.link') }}</span>
+          <span class="block text-sm text-surface-500">{{ t('records.history.linkHint') }}</span>
+        </span>
+      </RouterLink>
+
       <CareLinksPanel :pet="pet" @changed="load" />
       <TransferPanel :pet="pet" @changed="load" />
     </template>
