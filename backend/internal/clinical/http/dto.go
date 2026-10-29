@@ -329,6 +329,16 @@ func toSummary(it app.EncounterListItem) gen.EncounterSummary {
 	if it.AttendingVetID != nil {
 		s.AttendingVetId = ptr(openapi_types.UUID(*it.AttendingVetID))
 	}
+	if it.AttendingVetName != "" {
+		s.AttendingVetName = &it.AttendingVetName
+	}
+	if it.OrganizationName != "" {
+		s.OrganizationName = &it.OrganizationName
+	}
+	if it.Diagnoses != nil {
+		s.Diagnoses = &it.Diagnoses
+	}
+	s.AddendaCount = &it.AddendaCount
 	return s
 }
 

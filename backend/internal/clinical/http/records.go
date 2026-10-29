@@ -265,6 +265,9 @@ func (h *ClinicalHandlers) GetEncounterPdf(ctx context.Context, req gen.GetEncou
 		if err != nil {
 			return nil, err
 		}
+		if wantsJSON(req.Params.Accept) {
+			return gen.GetEncounterPdf200JSONResponse{Url: url, ExpiresAt: h.now().Add(presignTTL)}, nil
+		}
 		return gen.GetEncounterPdf302Response{Headers: gen.GetEncounterPdf302ResponseHeaders{Location: &url}}, nil
 	}
 	return gen.GetEncounterPdf202JSONResponse(toDocumentJob(job, "", nil)), nil

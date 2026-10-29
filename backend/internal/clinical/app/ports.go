@@ -120,6 +120,11 @@ type EncounterListItem struct {
 	SignedAt       *time.Time
 	Abandoned      bool
 	LastActivityAt time.Time
+	// Para tarjetas de historial (FE-009).
+	AttendingVetName string
+	OrganizationName string
+	Diagnoses        []string
+	AddendaCount     int
 }
 
 // AttachmentView es un adjunto proyectado.

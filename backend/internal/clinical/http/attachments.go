@@ -238,6 +238,9 @@ func (h *ClinicalHandlers) GetEncounterAttachment(ctx context.Context, req gen.G
 	if err != nil {
 		return nil, err
 	}
+	if wantsJSON(req.Params.Accept) {
+		return gen.GetEncounterAttachment200JSONResponse{Url: url, ExpiresAt: h.now().Add(presignTTL)}, nil
+	}
 	return gen.GetEncounterAttachment302Response{Headers: gen.GetEncounterAttachment302ResponseHeaders{Location: &url}}, nil
 }
 

@@ -262,6 +262,15 @@ func TestClinical_OpenEditSignAddendumPDFVerify(t *testing.T) {
 	if r, ok := resp.(gen.GetEncounterPdf302Response); !ok || !strings.Contains(*r.Headers.Location, "/v2.pdf") {
 		t.Fatalf("pdf: %#v", resp)
 	}
+	// Con Accept: application/json, 200 con la misma URL (SPA).
+	accept := "application/json"
+	resp, err = e.handlers.GetEncounterPdf(e.principalCtx(t, ana), gen.GetEncounterPdfRequestObject{EncounterId: enc, Params: gen.GetEncounterPdfParams{Accept: &accept}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r, ok := resp.(gen.GetEncounterPdf200JSONResponse); !ok || !strings.Contains(r.Url, "/v2.pdf") {
+		t.Fatalf("pdf json: %#v", resp)
+	}
 
 	// Verificación pública (API-013): válida con el hash firmado.
 	vr, err := e.handlers.VerifyEncounter(ctx, gen.VerifyEncounterRequestObject{EncounterId: enc, Params: gen.VerifyEncounterParams{Hash: &hash}})
@@ -356,6 +365,10 @@ func TestClinical_CustodyAfterRevocation(t *testing.T) {
 	page := list.(gen.ListOrgEncounters200JSONResponse)
 	if len(page.Data) != 1 || uuid.UUID(page.Data[0].Id) != enc {
 		t.Fatalf("lista de la org: %+v", page.Data)
+	}
+	// Resumen con nombres para las tarjetas de historial (FE-009).
+	if s := page.Data[0]; s.OrganizationName == nil || s.AttendingVetName == nil || s.AddendaCount == nil || s.Diagnoses == nil {
+		t.Fatalf("resumen sin nombres/diagnósticos: %+v", s)
 	}
 	// Tutor: ve la firmada, no el borrador.
 	anaCtx := e.principalCtx(t, ana)

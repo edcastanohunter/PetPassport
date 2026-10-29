@@ -195,20 +195,32 @@ func scanEncounter(row rowScanner) (app.EncounterView, error) {
 
 // ------------------------------------------------------------- listados
 
+// listColumns/listFrom: resumen con nombres de profesional y clínica,
+// textos de diagnóstico y número de adendas (tarjetas del historial, FE-009),
+// para no leer el detalle (auditado) de cada consulta.
 const listColumns = `
 	e.id, e.version, e.pet_id, p.name, p.species, e.organization_id, e.type, e.status,
 	e.started_at, e.reason, e.attending_vet_id, (e.signature->>'signed_at')::timestamptz,
-	e.last_activity_at`
+	e.last_activity_at, u.display_name, o.display_name,
+	ARRAY(SELECT d->>'text' FROM jsonb_array_elements(e.diagnoses) d), jsonb_array_length(e.addenda)`
+
+const listFrom = ` FROM read_clinical.encounters e
+	JOIN read_petregistry.pets p ON p.id = e.pet_id
+	LEFT JOIN identity.user_accounts u ON u.id = e.attending_vet_id
+	LEFT JOIN read_partnernetwork.organizations o ON o.id = e.organization_id`
 
 func scanList(rows pgx.Rows) ([]app.EncounterListItem, error) {
 	var out []app.EncounterListItem
 	for rows.Next() {
 		var it app.EncounterListItem
+		var vet, org *string
 		if err := rows.Scan(&it.ID, &it.Version, &it.PetID, &it.PetName, &it.PetSpecies,
 			&it.OrganizationID, &it.Type, &it.Status, &it.StartedAt, &it.Reason,
-			&it.AttendingVetID, &it.SignedAt, &it.LastActivityAt); err != nil {
+			&it.AttendingVetID, &it.SignedAt, &it.LastActivityAt, &vet, &org,
+			&it.Diagnoses, &it.AddendaCount); err != nil {
 			return nil, err
 		}
+		it.AttendingVetName, it.OrganizationName = deref(vet), deref(org)
 		it.Abandoned = it.Status == string(domain.StatusDraft) && time.Since(it.LastActivityAt) > domain.AbandonAfter
 		out = append(out, it)
 	}
@@ -247,8 +259,7 @@ func (q *Queries) ListByOrg(ctx context.Context, f app.EncounterFilter) ([]app.E
 		where += fmt.Sprintf(" AND (e.started_at, e.id) < ($%d, $%d)", len(args)-1, len(args))
 	}
 	args = append(args, limit+1)
-	rows, err := q.pool.Query(ctx, `SELECT `+listColumns+` FROM read_clinical.encounters e
-		JOIN read_petregistry.pets p ON p.id = e.pet_id`+where+
+	rows, err := q.pool.Query(ctx, `SELECT `+listColumns+listFrom+where+
 		fmt.Sprintf(" ORDER BY e.started_at DESC, e.id DESC LIMIT $%d", len(args)), args...)
 	if err != nil {
 		return nil, nil, err
@@ -282,8 +293,7 @@ func (q *Queries) ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.
 		where += fmt.Sprintf(" AND (e.started_at, e.id) < ($%d, $%d)", len(args)-1, len(args))
 	}
 	args = append(args, limit+1)
-	rows, err := q.pool.Query(ctx, `SELECT `+listColumns+` FROM read_clinical.encounters e
-		JOIN read_petregistry.pets p ON p.id = e.pet_id`+where+
+	rows, err := q.pool.Query(ctx, `SELECT `+listColumns+listFrom+where+
 		fmt.Sprintf(` ORDER BY e.started_at DESC, e.id DESC LIMIT $%d`, len(args)), args...)
 	if err != nil {
 		return nil, nil, err
@@ -438,10 +448,7 @@ func (q *Queries) Timeline(ctx context.Context, f app.TimelineFilter) ([]app.Tim
 func (q *Queries) Summary(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID) (app.SummaryView, error) {
 	var out app.SummaryView
 	rows, err := q.pool.Query(ctx, `
-		SELECT e.id, e.version, e.pet_id, p.name, p.species, e.organization_id, e.type, e.status,
-		       e.started_at, e.reason, e.attending_vet_id, (e.signature->>'signed_at')::timestamptz,
-		       e.last_activity_at
-		FROM read_clinical.encounters e JOIN read_petregistry.pets p ON p.id = e.pet_id
+		SELECT `+listColumns+listFrom+`
 		WHERE e.pet_id = $1 AND e.status = 'signed' AND ($2::uuid[] IS NULL OR e.organization_id = ANY($2))
 		ORDER BY e.started_at DESC, e.id DESC LIMIT 1`, petID, orgIDs)
 	if err != nil {
@@ -498,4 +505,11 @@ func (q *Queries) Summary(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UU
 		out.OpenFollowUps = []app.FollowUpItem{}
 	}
 	return out, nil
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

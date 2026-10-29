@@ -1931,7 +1931,15 @@ paths:
       description: 302 a URL prefirmada (15 min) del PDF vigente (última adenda incluida) o 202 con el job si aún se genera (DOCUMENT_PENDING, ARQ-010).
       tags: [encounters]
       x-pp-action: encounter:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
       responses:
+        "200":
+          description: "URL prefirmada del PDF (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
         "202":
           description: PDF en generación
           content:
@@ -2010,7 +2018,15 @@ paths:
       description: 302 a URL prefirmada (15 min, PDF con Content-Disposition attachment). El tutor solo ve adjuntos `visible_to_guardian` de consultas firmadas. Descarga auditada (SEC-005).
       tags: [encounters]
       x-pp-action: encounter:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
       responses:
+        "200":
+          description: "URL prefirmada (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
         "302":
           description: Redirección a la URL prefirmada
           headers:
@@ -2360,6 +2376,13 @@ components:
         minLength: 20
         maxLength: 64
         pattern: "^[A-Za-z0-9_-]+$"
+    AcceptLink:
+      name: Accept
+      in: header
+      required: false
+      description: "Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch)."
+      schema:
+        type: string
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -3763,6 +3786,15 @@ components:
           type: string
           minLength: 1
           maxLength: 300
+    DownloadLink:
+      type: object
+      required: [url, expires_at]
+      properties:
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
     DocumentJob:
       type: object
       required: [id, status]
@@ -3901,6 +3933,17 @@ components:
         attending_vet_id:
           type: string
           format: uuid
+        attending_vet_name:
+          type: string
+        organization_name:
+          type: string
+        diagnoses:
+          type: array
+          description: Textos de diagnóstico (tarjetas del historial, FE-009).
+          items:
+            type: string
+        addenda_count:
+          type: integer
         signed_at:
           type: string
           format: date-time

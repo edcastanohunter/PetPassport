@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -196,6 +197,12 @@ func (h *ClinicalHandlers) isGuardianView(ctx context.Context, p auth.Principal,
 		return false, err
 	}
 	return g == p.UserID, nil
+}
+
+// wantsJSON: con `Accept: application/json` las descargas responden 200
+// DownloadLink en vez de 302 (la SPA no puede leer Location con fetch).
+func wantsJSON(accept *gen.AcceptLink) bool {
+	return accept != nil && strings.Contains(strings.ToLower(*accept), "application/json")
 }
 
 func (h *ClinicalHandlers) presignPDF(ctx context.Context, key string, encounterID uuid.UUID) (string, error) {
