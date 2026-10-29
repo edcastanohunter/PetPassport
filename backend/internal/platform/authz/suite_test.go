@@ -58,6 +58,48 @@ var suitePersonas = []suitePersona{
 // La mascota está vinculada a sLinked y a sSusp (org suspendida).
 var suitePet = PetResource{ID: sPet, GuardianID: sTutor, ActiveCareLinkOrgIDs: []uuid.UUID{sLinked, sSusp}}
 
+// Recursos de Clinical Records (SEC-001): el mismo encuentro en borrador,
+// firmado y en custodia (vínculo revocado, se conserva lo firmado).
+var (
+	sVetLinked  = uuid.NewSHA1(uuid.NameSpaceOID, []byte("vet_linked"))
+	sEncDraft   = uuid.MustParse("01930000-0000-7000-8000-00000000e001")
+	sEncSigned  = uuid.MustParse("01930000-0000-7000-8000-00000000e002")
+	sEncCustody = uuid.MustParse("01930000-0000-7000-8000-00000000e003")
+)
+
+func encRes(id uuid.UUID, org uuid.UUID, status string, linked bool) EncounterResource {
+	return EncounterResource{
+		ID: id, PetID: sPet, OrganizationID: org, GuardianID: sTutor,
+		AttendingVetID: &sVetLinked, Status: status, PetLinked: linked,
+	}
+}
+
+func encDraftRes(suitePersona) Resource  { return encRes(sEncDraft, sLinked, "draft", true) }
+func encSignedRes(suitePersona) Resource { return encRes(sEncSigned, sLinked, "signed", true) }
+func encNotLinkedRes(suitePersona) Resource {
+	return encRes(sEncDraft, sLinked, "draft", false)
+}
+func encCustodyRes(suitePersona) Resource { return encRes(sEncCustody, sOther, "signed", false) }
+
+// Consulta firmada por sOther sobre una mascota vinculada a sLinked: las
+// clínicas con vínculo activo leen las firmadas de otras clínicas (PRD-009).
+func encOtherClinicRes(suitePersona) Resource {
+	r := encRes(sEncCustody, sOther, "signed", false)
+	r.LinkedOrgIDs = []uuid.UUID{sLinked, sSusp}
+	return r
+}
+
+func recordRes(suitePersona) Resource {
+	return PetRecordResource{PetID: sPet, GuardianID: sTutor, LinkedOrgIDs: []uuid.UUID{sLinked, sSusp}}
+}
+
+func recordCustodyRes(suitePersona) Resource {
+	return PetRecordResource{
+		PetID: sPet, GuardianID: sTutor,
+		LinkedOrgIDs: []uuid.UUID{sLinked, sSusp}, CustodyOrgIDs: []uuid.UUID{sOther},
+	}
+}
+
 // Y = permitido, N = denegado. Columnas en el orden de suitePersonas.
 const (
 	Y = true
@@ -119,6 +161,42 @@ var suite = map[Action][]suiteRow{
 	AdminUserSuspend:    {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminUserReactivate: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminAuditRead:      {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+
+	// Clinical Records (SEC-001, docs/phase-2/08 §2). tutor, vetL, admL,
+	// recL, vetU, vetS, phAd, phar, pend, stranger, super.
+	RecordRead: {
+		{recordRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}},
+		// La custodia (vínculo revocado) conserva lectura de lo propio.
+		{recordCustodyRes, [11]bool{Y, Y, Y, Y, Y, N, N, N, N, N, Y}},
+	},
+	EncounterList: {{encDraftRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	EncounterOpen: {
+		{encDraftRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}},
+		{encNotLinkedRes, [11]bool{N, N, N, N, N, N, N, N, N, N, N}},
+	},
+	EncounterRead: {
+		{encDraftRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}},
+		{encSignedRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}},
+		// Otra clínica no ve el encuentro aunque esté firmado.
+		{encCustodyRes, [11]bool{Y, N, N, N, Y, N, N, N, N, N, Y}},
+		{encOtherClinicRes, [11]bool{Y, Y, Y, Y, Y, N, N, N, N, N, Y}},
+	},
+	EncounterEdit: {
+		{encDraftRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}},
+		{encSignedRes, [11]bool{N, N, N, N, N, N, N, N, N, N, N}},
+	},
+	EncounterClinicalEdit: {
+		{encDraftRes, [11]bool{N, Y, N, N, N, N, N, N, N, N, N}},
+		{encSignedRes, [11]bool{N, N, N, N, N, N, N, N, N, N, N}},
+	},
+	EncounterSign: {
+		{encDraftRes, [11]bool{N, Y, N, N, N, N, N, N, N, N, N}},
+		{encSignedRes, [11]bool{N, Y, N, N, N, N, N, N, N, N, N}},
+	},
+	EncounterDiscard: {
+		{encDraftRes, [11]bool{N, Y, Y, N, N, N, N, N, N, N, Y}},
+		{encSignedRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}},
+	},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {
