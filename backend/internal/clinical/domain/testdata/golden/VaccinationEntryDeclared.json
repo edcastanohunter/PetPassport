@@ -1,0 +1,17 @@
+{
+  "pet_id": "0192f3a1-6a10-7f0b-8c3e-0a1b2c3d4e5f",
+  "entry_id": "0192f3a1-9a10-7f0b-8c3e-0a1b2c3d4e11",
+  "kind": "vaccine",
+  "product": {
+    "name": "Rabia"
+  },
+  "administered_at": "2025-03-01",
+  "lot": "R-99",
+  "dose_label": "refuerzo",
+  "next_due": {
+    "date": "2026-03-01",
+    "basis": "guardian"
+  },
+  "declared_by": "7a8f0000-0000-7000-8000-0000000000d1",
+  "evidence_object_key": "pets/p/card/e.jpg"
+}

@@ -36,10 +36,10 @@
 | PP-F2-DOM-003 | DOM | Agregado Encounter: comandos e invariantes E1–E9 | MUST | M2.1 | IMPLEMENTADO | | | E1–E9 con tests de dominio. |
 | PP-F2-DOM-004 | DOM | Value Objects clínicos | MUST | M2.1 | IMPLEMENTADO | | | |
 | PP-F2-DOM-005 | DOM | Eventos Encounter v1 | MUST | M2.1 | IMPLEMENTADO | | | Golden tests v1. |
-| PP-F2-DOM-006 | DOM | Agregado VaccinationCard: comandos e invariantes V1–V7 | MUST | M2.2 | PENDIENTE | | | |
-| PP-F2-DOM-007 | DOM | Value Objects del carnet | MUST | M2.2 | PENDIENTE | | | |
-| PP-F2-DOM-008 | DOM | Eventos VaccinationCard v1 | MUST | M2.2 | PENDIENTE | | | |
-| PP-F2-DOM-009 | DOM | Catálogos y servicio NextDueCalculator | MUST | M2.2 | PENDIENTE | | | |
+| PP-F2-DOM-006 | DOM | Agregado VaccinationCard: comandos e invariantes V1–V7 | MUST | M2.2 | IMPLEMENTADO | | | V1–V7 con tests de dominio; `recorded_at` añadido al payload (ventana V5). |
+| PP-F2-DOM-007 | DOM | Value Objects del carnet | MUST | M2.2 | IMPLEMENTADO | | | |
+| PP-F2-DOM-008 | DOM | Eventos VaccinationCard v1 | MUST | M2.2 | IMPLEMENTADO | | | |
+| PP-F2-DOM-009 | DOM | Catálogos y servicio NextDueCalculator | MUST | M2.2 | EN_PROGRESO | | | Hecho: NextDueCalculator con pruebas por tabla CO. Falta: tablas ref.* y semillas (DAT-003/009), API admin (API-005). |
 | PP-F2-DOM-010 | DOM | Agregado Appointment: comandos e invariantes A1–A8 | MUST | M2.3 | PENDIENTE | | | |
 | PP-F2-DOM-011 | DOM | Agregado ProfessionalAgenda y cálculo de disponibilidad | MUST | M2.3 | PENDIENTE | | | |
 | PP-F2-DOM-012 | DOM | Eventos Scheduling v1 | MUST | M2.3 | PENDIENTE | | | |
