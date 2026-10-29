@@ -54,6 +54,8 @@ type OrgRole string
 // Membership es el puerto hacia Partner Network.
 type Membership interface {
 	RoleOf(ctx context.Context, userID, orgID uuid.UUID) (role OrgRole, active bool, err error)
+	// OrganizationName devuelve el nombre comercial (verificación pública y PDF).
+	OrganizationName(ctx context.Context, orgID uuid.UUID) (string, error)
 }
 
 // AppointmentAccess es el puerto hacia Scheduling (M2.2). En M2.1 no hay citas
@@ -215,7 +217,11 @@ type TimelineFilter struct {
 	From, To       *time.Time
 	Cursor         Cursor
 	Limit          int
-	// OrgIDs limita lo visible para un miembro clínico sin vínculo.
+	// Audience filtra por visibilidad: "guardian" (guardian|both), "org"
+	// (org|both) o "" (todo, super_admin).
+	Audience string
+	// OrgIDs limita lo visible para un miembro clínico sin vínculo (custodia:
+	// solo lo propio).
 	OrgIDs []uuid.UUID
 }
 
@@ -234,13 +240,15 @@ type TimelineItem struct {
 // EncounterQueries es el lado de consulta (ARQ-009) sobre read_clinical.
 type EncounterQueries interface {
 	ListByOrg(ctx context.Context, f EncounterFilter) ([]EncounterListItem, *Cursor, error)
-	ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID, onlyPublished bool, limit int) ([]EncounterListItem, *Cursor, error)
+	ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID, onlyPublished bool, cursor Cursor, limit int) ([]EncounterListItem, *Cursor, error)
 	Get(ctx context.Context, id uuid.UUID) (EncounterView, error)
 	// Attachments devuelve los adjuntos de un encuentro (cuerpo y adendas).
 	Attachments(ctx context.Context, encounterID uuid.UUID) ([]AttachmentView, error)
-	WeightHistory(ctx context.Context, petID uuid.UUID) ([]WeightPoint, *WeightTrend, error)
+	// WeightHistory y Summary aceptan orgIDs (nil = sin restricción) para la
+	// vista de custodia: solo datos de las organizaciones indicadas.
+	WeightHistory(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID) ([]WeightPoint, *WeightTrend, error)
 	Timeline(ctx context.Context, f TimelineFilter) ([]TimelineItem, *Cursor, error)
-	Summary(ctx context.Context, petID uuid.UUID) (SummaryView, error)
+	Summary(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID) (SummaryView, error)
 	// Access devuelve la vista mínima para autorizar y detectar 404.
 	Access(ctx context.Context, id uuid.UUID) (EncounterAccess, error)
 }
@@ -257,15 +265,85 @@ type EncounterAccess struct {
 
 // VerifyView es el resultado de la verificación pública (API-013).
 type VerifyView struct {
-	Valid         bool
-	SignedAt      time.Time
-	StreamVersion int64
-	ContentHash   string
-	Organization  uuid.UUID
-	PetID         uuid.UUID
+	Valid            bool
+	SignedAt         time.Time
+	StreamVersion    int64
+	ContentHash      string
+	Organization     uuid.UUID
+	OrganizationName string
+	PetID            uuid.UUID
 }
 
 // ErrAppointmentNotFound: la cita no existe o no es de la mascota (404).
 type ErrAppointmentNotFound struct{}
 
 func (ErrAppointmentNotFound) Error() string { return "appointment not found" }
+
+// Nombres estables de las proyecciones asíncronas de Clinical (ARQ-012): los
+// usan el worker (checkpoints) y http (X-PP-Freshness).
+const (
+	ProjectionTimeline = "clinical.medical_timeline"
+	ProjectionWeight   = "clinical.weight_history"
+	ProjectionCustody  = "clinical.encounter_custody"
+)
+
+// Freshness informa el retraso de una proyección asíncrona (API-013).
+type Freshness interface {
+	LagSeconds(ctx context.Context, projection string) (float64, error)
+}
+
+// DocumentJobKindEncounterPDF es el tipo de trabajo del PDF de consulta.
+const DocumentJobKindEncounterPDF = "encounter_pdf"
+
+// DocumentJobView es un trabajo de document_jobs (ARQ-010, INF-004).
+type DocumentJobView struct {
+	ID        uuid.UUID
+	Kind      string
+	RefID     uuid.UUID
+	Version   int
+	Status    string // pending | rendering | ready | failed
+	ObjectKey string
+	UpdatedAt time.Time
+}
+
+// Documents es el lado de lectura de document_jobs.
+type Documents interface {
+	Job(ctx context.Context, id uuid.UUID) (DocumentJobView, error)
+	// LatestForRef devuelve el trabajo de mayor versión del recurso.
+	LatestForRef(ctx context.Context, kind string, refID uuid.UUID) (DocumentJobView, error)
+}
+
+// StagedUpload es un adjunto subido a un encuentro firmado, pendiente de
+// incorporarse a una adenda (E9: el cuerpo firmado no admite adjuntos).
+type StagedUpload struct {
+	Attachment  domain.Attachment
+	EncounterID uuid.UUID
+	UploadedBy  uuid.UUID
+	CreatedAt   time.Time
+}
+
+// StagedUploads es el almacén operacional de adjuntos pendientes de adenda
+// (no es un read model: no se reconstruye desde eventos).
+type StagedUploads interface {
+	Stage(ctx context.Context, s StagedUpload) error
+	Pending(ctx context.Context, encounterID uuid.UUID) ([]StagedUpload, error)
+	Get(ctx context.Context, encounterID, attachmentID uuid.UUID) (StagedUpload, error)
+	Delete(ctx context.Context, encounterID uuid.UUID, ids []uuid.UUID) error
+}
+
+// ReadAudit es una entrada de auditoría de acceso clínico (SEC-005).
+type ReadAudit struct {
+	ActorID        uuid.UUID
+	ActorRoles     []string
+	OrganizationID *uuid.UUID
+	PetID          uuid.UUID
+	Resource       string // encounter | attachment | record | pdf
+	ResourceID     uuid.UUID
+	Reason         string
+	CorrelationID  string
+}
+
+// AccessAuditor registra lecturas clínicas en platform.audit_log.
+type AccessAuditor interface {
+	RecordRead(ctx context.Context, e ReadAudit) error
+}

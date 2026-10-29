@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
+	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
+	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
@@ -104,6 +107,7 @@ func run() error {
 	petinfra.RegisterEvents(registry)
 	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
+	clinicalinfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -191,6 +195,28 @@ func run() error {
 	}
 	authz.InitMetrics(tel.Registry)
 
+	// Clinical Records (F2 M2.1).
+	clinicalQueries := clinicalinfra.NewQueries(pool.Pool)
+	clinicalPets := clinicalinfra.NewPetAccess(pool.Pool)
+	clinicalSvc := clinicalapp.NewService(clinicalapp.Options{
+		Repo:         clinicalinfra.NewRepository(store, registry, nil, nil),
+		UoW:          unit,
+		Projects:     clinicalinfra.NewSyncProjector(runner),
+		PetAccess:    clinicalPets,
+		Membership:   clinicalinfra.NewMembership(pool.Pool),
+		Appointments: clinicalinfra.AppointmentAdapter{},
+		Queries:      clinicalQueries,
+		Logger:       logger,
+	})
+	clinicalSvc.RegisterCommands(commands)
+	clinicalinfra.RegisterSyncProjectors(runner, registry)
+	clinicalHandlers := clinicalhttp.NewClinicalHandlers(clinicalhttp.Deps{
+		Commands: clinicalSvc, Queries: clinicalQueries, Pets: clinicalPets,
+		Documents: clinicalinfra.NewDocuments(pool.Pool), Uploads: clinicalinfra.NewUploads(pool.Pool),
+		Freshness: clinicalinfra.NewFreshness(pool.Pool), Auditor: clinicalinfra.NewReadAuditor(pool.Pool),
+		Idem: idemStore, Objects: objects, Logger: logger,
+	})
+
 	// Administración (API-008): service account de Keycloak (IAM-011). Sin
 	// secreto (solo dev) la suspensión queda solo en la plataforma.
 	adminOpts := identityapp.AdminOptions{
@@ -236,6 +262,7 @@ func run() error {
 			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
+			ClinicalHandlers: clinicalHandlers,
 		},
 		Guard:       guard.Middleware,
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,

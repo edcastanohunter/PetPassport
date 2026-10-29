@@ -16,7 +16,7 @@ import (
 )
 
 // DocumentJobKindEncounterPDF identifica el trabajo de PDF de un encuentro.
-const DocumentJobKindEncounterPDF = "encounter_pdf"
+const DocumentJobKindEncounterPDF = app.DocumentJobKindEncounterPDF
 
 // EncountersProjector proyecta read_clinical.encounters y
 // encounter_attachments en la tx del comando (DAT-002, proyección síncrona).

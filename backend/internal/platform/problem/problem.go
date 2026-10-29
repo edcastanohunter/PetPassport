@@ -43,6 +43,15 @@ const (
 	InvitationEmailMismatch Code = "INVITATION_EMAIL_MISMATCH"
 	InvitationResendLimit   Code = "INVITATION_RESEND_LIMIT"
 	ReasonRequired          Code = "REASON_REQUIRED"
+
+	// Clinical Records (PP-F2-API-012, M2.1).
+	PetNotAccessible         Code = "PET_NOT_ACCESSIBLE"
+	EncounterIncomplete      Code = "ENCOUNTER_INCOMPLETE"
+	NotAttendingVet          Code = "NOT_ATTENDING_VET"
+	RoleRequiredVeterinarian Code = "ROLE_REQUIRED_VETERINARIAN"
+	AttendingVetNotEligible  Code = "ATTENDING_VET_NOT_ELIGIBLE"
+	DiscardNotAllowed        Code = "DISCARD_NOT_ALLOWED"
+	AttachmentNotFound       Code = "ATTACHMENT_NOT_FOUND"
 )
 
 var defaultStatus = map[Code]int{
@@ -73,6 +82,14 @@ var defaultStatus = map[Code]int{
 	InvitationEmailMismatch: http.StatusForbidden,
 	InvitationResendLimit:   http.StatusTooManyRequests,
 	ReasonRequired:          http.StatusUnprocessableEntity,
+
+	PetNotAccessible:         http.StatusForbidden,
+	EncounterIncomplete:      http.StatusUnprocessableEntity,
+	NotAttendingVet:          http.StatusForbidden,
+	RoleRequiredVeterinarian: http.StatusForbidden,
+	AttendingVetNotEligible:  http.StatusUnprocessableEntity,
+	DiscardNotAllowed:        http.StatusForbidden,
+	AttachmentNotFound:       http.StatusNotFound,
 }
 
 // FieldError describe un error de validación por campo.

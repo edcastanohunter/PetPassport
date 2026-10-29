@@ -25,7 +25,6 @@ CREATE TABLE read_clinical.encounters (
   follow_up        jsonb,            -- {due_date, reason}
   signature        jsonb,            -- {signed_by, signed_at, stream_version, content_hash}
   addenda          jsonb NOT NULL DEFAULT '[]',
-  pdf_object_key   text, pdf_version int,
   last_activity_at timestamptz NOT NULL,
   created_at       timestamptz NOT NULL, updated_at timestamptz NOT NULL
 );

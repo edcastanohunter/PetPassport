@@ -490,7 +490,7 @@ func (e *Encounter) handleNarrative(c UpdateNarrative) ([]any, error) {
 	if c.Objective != nil {
 		o := c.Objective.normalize(ve)
 		currentEmpty := e.objective == nil || e.objective.IsEmpty()
-		if !(currentEmpty && o.IsEmpty()) && (e.objective == nil || !reflect.DeepEqual(cloneObjective(*e.objective), o)) {
+		if (!currentEmpty || !o.IsEmpty()) && (e.objective == nil || !reflect.DeepEqual(cloneObjective(*e.objective), o)) {
 			ev.Objective = &o
 		}
 	}

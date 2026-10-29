@@ -22,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 
+	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
@@ -74,6 +75,7 @@ type orgEnv struct {
 	pool     *db.Pool
 	unit     *db.UnitOfWork
 	store    *eventstore.Store
+	registry *eventstore.Registry
 	runner   *projection.Runner
 	identity *identityapp.Service
 	orgs     *orgapp.Service
@@ -98,12 +100,14 @@ func newOrgEnv(t *testing.T) *orgEnv {
 	petinfra.RegisterEvents(registry)
 	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
+	clinicalinfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	store := eventstore.NewStore(registry, pool, nil)
 	unit := db.NewUnitOfWork(pool)
 	runner := projection.NewRunner()
+	clinicalinfra.RegisterSyncProjectors(runner, registry)
 	commands := bus.New()
 	box := &mailbox{}
 	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
@@ -130,7 +134,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 	petSvc.RegisterCommands(commands)
 	petinfra.RegisterSyncProjectors(runner, registry, guardian, orgAdapter)
 
-	return &orgEnv{pool: pool, unit: unit, store: store, runner: runner, identity: identitySvc,
+	return &orgEnv{pool: pool, unit: unit, store: store, registry: registry, runner: runner, identity: identitySvc,
 		orgs: orgSvc, orgQ: orgQ, pets: petSvc, petQ: petQ, cache: cache, mail: box}
 }
 

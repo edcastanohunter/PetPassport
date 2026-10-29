@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
@@ -39,6 +40,7 @@ type handlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*clinicalhttp.ClinicalHandlers
 }
 
 type nopWriter struct{}

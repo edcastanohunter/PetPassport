@@ -35,12 +35,15 @@ const encounterColumns = `
 	e.type, e.status, e.started_at, e.reason, e.attending_vet_id, u.display_name,
 	e.vitals, e.subjective, e.objective, e.diagnoses, e.plan, e.follow_up,
 	e.signature, e.addenda, e.last_activity_at, e.created_at, e.updated_at,
-	e.pdf_object_key, e.pdf_version`
+	j.status, j.object_key, j.version`
 
 const encounterFrom = `
 	FROM read_clinical.encounters e
 	JOIN read_petregistry.pets p ON p.id = e.pet_id
-	LEFT JOIN identity.user_accounts u ON u.id = e.attending_vet_id`
+	LEFT JOIN identity.user_accounts u ON u.id = e.attending_vet_id
+	LEFT JOIN LATERAL (
+		SELECT status, object_key, version FROM read_clinical.document_jobs
+		WHERE kind = 'encounter_pdf' AND ref_id = e.id ORDER BY version DESC LIMIT 1) j ON true`
 
 // Get devuelve la vista completa del encuentro.
 func (q *Queries) Get(ctx context.Context, id uuid.UUID) (app.EncounterView, error) {
@@ -103,12 +106,12 @@ type rowScanner interface{ Scan(dest ...any) error }
 func scanEncounter(row rowScanner) (app.EncounterView, error) {
 	var v app.EncounterView
 	var vitals, objective, diagnoses, plan, followUp, signature, addenda []byte
-	var pdfKey *string
+	var pdfStatus, pdfKey *string
 	var pdfVersion *int
 	err := row.Scan(&v.ID, &v.Version, &v.PetID, &v.PetName, &v.PetSpecies, &v.OrganizationID,
 		&v.AppointmentID, &v.Type, &v.Status, &v.StartedAt, &v.Reason, &v.AttendingVetID, &v.AttendingVetName,
 		&vitals, &v.Subjective, &objective, &diagnoses, &plan, &followUp, &signature, &addenda,
-		&v.LastActivityAt, &v.CreatedAt, &v.UpdatedAt, &pdfKey, &pdfVersion)
+		&v.LastActivityAt, &v.CreatedAt, &v.UpdatedAt, &pdfStatus, &pdfKey, &pdfVersion)
 	if err != nil {
 		return app.EncounterView{}, err
 	}
@@ -173,12 +176,18 @@ func scanEncounter(row rowScanner) (app.EncounterView, error) {
 	if v.Attachments == nil {
 		v.Attachments = []app.AttachmentView{}
 	}
-	if pdfKey != nil {
-		v.PDF = &app.PDFView{Status: "ready", ObjectKey: *pdfKey}
+	// PDF: el trabajo de mayor versión (ARQ-010). Firmado sin trabajo =
+	// pending (el worker aún no lo tomó).
+	switch {
+	case pdfStatus != nil:
+		v.PDF = &app.PDFView{Status: *pdfStatus}
+		if pdfKey != nil {
+			v.PDF.ObjectKey = *pdfKey
+		}
 		if pdfVersion != nil {
 			v.PDF.Version = *pdfVersion
 		}
-	} else if v.Signature != nil {
+	case v.Signature != nil:
 		v.PDF = &app.PDFView{Status: "pending"}
 	}
 	return v, nil
@@ -255,7 +264,7 @@ func (q *Queries) ListByOrg(ctx context.Context, f app.EncounterFilter) ([]app.E
 // ListByPet lista consultas visibles de una mascota. onlyPublished oculta los
 // borradores (vista de tutor, API-001); orgIDs limita la vista de un miembro
 // sin vínculo a sus propias consultas firmadas.
-func (q *Queries) ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID, onlyPublished bool, limit int) ([]app.EncounterListItem, *app.Cursor, error) {
+func (q *Queries) ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID, onlyPublished bool, cursor app.Cursor, limit int) ([]app.EncounterListItem, *app.Cursor, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -267,6 +276,10 @@ func (q *Queries) ListByPet(ctx context.Context, petID uuid.UUID, orgIDs []uuid.
 	if orgIDs != nil {
 		args = append(args, orgIDs)
 		where += fmt.Sprintf(` AND e.organization_id = ANY($%d)`, len(args))
+	}
+	if !cursor.StartedAt.IsZero() {
+		args = append(args, cursor.StartedAt, cursor.ID)
+		where += fmt.Sprintf(" AND (e.started_at, e.id) < ($%d, $%d)", len(args)-1, len(args))
 	}
 	args = append(args, limit+1)
 	rows, err := q.pool.Query(ctx, `SELECT `+listColumns+` FROM read_clinical.encounters e
@@ -295,11 +308,12 @@ func paginate(items []app.EncounterListItem, limit int) ([]app.EncounterListItem
 // ------------------------------------------------------------- peso
 
 // WeightHistory devuelve el historial de peso y la tendencia (PRD-025).
-func (q *Queries) WeightHistory(ctx context.Context, petID uuid.UUID) ([]app.WeightPoint, *app.WeightTrend, error) {
+func (q *Queries) WeightHistory(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID) ([]app.WeightPoint, *app.WeightTrend, error) {
 	rows, err := q.pool.Query(ctx, `
 		SELECT measured_at, weight_kg::float8, source, ref_id, organization_id
-		FROM read_clinical.weight_history WHERE pet_id = $1
-		ORDER BY measured_at ASC, ref_id ASC`, petID)
+		FROM read_clinical.weight_history
+		WHERE pet_id = $1 AND ($2::uuid[] IS NULL OR organization_id = ANY($2))
+		ORDER BY measured_at ASC, ref_id ASC`, petID, orgIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -376,9 +390,15 @@ func (q *Queries) Timeline(ctx context.Context, f app.TimelineFilter) ([]app.Tim
 	if f.To != nil {
 		add("occurred_at <= $%d", *f.To)
 	}
+	switch f.Audience {
+	case "guardian":
+		where += " AND visibility IN ('guardian','both')"
+	case "org":
+		where += " AND visibility IN ('org','both')"
+	}
 	if f.OrgIDs != nil {
 		args = append(args, f.OrgIDs)
-		where += fmt.Sprintf(" AND (visibility = 'guardian' OR organization_id = ANY($%d))", len(args))
+		where += fmt.Sprintf(" AND organization_id = ANY($%d)", len(args))
 	}
 	if !f.Cursor.StartedAt.IsZero() {
 		args = append(args, f.Cursor.StartedAt, f.Cursor.ID)
@@ -415,15 +435,15 @@ func (q *Queries) Timeline(ctx context.Context, f app.TimelineFilter) ([]app.Tim
 // ------------------------------------------------------------- resumen
 
 // Summary compone la ficha de paciente (API-003).
-func (q *Queries) Summary(ctx context.Context, petID uuid.UUID) (app.SummaryView, error) {
+func (q *Queries) Summary(ctx context.Context, petID uuid.UUID, orgIDs []uuid.UUID) (app.SummaryView, error) {
 	var out app.SummaryView
 	rows, err := q.pool.Query(ctx, `
 		SELECT e.id, e.version, e.pet_id, p.name, p.species, e.organization_id, e.type, e.status,
 		       e.started_at, e.reason, e.attending_vet_id, (e.signature->>'signed_at')::timestamptz,
 		       e.last_activity_at
 		FROM read_clinical.encounters e JOIN read_petregistry.pets p ON p.id = e.pet_id
-		WHERE e.pet_id = $1 AND e.status = 'signed'
-		ORDER BY e.started_at DESC, e.id DESC LIMIT 1`, petID)
+		WHERE e.pet_id = $1 AND e.status = 'signed' AND ($2::uuid[] IS NULL OR e.organization_id = ANY($2))
+		ORDER BY e.started_at DESC, e.id DESC LIMIT 1`, petID, orgIDs)
 	if err != nil {
 		return app.SummaryView{}, err
 	}
@@ -439,7 +459,8 @@ func (q *Queries) Summary(ctx context.Context, petID uuid.UUID) (app.SummaryView
 		SELECT id, organization_id, pet_id, follow_up->>'due_date', follow_up->>'reason'
 		FROM read_clinical.encounters
 		WHERE pet_id = $1 AND status = 'signed' AND follow_up IS NOT NULL
-		ORDER BY (follow_up->>'due_date') ASC`, petID)
+		  AND ($2::uuid[] IS NULL OR organization_id = ANY($2))
+		ORDER BY (follow_up->>'due_date') ASC`, petID, orgIDs)
 	if err != nil {
 		return app.SummaryView{}, err
 	}
@@ -460,8 +481,9 @@ func (q *Queries) Summary(ctx context.Context, petID uuid.UUID) (app.SummaryView
 	var weight app.WeightPoint
 	err = q.pool.QueryRow(ctx, `
 		SELECT measured_at, weight_kg::float8, source, ref_id, organization_id
-		FROM read_clinical.weight_history WHERE pet_id = $1
-		ORDER BY measured_at DESC, ref_id DESC LIMIT 1`, petID).
+		FROM read_clinical.weight_history
+		WHERE pet_id = $1 AND ($2::uuid[] IS NULL OR organization_id = ANY($2))
+		ORDER BY measured_at DESC, ref_id DESC LIMIT 1`, petID, orgIDs).
 		Scan(&weight.MeasuredAt, &weight.WeightKg, &weight.Source, &weight.RefID, &weight.OrganizationID)
 	if err == nil {
 		out.CurrentWeight = &weight

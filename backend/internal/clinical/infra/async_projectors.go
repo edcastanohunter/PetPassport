@@ -8,15 +8,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 )
 
 // WeightProjectorName es la clave del checkpoint (renombrar = rebuild).
-const WeightProjectorName = "clinical.weight_history"
+const WeightProjectorName = app.ProjectionWeight
 
 // CustodyProjectorName es la clave del checkpoint de la custodia clínica.
-const CustodyProjectorName = "clinical.encounter_custody"
+const CustodyProjectorName = app.ProjectionCustody
 
 // WeightProjector alimenta read_clinical.weight_history con el peso de cada
 // encuentro firmado (DOM-015: "EncounterSigned con vitals.weight_kg";

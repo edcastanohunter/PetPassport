@@ -140,6 +140,16 @@ func (a *MembershipAdapter) RoleOf(ctx context.Context, userID, orgID uuid.UUID)
 	return app.OrgRole(role), status == "active" && orgStatus == "active", nil
 }
 
+// OrganizationName devuelve el display_name de la organización ("" si no existe).
+func (a *MembershipAdapter) OrganizationName(ctx context.Context, orgID uuid.UUID) (string, error) {
+	var name string
+	err := a.pool.QueryRow(ctx, `SELECT display_name FROM read_partnernetwork.organizations WHERE id = $1`, orgID).Scan(&name)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return name, err
+}
+
 // AppointmentAdapter implementa app.AppointmentAccess. En M2.1 no existe el
 // agregado Appointment (llega en M2.2): abrir desde una cita responde 409.
 type AppointmentAdapter struct{}

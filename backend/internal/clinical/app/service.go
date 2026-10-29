@@ -181,8 +181,9 @@ func (s *Service) actorFor(ctx context.Context, orgID uuid.UUID) (domain.Actor, 
 }
 
 // run carga el agregado, resuelve el actor, construye y ejecuta el comando, y
-// persiste + proyecta. build recibe el agregado cargado y el actor resuelto.
-func (s *Service) run(ctx context.Context, id uuid.UUID, build func(enc *domain.Encounter, actor domain.Actor) (any, error)) (bus.Result, error) {
+// persiste + proyecta. build recibe el contexto de la transacción (para leer
+// es.events en la misma tx), el agregado cargado y el actor resuelto.
+func (s *Service) run(ctx context.Context, id uuid.UUID, build func(ctx context.Context, enc *domain.Encounter, actor domain.Actor) (any, error)) (bus.Result, error) {
 	var res bus.Result
 	err := s.uow.Do(ctx, func(ctx context.Context) error {
 		enc, err := s.repo.Load(ctx, id)
@@ -197,7 +198,7 @@ func (s *Service) run(ctx context.Context, id uuid.UUID, build func(enc *domain.
 		if err != nil {
 			return err
 		}
-		cmd, err := build(enc, actor)
+		cmd, err := build(ctx, enc, actor)
 		if err != nil {
 			return err
 		}
@@ -322,7 +323,7 @@ func (s *Service) handleUpdateDetails(ctx context.Context, cmd bus.Command) (bus
 	if c.Now.IsZero() {
 		c.Now = s.clock.Now()
 	}
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -330,7 +331,7 @@ func (s *Service) handleUpdateDetails(ctx context.Context, cmd bus.Command) (bus
 
 func (s *Service) handleVitals(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.RecordVitals)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -338,7 +339,7 @@ func (s *Service) handleVitals(ctx context.Context, cmd bus.Command) (bus.Result
 
 func (s *Service) handleNarrative(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.UpdateNarrative)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -346,7 +347,7 @@ func (s *Service) handleNarrative(ctx context.Context, cmd bus.Command) (bus.Res
 
 func (s *Service) handleDiagnoses(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.SetDiagnoses)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -354,7 +355,7 @@ func (s *Service) handleDiagnoses(ctx context.Context, cmd bus.Command) (bus.Res
 
 func (s *Service) handlePlan(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.SetPlan)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -365,7 +366,7 @@ func (s *Service) handleFollowUp(ctx context.Context, cmd bus.Command) (bus.Resu
 	if c.Now.IsZero() {
 		c.Now = s.clock.Now()
 	}
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -373,7 +374,7 @@ func (s *Service) handleFollowUp(ctx context.Context, cmd bus.Command) (bus.Resu
 
 func (s *Service) handleClearFollowUp(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.ClearFollowUp)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -381,7 +382,7 @@ func (s *Service) handleClearFollowUp(ctx context.Context, cmd bus.Command) (bus
 
 func (s *Service) handleAssignVet(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.AssignAttendingVet)
-	return s.run(ctx, c.EncounterID, func(enc *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(ctx context.Context, enc *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		if c.UserID != uuid.Nil && s.membership != nil && !a.SuperAdmin {
 			role, active, err := s.membership.RoleOf(ctx, c.UserID, enc.OrganizationID())
@@ -398,7 +399,7 @@ func (s *Service) handleAssignVet(ctx context.Context, cmd bus.Command) (bus.Res
 
 func (s *Service) handleAddAttachment(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.AddAttachment)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -406,7 +407,7 @@ func (s *Service) handleAddAttachment(ctx context.Context, cmd bus.Command) (bus
 
 func (s *Service) handleRemoveAttachment(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.RemoveAttachment)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -414,7 +415,7 @@ func (s *Service) handleRemoveAttachment(ctx context.Context, cmd bus.Command) (
 
 func (s *Service) handleVisibility(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.SetTutorVisibility)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -425,7 +426,7 @@ func (s *Service) handleSign(ctx context.Context, cmd bus.Command) (bus.Result, 
 	if c.Now.IsZero() {
 		c.Now = s.clock.Now()
 	}
-	return s.run(ctx, c.EncounterID, func(enc *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(ctx context.Context, enc *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		// E8: el hash se calcula en el repositorio sobre los eventos ya
 		// persistidos hasta la versión actual (la firma no entra en él).
@@ -444,7 +445,7 @@ func (s *Service) handleAddendum(ctx context.Context, cmd bus.Command) (bus.Resu
 	if c.Now.IsZero() {
 		c.Now = s.clock.Now()
 	}
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -452,7 +453,7 @@ func (s *Service) handleAddendum(ctx context.Context, cmd bus.Command) (bus.Resu
 
 func (s *Service) handleDiscard(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.DiscardEncounter)
-	return s.run(ctx, c.EncounterID, func(_ *domain.Encounter, a domain.Actor) (any, error) {
+	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
@@ -502,6 +503,13 @@ func (s *Service) VerifyEncounter(ctx context.Context, id uuid.UUID, hash string
 	})
 	if err != nil {
 		return VerifyView{}, err
+	}
+	if s.membership != nil {
+		name, err := s.membership.OrganizationName(ctx, out.Organization)
+		if err != nil {
+			return VerifyView{}, err
+		}
+		out.OrganizationName = name
 	}
 	return out, nil
 }

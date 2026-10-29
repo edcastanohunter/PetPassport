@@ -21,6 +21,12 @@ type ObjectStorage interface {
 	PresignGet(ctx context.Context, key string, ttl time.Duration) (string, error)
 }
 
+// DownloadPresigner es la capacidad opcional de emitir URLs de descarga con
+// Content-Disposition: attachment (SEC-003). La implementa MinIO.
+type DownloadPresigner interface {
+	PresignDownload(ctx context.Context, key string, ttl time.Duration, filename, contentType string) (string, error)
+}
+
 // Keys de foto con prefijo pets/<petID>/ (DOM-004 PhotoRef).
 func PhotoKey(petID, objectID, suffix string) string {
 	return "pets/" + petID + "/" + objectID + suffix

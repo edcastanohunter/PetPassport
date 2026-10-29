@@ -196,7 +196,7 @@ func ContentHash(events []HashableEvent) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("content hash: %s: %w", e.EventType, err)
 		}
-		fmt.Fprintf(h, "%s|%s|%d|", e.EventID, e.EventType, e.SchemaVersion)
+		_, _ = fmt.Fprintf(h, "%s|%s|%d|", e.EventID, e.EventType, e.SchemaVersion) // hash.Hash no falla
 		h.Write(canon)
 		h.Write([]byte("\n"))
 	}

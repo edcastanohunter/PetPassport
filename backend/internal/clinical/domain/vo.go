@@ -90,7 +90,8 @@ func cleanText(s string, maxLen int, multiline bool) (string, error) {
 		return "", errInvalid
 	}
 	for _, r := range s {
-		if unicode.IsControl(r) && !(multiline && (r == '\n' || r == '\r' || r == '\t')) {
+		allowed := multiline && (r == '\n' || r == '\r' || r == '\t')
+		if unicode.IsControl(r) && !allowed {
 			return "", errInvalid
 		}
 	}

@@ -8,12 +8,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 )
 
 // TimelineProjectorName es la clave estable del checkpoint (renombrar = rebuild).
-const TimelineProjectorName = "clinical.medical_timeline"
+const TimelineProjectorName = app.ProjectionTimeline
 
 // Tipos de ítem de read_clinical.medical_timeline (ARQ-012).
 const (

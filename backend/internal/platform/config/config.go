@@ -242,6 +242,18 @@ type Worker struct {
 	Group        string // lock de instancia worker.<group>
 	OTLPEndpoint string
 	LogLevel     slog.Level
+
+	// Documentos PDF (F2 INF-004): storage compartido con el api y binario
+	// Typst. Sin endpoint de storage el runner de documentos no arranca.
+	Storage struct {
+		Endpoint  string
+		Bucket    string
+		AccessKey string
+		SecretKey string
+		UseSSL    bool
+	}
+	TypstBin      string
+	PublicBaseURL string
 }
 
 // LoadWorker lee PP_* del worker y valida.
@@ -279,6 +291,13 @@ func LoadWorker() (*Worker, error) {
 	if cfg.Env == EnvProd && level == slog.LevelDebug {
 		errs = append(errs, errors.New("PP_LOG_LEVEL=debug no está permitido en prod"))
 	}
+	cfg.Storage.Endpoint = os.Getenv("PP_STORAGE_ENDPOINT")
+	cfg.Storage.Bucket = getenv("PP_STORAGE_BUCKET", "petpassport-media")
+	cfg.Storage.AccessKey = os.Getenv("PP_STORAGE_ACCESS_KEY")
+	cfg.Storage.SecretKey = os.Getenv("PP_STORAGE_SECRET_KEY")
+	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
+	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
+	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
