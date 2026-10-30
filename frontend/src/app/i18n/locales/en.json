@@ -157,7 +157,14 @@
     "SHARE_LOCKED": "Too many attempts. Try again in an hour.",
     "PIN_REQUIRED": "This link requires a PIN.",
     "PIN_INVALID": "Wrong PIN.",
-    "CATALOG_DUPLICATE": "That entry already exists in the catalog."
+    "CATALOG_DUPLICATE": "That entry already exists in the catalog.",
+    "SLOT_UNAVAILABLE": "That slot is no longer available. Pick another one.",
+    "INVALID_TRANSITION": "The appointment status does not allow this action.",
+    "OUTSIDE_LEAD_TIME": "The dates are outside the clinic notice window.",
+    "REQUEST_LIMIT": "You already have 3 pending requests at this clinic for this pet.",
+    "PROPOSAL_EXPIRED": "The proposal has expired. Request a new appointment.",
+    "CHECKIN_WINDOW": "Check-in is only allowed on the appointment day, from 2 hours before.",
+    "INVALID_PROFESSIONAL": "The professional must be an active veterinarian of the clinic."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -771,8 +778,7 @@
       "encounters": "Encounters",
       "card": "Card",
       "appointments": "Appointments",
-      "weight": "Weight",
-      "appointmentsSoon": "Appointments will be available soon."
+      "weight": "Weight"
     },
     "summary": {
       "title": "Patient summary",
@@ -946,6 +952,143 @@
       "invalid": "The card does not match the current record.",
       "entries": "{n} entries",
       "notFound": "This card was not found."
+    }
+  },
+  "scheduling": {
+    "nav": {
+      "agenda": "Schedule",
+      "agendas": "Schedules",
+      "myAppointments": "My appointments"
+    },
+    "type": {
+      "consultation": "Consultation",
+      "follow_up": "Follow-up",
+      "vaccination": "Vaccination",
+      "surgery": "Surgery",
+      "procedure": "Procedure",
+      "other": "Other"
+    },
+    "status": {
+      "requested": "Requested",
+      "proposed": "Alternative proposed",
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No-show",
+      "rejected": "Rejected"
+    },
+    "days": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    },
+    "slots": {
+      "none": "No slots available in the coming days.",
+      "pickUpTo": "Pick up to {n} slots"
+    },
+    "action": {
+      "confirm": "Confirm",
+      "propose": "Propose alternative",
+      "reject": "Reject",
+      "reschedule": "Reschedule",
+      "cancel": "Cancel appointment",
+      "checkIn": "Check in",
+      "noShow": "Mark no-show",
+      "complete": "Complete",
+      "openEncounter": "Open encounter"
+    },
+    "detail": {
+      "preferences": "Guardian preferences",
+      "proposalExpires": "The proposal expires {when}.",
+      "late": "late cancellation",
+      "reason": "Reason (optional)",
+      "submit": "Accept",
+      "history": "History",
+      "cancelledBy": {
+        "guardian": "Cancelled by the guardian",
+        "clinic": "Cancelled by the clinic"
+      }
+    },
+    "new": {
+      "title": "New appointment",
+      "patient": "Patient",
+      "type": "Appointment type",
+      "reason": "Reason",
+      "submit": "Create appointment"
+    },
+    "agenda": {
+      "title": "Schedule",
+      "professional": "Professional",
+      "allProfessionals": "All professionals",
+      "view": "View",
+      "day": "Day",
+      "week": "Week",
+      "prev": "Previous",
+      "next": "Next",
+      "today": "Today",
+      "free": "No appointments",
+      "noAgendas": "No schedules are set up yet.",
+      "configure": "Set up schedules"
+    },
+    "inbox": {
+      "title": "Pending requests"
+    },
+    "patient": {
+      "empty": "This pet has no appointments at the clinic.",
+      "noSlot": "No slot"
+    },
+    "settings": {
+      "title": "Schedules",
+      "noVets": "There are no active veterinarians in the organization.",
+      "undefined": "Not set up",
+      "active": "Active",
+      "inactive": "Inactive",
+      "timeZone": "Time zone (IANA)",
+      "timeZoneAuto": "Based on the clinic country",
+      "timeZoneHint": "Set when the schedule is created and cannot change afterwards.",
+      "weekly": "Weekly hours",
+      "closed": "Closed",
+      "from": "From",
+      "to": "To",
+      "durations": "Slot length (minutes)",
+      "policies": "Policies",
+      "leadMin": "Minimum notice (hours)",
+      "leadMax": "Maximum advance (days)",
+      "cancelHours": "Cancel without late flag (hours)",
+      "activeLabel": "Schedule active (accepts appointments)",
+      "saved": "Changes saved",
+      "exceptions": "Day exceptions",
+      "date": "Date",
+      "closedDay": "Closed day",
+      "addException": "Add exception"
+    },
+    "guardian": {
+      "title": "My appointments",
+      "request": "Request appointment",
+      "pet": "Pet",
+      "clinic": "Clinic",
+      "noLinks": "This pet has no linked clinics.",
+      "preferences": "When works for you",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "addRange": "Add date range",
+      "prefHint": "Up to {n} preferences",
+      "send": "Send request",
+      "requested": "Request sent. The clinic will confirm it or propose another slot.",
+      "empty": "You have no appointments yet.",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "proposal": "The clinic proposes another slot. You have {left} left to accept it.",
+      "accept": "Accept",
+      "proposalExpired": "The proposal has expired.",
+      "cancelAsk": "Cancel this appointment?",
+      "cancelYes": "Yes, cancel",
+      "lateWarning": "Less than {hours} h left: it will be recorded as a late cancellation (no penalty)."
     }
   }
 }

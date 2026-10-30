@@ -7,6 +7,7 @@ import (
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 )
 
 // apiHandlers compone el contrato completo a partir de los handlers de cada
@@ -19,6 +20,7 @@ type apiHandlers struct {
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 	*clinicalhttp.ClinicalHandlers
+	*schedulinghttp.SchedulingHandlers
 }
 
 var _ gen.StrictServerInterface = apiHandlers{}

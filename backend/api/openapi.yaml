@@ -39,6 +39,10 @@ tags:
     description: Enlaces compartidos de solo lectura (F2 M2.2)
   - name: records
     description: Historial, resumen y peso de la mascota (docs/phase-2/04-api.md §3)
+  - name: appointments
+    description: Citas, solicitudes y propuestas (F2 M2.3, ADR-011)
+  - name: agendas
+    description: Agendas por profesional y disponibilidad (F2 M2.3, ADR-011)
   - name: documents
     description: Documentos generados y verificación pública (docs/phase-2/04-api.md §13)
 security:
@@ -3020,6 +3024,604 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /appointments:
+    post:
+      operationId: requestAppointment
+      summary: Solicitar cita
+      description: El tutor solicita una cita a una clínica con vínculo activo a la mascota, con hasta 3 preferencias de franja (PRD-016). No bloquea la agenda (RN-11). Máximo 3 solicitudes pendientes por mascota y clínica → 409 REQUEST_LIMIT; sin vínculo → 403 PET_NOT_ACCESSIBLE.
+      tags: [appointments]
+      x-pp-action: appointment:request
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestAppointmentRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/AppointmentCreated"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listMyAppointments
+      summary: Mis citas
+      description: Citas de las mascotas del tutor autenticado, más recientes primero.
+      tags: [appointments]
+      x-pp-action: appointment:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+        - name: pet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de citas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    get:
+      operationId: getAppointment
+      summary: Detalle de la cita
+      description: Tutor de la mascota o miembro clínico de la organización de la cita. No visible → 404.
+      tags: [appointments]
+      x-pp-action: appointment:read
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}/accept-proposal:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: acceptAppointmentProposal
+      summary: Aceptar la alternativa propuesta
+      description: Solo el tutor, dentro de las 48 h de vigencia (PRD-016). Vencida → 410 PROPOSAL_EXPIRED; franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:request
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: cancelAppointment
+      summary: Cancelar la cita (tutor)
+      description: Libera la franja. Si se cancela dentro de la ventana de política de la clínica queda marcada `late` (PRD-018, sin penalización).
+      tags: [appointments]
+      x-pp-action: appointment:cancel
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: createOrgAppointment
+      summary: Crear cita desde la clínica
+      description: Miembro clínico crea una cita directamente confirmada para una mascota con vínculo activo (PRD-017). Franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/AppointmentCreated"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listOrgAppointments
+      summary: Citas de la organización
+      description: Con `from`/`to` devuelve la agenda (franjas ascendentes, hasta 500, sin cursor); sin ellos, la bandeja (más recientes primero, con cursor). Miembros clínicos.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+        - name: professional_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: pet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Citas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: confirmAppointment
+      summary: Confirmar solicitud
+      description: Asigna profesional y franja y reserva la agenda (PRD-016). Franja ocupada → 409 SLOT_UNAVAILABLE; fuera del margen mínimo → 422 OUTSIDE_LEAD_TIME.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/propose:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: proposeAppointmentAlternative
+      summary: Proponer alternativa
+      description: Propone otra franja; la reserva es provisional y vence a las 48 h (PRD-016).
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: rejectAppointment
+      summary: Rechazar solicitud o propuesta
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/reschedule:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: rescheduleAppointment
+      summary: Reprogramar cita confirmada
+      description: Mueve la cita a otra franja (atómico con la reserva). Versión distinta → 409 CONFLICT_VERSION; franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: cancelOrgAppointment
+      summary: Cancelar la cita (clínica)
+      tags: [appointments]
+      x-pp-action: appointment:cancel
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/check-in:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: checkInAppointment
+      summary: Registrar llegada
+      description: Solo el día local de la cita y desde 2 h antes del inicio (A6) → si no, 409 CHECKIN_WINDOW.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/no-show:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: markAppointmentNoShow
+      summary: Marcar ausencia
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/complete:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: completeAppointment
+      summary: Completar la cita manualmente
+      description: Normalmente la completa el proceso `scheduling.complete-on-sign` al firmar la consulta enlazada (DOM-015).
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listOrgAgendas
+      summary: Agendas de la organización
+      description: Miembros clínicos. Incluye una entrada (sin definir) por cada veterinario activo sin agenda.
+      tags: [agendas]
+      x-pp-action: agenda:read
+      responses:
+        "200":
+          description: Agendas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgendaList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+    put:
+      operationId: putOrgAgenda
+      summary: Definir o actualizar la agenda de un profesional
+      description: Solo clinic_admin. Crea la agenda (con `time_zone`, por defecto la del país de la organización, inmutable después) o actualiza lo que cambió. Actualizar exige `If-Match` con la versión conocida.
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      parameters:
+        - name: If-Match
+          in: header
+          required: false
+          description: Versión conocida de la agenda; obligatoria al actualizar una agenda existente.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutAgendaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}/exceptions:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+    post:
+      operationId: addAgendaException
+      summary: Añadir excepción de un día
+      description: Cierra un día o fija un horario especial; reemplaza la excepción previa de esa fecha.
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAgendaExceptionRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}/exceptions/{date}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    delete:
+      operationId: removeAgendaException
+      summary: Quitar la excepción de un día
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/availability:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgAvailability
+      summary: Disponibilidad publicada
+      description: "Franjas libres (plantilla − excepciones − reservas vigentes, respetando el margen mínimo y máximo). Miembros clínicos y tutores con una mascota vinculada. Informativa: la autoridad es la reserva al confirmar. Ventana máxima de 62 días."
+      tags: [agendas]
+      x-pp-action: availability:read
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/AppointmentType"
+        - name: professional_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Franjas libres
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -3166,6 +3768,20 @@ components:
         minLength: 20
         maxLength: 64
         pattern: "^[A-Za-z0-9_-]+$"
+    AppointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProfessionalId:
+      name: professionalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     X-PP-Freshness:
       description: Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013).
@@ -3296,7 +3912,7 @@ components:
       type: string
       enum: [dog, cat, bird, rabbit, reptile, rodent, equine, ferret, fish, other]
       x-enum-varnames: [Dog, Cat, Bird, Rabbit, Reptile, Rodent, Equine, Ferret, Fish, Other]
-    SpeciesOther:
+    SpeciesOtherText:
       type: string
       description: Obligatoria si species = other; 1–40.
       minLength: 1
@@ -3347,7 +3963,7 @@ components:
         species:
           $ref: "#/components/schemas/Species"
         species_other:
-          $ref: "#/components/schemas/SpeciesOther"
+          $ref: "#/components/schemas/SpeciesOtherText"
         breed:
           $ref: "#/components/schemas/Breed"
         sex:
@@ -3368,7 +3984,7 @@ components:
         species:
           $ref: "#/components/schemas/Species"
         species_other:
-          $ref: "#/components/schemas/SpeciesOther"
+          $ref: "#/components/schemas/SpeciesOtherText"
         breed:
           description: Cadena vacía vacía el campo.
           type: string
@@ -5344,6 +5960,329 @@ components:
         verified_at:
           type: string
           format: date-time
+    AppointmentType:
+      type: string
+      enum: [consultation, follow_up, vaccination, surgery, procedure, other]
+    AppointmentStatus:
+      type: string
+      enum: [requested, proposed, confirmed, checked_in, completed, cancelled, no_show, rejected]
+    SlotPreference:
+      type: object
+      description: Franja exacta (`start`+`end`) o rango de fechas locales (`date_from`+`date_to`).
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        date_from:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        date_to:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    AppointmentTransition:
+      type: object
+      required: [status, at]
+      properties:
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        at:
+          type: string
+          format: date-time
+        by:
+          type: string
+        note:
+          type: string
+    AppointmentCancellation:
+      type: object
+      required: [by, late]
+      properties:
+        by:
+          type: string
+          enum: [guardian, clinic]
+        reason:
+          type: string
+        late:
+          type: boolean
+    Appointment:
+      type: object
+      required: [id, version, pet_id, organization_id, type, origin, status, preferences, history, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        pet_id:
+          type: string
+          format: uuid
+        pet_name:
+          type: string
+        pet_species:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+        professional_id:
+          type: [string, "null"]
+          format: uuid
+        professional_name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        origin:
+          type: string
+          enum: [guardian, clinic]
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        reason:
+          type: string
+        preferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlotPreference"
+        start:
+          type: [string, "null"]
+          format: date-time
+        end:
+          type: [string, "null"]
+          format: date-time
+        time_zone:
+          type: string
+        proposal_expires_at:
+          type: [string, "null"]
+          format: date-time
+        encounter_id:
+          type: [string, "null"]
+          format: uuid
+        cancellation:
+          oneOf:
+            - $ref: "#/components/schemas/AppointmentCancellation"
+            - type: "null"
+        cancellation_policy_hours:
+          type: integer
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentTransition"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AppointmentPage:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
+        next_cursor:
+          type: string
+    RequestAppointmentRequest:
+      type: object
+      required: [pet_id, organization_id, type]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        reason:
+          type: string
+          maxLength: 300
+        preferences:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/SlotPreference"
+    CreateAppointmentRequest:
+      type: object
+      required: [pet_id, professional_id, type, start, end]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        reason:
+          type: string
+          maxLength: 300
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AppointmentSlotRequest:
+      type: object
+      required: [start, end]
+      properties:
+        professional_id:
+          type: string
+          format: uuid
+          description: Obligatorio al confirmar y proponer; al reprogramar, si se omite se mantiene el profesional.
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AppointmentReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    AgendaTimeRange:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+        end:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+    AgendaDayException:
+      type: object
+      required: [closed]
+      properties:
+        closed:
+          type: boolean
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgendaTimeRange"
+    Agenda:
+      type: object
+      required: [organization_id, professional_id, defined, active, version]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        professional_name:
+          type: string
+        defined:
+          type: boolean
+          description: "`false` para un veterinario activo sin agenda todavía."
+        active:
+          type: boolean
+        version:
+          type: integer
+          format: int64
+        time_zone:
+          type: string
+        weekly_template:
+          type: object
+          description: "Claves `mon`…`sun`."
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/AgendaTimeRange"
+        slot_minutes:
+          type: object
+          description: Duración de franja por tipo de cita (5–480).
+          additionalProperties:
+            type: integer
+        lead_time_min_hours:
+          type: integer
+        lead_time_max_days:
+          type: integer
+        cancellation_policy_hours:
+          type: integer
+        exceptions:
+          type: object
+          description: Excepciones por fecha local `YYYY-MM-DD`.
+          additionalProperties:
+            $ref: "#/components/schemas/AgendaDayException"
+    AgendaList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agenda"
+    PutAgendaRequest:
+      type: object
+      required: [weekly_template, slot_minutes, lead_time_min_hours, lead_time_max_days, cancellation_policy_hours]
+      properties:
+        time_zone:
+          type: string
+          description: IANA. Solo se usa al crear la agenda.
+        weekly_template:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/AgendaTimeRange"
+        slot_minutes:
+          type: object
+          additionalProperties:
+            type: integer
+        lead_time_min_hours:
+          type: integer
+          minimum: 0
+        lead_time_max_days:
+          type: integer
+          minimum: 1
+        cancellation_policy_hours:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+          default: true
+    AddAgendaExceptionRequest:
+      type: object
+      required: [date, closed]
+      properties:
+        date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        closed:
+          type: boolean
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgendaTimeRange"
+    AvailabilitySlot:
+      type: object
+      required: [professional_id, start, end]
+      properties:
+        professional_id:
+          type: string
+          format: uuid
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AvailabilityList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailabilitySlot"
   responses:
     EncounterOK:
       description: Consulta actualizada
@@ -5369,3 +6308,33 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+    AppointmentOK:
+      description: Cita
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Appointment"
+    AppointmentCreated:
+      description: Cita creada
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+        Location:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Appointment"
+    AgendaOK:
+      description: Agenda
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Agenda"

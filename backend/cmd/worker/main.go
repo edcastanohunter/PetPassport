@@ -140,6 +140,7 @@ func run() error {
 	sched := scheduler.New(allowed, nil)
 	consumer := process.NewConsumer(a.pool, a.store, reg, process.ConsumerOptions{Logger: logger})
 	registerProcessManagers(consumer, allowed, sched)
+	registerCommands(commands, a.pool, a.store, logger)
 	if err := process.ValidateEmits(consumer.ProcessManagers(), allowed); err != nil {
 		return err
 	}

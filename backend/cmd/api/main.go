@@ -40,6 +40,9 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
+	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
+	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
 )
 
 // version se inyecta en build con -ldflags "-X main.version=...".
@@ -108,6 +111,7 @@ func run() error {
 	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
 	clinicalinfra.RegisterEvents(registry)
+	schedulinginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -204,7 +208,7 @@ func run() error {
 		Projects:     clinicalinfra.NewSyncProjector(runner),
 		PetAccess:    clinicalPets,
 		Membership:   clinicalinfra.NewMembership(pool.Pool),
-		Appointments: clinicalinfra.AppointmentAdapter{},
+		Appointments: clinicalinfra.NewAppointmentAdapter(pool.Pool),
 		Queries:      clinicalQueries,
 		Logger:       logger,
 	})
@@ -233,6 +237,29 @@ func run() error {
 			Shares:        clinicalapp.NewShareService(clinicalinfra.NewShareStore(pool.Pool), cardQueries, cardQueries, nil, nil),
 			PublicBaseURL: cfg.PublicBaseURL,
 		},
+	})
+
+	// Scheduling (F2 M2.3, ADR-011).
+	schedulingQueries := schedulinginfra.NewQueries(pool.Pool)
+	schedulingPets := schedulinginfra.NewPetAccess(pool.Pool)
+	schedulingMembers := schedulinginfra.NewMembership(pool.Pool)
+	schedulingSvc := schedulingapp.NewService(schedulingapp.Options{
+		Appointments: schedulinginfra.NewAppointmentRepository(store, registry, nil, nil),
+		Agendas:      schedulinginfra.NewAgendaRepository(store, registry, nil, nil),
+		AgendaReader: schedulingQueries,
+		Queries:      schedulingQueries,
+		Reservations: schedulinginfra.NewReservations(pool.Pool),
+		UoW:          unit,
+		Projects:     schedulinginfra.NewSyncProjector(runner),
+		Pets:         schedulingPets,
+		Membership:   schedulingMembers,
+		Logger:       logger,
+	})
+	schedulingSvc.RegisterCommands(commands)
+	schedulinginfra.RegisterSyncProjectors(runner, registry)
+	schedulingHandlers := schedulinghttp.NewSchedulingHandlers(schedulinghttp.Deps{
+		Service: schedulingSvc, Agendas: schedulingQueries, Pets: schedulingPets,
+		Membership: schedulingMembers, Idem: idemStore, Logger: logger,
 	})
 
 	// Administración (API-008): service account de Keycloak (IAM-011). Sin
@@ -280,7 +307,8 @@ func run() error {
 			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
-			ClinicalHandlers: clinicalHandlers,
+			ClinicalHandlers:   clinicalHandlers,
+			SchedulingHandlers: schedulingHandlers,
 		},
 		Guard:       guard.Middleware,
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,

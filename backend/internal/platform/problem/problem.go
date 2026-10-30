@@ -105,6 +105,12 @@ var defaultStatus = map[Code]int{
 	Code("PIN_REQUIRED"):          http.StatusUnauthorized,
 	Code("PIN_INVALID"):           http.StatusUnauthorized,
 	Code("SHARE_LOCKED"):          http.StatusTooManyRequests,
+
+	// Scheduling (M2.3); el resto (SLOT_UNAVAILABLE, INVALID_TRANSITION,
+	// REQUEST_LIMIT, CHECKIN_WINDOW) usa el 409 por defecto.
+	Code("OUTSIDE_LEAD_TIME"):    http.StatusUnprocessableEntity,
+	Code("INVALID_PROFESSIONAL"): http.StatusUnprocessableEntity,
+	Code("PROPOSAL_EXPIRED"):     http.StatusGone,
 }
 
 // FieldError describe un error de validación por campo.

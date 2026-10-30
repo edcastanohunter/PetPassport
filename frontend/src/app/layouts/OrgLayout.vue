@@ -35,10 +35,14 @@ const sections = computed(() => {
   if (m.type === 'clinic' && CLINIC_ROLES.includes(m.role)) {
     items.push({ name: 'org-patients', label: t('orgs.nav.patients') })
     items.push({ name: 'org-encounters', label: t('orgs.nav.encounters') })
+    items.push({ name: 'org-agenda', label: t('scheduling.nav.agenda') })
   }
   if (ADMIN_ROLES.includes(m.role)) {
     items.push({ name: 'org-members', label: t('orgs.nav.members') })
     items.push({ name: 'org-settings', label: t('orgs.nav.settings') })
+    if (m.type === 'clinic') {
+      items.push({ name: 'org-agendas', label: t('scheduling.nav.agendas') })
+    }
   }
   return items
 })

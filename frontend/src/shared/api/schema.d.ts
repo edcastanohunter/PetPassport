@@ -1679,6 +1679,408 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mis citas
+         * @description Citas de las mascotas del tutor autenticado, más recientes primero.
+         */
+        get: operations["listMyAppointments"];
+        put?: never;
+        /**
+         * Solicitar cita
+         * @description El tutor solicita una cita a una clínica con vínculo activo a la mascota, con hasta 3 preferencias de franja (PRD-016). No bloquea la agenda (RN-11). Máximo 3 solicitudes pendientes por mascota y clínica → 409 REQUEST_LIMIT; sin vínculo → 403 PET_NOT_ACCESSIBLE.
+         */
+        post: operations["requestAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de la cita
+         * @description Tutor de la mascota o miembro clínico de la organización de la cita. No visible → 404.
+         */
+        get: operations["getAppointment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointmentId}/accept-proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar la alternativa propuesta
+         * @description Solo el tutor, dentro de las 48 h de vigencia (PRD-016). Vencida → 410 PROPOSAL_EXPIRED; franja ocupada → 409 SLOT_UNAVAILABLE.
+         */
+        post: operations["acceptAppointmentProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointmentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar la cita (tutor)
+         * @description Libera la franja. Si se cancela dentro de la ventana de política de la clínica queda marcada `late` (PRD-018, sin penalización).
+         */
+        post: operations["cancelAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Citas de la organización
+         * @description Con `from`/`to` devuelve la agenda (franjas ascendentes, hasta 500, sin cursor); sin ellos, la bandeja (más recientes primero, con cursor). Miembros clínicos.
+         */
+        get: operations["listOrgAppointments"];
+        put?: never;
+        /**
+         * Crear cita desde la clínica
+         * @description Miembro clínico crea una cita directamente confirmada para una mascota con vínculo activo (PRD-017). Franja ocupada → 409 SLOT_UNAVAILABLE.
+         */
+        post: operations["createOrgAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar solicitud
+         * @description Asigna profesional y franja y reserva la agenda (PRD-016). Franja ocupada → 409 SLOT_UNAVAILABLE; fuera del margen mínimo → 422 OUTSIDE_LEAD_TIME.
+         */
+        post: operations["confirmAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/propose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Proponer alternativa
+         * @description Propone otra franja; la reserva es provisional y vence a las 48 h (PRD-016).
+         */
+        post: operations["proposeAppointmentAlternative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rechazar solicitud o propuesta */
+        post: operations["rejectAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reprogramar cita confirmada
+         * @description Mueve la cita a otra franja (atómico con la reserva). Versión distinta → 409 CONFLICT_VERSION; franja ocupada → 409 SLOT_UNAVAILABLE.
+         */
+        post: operations["rescheduleAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancelar la cita (clínica) */
+        post: operations["cancelOrgAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar llegada
+         * @description Solo el día local de la cita y desde 2 h antes del inicio (A6) → si no, 409 CHECKIN_WINDOW.
+         */
+        post: operations["checkInAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marcar ausencia */
+        post: operations["markAppointmentNoShow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/appointments/{appointmentId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Completar la cita manualmente
+         * @description Normalmente la completa el proceso `scheduling.complete-on-sign` al firmar la consulta enlazada (DOM-015).
+         */
+        post: operations["completeAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/agendas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Agendas de la organización
+         * @description Miembros clínicos. Incluye una entrada (sin definir) por cada veterinario activo sin agenda.
+         */
+        get: operations["listOrgAgendas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/agendas/{professionalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Definir o actualizar la agenda de un profesional
+         * @description Solo clinic_admin. Crea la agenda (con `time_zone`, por defecto la del país de la organización, inmutable después) o actualiza lo que cambió. Actualizar exige `If-Match` con la versión conocida.
+         */
+        put: operations["putOrgAgenda"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/agendas/{professionalId}/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Añadir excepción de un día
+         * @description Cierra un día o fija un horario especial; reemplaza la excepción previa de esa fecha.
+         */
+        post: operations["addAgendaException"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/agendas/{professionalId}/exceptions/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+                date: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Quitar la excepción de un día */
+        delete: operations["removeAgendaException"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Disponibilidad publicada
+         * @description Franjas libres (plantilla − excepciones − reservas vigentes, respetando el margen mínimo y máximo). Miembros clínicos y tutores con una mascota vinculada. Informativa: la autoridad es la reserva al confirmar. Ventana máxima de 62 días.
+         */
+        get: operations["getOrgAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1739,7 +2141,7 @@ export interface components {
         /** @enum {string} */
         Species: "dog" | "cat" | "bird" | "rabbit" | "reptile" | "rodent" | "equine" | "ferret" | "fish" | "other";
         /** @description Obligatoria si species = other; 1–40. */
-        SpeciesOther: string;
+        SpeciesOtherText: string;
         /** @enum {string} */
         Sex: "male" | "female" | "unknown";
         /** @enum {string} */
@@ -1764,7 +2166,7 @@ export interface components {
         CreatePetRequest: {
             name: components["schemas"]["PetName"];
             species: components["schemas"]["Species"];
-            species_other?: components["schemas"]["SpeciesOther"];
+            species_other?: components["schemas"]["SpeciesOtherText"];
             breed?: components["schemas"]["Breed"];
             sex: components["schemas"]["Sex"];
             neutered: components["schemas"]["Neutered"];
@@ -1774,7 +2176,7 @@ export interface components {
         UpdatePetRequest: {
             name?: components["schemas"]["PetName"];
             species?: components["schemas"]["Species"];
-            species_other?: components["schemas"]["SpeciesOther"];
+            species_other?: components["schemas"]["SpeciesOtherText"];
             /** @description Cadena vacía vacía el campo. */
             breed?: string;
             sex?: components["schemas"]["Sex"];
@@ -2691,6 +3093,179 @@ export interface components {
             /** Format: date-time */
             verified_at?: string;
         };
+        /** @enum {string} */
+        AppointmentType: "consultation" | "follow_up" | "vaccination" | "surgery" | "procedure" | "other";
+        /** @enum {string} */
+        AppointmentStatus: "requested" | "proposed" | "confirmed" | "checked_in" | "completed" | "cancelled" | "no_show" | "rejected";
+        /** @description Franja exacta (`start`+`end`) o rango de fechas locales (`date_from`+`date_to`). */
+        SlotPreference: {
+            /** Format: date-time */
+            start?: string;
+            /** Format: date-time */
+            end?: string;
+            date_from?: string;
+            date_to?: string;
+        };
+        AppointmentTransition: {
+            status: components["schemas"]["AppointmentStatus"];
+            /** Format: date-time */
+            at: string;
+            by?: string;
+            note?: string;
+        };
+        AppointmentCancellation: {
+            /** @enum {string} */
+            by: "guardian" | "clinic";
+            reason?: string;
+            late: boolean;
+        };
+        Appointment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            /** Format: uuid */
+            pet_id: string;
+            pet_name?: string;
+            pet_species?: string;
+            /** Format: uuid */
+            organization_id: string;
+            organization_name?: string;
+            /** Format: uuid */
+            professional_id?: string | null;
+            professional_name?: string;
+            type: components["schemas"]["AppointmentType"];
+            /** @enum {string} */
+            origin: "guardian" | "clinic";
+            status: components["schemas"]["AppointmentStatus"];
+            reason?: string;
+            preferences: components["schemas"]["SlotPreference"][];
+            /** Format: date-time */
+            start?: string | null;
+            /** Format: date-time */
+            end?: string | null;
+            time_zone?: string;
+            /** Format: date-time */
+            proposal_expires_at?: string | null;
+            /** Format: uuid */
+            encounter_id?: string | null;
+            cancellation?: components["schemas"]["AppointmentCancellation"] | null;
+            cancellation_policy_hours?: number;
+            history: components["schemas"]["AppointmentTransition"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AppointmentPage: {
+            data: components["schemas"]["Appointment"][];
+            next_cursor?: string;
+        };
+        RequestAppointmentRequest: {
+            /** Format: uuid */
+            pet_id: string;
+            /** Format: uuid */
+            organization_id: string;
+            type: components["schemas"]["AppointmentType"];
+            reason?: string;
+            preferences?: components["schemas"]["SlotPreference"][];
+        };
+        CreateAppointmentRequest: {
+            /** Format: uuid */
+            pet_id: string;
+            /** Format: uuid */
+            professional_id: string;
+            type: components["schemas"]["AppointmentType"];
+            reason?: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+        };
+        AppointmentSlotRequest: {
+            /**
+             * Format: uuid
+             * @description Obligatorio al confirmar y proponer; al reprogramar, si se omite se mantiene el profesional.
+             */
+            professional_id?: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+        };
+        AppointmentReasonRequest: {
+            reason?: string;
+        };
+        AgendaTimeRange: {
+            start: string;
+            end: string;
+        };
+        AgendaDayException: {
+            closed: boolean;
+            ranges?: components["schemas"]["AgendaTimeRange"][];
+        };
+        Agenda: {
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: uuid */
+            professional_id: string;
+            professional_name?: string;
+            /** @description `false` para un veterinario activo sin agenda todavía. */
+            defined: boolean;
+            active: boolean;
+            /** Format: int64 */
+            version: number;
+            time_zone?: string;
+            /** @description Claves `mon`…`sun`. */
+            weekly_template?: {
+                [key: string]: components["schemas"]["AgendaTimeRange"][];
+            };
+            /** @description Duración de franja por tipo de cita (5–480). */
+            slot_minutes?: {
+                [key: string]: number;
+            };
+            lead_time_min_hours?: number;
+            lead_time_max_days?: number;
+            cancellation_policy_hours?: number;
+            /** @description Excepciones por fecha local `YYYY-MM-DD`. */
+            exceptions?: {
+                [key: string]: components["schemas"]["AgendaDayException"];
+            };
+        };
+        AgendaList: {
+            data: components["schemas"]["Agenda"][];
+        };
+        PutAgendaRequest: {
+            /** @description IANA. Solo se usa al crear la agenda. */
+            time_zone?: string;
+            weekly_template: {
+                [key: string]: components["schemas"]["AgendaTimeRange"][];
+            };
+            slot_minutes: {
+                [key: string]: number;
+            };
+            lead_time_min_hours: number;
+            lead_time_max_days: number;
+            cancellation_policy_hours: number;
+            /** @default true */
+            active: boolean;
+        };
+        AddAgendaExceptionRequest: {
+            date: string;
+            closed: boolean;
+            ranges?: components["schemas"]["AgendaTimeRange"][];
+        };
+        AvailabilitySlot: {
+            /** Format: uuid */
+            professional_id: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+        };
+        AvailabilityList: {
+            data: components["schemas"]["AvailabilitySlot"][];
+        };
     };
     responses: {
         /** @description Consulta actualizada */
@@ -2722,6 +3297,37 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Cita */
+        AppointmentOK: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Appointment"];
+            };
+        };
+        /** @description Cita creada */
+        AppointmentCreated: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                Location?: string;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Appointment"];
+            };
+        };
+        /** @description Agenda */
+        AgendaOK: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Agenda"];
+            };
+        };
     };
     parameters: {
         EncounterId: string;
@@ -2743,6 +3349,8 @@ export interface components {
         IfMatch: number;
         EntryId: string;
         ShareToken: string;
+        AppointmentId: string;
+        ProfessionalId: string;
     };
     requestBodies: never;
     headers: {
@@ -5504,6 +6112,496 @@ export interface operations {
                 };
             };
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listMyAppointments: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AppointmentStatus"];
+                pet_id?: string;
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de citas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    requestAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestAppointmentRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["AppointmentCreated"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptAppointmentProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            410: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AppointmentReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgAppointments: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AppointmentStatus"];
+                professional_id?: string;
+                pet_id?: string;
+                from?: string;
+                to?: string;
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Citas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createOrgAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAppointmentRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["AppointmentCreated"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    confirmAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentSlotRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    proposeAppointmentAlternative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentSlotRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    rejectAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AppointmentReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    rescheduleAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentSlotRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelOrgAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AppointmentReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    checkInAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    markAppointmentNoShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    completeAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                appointmentId: components["parameters"]["AppointmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AppointmentOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgAgendas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agendas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putOrgAgenda: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Versión conocida de la agenda; obligatoria al actualizar una agenda existente. */
+                "If-Match"?: number;
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutAgendaRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AgendaOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addAgendaException: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAgendaExceptionRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AgendaOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeAgendaException: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                professionalId: components["parameters"]["ProfessionalId"];
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AgendaOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrgAvailability: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                type: components["schemas"]["AppointmentType"];
+                professional_id?: string;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Franjas libres */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

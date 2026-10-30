@@ -74,6 +74,14 @@ func encRes(id uuid.UUID, org uuid.UUID, status string, linked bool) EncounterRe
 	}
 }
 
+// apptRes: cita del tutor sTutor en la clínica sLinked; el tutor está vinculado.
+func apptRes(who suitePersona) Resource {
+	return AppointmentResource{
+		ID: uuid.MustParse("01930000-0000-7000-8000-00000000f001"), OrganizationID: sLinked,
+		GuardianID: sTutor, LinkedGuardian: who.p.UserID == sTutor,
+	}
+}
+
 func encDraftRes(suitePersona) Resource  { return encRes(sEncDraft, sLinked, "draft", true) }
 func encSignedRes(suitePersona) Resource { return encRes(sEncSigned, sLinked, "signed", true) }
 func encNotLinkedRes(suitePersona) Resource {
@@ -204,6 +212,15 @@ var suite = map[Action][]suiteRow{
 	CardVoid:    {{recordCustodyRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}}},
 	CardDeclare: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 	ShareManage: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
+
+	// Scheduling (SEC-001, ADR-011): tutor de la cita sTutor, org sLinked.
+	AppointmentRequest: {{apptRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
+	AppointmentRead:    {{apptRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, N}}},
+	AppointmentCancel:  {{apptRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, N}}},
+	AppointmentManage:  {{apptRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
+	AgendaManage:       {{apptRes, [11]bool{N, N, Y, N, N, N, N, N, N, N, N}}},
+	AgendaRead:         {{apptRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
+	AvailabilityRead:   {{apptRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, N}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

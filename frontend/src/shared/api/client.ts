@@ -57,6 +57,15 @@ export type CreatedShare = components['schemas']['CreatedShare']
 export type SharedRecord = components['schemas']['SharedRecord']
 export type CardVerification = components['schemas']['CardVerification']
 export type UnlockedShare = components['schemas']['UnlockedShare']
+export type CareLink = components['schemas']['CareLink']
+export type Appointment = components['schemas']['Appointment']
+export type AppointmentType = components['schemas']['AppointmentType']
+export type AppointmentStatus = components['schemas']['AppointmentStatus']
+export type SlotPreference = components['schemas']['SlotPreference']
+export type Agenda = components['schemas']['Agenda']
+export type AgendaTimeRange = components['schemas']['AgendaTimeRange']
+export type AgendaDayException = components['schemas']['AgendaDayException']
+export type AvailabilitySlot = components['schemas']['AvailabilitySlot']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

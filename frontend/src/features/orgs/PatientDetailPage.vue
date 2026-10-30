@@ -13,6 +13,7 @@ import {
   type TimelineItem,
 } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
+import PatientAppointments from '@/features/scheduling/PatientAppointments.vue'
 import ClinicCardPanel from '@/features/card/ClinicCardPanel.vue'
 import { useCommand } from '@/shared/composables/useCommand'
 import { openEncounter } from '@/features/encounters/encounterApi'
@@ -405,12 +406,12 @@ function typeLabel(k: string) {
           :species="pet.species"
           :can-write="canOpen"
         />
-        <p
+        <PatientAppointments
           v-if="tab === 'appointments'"
-          class="rounded-lg border border-dashed border-surface-200 p-6 text-center text-sm text-surface-500 dark:border-surface-800"
-        >
-          {{ t('records.tabs.appointmentsSoon') }}
-        </p>
+          :org-id="orgId"
+          :pet-id="petId"
+          :can-manage="!!membership"
+        />
         <WeightPanel v-if="tab === 'weight'" :pet-id="petId" />
       </div>
     </template>

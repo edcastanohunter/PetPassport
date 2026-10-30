@@ -1,0 +1,23 @@
+{
+  "organization_id": "00000000-0000-7000-8000-0000000000d1",
+  "professional_id": "00000000-0000-7000-8000-0000000000e1",
+  "config": {
+    "tz": "America/Bogota",
+    "weekly_template": {
+      "mon": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        }
+      ]
+    },
+    "slot_minutes": {
+      "consultation": 30
+    },
+    "lead_time_min_hours": 2,
+    "lead_time_max_days": 60,
+    "cancellation_policy_hours": 4
+  },
+  "by": "00000000-0000-7000-8000-0000000000f1",
+  "at": "2026-11-02T13:00:00Z"
+}
