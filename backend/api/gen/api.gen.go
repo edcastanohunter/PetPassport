@@ -67,6 +67,108 @@ func (e AdminUserRowStatus) Valid() bool {
 	}
 }
 
+// Defines values for AppointmentOrigin.
+const (
+	AppointmentOriginClinic   AppointmentOrigin = "clinic"
+	AppointmentOriginGuardian AppointmentOrigin = "guardian"
+)
+
+// Valid indicates whether the value is a known member of the AppointmentOrigin enum.
+func (e AppointmentOrigin) Valid() bool {
+	switch e {
+	case AppointmentOriginClinic:
+		return true
+	case AppointmentOriginGuardian:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AppointmentCancellationBy.
+const (
+	AppointmentCancellationByClinic   AppointmentCancellationBy = "clinic"
+	AppointmentCancellationByGuardian AppointmentCancellationBy = "guardian"
+)
+
+// Valid indicates whether the value is a known member of the AppointmentCancellationBy enum.
+func (e AppointmentCancellationBy) Valid() bool {
+	switch e {
+	case AppointmentCancellationByClinic:
+		return true
+	case AppointmentCancellationByGuardian:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AppointmentStatus.
+const (
+	AppointmentStatusCancelled AppointmentStatus = "cancelled"
+	AppointmentStatusCheckedIn AppointmentStatus = "checked_in"
+	AppointmentStatusCompleted AppointmentStatus = "completed"
+	AppointmentStatusConfirmed AppointmentStatus = "confirmed"
+	AppointmentStatusNoShow    AppointmentStatus = "no_show"
+	AppointmentStatusProposed  AppointmentStatus = "proposed"
+	AppointmentStatusRejected  AppointmentStatus = "rejected"
+	AppointmentStatusRequested AppointmentStatus = "requested"
+)
+
+// Valid indicates whether the value is a known member of the AppointmentStatus enum.
+func (e AppointmentStatus) Valid() bool {
+	switch e {
+	case AppointmentStatusCancelled:
+		return true
+	case AppointmentStatusCheckedIn:
+		return true
+	case AppointmentStatusCompleted:
+		return true
+	case AppointmentStatusConfirmed:
+		return true
+	case AppointmentStatusNoShow:
+		return true
+	case AppointmentStatusProposed:
+		return true
+	case AppointmentStatusRejected:
+		return true
+	case AppointmentStatusRequested:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AppointmentType.
+const (
+	AppointmentTypeConsultation AppointmentType = "consultation"
+	AppointmentTypeFollowUp     AppointmentType = "follow_up"
+	AppointmentTypeOther        AppointmentType = "other"
+	AppointmentTypeProcedure    AppointmentType = "procedure"
+	AppointmentTypeSurgery      AppointmentType = "surgery"
+	AppointmentTypeVaccination  AppointmentType = "vaccination"
+)
+
+// Valid indicates whether the value is a known member of the AppointmentType enum.
+func (e AppointmentType) Valid() bool {
+	switch e {
+	case AppointmentTypeConsultation:
+		return true
+	case AppointmentTypeFollowUp:
+		return true
+	case AppointmentTypeOther:
+		return true
+	case AppointmentTypeProcedure:
+		return true
+	case AppointmentTypeSurgery:
+		return true
+	case AppointmentTypeVaccination:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AttachmentContentType.
 const (
 	Jpeg AttachmentContentType = "jpeg"
@@ -231,22 +333,22 @@ func (e CreateShareRequestScope) Valid() bool {
 
 // Defines values for DiagnosisCertainty.
 const (
-	Confirmed    DiagnosisCertainty = "confirmed"
-	Differential DiagnosisCertainty = "differential"
-	Presumptive  DiagnosisCertainty = "presumptive"
-	RuledOut     DiagnosisCertainty = "ruled_out"
+	DiagnosisCertaintyConfirmed    DiagnosisCertainty = "confirmed"
+	DiagnosisCertaintyDifferential DiagnosisCertainty = "differential"
+	DiagnosisCertaintyPresumptive  DiagnosisCertainty = "presumptive"
+	DiagnosisCertaintyRuledOut     DiagnosisCertainty = "ruled_out"
 )
 
 // Valid indicates whether the value is a known member of the DiagnosisCertainty enum.
 func (e DiagnosisCertainty) Valid() bool {
 	switch e {
-	case Confirmed:
+	case DiagnosisCertaintyConfirmed:
 		return true
-	case Differential:
+	case DiagnosisCertaintyDifferential:
 		return true
-	case Presumptive:
+	case DiagnosisCertaintyPresumptive:
 		return true
-	case RuledOut:
+	case DiagnosisCertaintyRuledOut:
 		return true
 	default:
 		return false
@@ -657,22 +759,22 @@ func (e Neutered) Valid() bool {
 
 // Defines values for NextDueItemStatus.
 const (
-	Cancelled NextDueItemStatus = "cancelled"
-	Overdue   NextDueItemStatus = "overdue"
-	Satisfied NextDueItemStatus = "satisfied"
-	Upcoming  NextDueItemStatus = "upcoming"
+	NextDueItemStatusCancelled NextDueItemStatus = "cancelled"
+	NextDueItemStatusOverdue   NextDueItemStatus = "overdue"
+	NextDueItemStatusSatisfied NextDueItemStatus = "satisfied"
+	NextDueItemStatusUpcoming  NextDueItemStatus = "upcoming"
 )
 
 // Valid indicates whether the value is a known member of the NextDueItemStatus enum.
 func (e NextDueItemStatus) Valid() bool {
 	switch e {
-	case Cancelled:
+	case NextDueItemStatusCancelled:
 		return true
-	case Overdue:
+	case NextDueItemStatusOverdue:
 		return true
-	case Satisfied:
+	case NextDueItemStatusSatisfied:
 		return true
-	case Upcoming:
+	case NextDueItemStatusUpcoming:
 		return true
 	default:
 		return false
@@ -867,40 +969,40 @@ func (e SharedRecordScope) Valid() bool {
 
 // Defines values for Species.
 const (
-	Bird    Species = "bird"
-	Cat     Species = "cat"
-	Dog     Species = "dog"
-	Equine  Species = "equine"
-	Ferret  Species = "ferret"
-	Fish    Species = "fish"
-	Other   Species = "other"
-	Rabbit  Species = "rabbit"
-	Reptile Species = "reptile"
-	Rodent  Species = "rodent"
+	SpeciesBird    Species = "bird"
+	SpeciesCat     Species = "cat"
+	SpeciesDog     Species = "dog"
+	SpeciesEquine  Species = "equine"
+	SpeciesFerret  Species = "ferret"
+	SpeciesFish    Species = "fish"
+	SpeciesOther   Species = "other"
+	SpeciesRabbit  Species = "rabbit"
+	SpeciesReptile Species = "reptile"
+	SpeciesRodent  Species = "rodent"
 )
 
 // Valid indicates whether the value is a known member of the Species enum.
 func (e Species) Valid() bool {
 	switch e {
-	case Bird:
+	case SpeciesBird:
 		return true
-	case Cat:
+	case SpeciesCat:
 		return true
-	case Dog:
+	case SpeciesDog:
 		return true
-	case Equine:
+	case SpeciesEquine:
 		return true
-	case Ferret:
+	case SpeciesFerret:
 		return true
-	case Fish:
+	case SpeciesFish:
 		return true
-	case Other:
+	case SpeciesOther:
 		return true
-	case Rabbit:
+	case SpeciesRabbit:
 		return true
-	case Reptile:
+	case SpeciesReptile:
 		return true
-	case Rodent:
+	case SpeciesRodent:
 		return true
 	default:
 		return false
@@ -1204,6 +1306,13 @@ func (e GetPetTimelineParamsKind) Valid() bool {
 	}
 }
 
+// AddAgendaExceptionRequest defines model for AddAgendaExceptionRequest.
+type AddAgendaExceptionRequest struct {
+	Closed bool               `json:"closed"`
+	Date   string             `json:"date"`
+	Ranges *[]AgendaTimeRange `json:"ranges,omitempty"`
+}
+
 // Addendum defines model for Addendum.
 type Addendum struct {
 	Attachments []Attachment   `json:"attachments"`
@@ -1282,6 +1391,123 @@ type AdminUserRow struct {
 // AdminUserRowStatus defines model for AdminUserRow.Status.
 type AdminUserRowStatus string
 
+// Agenda defines model for Agenda.
+type Agenda struct {
+	Active                  bool `json:"active"`
+	CancellationPolicyHours *int `json:"cancellation_policy_hours,omitempty"`
+
+	// Defined `false` para un veterinario activo sin agenda todavía.
+	Defined bool `json:"defined"`
+
+	// Exceptions Excepciones por fecha local `YYYY-MM-DD`.
+	Exceptions       *map[string]AgendaDayException `json:"exceptions,omitempty"`
+	LeadTimeMaxDays  *int                           `json:"lead_time_max_days,omitempty"`
+	LeadTimeMinHours *int                           `json:"lead_time_min_hours,omitempty"`
+	OrganizationId   openapi_types.UUID             `json:"organization_id"`
+	ProfessionalId   openapi_types.UUID             `json:"professional_id"`
+	ProfessionalName *string                        `json:"professional_name,omitempty"`
+
+	// SlotMinutes Duración de franja por tipo de cita (5–480).
+	SlotMinutes *map[string]int `json:"slot_minutes,omitempty"`
+	TimeZone    *string         `json:"time_zone,omitempty"`
+	Version     int64           `json:"version"`
+
+	// WeeklyTemplate Claves `mon`…`sun`.
+	WeeklyTemplate *map[string][]AgendaTimeRange `json:"weekly_template,omitempty"`
+}
+
+// AgendaDayException defines model for AgendaDayException.
+type AgendaDayException struct {
+	Closed bool               `json:"closed"`
+	Ranges *[]AgendaTimeRange `json:"ranges,omitempty"`
+}
+
+// AgendaList defines model for AgendaList.
+type AgendaList struct {
+	Data []Agenda `json:"data"`
+}
+
+// AgendaTimeRange defines model for AgendaTimeRange.
+type AgendaTimeRange struct {
+	End   string `json:"end"`
+	Start string `json:"start"`
+}
+
+// Appointment defines model for Appointment.
+type Appointment struct {
+	Cancellation            *AppointmentCancellation `json:"cancellation,omitempty"`
+	CancellationPolicyHours *int                     `json:"cancellation_policy_hours,omitempty"`
+	CreatedAt               time.Time                `json:"created_at"`
+	EncounterId             *openapi_types.UUID      `json:"encounter_id,omitempty"`
+	End                     *time.Time               `json:"end,omitempty"`
+	History                 []AppointmentTransition  `json:"history"`
+	Id                      openapi_types.UUID       `json:"id"`
+	OrganizationId          openapi_types.UUID       `json:"organization_id"`
+	OrganizationName        *string                  `json:"organization_name,omitempty"`
+	Origin                  AppointmentOrigin        `json:"origin"`
+	PetId                   openapi_types.UUID       `json:"pet_id"`
+	PetName                 *string                  `json:"pet_name,omitempty"`
+	PetSpecies              *string                  `json:"pet_species,omitempty"`
+	Preferences             []SlotPreference         `json:"preferences"`
+	ProfessionalId          *openapi_types.UUID      `json:"professional_id,omitempty"`
+	ProfessionalName        *string                  `json:"professional_name,omitempty"`
+	ProposalExpiresAt       *time.Time               `json:"proposal_expires_at,omitempty"`
+	Reason                  *string                  `json:"reason,omitempty"`
+	Start                   *time.Time               `json:"start,omitempty"`
+	Status                  AppointmentStatus        `json:"status"`
+	TimeZone                *string                  `json:"time_zone,omitempty"`
+	Type                    AppointmentType          `json:"type"`
+	UpdatedAt               time.Time                `json:"updated_at"`
+	Version                 int64                    `json:"version"`
+}
+
+// AppointmentOrigin defines model for Appointment.Origin.
+type AppointmentOrigin string
+
+// AppointmentCancellation defines model for AppointmentCancellation.
+type AppointmentCancellation struct {
+	By     AppointmentCancellationBy `json:"by"`
+	Late   bool                      `json:"late"`
+	Reason *string                   `json:"reason,omitempty"`
+}
+
+// AppointmentCancellationBy defines model for AppointmentCancellation.By.
+type AppointmentCancellationBy string
+
+// AppointmentPage defines model for AppointmentPage.
+type AppointmentPage struct {
+	Data       []Appointment `json:"data"`
+	NextCursor *string       `json:"next_cursor,omitempty"`
+}
+
+// AppointmentReasonRequest defines model for AppointmentReasonRequest.
+type AppointmentReasonRequest struct {
+	Reason *string `json:"reason,omitempty"`
+}
+
+// AppointmentSlotRequest defines model for AppointmentSlotRequest.
+type AppointmentSlotRequest struct {
+	End time.Time `json:"end"`
+
+	// ProfessionalId Obligatorio al confirmar y proponer; al reprogramar, si se omite se mantiene el profesional.
+	ProfessionalId *openapi_types.UUID `json:"professional_id,omitempty"`
+	Start          time.Time           `json:"start"`
+}
+
+// AppointmentStatus defines model for AppointmentStatus.
+type AppointmentStatus string
+
+// AppointmentTransition defines model for AppointmentTransition.
+type AppointmentTransition struct {
+	At     time.Time         `json:"at"`
+	By     *string           `json:"by,omitempty"`
+	Note   *string           `json:"note,omitempty"`
+	Status AppointmentStatus `json:"status"`
+}
+
+// AppointmentType defines model for AppointmentType.
+type AppointmentType string
+
 // Attachment defines model for Attachment.
 type Attachment struct {
 	AddendumSeq *int                  `json:"addendum_seq,omitempty"`
@@ -1325,6 +1551,18 @@ type AuditEntry struct {
 type AuditPage struct {
 	Data       []AuditEntry `json:"data"`
 	NextCursor *string      `json:"next_cursor"`
+}
+
+// AvailabilityList defines model for AvailabilityList.
+type AvailabilityList struct {
+	Data []AvailabilitySlot `json:"data"`
+}
+
+// AvailabilitySlot defines model for AvailabilitySlot.
+type AvailabilitySlot struct {
+	End            time.Time          `json:"end"`
+	ProfessionalId openapi_types.UUID `json:"professional_id"`
+	Start          time.Time          `json:"start"`
 }
 
 // BirthDate defines model for BirthDate.
@@ -1451,6 +1689,16 @@ type ConsentVersion = string
 // CountryCode ISO 3166-1 alpha-2.
 type CountryCode = string
 
+// CreateAppointmentRequest defines model for CreateAppointmentRequest.
+type CreateAppointmentRequest struct {
+	End            time.Time          `json:"end"`
+	PetId          openapi_types.UUID `json:"pet_id"`
+	ProfessionalId openapi_types.UUID `json:"professional_id"`
+	Reason         *string            `json:"reason,omitempty"`
+	Start          time.Time          `json:"start"`
+	Type           AppointmentType    `json:"type"`
+}
+
 // CreateInvitationRequest defines model for CreateInvitationRequest.
 type CreateInvitationRequest struct {
 	Email EmailAddress `json:"email"`
@@ -1484,7 +1732,7 @@ type CreatePetRequest struct {
 	Species  Species  `json:"species"`
 
 	// SpeciesOther Obligatoria si species = other; 1–40.
-	SpeciesOther *SpeciesOther `json:"species_other,omitempty"`
+	SpeciesOther *SpeciesOtherText `json:"species_other,omitempty"`
 }
 
 // CreateShareRequest defines model for CreateShareRequest.
@@ -2135,6 +2383,19 @@ type ProtocolWriteRequest struct {
 	VaccineId             openapi_types.UUID `json:"vaccine_id"`
 }
 
+// PutAgendaRequest defines model for PutAgendaRequest.
+type PutAgendaRequest struct {
+	Active                  *bool          `json:"active,omitempty"`
+	CancellationPolicyHours int            `json:"cancellation_policy_hours"`
+	LeadTimeMaxDays         int            `json:"lead_time_max_days"`
+	LeadTimeMinHours        int            `json:"lead_time_min_hours"`
+	SlotMinutes             map[string]int `json:"slot_minutes"`
+
+	// TimeZone IANA. Solo se usa al crear la agenda.
+	TimeZone       *string                      `json:"time_zone,omitempty"`
+	WeeklyTemplate map[string][]AgendaTimeRange `json:"weekly_template"`
+}
+
 // ReasonRequest defines model for ReasonRequest.
 type ReasonRequest struct {
 	Reason string `json:"reason"`
@@ -2154,6 +2415,15 @@ type RecordCardEntryRequest struct {
 	Route          *string             `json:"route,omitempty"`
 	Site           *string             `json:"site,omitempty"`
 	WeightKg       *float32            `json:"weight_kg,omitempty"`
+}
+
+// RequestAppointmentRequest defines model for RequestAppointmentRequest.
+type RequestAppointmentRequest struct {
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+	PetId          openapi_types.UUID `json:"pet_id"`
+	Preferences    *[]SlotPreference  `json:"preferences,omitempty"`
+	Reason         *string            `json:"reason,omitempty"`
+	Type           AppointmentType    `json:"type"`
 }
 
 // RevokeCareLinkRequest defines model for RevokeCareLinkRequest.
@@ -2222,11 +2492,19 @@ type Signature struct {
 	StreamVersion int64     `json:"stream_version"`
 }
 
+// SlotPreference Franja exacta (`start`+`end`) o rango de fechas locales (`date_from`+`date_to`).
+type SlotPreference struct {
+	DateFrom *string    `json:"date_from,omitempty"`
+	DateTo   *string    `json:"date_to,omitempty"`
+	End      *time.Time `json:"end,omitempty"`
+	Start    *time.Time `json:"start,omitempty"`
+}
+
 // Species defines model for Species.
 type Species string
 
-// SpeciesOther Obligatoria si species = other; 1–40.
-type SpeciesOther = string
+// SpeciesOtherText Obligatoria si species = other; 1–40.
+type SpeciesOtherText = string
 
 // TaxId defines model for TaxId.
 type TaxId struct {
@@ -2338,7 +2616,7 @@ type UpdatePetRequest struct {
 	Species  *Species  `json:"species,omitempty"`
 
 	// SpeciesOther Obligatoria si species = other; 1–40.
-	SpeciesOther *SpeciesOther `json:"species_other,omitempty"`
+	SpeciesOther *SpeciesOtherText `json:"species_other,omitempty"`
 }
 
 // UserRef defines model for UserRef.
@@ -2435,6 +2713,9 @@ type WeightPointSource string
 // AcceptLink defines model for AcceptLink.
 type AcceptLink = string
 
+// AppointmentId defines model for AppointmentId.
+type AppointmentId = openapi_types.UUID
+
 // AttachmentId defines model for AttachmentId.
 type AttachmentId = openapi_types.UUID
 
@@ -2468,6 +2749,9 @@ type OrganizationId = openapi_types.UUID
 // PetId defines model for PetId.
 type PetId = openapi_types.UUID
 
+// ProfessionalId defines model for ProfessionalId.
+type ProfessionalId = openapi_types.UUID
+
 // ShareToken defines model for ShareToken.
 type ShareToken = string
 
@@ -2476,6 +2760,15 @@ type Token = string
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
+
+// AgendaOK defines model for AgendaOK.
+type AgendaOK = Agenda
+
+// AppointmentCreated defines model for AppointmentCreated.
+type AppointmentCreated = Appointment
+
+// AppointmentOK defines model for AppointmentOK.
+type AppointmentOK = Appointment
 
 // EncounterCreated defines model for EncounterCreated.
 type EncounterCreated = Encounter
@@ -2511,6 +2804,20 @@ type AdminListUsersParams struct {
 
 // AdminListUsersParamsStatus defines parameters for AdminListUsers.
 type AdminListUsersParamsStatus string
+
+// ListMyAppointmentsParams defines parameters for ListMyAppointments.
+type ListMyAppointmentsParams struct {
+	Status *AppointmentStatus  `form:"status,omitempty" json:"status,omitempty"`
+	PetId  *openapi_types.UUID `form:"pet_id,omitempty" json:"pet_id,omitempty"`
+	Cursor *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// RequestAppointmentParams defines parameters for RequestAppointment.
+type RequestAppointmentParams struct {
+	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
 
 // ListVaccinationProtocolsParams defines parameters for ListVaccinationProtocols.
 type ListVaccinationProtocolsParams struct {
@@ -2612,6 +2919,43 @@ type LookupOrganizationParams struct {
 type UpdateOrganizationParams struct {
 	// IfMatch Versión conocida del recurso (ETag de la última lectura).
 	IfMatch IfMatch `json:"If-Match"`
+}
+
+// PutOrgAgendaParams defines parameters for PutOrgAgenda.
+type PutOrgAgendaParams struct {
+	// IfMatch Versión conocida de la agenda; obligatoria al actualizar una agenda existente.
+	IfMatch *int64 `json:"If-Match,omitempty"`
+}
+
+// ListOrgAppointmentsParams defines parameters for ListOrgAppointments.
+type ListOrgAppointmentsParams struct {
+	Status         *AppointmentStatus  `form:"status,omitempty" json:"status,omitempty"`
+	ProfessionalId *openapi_types.UUID `form:"professional_id,omitempty" json:"professional_id,omitempty"`
+	PetId          *openapi_types.UUID `form:"pet_id,omitempty" json:"pet_id,omitempty"`
+	From           *time.Time          `form:"from,omitempty" json:"from,omitempty"`
+	To             *time.Time          `form:"to,omitempty" json:"to,omitempty"`
+	Cursor         *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit          *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateOrgAppointmentParams defines parameters for CreateOrgAppointment.
+type CreateOrgAppointmentParams struct {
+	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// RescheduleAppointmentParams defines parameters for RescheduleAppointment.
+type RescheduleAppointmentParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// GetOrgAvailabilityParams defines parameters for GetOrgAvailability.
+type GetOrgAvailabilityParams struct {
+	From           time.Time           `form:"from" json:"from"`
+	To             time.Time           `form:"to" json:"to"`
+	Type           AppointmentType     `form:"type" json:"type"`
+	ProfessionalId *openapi_types.UUID `form:"professional_id,omitempty" json:"professional_id,omitempty"`
 }
 
 // ListOrgEncountersParams defines parameters for ListOrgEncounters.
@@ -2808,6 +3152,12 @@ type AdminReactivateUserJSONRequestBody = AdminReasonRequest
 // AdminSuspendUserJSONRequestBody defines body for AdminSuspendUser for application/json ContentType.
 type AdminSuspendUserJSONRequestBody = AdminReasonRequest
 
+// RequestAppointmentJSONRequestBody defines body for RequestAppointment for application/json ContentType.
+type RequestAppointmentJSONRequestBody = RequestAppointmentRequest
+
+// CancelAppointmentJSONRequestBody defines body for CancelAppointment for application/json ContentType.
+type CancelAppointmentJSONRequestBody = AppointmentReasonRequest
+
 // UpdateEncounterJSONRequestBody defines body for UpdateEncounter for application/json ContentType.
 type UpdateEncounterJSONRequestBody = UpdateEncounterRequest
 
@@ -2852,6 +3202,30 @@ type CreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
+// PutOrgAgendaJSONRequestBody defines body for PutOrgAgenda for application/json ContentType.
+type PutOrgAgendaJSONRequestBody = PutAgendaRequest
+
+// AddAgendaExceptionJSONRequestBody defines body for AddAgendaException for application/json ContentType.
+type AddAgendaExceptionJSONRequestBody = AddAgendaExceptionRequest
+
+// CreateOrgAppointmentJSONRequestBody defines body for CreateOrgAppointment for application/json ContentType.
+type CreateOrgAppointmentJSONRequestBody = CreateAppointmentRequest
+
+// CancelOrgAppointmentJSONRequestBody defines body for CancelOrgAppointment for application/json ContentType.
+type CancelOrgAppointmentJSONRequestBody = AppointmentReasonRequest
+
+// ConfirmAppointmentJSONRequestBody defines body for ConfirmAppointment for application/json ContentType.
+type ConfirmAppointmentJSONRequestBody = AppointmentSlotRequest
+
+// ProposeAppointmentAlternativeJSONRequestBody defines body for ProposeAppointmentAlternative for application/json ContentType.
+type ProposeAppointmentAlternativeJSONRequestBody = AppointmentSlotRequest
+
+// RejectAppointmentJSONRequestBody defines body for RejectAppointment for application/json ContentType.
+type RejectAppointmentJSONRequestBody = AppointmentReasonRequest
+
+// RescheduleAppointmentJSONRequestBody defines body for RescheduleAppointment for application/json ContentType.
+type RescheduleAppointmentJSONRequestBody = AppointmentSlotRequest
 
 // OpenEncounterJSONRequestBody defines body for OpenEncounter for application/json ContentType.
 type OpenEncounterJSONRequestBody = OpenEncounterRequest
@@ -3019,6 +3393,21 @@ type ServerInterface interface {
 	// AdminSuspendUser Suspender un usuario
 	// (POST /admin/users/{userId}/suspend)
 	AdminSuspendUser(w http.ResponseWriter, r *http.Request, userId UserId)
+	// ListMyAppointments Mis citas
+	// (GET /appointments)
+	ListMyAppointments(w http.ResponseWriter, r *http.Request, params ListMyAppointmentsParams)
+	// RequestAppointment Solicitar cita
+	// (POST /appointments)
+	RequestAppointment(w http.ResponseWriter, r *http.Request, params RequestAppointmentParams)
+	// GetAppointment Detalle de la cita
+	// (GET /appointments/{appointmentId})
+	GetAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId)
+	// AcceptAppointmentProposal Aceptar la alternativa propuesta
+	// (POST /appointments/{appointmentId}/accept-proposal)
+	AcceptAppointmentProposal(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId)
+	// CancelAppointment Cancelar la cita (tutor)
+	// (POST /appointments/{appointmentId}/cancel)
+	CancelAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId)
 	// ListVaccinationProtocols Protocolos de vacunación activos
 	// (GET /catalogs/protocols)
 	ListVaccinationProtocols(w http.ResponseWriter, r *http.Request, params ListVaccinationProtocolsParams)
@@ -3112,6 +3501,51 @@ type ServerInterface interface {
 	// UpdateOrganization Editar el perfil
 	// (PATCH /organizations/{orgId})
 	UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams)
+	// ListOrgAgendas Agendas de la organización
+	// (GET /organizations/{orgId}/agendas)
+	ListOrgAgendas(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// PutOrgAgenda Definir o actualizar la agenda de un profesional
+	// (PUT /organizations/{orgId}/agendas/{professionalId})
+	PutOrgAgenda(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, params PutOrgAgendaParams)
+	// AddAgendaException Añadir excepción de un día
+	// (POST /organizations/{orgId}/agendas/{professionalId}/exceptions)
+	AddAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId)
+	// RemoveAgendaException Quitar la excepción de un día
+	// (DELETE /organizations/{orgId}/agendas/{professionalId}/exceptions/{date})
+	RemoveAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, date string)
+	// ListOrgAppointments Citas de la organización
+	// (GET /organizations/{orgId}/appointments)
+	ListOrgAppointments(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAppointmentsParams)
+	// CreateOrgAppointment Crear cita desde la clínica
+	// (POST /organizations/{orgId}/appointments)
+	CreateOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateOrgAppointmentParams)
+	// CancelOrgAppointment Cancelar la cita (clínica)
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/cancel)
+	CancelOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// CheckInAppointment Registrar llegada
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/check-in)
+	CheckInAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// CompleteAppointment Completar la cita manualmente
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/complete)
+	CompleteAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// ConfirmAppointment Confirmar solicitud
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/confirm)
+	ConfirmAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// MarkAppointmentNoShow Marcar ausencia
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/no-show)
+	MarkAppointmentNoShow(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// ProposeAppointmentAlternative Proponer alternativa
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/propose)
+	ProposeAppointmentAlternative(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// RejectAppointment Rechazar solicitud o propuesta
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/reject)
+	RejectAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId)
+	// RescheduleAppointment Reprogramar cita confirmada
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/reschedule)
+	RescheduleAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId, params RescheduleAppointmentParams)
+	// GetOrgAvailability Disponibilidad publicada
+	// (GET /organizations/{orgId}/availability)
+	GetOrgAvailability(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetOrgAvailabilityParams)
 	// ListOrgEncounters Consultas de la organización
 	// (GET /organizations/{orgId}/encounters)
 	ListOrgEncounters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgEncountersParams)
@@ -3346,6 +3780,36 @@ func (_ Unimplemented) AdminSuspendUser(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListMyAppointments Mis citas
+// (GET /appointments)
+func (_ Unimplemented) ListMyAppointments(w http.ResponseWriter, r *http.Request, params ListMyAppointmentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RequestAppointment Solicitar cita
+// (POST /appointments)
+func (_ Unimplemented) RequestAppointment(w http.ResponseWriter, r *http.Request, params RequestAppointmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetAppointment Detalle de la cita
+// (GET /appointments/{appointmentId})
+func (_ Unimplemented) GetAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AcceptAppointmentProposal Aceptar la alternativa propuesta
+// (POST /appointments/{appointmentId}/accept-proposal)
+func (_ Unimplemented) AcceptAppointmentProposal(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CancelAppointment Cancelar la cita (tutor)
+// (POST /appointments/{appointmentId}/cancel)
+func (_ Unimplemented) CancelAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListVaccinationProtocols Protocolos de vacunación activos
 // (GET /catalogs/protocols)
 func (_ Unimplemented) ListVaccinationProtocols(w http.ResponseWriter, r *http.Request, params ListVaccinationProtocolsParams) {
@@ -3529,6 +3993,96 @@ func (_ Unimplemented) GetOrganization(w http.ResponseWriter, r *http.Request, o
 // UpdateOrganization Editar el perfil
 // (PATCH /organizations/{orgId})
 func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListOrgAgendas Agendas de la organización
+// (GET /organizations/{orgId}/agendas)
+func (_ Unimplemented) ListOrgAgendas(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutOrgAgenda Definir o actualizar la agenda de un profesional
+// (PUT /organizations/{orgId}/agendas/{professionalId})
+func (_ Unimplemented) PutOrgAgenda(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, params PutOrgAgendaParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddAgendaException Añadir excepción de un día
+// (POST /organizations/{orgId}/agendas/{professionalId}/exceptions)
+func (_ Unimplemented) AddAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveAgendaException Quitar la excepción de un día
+// (DELETE /organizations/{orgId}/agendas/{professionalId}/exceptions/{date})
+func (_ Unimplemented) RemoveAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, date string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListOrgAppointments Citas de la organización
+// (GET /organizations/{orgId}/appointments)
+func (_ Unimplemented) ListOrgAppointments(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAppointmentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateOrgAppointment Crear cita desde la clínica
+// (POST /organizations/{orgId}/appointments)
+func (_ Unimplemented) CreateOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateOrgAppointmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CancelOrgAppointment Cancelar la cita (clínica)
+// (POST /organizations/{orgId}/appointments/{appointmentId}/cancel)
+func (_ Unimplemented) CancelOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CheckInAppointment Registrar llegada
+// (POST /organizations/{orgId}/appointments/{appointmentId}/check-in)
+func (_ Unimplemented) CheckInAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CompleteAppointment Completar la cita manualmente
+// (POST /organizations/{orgId}/appointments/{appointmentId}/complete)
+func (_ Unimplemented) CompleteAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConfirmAppointment Confirmar solicitud
+// (POST /organizations/{orgId}/appointments/{appointmentId}/confirm)
+func (_ Unimplemented) ConfirmAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkAppointmentNoShow Marcar ausencia
+// (POST /organizations/{orgId}/appointments/{appointmentId}/no-show)
+func (_ Unimplemented) MarkAppointmentNoShow(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ProposeAppointmentAlternative Proponer alternativa
+// (POST /organizations/{orgId}/appointments/{appointmentId}/propose)
+func (_ Unimplemented) ProposeAppointmentAlternative(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RejectAppointment Rechazar solicitud o propuesta
+// (POST /organizations/{orgId}/appointments/{appointmentId}/reject)
+func (_ Unimplemented) RejectAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RescheduleAppointment Reprogramar cita confirmada
+// (POST /organizations/{orgId}/appointments/{appointmentId}/reschedule)
+func (_ Unimplemented) RescheduleAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId, params RescheduleAppointmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetOrgAvailability Disponibilidad publicada
+// (GET /organizations/{orgId}/availability)
+func (_ Unimplemented) GetOrgAvailability(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetOrgAvailabilityParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4338,6 +4892,201 @@ func (siw *ServerInterfaceWrapper) AdminSuspendUser(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminSuspendUser(w, r, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMyAppointments operation middleware
+func (siw *ServerInterfaceWrapper) ListMyAppointments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMyAppointmentsParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pet_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pet_id", r.URL.Query(), &params.PetId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pet_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pet_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyAppointments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestAppointment operation middleware
+func (siw *ServerInterfaceWrapper) RequestAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RequestAppointmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestAppointment(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAppointment operation middleware
+func (siw *ServerInterfaceWrapper) GetAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAppointment(w, r, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptAppointmentProposal operation middleware
+func (siw *ServerInterfaceWrapper) AcceptAppointmentProposal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptAppointmentProposal(w, r, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelAppointment operation middleware
+func (siw *ServerInterfaceWrapper) CancelAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelAppointment(w, r, appointmentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5493,6 +6242,733 @@ func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrgAgendas operation middleware
+func (siw *ServerInterfaceWrapper) ListOrgAgendas(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrgAgendas(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutOrgAgenda operation middleware
+func (siw *ServerInterfaceWrapper) PutOrgAgenda(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "professionalId" -------------
+	var professionalId ProfessionalId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "professionalId", chi.URLParam(r, "professionalId"), &professionalId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professionalId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutOrgAgendaParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch int64
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = &IfMatch
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutOrgAgenda(w, r, orgId, professionalId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddAgendaException operation middleware
+func (siw *ServerInterfaceWrapper) AddAgendaException(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "professionalId" -------------
+	var professionalId ProfessionalId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "professionalId", chi.URLParam(r, "professionalId"), &professionalId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professionalId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddAgendaException(w, r, orgId, professionalId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveAgendaException operation middleware
+func (siw *ServerInterfaceWrapper) RemoveAgendaException(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "professionalId" -------------
+	var professionalId ProfessionalId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "professionalId", chi.URLParam(r, "professionalId"), &professionalId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professionalId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "date" -------------
+	var date string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "date", chi.URLParam(r, "date"), &date, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveAgendaException(w, r, orgId, professionalId, date)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrgAppointments operation middleware
+func (siw *ServerInterfaceWrapper) ListOrgAppointments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrgAppointmentsParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "professional_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "professional_id", r.URL.Query(), &params.ProfessionalId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "professional_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professional_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pet_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pet_id", r.URL.Query(), &params.PetId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pet_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pet_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrgAppointments(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateOrgAppointment operation middleware
+func (siw *ServerInterfaceWrapper) CreateOrgAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateOrgAppointmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateOrgAppointment(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelOrgAppointment operation middleware
+func (siw *ServerInterfaceWrapper) CancelOrgAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelOrgAppointment(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CheckInAppointment operation middleware
+func (siw *ServerInterfaceWrapper) CheckInAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CheckInAppointment(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CompleteAppointment operation middleware
+func (siw *ServerInterfaceWrapper) CompleteAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteAppointment(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmAppointment operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmAppointment(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkAppointmentNoShow operation middleware
+func (siw *ServerInterfaceWrapper) MarkAppointmentNoShow(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkAppointmentNoShow(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ProposeAppointmentAlternative operation middleware
+func (siw *ServerInterfaceWrapper) ProposeAppointmentAlternative(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ProposeAppointmentAlternative(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectAppointment operation middleware
+func (siw *ServerInterfaceWrapper) RejectAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectAppointment(w, r, orgId, appointmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RescheduleAppointment operation middleware
+func (siw *ServerInterfaceWrapper) RescheduleAppointment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "appointmentId" -------------
+	var appointmentId AppointmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "appointmentId", chi.URLParam(r, "appointmentId"), &appointmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "appointmentId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RescheduleAppointmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RescheduleAppointment(w, r, orgId, appointmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOrgAvailability operation middleware
+func (siw *ServerInterfaceWrapper) GetOrgAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetOrgAvailabilityParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "type", r.URL.Query(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "professional_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "professional_id", r.URL.Query(), &params.ProfessionalId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "professional_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professional_id", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOrgAvailability(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7885,10 +9361,98 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/verify/cards/{petId}", wrapper.VerifyCard)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/appointments", wrapper.ListMyAppointments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/appointments", wrapper.RequestAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/appointments/{appointmentId}", wrapper.GetAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/appointments/{appointmentId}/accept-proposal", wrapper.AcceptAppointmentProposal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/appointments/{appointmentId}/cancel", wrapper.CancelAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/appointments", wrapper.ListOrgAppointments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments", wrapper.CreateOrgAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/confirm", wrapper.ConfirmAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/propose", wrapper.ProposeAppointmentAlternative)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/reject", wrapper.RejectAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/reschedule", wrapper.RescheduleAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/cancel", wrapper.CancelOrgAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/check-in", wrapper.CheckInAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/no-show", wrapper.MarkAppointmentNoShow)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/appointments/{appointmentId}/complete", wrapper.CompleteAppointment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/agendas", wrapper.ListOrgAgendas)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/organizations/{orgId}/agendas/{professionalId}", wrapper.PutOrgAgenda)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/agendas/{professionalId}/exceptions", wrapper.AddAgendaException)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/organizations/{orgId}/agendas/{professionalId}/exceptions/{date}", wrapper.RemoveAgendaException)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/availability", wrapper.GetOrgAvailability)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/healthz", wrapper.GetHealthz)
 	})
 
 	return r
+}
+
+type AgendaOKResponseHeaders struct {
+	ETag *int64
+}
+type AgendaOKJSONResponse struct {
+	Body Agenda
+
+	Headers AgendaOKResponseHeaders
+}
+
+type AppointmentCreatedResponseHeaders struct {
+	ETag     *int64
+	Location *string
+}
+type AppointmentCreatedJSONResponse struct {
+	Body Appointment
+
+	Headers AppointmentCreatedResponseHeaders
+}
+
+type AppointmentOKResponseHeaders struct {
+	ETag *int64
+}
+type AppointmentOKJSONResponse struct {
+	Body Appointment
+
+	Headers AppointmentOKResponseHeaders
 }
 
 type EncounterCreatedResponseHeaders struct {
@@ -9407,6 +10971,480 @@ type AdminSuspendUserdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response AdminSuspendUserdefaultApplicationProblemPlusJSONResponse) VisitAdminSuspendUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyAppointmentsRequestObject struct {
+	Params ListMyAppointmentsParams
+}
+
+type ListMyAppointmentsResponseObject interface {
+	VisitListMyAppointmentsResponse(w http.ResponseWriter) error
+}
+
+type ListMyAppointments200JSONResponse AppointmentPage
+
+func (response ListMyAppointments200JSONResponse) VisitListMyAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyAppointments401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListMyAppointments401ApplicationProblemPlusJSONResponse) VisitListMyAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyAppointments422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListMyAppointments422ApplicationProblemPlusJSONResponse) VisitListMyAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyAppointmentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListMyAppointmentsdefaultApplicationProblemPlusJSONResponse) VisitListMyAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointmentRequestObject struct {
+	Params RequestAppointmentParams
+	Body   *RequestAppointmentJSONRequestBody
+}
+
+type RequestAppointmentResponseObject interface {
+	VisitRequestAppointmentResponse(w http.ResponseWriter) error
+}
+
+type RequestAppointment201JSONResponse struct{ AppointmentCreatedJSONResponse }
+
+func (response RequestAppointment201JSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RequestAppointment401ApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestAppointment403ApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestAppointment404ApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestAppointment409ApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointment422ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestAppointment422ApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RequestAppointmentdefaultApplicationProblemPlusJSONResponse) VisitRequestAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAppointmentRequestObject struct {
+	AppointmentId AppointmentId `json:"appointmentId"`
+}
+
+type GetAppointmentResponseObject interface {
+	VisitGetAppointmentResponse(w http.ResponseWriter) error
+}
+
+type GetAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response GetAppointment200JSONResponse) VisitGetAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAppointment401ApplicationProblemPlusJSONResponse) VisitGetAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAppointment404ApplicationProblemPlusJSONResponse) VisitGetAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetAppointmentdefaultApplicationProblemPlusJSONResponse) VisitGetAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposalRequestObject struct {
+	AppointmentId AppointmentId `json:"appointmentId"`
+}
+
+type AcceptAppointmentProposalResponseObject interface {
+	VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error
+}
+
+type AcceptAppointmentProposal200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response AcceptAppointmentProposal200JSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposal401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptAppointmentProposal401ApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposal403ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptAppointmentProposal403ApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposal404ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptAppointmentProposal404ApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposal409ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptAppointmentProposal409ApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposal410ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptAppointmentProposal410ApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(410)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptAppointmentProposaldefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response AcceptAppointmentProposaldefaultApplicationProblemPlusJSONResponse) VisitAcceptAppointmentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointmentRequestObject struct {
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Body          *CancelAppointmentJSONRequestBody
+}
+
+type CancelAppointmentResponseObject interface {
+	VisitCancelAppointmentResponse(w http.ResponseWriter) error
+}
+
+type CancelAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response CancelAppointment200JSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CancelAppointment401ApplicationProblemPlusJSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelAppointment403ApplicationProblemPlusJSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelAppointment404ApplicationProblemPlusJSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelAppointment409ApplicationProblemPlusJSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CancelAppointmentdefaultApplicationProblemPlusJSONResponse) VisitCancelAppointmentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -12331,6 +14369,1553 @@ type UpdateOrganizationdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UpdateOrganizationdefaultApplicationProblemPlusJSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAgendasRequestObject struct {
+	OrgId OrgId `json:"orgId"`
+}
+
+type ListOrgAgendasResponseObject interface {
+	VisitListOrgAgendasResponse(w http.ResponseWriter) error
+}
+
+type ListOrgAgendas200JSONResponse AgendaList
+
+func (response ListOrgAgendas200JSONResponse) VisitListOrgAgendasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAgendas401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListOrgAgendas401ApplicationProblemPlusJSONResponse) VisitListOrgAgendasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAgendas403ApplicationProblemPlusJSONResponse Problem
+
+func (response ListOrgAgendas403ApplicationProblemPlusJSONResponse) VisitListOrgAgendasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAgendasdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListOrgAgendasdefaultApplicationProblemPlusJSONResponse) VisitListOrgAgendasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgendaRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	ProfessionalId ProfessionalId `json:"professionalId"`
+	Params         PutOrgAgendaParams
+	Body           *PutOrgAgendaJSONRequestBody
+}
+
+type PutOrgAgendaResponseObject interface {
+	VisitPutOrgAgendaResponse(w http.ResponseWriter) error
+}
+
+type PutOrgAgenda200JSONResponse struct{ AgendaOKJSONResponse }
+
+func (response PutOrgAgenda200JSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgenda401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutOrgAgenda401ApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgenda403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutOrgAgenda403ApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgenda404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutOrgAgenda404ApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgenda409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutOrgAgenda409ApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgenda422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutOrgAgenda422ApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutOrgAgendadefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutOrgAgendadefaultApplicationProblemPlusJSONResponse) VisitPutOrgAgendaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaExceptionRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	ProfessionalId ProfessionalId `json:"professionalId"`
+	Body           *AddAgendaExceptionJSONRequestBody
+}
+
+type AddAgendaExceptionResponseObject interface {
+	VisitAddAgendaExceptionResponse(w http.ResponseWriter) error
+}
+
+type AddAgendaException200JSONResponse struct{ AgendaOKJSONResponse }
+
+func (response AddAgendaException200JSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaException401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgendaException401ApplicationProblemPlusJSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaException403ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgendaException403ApplicationProblemPlusJSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaException404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgendaException404ApplicationProblemPlusJSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaException422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgendaException422ApplicationProblemPlusJSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgendaExceptiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response AddAgendaExceptiondefaultApplicationProblemPlusJSONResponse) VisitAddAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaExceptionRequestObject struct {
+	OrgId          OrgId          `json:"orgId"`
+	ProfessionalId ProfessionalId `json:"professionalId"`
+	Date           string         `json:"date"`
+}
+
+type RemoveAgendaExceptionResponseObject interface {
+	VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error
+}
+
+type RemoveAgendaException200JSONResponse struct{ AgendaOKJSONResponse }
+
+func (response RemoveAgendaException200JSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaException401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveAgendaException401ApplicationProblemPlusJSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaException403ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveAgendaException403ApplicationProblemPlusJSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaException404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveAgendaException404ApplicationProblemPlusJSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaException422ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveAgendaException422ApplicationProblemPlusJSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveAgendaExceptiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RemoveAgendaExceptiondefaultApplicationProblemPlusJSONResponse) VisitRemoveAgendaExceptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAppointmentsRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListOrgAppointmentsParams
+}
+
+type ListOrgAppointmentsResponseObject interface {
+	VisitListOrgAppointmentsResponse(w http.ResponseWriter) error
+}
+
+type ListOrgAppointments200JSONResponse AppointmentPage
+
+func (response ListOrgAppointments200JSONResponse) VisitListOrgAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAppointments401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListOrgAppointments401ApplicationProblemPlusJSONResponse) VisitListOrgAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAppointments403ApplicationProblemPlusJSONResponse Problem
+
+func (response ListOrgAppointments403ApplicationProblemPlusJSONResponse) VisitListOrgAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAppointments422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListOrgAppointments422ApplicationProblemPlusJSONResponse) VisitListOrgAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgAppointmentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListOrgAppointmentsdefaultApplicationProblemPlusJSONResponse) VisitListOrgAppointmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointmentRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params CreateOrgAppointmentParams
+	Body   *CreateOrgAppointmentJSONRequestBody
+}
+
+type CreateOrgAppointmentResponseObject interface {
+	VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error
+}
+
+type CreateOrgAppointment201JSONResponse struct{ AppointmentCreatedJSONResponse }
+
+func (response CreateOrgAppointment201JSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateOrgAppointment401ApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateOrgAppointment403ApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateOrgAppointment404ApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateOrgAppointment409ApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointment422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateOrgAppointment422ApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOrgAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CreateOrgAppointmentdefaultApplicationProblemPlusJSONResponse) VisitCreateOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Body          *CancelOrgAppointmentJSONRequestBody
+}
+
+type CancelOrgAppointmentResponseObject interface {
+	VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error
+}
+
+type CancelOrgAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response CancelOrgAppointment200JSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CancelOrgAppointment401ApplicationProblemPlusJSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelOrgAppointment403ApplicationProblemPlusJSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelOrgAppointment404ApplicationProblemPlusJSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelOrgAppointment409ApplicationProblemPlusJSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelOrgAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CancelOrgAppointmentdefaultApplicationProblemPlusJSONResponse) VisitCancelOrgAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+}
+
+type CheckInAppointmentResponseObject interface {
+	VisitCheckInAppointmentResponse(w http.ResponseWriter) error
+}
+
+type CheckInAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response CheckInAppointment200JSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CheckInAppointment401ApplicationProblemPlusJSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response CheckInAppointment403ApplicationProblemPlusJSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CheckInAppointment404ApplicationProblemPlusJSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response CheckInAppointment409ApplicationProblemPlusJSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckInAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CheckInAppointmentdefaultApplicationProblemPlusJSONResponse) VisitCheckInAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+}
+
+type CompleteAppointmentResponseObject interface {
+	VisitCompleteAppointmentResponse(w http.ResponseWriter) error
+}
+
+type CompleteAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response CompleteAppointment200JSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteAppointment401ApplicationProblemPlusJSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteAppointment403ApplicationProblemPlusJSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteAppointment404ApplicationProblemPlusJSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response CompleteAppointment409ApplicationProblemPlusJSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CompleteAppointmentdefaultApplicationProblemPlusJSONResponse) VisitCompleteAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Body          *ConfirmAppointmentJSONRequestBody
+}
+
+type ConfirmAppointmentResponseObject interface {
+	VisitConfirmAppointmentResponse(w http.ResponseWriter) error
+}
+
+type ConfirmAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response ConfirmAppointment200JSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmAppointment401ApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAppointment403ApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAppointment404ApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAppointment409ApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointment422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAppointment422ApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ConfirmAppointmentdefaultApplicationProblemPlusJSONResponse) VisitConfirmAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShowRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+}
+
+type MarkAppointmentNoShowResponseObject interface {
+	VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error
+}
+
+type MarkAppointmentNoShow200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response MarkAppointmentNoShow200JSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShow401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MarkAppointmentNoShow401ApplicationProblemPlusJSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShow403ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkAppointmentNoShow403ApplicationProblemPlusJSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShow404ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkAppointmentNoShow404ApplicationProblemPlusJSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShow409ApplicationProblemPlusJSONResponse Problem
+
+func (response MarkAppointmentNoShow409ApplicationProblemPlusJSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkAppointmentNoShowdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response MarkAppointmentNoShowdefaultApplicationProblemPlusJSONResponse) VisitMarkAppointmentNoShowResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternativeRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Body          *ProposeAppointmentAlternativeJSONRequestBody
+}
+
+type ProposeAppointmentAlternativeResponseObject interface {
+	VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error
+}
+
+type ProposeAppointmentAlternative200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response ProposeAppointmentAlternative200JSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternative401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ProposeAppointmentAlternative401ApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternative403ApplicationProblemPlusJSONResponse Problem
+
+func (response ProposeAppointmentAlternative403ApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternative404ApplicationProblemPlusJSONResponse Problem
+
+func (response ProposeAppointmentAlternative404ApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternative409ApplicationProblemPlusJSONResponse Problem
+
+func (response ProposeAppointmentAlternative409ApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternative422ApplicationProblemPlusJSONResponse Problem
+
+func (response ProposeAppointmentAlternative422ApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProposeAppointmentAlternativedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ProposeAppointmentAlternativedefaultApplicationProblemPlusJSONResponse) VisitProposeAppointmentAlternativeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Body          *RejectAppointmentJSONRequestBody
+}
+
+type RejectAppointmentResponseObject interface {
+	VisitRejectAppointmentResponse(w http.ResponseWriter) error
+}
+
+type RejectAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response RejectAppointment200JSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RejectAppointment401ApplicationProblemPlusJSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response RejectAppointment403ApplicationProblemPlusJSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response RejectAppointment404ApplicationProblemPlusJSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response RejectAppointment409ApplicationProblemPlusJSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RejectAppointmentdefaultApplicationProblemPlusJSONResponse) VisitRejectAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointmentRequestObject struct {
+	OrgId         OrgId         `json:"orgId"`
+	AppointmentId AppointmentId `json:"appointmentId"`
+	Params        RescheduleAppointmentParams
+	Body          *RescheduleAppointmentJSONRequestBody
+}
+
+type RescheduleAppointmentResponseObject interface {
+	VisitRescheduleAppointmentResponse(w http.ResponseWriter) error
+}
+
+type RescheduleAppointment200JSONResponse struct{ AppointmentOKJSONResponse }
+
+func (response RescheduleAppointment200JSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RescheduleAppointment401ApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointment403ApplicationProblemPlusJSONResponse Problem
+
+func (response RescheduleAppointment403ApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointment404ApplicationProblemPlusJSONResponse Problem
+
+func (response RescheduleAppointment404ApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointment409ApplicationProblemPlusJSONResponse Problem
+
+func (response RescheduleAppointment409ApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointment422ApplicationProblemPlusJSONResponse Problem
+
+func (response RescheduleAppointment422ApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RescheduleAppointmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RescheduleAppointmentdefaultApplicationProblemPlusJSONResponse) VisitRescheduleAppointmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailabilityRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params GetOrgAvailabilityParams
+}
+
+type GetOrgAvailabilityResponseObject interface {
+	VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error
+}
+
+type GetOrgAvailability200JSONResponse AvailabilityList
+
+func (response GetOrgAvailability200JSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailability401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetOrgAvailability401ApplicationProblemPlusJSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailability403ApplicationProblemPlusJSONResponse Problem
+
+func (response GetOrgAvailability403ApplicationProblemPlusJSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailability404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetOrgAvailability404ApplicationProblemPlusJSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailability422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetOrgAvailability422ApplicationProblemPlusJSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOrgAvailabilitydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetOrgAvailabilitydefaultApplicationProblemPlusJSONResponse) VisitGetOrgAvailabilityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -16774,6 +20359,21 @@ type StrictServerInterface interface {
 	// AdminSuspendUser Suspender un usuario
 	// (POST /admin/users/{userId}/suspend)
 	AdminSuspendUser(ctx context.Context, request AdminSuspendUserRequestObject) (AdminSuspendUserResponseObject, error)
+	// ListMyAppointments Mis citas
+	// (GET /appointments)
+	ListMyAppointments(ctx context.Context, request ListMyAppointmentsRequestObject) (ListMyAppointmentsResponseObject, error)
+	// RequestAppointment Solicitar cita
+	// (POST /appointments)
+	RequestAppointment(ctx context.Context, request RequestAppointmentRequestObject) (RequestAppointmentResponseObject, error)
+	// GetAppointment Detalle de la cita
+	// (GET /appointments/{appointmentId})
+	GetAppointment(ctx context.Context, request GetAppointmentRequestObject) (GetAppointmentResponseObject, error)
+	// AcceptAppointmentProposal Aceptar la alternativa propuesta
+	// (POST /appointments/{appointmentId}/accept-proposal)
+	AcceptAppointmentProposal(ctx context.Context, request AcceptAppointmentProposalRequestObject) (AcceptAppointmentProposalResponseObject, error)
+	// CancelAppointment Cancelar la cita (tutor)
+	// (POST /appointments/{appointmentId}/cancel)
+	CancelAppointment(ctx context.Context, request CancelAppointmentRequestObject) (CancelAppointmentResponseObject, error)
 	// ListVaccinationProtocols Protocolos de vacunación activos
 	// (GET /catalogs/protocols)
 	ListVaccinationProtocols(ctx context.Context, request ListVaccinationProtocolsRequestObject) (ListVaccinationProtocolsResponseObject, error)
@@ -16867,6 +20467,51 @@ type StrictServerInterface interface {
 	// UpdateOrganization Editar el perfil
 	// (PATCH /organizations/{orgId})
 	UpdateOrganization(ctx context.Context, request UpdateOrganizationRequestObject) (UpdateOrganizationResponseObject, error)
+	// ListOrgAgendas Agendas de la organización
+	// (GET /organizations/{orgId}/agendas)
+	ListOrgAgendas(ctx context.Context, request ListOrgAgendasRequestObject) (ListOrgAgendasResponseObject, error)
+	// PutOrgAgenda Definir o actualizar la agenda de un profesional
+	// (PUT /organizations/{orgId}/agendas/{professionalId})
+	PutOrgAgenda(ctx context.Context, request PutOrgAgendaRequestObject) (PutOrgAgendaResponseObject, error)
+	// AddAgendaException Añadir excepción de un día
+	// (POST /organizations/{orgId}/agendas/{professionalId}/exceptions)
+	AddAgendaException(ctx context.Context, request AddAgendaExceptionRequestObject) (AddAgendaExceptionResponseObject, error)
+	// RemoveAgendaException Quitar la excepción de un día
+	// (DELETE /organizations/{orgId}/agendas/{professionalId}/exceptions/{date})
+	RemoveAgendaException(ctx context.Context, request RemoveAgendaExceptionRequestObject) (RemoveAgendaExceptionResponseObject, error)
+	// ListOrgAppointments Citas de la organización
+	// (GET /organizations/{orgId}/appointments)
+	ListOrgAppointments(ctx context.Context, request ListOrgAppointmentsRequestObject) (ListOrgAppointmentsResponseObject, error)
+	// CreateOrgAppointment Crear cita desde la clínica
+	// (POST /organizations/{orgId}/appointments)
+	CreateOrgAppointment(ctx context.Context, request CreateOrgAppointmentRequestObject) (CreateOrgAppointmentResponseObject, error)
+	// CancelOrgAppointment Cancelar la cita (clínica)
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/cancel)
+	CancelOrgAppointment(ctx context.Context, request CancelOrgAppointmentRequestObject) (CancelOrgAppointmentResponseObject, error)
+	// CheckInAppointment Registrar llegada
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/check-in)
+	CheckInAppointment(ctx context.Context, request CheckInAppointmentRequestObject) (CheckInAppointmentResponseObject, error)
+	// CompleteAppointment Completar la cita manualmente
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/complete)
+	CompleteAppointment(ctx context.Context, request CompleteAppointmentRequestObject) (CompleteAppointmentResponseObject, error)
+	// ConfirmAppointment Confirmar solicitud
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/confirm)
+	ConfirmAppointment(ctx context.Context, request ConfirmAppointmentRequestObject) (ConfirmAppointmentResponseObject, error)
+	// MarkAppointmentNoShow Marcar ausencia
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/no-show)
+	MarkAppointmentNoShow(ctx context.Context, request MarkAppointmentNoShowRequestObject) (MarkAppointmentNoShowResponseObject, error)
+	// ProposeAppointmentAlternative Proponer alternativa
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/propose)
+	ProposeAppointmentAlternative(ctx context.Context, request ProposeAppointmentAlternativeRequestObject) (ProposeAppointmentAlternativeResponseObject, error)
+	// RejectAppointment Rechazar solicitud o propuesta
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/reject)
+	RejectAppointment(ctx context.Context, request RejectAppointmentRequestObject) (RejectAppointmentResponseObject, error)
+	// RescheduleAppointment Reprogramar cita confirmada
+	// (POST /organizations/{orgId}/appointments/{appointmentId}/reschedule)
+	RescheduleAppointment(ctx context.Context, request RescheduleAppointmentRequestObject) (RescheduleAppointmentResponseObject, error)
+	// GetOrgAvailability Disponibilidad publicada
+	// (GET /organizations/{orgId}/availability)
+	GetOrgAvailability(ctx context.Context, request GetOrgAvailabilityRequestObject) (GetOrgAvailabilityResponseObject, error)
 	// ListOrgEncounters Consultas de la organización
 	// (GET /organizations/{orgId}/encounters)
 	ListOrgEncounters(ctx context.Context, request ListOrgEncountersRequestObject) (ListOrgEncountersResponseObject, error)
@@ -17509,6 +21154,153 @@ func (sh *strictHandler) AdminSuspendUser(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminSuspendUserResponseObject); ok {
 		if err := validResponse.VisitAdminSuspendUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMyAppointments operation middleware
+func (sh *strictHandler) ListMyAppointments(w http.ResponseWriter, r *http.Request, params ListMyAppointmentsParams) {
+	var request ListMyAppointmentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyAppointments(ctx, request.(ListMyAppointmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyAppointments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyAppointmentsResponseObject); ok {
+		if err := validResponse.VisitListMyAppointmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestAppointment operation middleware
+func (sh *strictHandler) RequestAppointment(w http.ResponseWriter, r *http.Request, params RequestAppointmentParams) {
+	var request RequestAppointmentRequestObject
+
+	request.Params = params
+
+	var body RequestAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestAppointment(ctx, request.(RequestAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestAppointmentResponseObject); ok {
+		if err := validResponse.VisitRequestAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAppointment operation middleware
+func (sh *strictHandler) GetAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	var request GetAppointmentRequestObject
+
+	request.AppointmentId = appointmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAppointment(ctx, request.(GetAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAppointmentResponseObject); ok {
+		if err := validResponse.VisitGetAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptAppointmentProposal operation middleware
+func (sh *strictHandler) AcceptAppointmentProposal(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	var request AcceptAppointmentProposalRequestObject
+
+	request.AppointmentId = appointmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptAppointmentProposal(ctx, request.(AcceptAppointmentProposalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptAppointmentProposal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptAppointmentProposalResponseObject); ok {
+		if err := validResponse.VisitAcceptAppointmentProposalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelAppointment operation middleware
+func (sh *strictHandler) CancelAppointment(w http.ResponseWriter, r *http.Request, appointmentId AppointmentId) {
+	var request CancelAppointmentRequestObject
+
+	request.AppointmentId = appointmentId
+
+	var body CancelAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelAppointment(ctx, request.(CancelAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelAppointmentResponseObject); ok {
+		if err := validResponse.VisitCancelAppointmentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -18423,6 +22215,475 @@ func (sh *strictHandler) UpdateOrganization(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateOrganizationResponseObject); ok {
 		if err := validResponse.VisitUpdateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOrgAgendas operation middleware
+func (sh *strictHandler) ListOrgAgendas(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	var request ListOrgAgendasRequestObject
+
+	request.OrgId = orgId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOrgAgendas(ctx, request.(ListOrgAgendasRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOrgAgendas")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOrgAgendasResponseObject); ok {
+		if err := validResponse.VisitListOrgAgendasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutOrgAgenda operation middleware
+func (sh *strictHandler) PutOrgAgenda(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, params PutOrgAgendaParams) {
+	var request PutOrgAgendaRequestObject
+
+	request.OrgId = orgId
+	request.ProfessionalId = professionalId
+	request.Params = params
+
+	var body PutOrgAgendaJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutOrgAgenda(ctx, request.(PutOrgAgendaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutOrgAgenda")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutOrgAgendaResponseObject); ok {
+		if err := validResponse.VisitPutOrgAgendaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddAgendaException operation middleware
+func (sh *strictHandler) AddAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId) {
+	var request AddAgendaExceptionRequestObject
+
+	request.OrgId = orgId
+	request.ProfessionalId = professionalId
+
+	var body AddAgendaExceptionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddAgendaException(ctx, request.(AddAgendaExceptionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddAgendaException")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddAgendaExceptionResponseObject); ok {
+		if err := validResponse.VisitAddAgendaExceptionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveAgendaException operation middleware
+func (sh *strictHandler) RemoveAgendaException(w http.ResponseWriter, r *http.Request, orgId OrgId, professionalId ProfessionalId, date string) {
+	var request RemoveAgendaExceptionRequestObject
+
+	request.OrgId = orgId
+	request.ProfessionalId = professionalId
+	request.Date = date
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveAgendaException(ctx, request.(RemoveAgendaExceptionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveAgendaException")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveAgendaExceptionResponseObject); ok {
+		if err := validResponse.VisitRemoveAgendaExceptionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOrgAppointments operation middleware
+func (sh *strictHandler) ListOrgAppointments(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgAppointmentsParams) {
+	var request ListOrgAppointmentsRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOrgAppointments(ctx, request.(ListOrgAppointmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOrgAppointments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOrgAppointmentsResponseObject); ok {
+		if err := validResponse.VisitListOrgAppointmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateOrgAppointment operation middleware
+func (sh *strictHandler) CreateOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, params CreateOrgAppointmentParams) {
+	var request CreateOrgAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body CreateOrgAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateOrgAppointment(ctx, request.(CreateOrgAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateOrgAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateOrgAppointmentResponseObject); ok {
+		if err := validResponse.VisitCreateOrgAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelOrgAppointment operation middleware
+func (sh *strictHandler) CancelOrgAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request CancelOrgAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	var body CancelOrgAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelOrgAppointment(ctx, request.(CancelOrgAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelOrgAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelOrgAppointmentResponseObject); ok {
+		if err := validResponse.VisitCancelOrgAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CheckInAppointment operation middleware
+func (sh *strictHandler) CheckInAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request CheckInAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CheckInAppointment(ctx, request.(CheckInAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CheckInAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CheckInAppointmentResponseObject); ok {
+		if err := validResponse.VisitCheckInAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CompleteAppointment operation middleware
+func (sh *strictHandler) CompleteAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request CompleteAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CompleteAppointment(ctx, request.(CompleteAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CompleteAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CompleteAppointmentResponseObject); ok {
+		if err := validResponse.VisitCompleteAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmAppointment operation middleware
+func (sh *strictHandler) ConfirmAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request ConfirmAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	var body ConfirmAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmAppointment(ctx, request.(ConfirmAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmAppointmentResponseObject); ok {
+		if err := validResponse.VisitConfirmAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkAppointmentNoShow operation middleware
+func (sh *strictHandler) MarkAppointmentNoShow(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request MarkAppointmentNoShowRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkAppointmentNoShow(ctx, request.(MarkAppointmentNoShowRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkAppointmentNoShow")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkAppointmentNoShowResponseObject); ok {
+		if err := validResponse.VisitMarkAppointmentNoShowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ProposeAppointmentAlternative operation middleware
+func (sh *strictHandler) ProposeAppointmentAlternative(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request ProposeAppointmentAlternativeRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	var body ProposeAppointmentAlternativeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ProposeAppointmentAlternative(ctx, request.(ProposeAppointmentAlternativeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ProposeAppointmentAlternative")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ProposeAppointmentAlternativeResponseObject); ok {
+		if err := validResponse.VisitProposeAppointmentAlternativeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectAppointment operation middleware
+func (sh *strictHandler) RejectAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId) {
+	var request RejectAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+
+	var body RejectAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectAppointment(ctx, request.(RejectAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectAppointmentResponseObject); ok {
+		if err := validResponse.VisitRejectAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RescheduleAppointment operation middleware
+func (sh *strictHandler) RescheduleAppointment(w http.ResponseWriter, r *http.Request, orgId OrgId, appointmentId AppointmentId, params RescheduleAppointmentParams) {
+	var request RescheduleAppointmentRequestObject
+
+	request.OrgId = orgId
+	request.AppointmentId = appointmentId
+	request.Params = params
+
+	var body RescheduleAppointmentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RescheduleAppointment(ctx, request.(RescheduleAppointmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RescheduleAppointment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RescheduleAppointmentResponseObject); ok {
+		if err := validResponse.VisitRescheduleAppointmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOrgAvailability operation middleware
+func (sh *strictHandler) GetOrgAvailability(w http.ResponseWriter, r *http.Request, orgId OrgId, params GetOrgAvailabilityParams) {
+	var request GetOrgAvailabilityRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOrgAvailability(ctx, request.(GetOrgAvailabilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOrgAvailability")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOrgAvailabilityResponseObject); ok {
+		if err := validResponse.VisitGetOrgAvailabilityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -19803,339 +24064,394 @@ func (sh *strictHandler) VerifyEncounter(w http.ResponseWriter, r *http.Request,
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"7P3bchtHuiCMvkoGZu3Y4G4ABClStsRYsYcmIRvdPMAkJXcvSwtIVCWBlAqV5cwsSLB+RfTVxOrb1f8L",
+	"OGLWP9EXvpjwnS+Hb+In+SO/zKrKArKAAkCQtJodHRYIVOXxOx8/Vjw2ilhIQikqzz9WyAc8igICn0/J",
+	"edhnmPvEV3+OcRAT9QH7PidCVJ6HcRDUKh4LBQkl/OJ5JJLE72JZeV7Zbe4+re8067vNq53m86b6/79V",
+	"apWI0zH2Jt0x4YKy0HrQ5/haVmoVSfhIFP7+KZ2yy2LpY6mWd40DQdQPcSj5pPK8cnReqVV8KqIAT7oh",
+	"HpHK88phiNFVLBnHlVqFjDANKs8rOMT/3ey64bFR8ouanl5TNbbkMVHfEj4goTfpeiyU2JPJ/gcB6+Og",
+	"yxkc2/eViMguex8SXnlTq1C/8rzS3Hm2e/0E79Z3d3d3619gjOv9fr9f963/VWqVgHk4UOskolKrjMio",
+	"T7gY0kiN+qZWYfoyaDjocvJDTLm172jIQvXmH/a/eNJs7uw+2dt/+kWlVhESy1ioXXqSjknl06dPtcqQ",
+	"YJ9wuOLWFR6of30iPE4jqc/7lTr5m19C5JMAceLFXLADRMIxxRyRELWv66dYekMUYY5RwATy2AiHPhMN",
+	"Nac3JCOsRr1mfASQQEP5dE9d7CQi+k8yILyiFvPn+hHjnARYzV1vH8+upu2TUNJr6mGfceQT5OkXPFhi",
+	"9eXL9vFWA10ShBXwYURCyXEoCZogQcko4gQJgnwyjkkwJgUrjGPqZwsUktNwYNbX6dRfcCKGIcD89Oou",
+	"iORYMLWuAKOIswnxPHN4CtB9XEO9AA/+9XXcbD7xBBnE6qDgL9JD1RetenNnr4YOO+16c+fJVn59rvVc",
+	"kB9iImSJs7r5NaQeM7cILy23+0+1irrhEZEGXA4Bv09o+G526iMWoh6OooB6cJfbbwULe+pQ1HOYDzDi",
+	"REQs9Anq7Tab6Ji9DwOGfTVcT4FVEA8wXHDvSXO3h6peQEkoiUCXnUP0Q0xQyFAUE189SghHvROmp+qp",
+	"l+JQTeBTnpy/x0J0TaQ3hDOlao0a8iu1SkIQYD8LTvwwihgN5YiEsg2EEIaKsBxmA+HcM7VKhqCaeCwD",
+	"cYdSYm84fzr7kfVmO1LIzdN5fogJn2QTefpXe8gR/nBCwoEcVp7vNpuuIVshkGHCC9dPrCfWW35Lkfs5",
+	"8+hf15uj7ZNRxKSi/X8ik1nIVxQI4JOm2IdIgBSVC6VGv1jEmFN2gDiJiKQ+BugkARpRMWLIiwmPWEqj",
+	"FNIoXFEYixHjdEBDHKDq4cW39Wbzy2J4tlZaV0tdc9/XQOXn8AePhcxTu7EYBaoqpmLo4c2vgaQjjALi",
+	"yZjjOSs3LKXckhN+MqIhHcWjyvMdJ29ph2MqgUIUQgi1H1nvuE7oiMoiRArgR3tAn1zjOJAKi2oKqcxG",
+	"FEot2NY5HxTuh8Fv623knA9wSH+cf3As/9B6M3ZIMa2LyPpErsPZNRFKmsRB8UT5h9ab8XKIObli70hY",
+	"MJuE3+ZNYhHap3sAFBndVYxZSsLVuP/+/WH933D9x2b9Wbf+5g//4lxPupQ8JsPXmnsiwQKGYoXAT3ZR",
+	"f6IYLwlRHwvydC/mQYa797qRl2IOX4nF2izlk3pZiSlCK0GHAxL6+PxP6rMS/BNNZ0rQUd9lk/wLJ9eV",
+	"55X/tp0pV9v6V7GtB9Qz5S/D/OIU0F0jmse24ZlPU6LKESdaM7qtZWdDu9Z+RCVGHid49Q3UKok8l1/V",
+	"zA3lN3qbV7N4j+vcTioX3fbdpAM7ocpXUGXu5iAnYyg1Og5uaVO3eA9z93NkFo2wJ2Mc0B/xejjT4awf",
+	"kNGcxUf6iT8st4lkXMcWWpwzzcrNw0BofF8TgNYHpZRQFhpFT/0YcRYRLqmmSV7AhAYfgxt9xgKCQ4VD",
+	"PpZgpLHI6uvX/se9T3X1z27yj4O41iochwM9A5VkJMpRsis6IhfqRTWCGRJzjicVTUsTQvy9XlotWf2b",
+	"9GnWf0s8sOsc+gpY49HsljONZ4n1pe/MLk2tDJv7nDuGWdGFflpdGfnBOvlULqtVBB2ExvRlsRm16bqk",
+	"I+I6cPNKf7JoGYrrXZBr2Af5IN2Kqn3WapXm2XSr9nz2cmu50513LxfpmZFQ3dL3FbDFeADXtQr2fSpB",
+	"fupe09Cn4UBUapUA97ucKJxVfzE51Jax/PprlQ91NWZ9jLli5mBJS6Y9sidJvjxMJ3uRzZX8eIL7F+mU",
+	"yZfneurcflIMy9besQAvMa8VwGKX+nlwXCBdgKDf1g/v3x5IJiBhCVr7TaNIJF/s1BZATB5WCqCAGxvY",
+	"EqflUTmZWtzO7qK1WZbc+YdxpB87Yj7Qn4CGZMdlpVgwm3pvt4R1o1aJmJA46HpqwunnXSSVDIxAM73/",
+	"+beRbL+mzy/Zmfta3sZCnpEP8jgmhTwj4Qs5wlRZtAx4yD3piIbnkYYBDYmrIVMG83keecokHTPEIg/G",
+	"QdXf/vZfaKeJPMyxJwknAgmKBEEkHN/8rC0Lefh37a1gH5Yu28EDsuQWfCxxaaZkz5UnCDvWklOSEJIP",
+	"suulNjoWkvPryvPvZ8h/Lf0mjIOg8umN4yaVmGSPV3ivG7xPbRbCxkQ7e6kHaHTzk0Ae45Kh3/7Hf6K9",
+	"3V100Tq8PD/rXrS+fdm+aB1vNdC3MfGxUk9JgHDsU4kCNigHAvahzCV2IxoqtrtpgEgnumDvHypAJMtb",
+	"kvJrNWcpiSjvsZvdVeK2c/yS98NZpz+HCe86Tpj6pTh5gIXsBmxAQ7PB7CpKbXXmfqZcfiXB5zR9pwTw",
+	"RER2gbMUSLDGW5iJd8ZtWKuIWEQk9HNyuyXHwovdDPf1E99n0h1scgYG4WT1jU5dfbqYqXut2VA1fQn2",
+	"BvOn6YRsbW6ZVTX0np3alYdDjwTaWdmNWEC9SXfIYi7cB+qTaxpqTS1PDXuAMD3tQI1DNCaScBpiThmC",
+	"+RkSNEQYlogk87Fico0MjKw1kURfnCOZlVHkjvEkVT0rszqr+knxYiJQxDi6Jt4QI3BZo95f/vKXv9RP",
+	"T+vHxz1rjdlRBwT7XYUH3RH+0PXxpOC8rOdoOO9gbetztyTC2vbdld4ppEkiYFKtOJZk7h24AMQ+4+OY",
+	"48R3jK45Dt9iOGtJwTmEPCoxqu7/9te/733Z3HKeNBzejxAM4FhoGlJRwjdfq7wn5F0w6UoyigIjPRbt",
+	"7HbsBTOmngCPiUC9EQt7v/31/+mJOHTB1xRRmYaN2ZvPELOWUbjkbIpJRQ5BljLKbNiwMs+iAkOd0AKV",
+	"AC+5pjI2HjxnIdmeZlZDQt9ht9r99HyOwUpIzOWSb00bSmCIGkzvXLdlE569c4sd5EWAkmbmI3sAp0yw",
+	"JMdZReZKvfFzqeIsM68ldzZnGtdbQyok06p9OdDLzuuK41DQhEOtKLmtwjxy7xQyAu2qtwWoQYy5T3EI",
+	"dk8aUs8pPymxpSxHIrJ4fvWjiIiX5zc2OyPXhJPQW4IYXQZMdtL3XMdemrG6gKEch1VoxwQOuuRDRDkR",
+	"i+HbNde0fOqiJEsOmYnMJSH4Ur+wkFXrL8ojhnr8U60SR/7S+L+MVOAS4JP3UziuOXgwDJRiiCXe2zCZ",
+	"0YYpOd/a1gIifTRFkvMEW1val0PORPZxsPUieJo6JbC3B4WmtGzxia1hHT5t+zAXmg8WWv/woiXP2IqK",
+	"zEGWZeZJWeOchTYBk4WTLGZD89WAvNR53g/oAEsGuliAPBZeUz7CHE0QkKGQ8AP1AycRZwOOR5jXjC2S",
+	"jaiEaNMRDiUlIUEkQHpCmE8JrwspfBlSdAvSzOWMsm9iRIkRmSMQKiHYWh2A/jwk3jvidwGFFfQFRD9v",
+	"xBT4HLKuGLL34ExQExcYDdxs3eH5K3+3Gr1nvg6ZJEVUfzXqPXvsmpgtpk9Xhq5nDjTtzjberWsWBOx9",
+	"N44UXcWeR8PkFxHzgQ4pizjziB9zUuxOy4WROs7UuJC6hc5M4wrvyqnlvo2I4n8RcMH3pK/WGfnXzhWs",
+	"ZP+zUdFxY6WlJHAJdrHlUM5j+WXcpz5DGOKGk0tAgOk+PlA4jP23cSh1pGaAkaCDGOKREYaICrcxRtAf",
+	"iftEx1TQfkC6knVTvuPgKi4Gm7sMM4d7wNyhOyExhYpX6nUaUDlZ19C/0Ge22tZdbzm3FPtUthJn4TJ+",
+	"XK8QzLAnWaIOOey6BWDnUN/0QCVs0tOM2suyIm5jHT6RmAZzrFM6Tm7KHkUkDgLwtIWo024jEiIvwJyh",
+	"ashGfU4EWKXwKGKihowYSEQNESGxz4TbRFVW4/K8mPMlycdiC3StIjEfpPrWWodqRkpo5DJGb3t3Frjl",
+	"AaaWgGh+KnsLVnDHFMQUosrGHVoZPj5Ad9YY0wBruncbVjFrOCWirmEfmx7p1qXcjQqesybWRaLoV5TL",
+	"4fFcu7KbakcRZx/oqFArSyId8rTsBfgrPDqmAcrcFQfot7/9TzRkEzRBv/3tv+DTb//xn2ivifDN/9b5",
+	"bCtETNRyq3TunhOXX+iKfJAMBbTPiSK2L3ZQ1cPy5qeADRh8sTsd6PDl4uCWI8x9FzhJvoz1Xo2SYrUT",
+	"jX2dHlpqNBOuokiD06RU3iBWbO+aBtGEYiZv1NIzsDbguqxs6w5JekRDKiQp4FROGZcJ0g1wn4AfW9Ez",
+	"3A9IwoKXNs8uHuBDRPmkWxQBtPD9IRZdMqY+2P+cKFfyqt5RTcJKgdmf1MOfahVDCxeucoTD+Bp7MuaE",
+	"l3rBhlkcBCUM92ptBnArn95Mn5ymun7syTJ77JhHAUg9xn2Iy+yWsE0v3Bhnsb7phU8KWvZBFnOP5I0F",
+	"etHgTFNCIXyko4hxOTdKwBleMGa0KLZA52FniQHJu2l+dq0Sh9YfPhVRXLQENY8VprBw3+8JHQxl991g",
+	"ztNhPOoXmUYB4jO4qM3Qi/RopzZqGUhz6DeXPP3J4Fd6RGBAIHBF7xkfaamUeJJFmGO4/DcF/CIB81kL",
+	"KhY0d4cRZ5J5LMiMqLWKQ1+zyN/qkYg1M33RKZwxWRwBmViBVjBE2gjrcAJKHLDBqtia+DyWio+dOhwY",
+	"o+hQXk0hUKEY4LBZ4IAWuLQTjFtCPZvW72HwjAkXrJ8k6eYrxBwXK4EL48wGUENgOe2T8UE3C5RyHtsq",
+	"vkdOxuxdmaXMd1DNEF0zrgNJF0ZUFMZqZac2fRzzrnc1C9TyZ7lgX+4lAnav7OZYBo3nhKMeWUVWlrFw",
+	"WfVYyquOU/VZXNaqfIWWjwtzC+zHZ6eo5VY6Z/+rAYpjR/NzCmCuV+Zp13aXeX3Js5iz+1fZAmww2y1I",
+	"om24k2jVcFnSxGwJkctz9GTn6dP6DsJBNMT1XaVxzk7wpigoR2c35lyEt+K3WyJGYgXjR2lH5ZJ2khU9",
+	"+UW666ydJXEKLDC36FvJKiKshklp9PXc9E31UJIsBPpIQEqkRVyox6Y3ngQHwxjF+7KzKlZM6sqSmxYk",
+	"XyXbSstALdzZkXnSIXcUW3J2XaEIZGBFycyRGF0vS/zBIMO85V7hD22/LNjax+6EWwOc1rpnZAezrFp6",
+	"A9nJFt93h6zICvqUy2FqCpm3t8w++alW6SfmurlvwENgiuDvICFxUex+8pylBsxNKSbyTD0GxosYdMjF",
+	"djbzHGSuflgY7EU+TNnU5j5tHsve6Gp/dLn3IB/zinyQbn3GNtSppVubLgYMqLtRzHBM9BgN0yD0tPLK",
+	"swWFV2qVSIf22aywWX/25uNe7WlBeKrH8t5zy6Pf9TBXUH8dB0FXG1MWC+J6wNrMPorPw4cDKT6JZQTD",
+	"kpw05sFiiRBeVU/W7KW49nFMPIIF8VfDd9+8Xc42+8k9f4A5SY0shcC1vinYIuh7LsEjsQJ19eq678ik",
+	"lMCyjt110ZpWMXlOwcJCI5kTLCgehEwQsSJcJK+X9liYCalYlEE2bbhKZ5qzDbp0VjXhEtNQTvKmOCLi",
+	"UWTUeztuy6fXEGQpKQZpKg6I32WxdMftGL1gieWIiZC6hsYieEmriM5/cJrw6fGT110n6UiC310xBz47",
+	"XPeVgfxyVspuZzOLf3/9+kOzWVf//VL95yv1nyP1n5b6cufFm/+fk40cMy9WmsEfWf9OCfms6ciEVYHt",
+	"KPQJTz5jf6JYGaZBgd29PE8wkzoP3ioYeTsHUWpZpbhUTuex508UGBss9/cca2kl9WWPMr1iCQwsIz/a",
+	"kPspLRq7QOaEh+BIdGwJpJpOVfVqljJQJzM6zy8t+TPLV/s49FlYZFHVIX7L5FubkECH29kq41nWbnD7",
+	"hWkUxdDRi2MilygMs1q69VpscHrpWfTqglFewIMvo2XiwQBWTGbuXKU0fXDVRFH/unSFqo5/bYxTJZQ3",
+	"c1FRgBcaETvBghQDXcAHy5gvPJDL9MHEeLVsmaJSYdLpmWQpLiK2L20ly1g66l1luNQqYypxsHC7r/RT",
+	"n2qV95iHibo/VXttTAWDIEmOwwGDZF6itVpdCUNA6LHEUOa4ChUYSYg6L6/Qtl4FmiS1UwXygpufQ+ph",
+	"HVdZClthkd/p9S2MTZtN5pmXyZP6fCyIsqIRM8piAD5PKjO6vVymT4Z466fKZAAbj0Z4TmDT2vkyOXJx",
+	"K5LLW9bvrizGhQyCAm5Zmsuh2YK8sTlS3jQZsdad9AfQpcu0KdHT/Qlcy5y53xVFi3klM3LMegmZwXqp",
+	"0AWdY86OOEEgLPDQzS9CUo+hqsT8LZFYQEFmnUtHcVBDL1r1ZvNZnm4sDEFfphAKOJWpnCzrL99QIu5S",
+	"/HgBj12eWd4dg12Jg95qvucaLCLDPgcQzSUNSyRRpW071kuoctYnzK3nKL+G3G+puDv1fctaXO6HV7mV",
+	"5n66TJed+7pj7SH3Q1b1MP16fkRQkm00xMJR+/1SyShWPw0kKAowSoLXdPkSItD45qeA5rKklsXhlXCP",
+	"EzzqLinuJUFOUwVvAqROAHGicCqW2GfIYzT0KLQggdJjOl2MoUktV4yuBr/31Os9V5pYQSCUXZFzaicu",
+	"bDBlL5e1E8xGwe0XeblnxAY+AvMh7qcfQya75AMeQTWVNyXSU4vYfooiS9pxY9ItGVBYm5OytoyRMJ1y",
+	"brHMZD9tYxddY9nl6nOsyVfL5rLnFuOi/SWPB5KNFeVbMgBhTPhkSb8dK4xbj0PdsSGBcF1YpVaZcqrN",
+	"cw/lWgPl1xrgQVcQj4W+LW8VhAvbD7sO7GsTUruadXCNsnqplbBketuUe18P7NrRNwQHcphJ+cu4G2Zo",
+	"E3u3FvXJ4mLuoMZh8Vlv0Ji/VBDOfNt/EqtnhZAmSy/BA3I1/2BVlqBoHcDCVObszpJEvk1lNFrQsXJ+",
+	"XzZGh5MxJe9XibzqjrB4l9NW14Mdm3qXAA7LTrJOTFdu1hQGchtc6G85IQMcHMWcLx8UmwRcFlkxyse/",
+	"Fo1w69Gx2XS13PKdJ2O6CGaYa1LdnDaSUytUabrPQsA42kaC3PxvLFCEuaReHGBOxFQKojvp/5SsHoFX",
+	"so5aGovnqpuWBUyXGy2JsJ43mtVw0lkdNKtZvkbmQcoeZnyI7ketTpWuRTn6VpY9khmXpPNs7rrubgrf",
+	"85ZusOAuiuo6+3K6bmKhJLVyBd55LHYKRmbiL815ztTZtc/NvUkHWsz1358S3xgdEqVoGYbNhCZqH7wg",
+	"FnRMThOZvzmTiWfiqqal+5E66pE6k5hC4Gk/APuVhyMRwxH4nEXqmUE3Irz7Tj+ffHbmssVcqz4z4YRP",
+	"nu4v0kuubR1orrc0fVChSSgkj7204O/C6K9ReuzdlXLNoESbuuZUTFjQysDKQE3Fcw7WAuFBjqj6z1jd",
+	"AIuoBz+waCiHOBhB9iCT8A8NhzgwUqYncbAY7qd3quGgYoNDsjb79N2wCqB0Z1rWW0aXNXatLdFbiWAj",
+	"Ni7y9YiydofpsBmR2AgKCnxPy/7ZERRfyKYlfXPtK0v5FuO4ZdCBZLoipaw7lTvsYBoLirGtZDJieTlT",
+	"p/92IXoT3ARJTXOs+wOa0snqChUzxHyk5NjkcfOF+vXNnCya/GTWQLeQxmjcFgYwrRN3XjX1OPPMTc+m",
+	"UO3sfPHl3rb67z6q7uwj/+bnAZVMbCGGAjLAPkPVZ9s7TYSDaxzGo5t/cOoxoTtZa/Mq/RGjqqAhIiLC",
+	"HmViexCbAksjPLn5VShxXEwXBNnZz9HzZ7kYxKqOWN/Z//R/fX9Y/zf441ltp/lpyxl5mO5xtSDbkX1E",
+	"c9EufXCGpKe/uO7gzMqCSABjout5MKgL8C5k792Kj12ApDjJ3cHwlzLcSj7pbrI4homZnuNEmSEZceQx",
+	"UwmAjQn3Y6ATWFJh5MOslONCjEo3OF3pIOW/mTFYn+lcAdHcSccU+51zLwuz6lcudkI+RAEOsSyludsP",
+	"uzZ0boc/LRXMyZVcOSbOrl6zlwzR0Su3f0gcSTP197/BQYB/HDDd8UFQNQt+Do2tBxCRjPmkhkaxIkRM",
+	"vCMBkTioIU8pCmyMgT7xGrSyphxLpp726YAItbUaGpCQShYDj5jUUEj4mMWihsgEashhLmoomIyiYQ0p",
+	"+dFd+X/2zFNNZcVEQLBudtfOGTbjrJU6vGobtGlpYomg4GXV62WCiOd7CrKWZ6lK6jzDWtEVOTEwImHq",
+	"914RIFYKCl4+KmiJBOcVyw2sFpyyQoxJUfZyImAV+wWtbNk7yExeLgL+PeknBZPydPLlxQkaShnNMYwu",
+	"dJslSlJxiPw5H7xgcejfpVq6iuJXrPMV7OriLvWIcz643JwaZTlJ1qlY4+6DuXyztKUjRBc5gJYKPFuY",
+	"HW7ThGlmoLteZjxhjth4PuXFenhZ/xvphHedEQNHiBYJIbx8TIUOB0VJUmXSYqp62GnXm80vQX8s5w+w",
+	"KJDTE1DWgp+rYuCwV476hM8Luh1NuontofTCjRnMseoo7gfUSzu63gZ2lO6Hd0dVGe67L8h6ZSDyV2RZ",
+	"DJdJHLAP5dyOCJ9q/mA9prvzjSgZ9TkTaIJEHBGuGc0Byki9fo4EStGRbCl0slvBlne/v5naz9UKtrFa",
+	"pYMltXqObMqkaqYx3U3vu/6ztZrl9mwXrr9N2Wut8CrXDgMavlu24lepaPkTKqSu1zsr3ts1H+0lOK9A",
+	"C1vQ8+N6aWF2lTAXyboLwmemIzKmXlgYjtIhS2uVS2PdiIVyWFCocUKwuyPc1Mb0c7VkLNdW8hVyylEy",
+	"u1aOg8Om1XOK2aCHOekquFmqILWuDenqnrBS65ESpUJca08g3w6wcEhknuIoRD6ffvw5J9hH1WvqDbES",
+	"1CLs6T4jPklT/pYQ0qYDRd0xG8kaSopsJR+zCx8Vn1fOLVDisS50Nsg83tNxSupH05nWJyh9DU0wigX2",
+	"sTZfkgDJWDKOqs1GY8duTWHhUSGZXqXeUqJVSovSOeAikR5gdeXveZqMumXbIZOsPB534HHnSHdaPGql",
+	"AJkEf91u7HuVf210qy2sbmVLuBlZXE7c7RB5BFIgDoqzHz3P6L55qDyjYxKAyqgeYJBLCG1JDlDPi4Vk",
+	"/qSHRjFRuqQC3D4OQ8LR68qhfj6gIwrpMhiJWEDTNGoyneNAYvG6gqqQkLgPWOjoxqcFCLVlPV1SE8h5",
+	"tTggXC7bXUdHjnZ1fe9FoPodPNVhVBdsuLZD/hfE7ZgHkzRJYpe5WDY32S5Yn7+xDr/55QMdKUWfCaqz",
+	"Pz3MQyJRNVBaVwjcx8oqO8Lcr6HT3cauMynUKqszHe0WkbCbJtiV59a5fJhF8RXmSq0tz05s30MBBqQS",
+	"6/J9ocaWNDLLJu5JRlpBqCnJuOepJ7fFQJZnCyvS+tuj27OUOm30Z8PIwlSFpHDjDOLu/PbXvz9tKlzF",
+	"niL+4gAFRHIsttOYj//vdv0AGnApcZGzAAJEoGCgxFloCJogQZDHAhwJHE75IZ5upCxVh2zedmBrnQuN",
+	"B06M2LxFQeeRz3DXdTGvdF8bl0zhXGhiaZjKc23sPN3TDQ89EtkwVUMm3giBievmH6Ekirv8EEOPU6L4",
+	"fIhDhIMsYIlPgd5UcerXr//wfbP+DFW3Xr+uN958fFp70nTXzuwkhGfTtoFhPOoXZnKY72fdfREnplck",
+	"RHeNaLilK7qgayYZqh5efFtv7uxuNRbHSUJWR7aMxbaGYGkrVBYYu0wMfC5aOxcH/6Tp7AKuE9DLT5Hl",
+	"rC9MDoAs7BEJfewKfHbGxbiCQzqc9YMSAsEUinCuFMgQaZBiCEdRYA5nO9JD/uGtYCGqXrw4Qs/29r/Y",
+	"AoHLu/nFpwMG/RD7ATFymenn1ajMOAGdBdmPzCC5l1HVZ57YjoZYkPrOdnO/jiPaGPno//wvLVVPFWzv",
+	"FpSCn20zuZBi6VaSbkeyOqj8/S/jAy3ywFxTEpSw2unHTP1KF+YsSOSgUInJW+QFSkP89589s0L896wh",
+	"LVFRUhnMr36VHTinC6lF0gASRrUVxaI9Zzi2Wj3BJVMFQibJNHbuFGBnqQ42naS9kEN9nSosZqXa9BkT",
+	"kKOuVKgxDrqZ8bQgAjDX+7jY5V7WXhZSSXHQFWSpHnuX8PgxE8Ql7mj3GVSLoHKy1JbSa1lCzEjqpZDu",
+	"ylEglvs+FaGtQWfOKQ25mAcJt9C2MwWqlQP9kxG+43ROy6k5YDg/NcgCwSlCXth2425Bbv7yXVTAnZy0",
+	"eiTbhuB2eZCdE83WieXhQAktxUXDUyLmk2scB3IKh+3sUh2XrXl1xALqTbq6YIV9H04mFBDsd5UE3B3h",
+	"D1mu2tw7tN6hYdmJRMCkej6WZG44soNPzhie1NQ/OlWW9uHZYQMllYhigZUKolRwrgRwPJhqz2638yPv",
+	"gklXklEUzO08W7aQK0x1RUfkAocDJwbNRizb0Da9oKkTdN+C8z7nwYcLNGcaWq3b+v02u11dQD+EB1Fy",
+	"f9naOwuard5pbf7plqjzSzZn1tbyq1+x4WmSHrpoQUm47aLncm0659fZWanZgAHAMj2tVio4vExrKwKF",
+	"/L1lWHzAZCd9b0qTd6napTth3Wprq4Iygu77GLN3ZL3ugcXFwErYESypaQYCFKHGA9JVtL0Ey1SPp/Lh",
+	"DGtuOk3WjvV8yGW66/SJa2I+zEuEK2gQo52D86IwVyp9tIKFbohF17TeWbnztCkvCVuaM/fiPsi33dFH",
+	"F/4zbX2SnRbXQarl78WFG3Cft6AjabhYWUGC130TFzWvB9fSGXqpp2xxS/A0giQL/Crdj3f27jWOrW6o",
+	"d/r9i89OC0GufsO8lMRQMrIvu6hbge/b6Ayc4ENkynNwv5If1nlodjn8pSqafnNY391/ikiIhuQDmFn/",
+	"eHl+hjwc3vwSQlnlixdH6MsvvtzXNn4mEBmTUDKBhlhIjPLFOhPjf3PLqYO8fe8IubggQjEA30QDBViX",
+	"FkXwCBvwm5+uqYdhbepB6jOOqi/2a+iydVRvNvfcU61SQVW/0p8s0Xhihaqr0xeezjq3Cmotf5NOKMjL",
+	"OjMH/YLj8C1G5AP2JEbVHiTE9f7QI6Hf20LM1On3Cbom3hALpFMRBar21LF1rzkb9f6gP0vW25q14aeP",
+	"TdluXr/2P+59qqt/dpN/nHYcM/aqry/VU3WpTqZOuSOjfWmRdjYApFX316eAuhz3+7r2CokkDXSNBZ+E",
+	"0K/0h1i3qL8mnAO+X1MxXLIQ8zHMeQRzfqXnvEjmvEjnvEjmbCVzvkjmfKHnzGolz7QonM0U6Ad0gKHA",
+	"OhT/1S+gf0Ww8AO089tf/77XnHKH7i02bOlUj2U9J6tkCaetuKb8TefP0Vn7ChxYpmqFQoh8hefqWfK/",
+	"+vHWAWKSM4EifPOzIOI5+ndTXKJRf/Nxv7bb/PQvDrewdQ5PylvlihuAXdERCWhYUNIh0bPTonhpJFZS",
+	"5z8eZaY+QGsg8jrexMoBtsL5oM6LFaTnrqziQbCZv/HK+Jxcl24JkYUEzup0icNqCioCPCapI1Ny7Mce",
+	"VR+rUQORtw2UHmhDU3A3SxpTQfs0oPnGdVboH+MKlftMDksUdLGONq1AYY4h85FZU84Dm1toKJKDQFd7",
+	"pJUCB5dvQbIoNC6JGV6xEukKOpxiiN00CnZxUsy8thjLBpI57A0zkvic9S2Mx0hOczUzRJJqslzqekG+",
+	"inN9L8OAee/mN8ZdsrXt9JHScM7Mt9qDVrJ3pExJVXhs4dW9hCDqdetDrFLsYbVuZnda9yHfvGtxFZrV",
+	"6kQU3MkpKXsZIxra3+5suqxsKmmVLStry1yOEdeo1bLx0q4rF4MpHS0ckoJIzEK4GPVXRdR1albDu8Uk",
+	"xM7G3QDgbrI2wTT8WYj+ZZ6w7C7M5Z8TLOR6eanc92KYgAjc2znzvGmybDh/ZpKckpmxT0KMxti7+Tn9",
+	"B6L4RhGb0oi+bC7Ip1t9aHd97jL0JolbXzEB7k5zxkq8l2nzbmgyJq1ZJeBW6qy4LP8Ls7lfGX10qeg3",
+	"nwqCBVkyJ2rdgHXw6i45p3Xv5V+aKQXKoOtVyMIufCzndJnRAdJTswqBmiiMOVFp5oJuweGSXPXKLhcz",
+	"wPyQtNVgY8Vo0JXl1Y3B0oiGSQjwBgBrGZiaE/6S69rq8Gb4uVWenH9XqVW+aX/9jdP+VBQ8XauMiBDG",
+	"6LFEYHX2XuHSlw387jMfRFj9Qr6706Ii6h6XdpOlLDjberHZ2HfUiB8SzGWXY0m6/WiUe3mvaTeV2nX6",
+	"7YcT39R+jzyZe3snN7dj5lHsMYFzBcho+A6C9sFi9X5IwRXqTXCYFEP3JOHwaTiJCCcj6jlvmxMR6T3x",
+	"qT3t5va074xVJ6Oo6+VPwt7LE9dmcrE32fHnZms2mjs1R2DOLPgwWiLsa+PxZzrh9xvonzpZk6xPJQ/f",
+	"jk1QcuPnmRIKAsJlgUxAAondEVLJjwaOZ2+Yhj57n8amLPDl2U+b5GzHGbvNlnpbi8yX9onORt8QLOK7",
+	"MLcLFnOPFLkU7Fajb9aLWLN3ZL+YLsF5uoJ4MadycqnAx5BZgjnhh7EcZn+9SLb5x++uKtN5T5DPLxAY",
+	"0xAZUUl93cP8T2TiBQy/Q1VOcDBCvYjICAsRMS57NYRjn5LQozj3Qx1HVHtMAaQBPmEN2ekOpYwqnz5B",
+	"NPs1S1z3RqXVMohOO9UjzlYsPuy0UXTzaz/Q3nJkPYyqvW0c0e3xTm+rgZQCzLFk6DqGWivVw+MLqEjw",
+	"HNk+9q8ZmoBaFUBJltdQausSJkSCoAEJCcch8onwwTlCEObekI4ZzDBWhwAJlCRE7nytxuswdVXk9oYO",
+	"O20rF/l5ZafRbDSTDHwc0crzypPGTqOpc710VP42BDNuq/OX9YABcA1IUUEaq5xZAymKC7VSfIKiAEsF",
+	"/w0YqBuwga5D32m31U68AHO2VUOjm58E4kRXqxEo4nREOKuhaxpIjvsB0YVXoHREDSnYlHSsDnTayf79",
+	"NWejGpJMl7mJiGasbV/dqFqekq4P1VpOwNEbYY5HRBIuwMRE1Y5+iHVTXAMlMGnXRFcpAlpKQXOPJTEf",
+	"JEGKaw8GoQHOcea63gtWxm5tKONgsodbGBfpHgnKf+QGSlMbQGVIxaTmgs6dn95oeYaFRl/ZbTatcB5T",
+	"mzlNxHxrZIJs3rlmMwVO4PMDejNVT+PmpwENgYIACjB+8zNWuLfX3CkaOF3pdpJkCs8/We753d2lnk9P",
+	"tvQ7tve3ckEGVEjOpjZaq0g8gMCKtOrKh3oU1bFnzge+fg5vQPUqGNYQHw9LHLCB2I5MipR2MDEtyOWR",
+	"+wgiG62yJGlilmaBRMivmD+5tUt3Zm19yjNcyWPyaQbwdm59DU64M78xyGbx2Z2AXPPZQwbRI0jridKD",
+	"8QkaYy8OdRyKBaoJ3BVBq/n9+Xt19/MBdvtj8rHtf9IELCCm1ksOfo8JWIbuFIaP9HLz+TulYHhvVg44",
+	"JkLv4K5gbe8uYSfdnQVAq0OMW+5QslfG+zK4qUzfxzKyw5taJYod9FL7O34P9LJ5x/QSezKGAiQPE5Dv",
+	"mGgeJqdxR5TTRM3lOP18haMG4YUjpjSCAy17QEssXZR836EI2LIC2RC8uyzodywepF6AWWh/BbenRQP8",
+	"KBoY0UDDdL46ykaAe/uj+TQjFOSv6Sv8FqPg5pcB9TCq9rTvCP0rAtN3b+s51OUnibo9wYhrKRz+hI6q",
+	"fIxDJGKUxLFTPIsO06IH+X2JG/jzFjduFyjLSB4pbG5c8HhwxLd5h8Q3kzPwo5xhyxmbIsO2aV6Utmei",
+	"aufiuN7c+WKrgTqMI59cE08yFGCokYhcDX9qpoAbmDVxKOkgxgin3ySGzgP0A+rHwsNg3AzZqM9JDXH8",
+	"480vIRLMozhALK38ZYzRrIHaoRfEE4JM2xY0QXajkzmGz/PcCZSyfqZlocqBvdW7pMio90ORZfDL5qOJ",
+	"sTAyb0RD+/ZKmBsTcNd+g8/Q5Hie26CuzC607A+YOZ1ptFXWGsn44HlAhSwkHtsfGR+0/U/bPBWddMx7",
+	"Dp1ce8oeUajS9ivAJ0vpOQ2U9g5Dv/2P/0RaGmygU9B8EEuTyFgDHRotqIAWXKTLzjWO2QwzTmZcVui7",
+	"PezJd8eZRZoMkBThlRwLRaqh1j5NNNwhwT7RdYtaV3hQNKV5bBuegakeHF9/2JpYApocKRmA2TezDPpa",
+	"iFkCicHVfQcI7JIVAJeTToAHiATGlIGqv/3tv9COXdG5hi5ah5fnZ92L1rcv2xet4y0kSFo+Hwe6MZuR",
+	"PXJHV4IiqAU8UoNHavDAqIE3xD+uTwzSWJa5hMDw17ugBMaUo3A/5eoHUA8ibRIXUcJ9EiatM3DazUeg",
+	"yQyCI58IHGFOPGLwv3/zq/ghJr5WLhIlwlJmVpAbLvVSH8nEI5l4UGTCwCVZk04k+L+QUAD/ntyrxKAJ",
+	"yAEKmYQftPozwjSACpY61o01kA5NRSzyIIDaIVVAyQmCSDi++RlvZTQAVS/O6s2nRYFUr+AM7ooUnEc6",
+	"APyRJDyShFIk4ZVBmDVJgsF0iyLEwlzfUtbDL7caOWOfxlRmjH6oKuK+B3l4NWjQ4lMhaTiIKUcjPLn5",
+	"VXhxgMVWA52DSKBGgIBHiLYKpPpXeIoChpLMsf+9hLWXsvsVWul2dssb1xzGw5n+O1lD9DeP5r95JFBd",
+	"XgmzXyxizCn7HA1+Xyn04dkOS+KxwtgZex6g8fZH9c+6hryXMMZSbD2xcoAXISahxFqmH2IoL4MRCdPI",
+	"+CWseWoln61AniIB9H+exYGXGixSvos9Te0/A9/a/pLruUUbXIJtSyGb2/o2hXIra9sr4Nsp5p6NbB4b",
+	"McucXg0wOuy0kT4Yn6C95hN0eHR0/vLsqnv58rLTOjtuHSe5GQESdBDrxroG1bZq6scMe4Pk2GxERhPE",
+	"yZh5upelIEL7LaqQIuJBj0wWh7KG2oen9ebOzlYDXdLs7ZBl61MawH7ziSYaZk9a2Teboj7QkABDBgYG",
+	"Z/0B4oQCImKOlNxPBjFnDXQGte+jmPgkPRMof6/bbZrxyxoHHmnQIw26ZZV+JRqUV+azonvFsvsRlTpp",
+	"KcACjbDwmP476faMYwVA1MM+K8pYmkUNJXafTg7t+Tfhd7cmWOR/j1ZKQFpAk4+0RF7iyROQuDcrLmeH",
+	"UUJg9tS1r4Shdyv9nlJh1mqhgQ1Xs9iQ/Wpya4o4ZiuBccECqiYBrRk+mI+mezzE2o5vfg69WIdK0zEz",
+	"kS0aYXQ0ri5m/ARFWdwhYNa1rplrlOKnW8B8+gH7ISY4a7gClifgf6c3P32gI4aeJAuLfYVsisEZvGM8",
+	"mRlNslUq/rjXfIYuWt++bF1edU/ap+0r3fs0Xbx+5gnqtK66Z+dX3cOjo9blZfurk9YsFs92bZjF4gVw",
+	"3/bJKGKShN7kT2RiEOD2eWRxf4ny0cfzodMaWgdS+5VH89TS7M3gGQckWxGjk3udYnDbH62/TISxk+Fd",
+	"AcqbUDWDRCxxQCXIxFz+ZPOdWjugMBRGDYjBqb1ZBPqaTCGPi/iXhrvzP60GcnccwytxEBDrqNYj3EtR",
+	"m0MbAnQFvrkwso09j0SyrkR+JnCwvFY2PeNc5SyRqZTaFJqsUSV17X2JhhC3RQc669/iFK/UN76h7TtN",
+	"1Lk475xfHp50W3/utC9axwcJd2FeHGE/YwKXJ+dX3Zdnh68O2yeHTvJ+CJu3xYbkGO4JUB8Ybdxp3m0o",
+	"MImkacAWSMJDDKYyBZqK4G2YWm7r5mebQ4AT2iemMQPAK2j5giA9L85hBBor1VvLqRELbn6WphpFYIlk",
+	"WvEfYe4pqO8FWJJe6nfQ/oSIhBBcreMgHRlRMPc0hd6ABm+LJVN6/KdHXLuFRCYNRDxhOagKdHZrJZwx",
+	"mAAo487FN2LFrMrrSCwtqfhaXTNTkCrXuLTQC5V1yUlHdGSrbDzt9IQmUnhB6ulKWuiaAJNNPpXVaZQ7",
+	"USrzYkSs4g3OXM4FkEJMclhJ40iJG72N7IM3m08QKgIKnSR0HxBxlDaGTwFCaGDAKwCDz7zY8Nm3rD9P",
+	"G/kj6wMMdo5fQAeIAPtMIBzo/kUcMYR9EvqYm9TenSdKKDSKB/Q6+iGmJDSG7IAQrsTMZH6mUyKUXOnU",
+	"To7Nc39k/coGb92exnHrLZ2/4JMAvVVPPHglJ10wikPrrEloClpNB1yk4DALNmnNsyKVx5GqCCC1Xpqi",
+	"AtJ0arH9Mf28WHMWSpUB6IT0W4T9tzH08jLqsDjIojlzdrPqyRZiyIuFZL5Sco62XEr2QS6QJEtyR9Uk",
+	"yX2rga6Yj1FAPBlzbK4hUeBzOUCQUmZK82BU1c2+9rdKa+8tqyLdxrAjm8SBG0csFHEA4v8dBlHdp8kg",
+	"23CCPhmgroA/C/SXVgb4WnvB0nP0uPuKcY59xnMQfYC8GAeK/nLEWZDZjiCG8IutBjrCo0iR81how23I",
+	"kIdHfYpDbQNORk2U9tYZeF9bF2CbPb44fHF1gKCEHZifID5KZjr+0fnZi5P20VX3Vevisn1+ZvSf5hOH",
+	"sjPVqmN5S+71KRzNpky4Ba1Eyrs654NeOvBnYpy4W8NtywerrabENSRpxGqIhtSjrIYut89R4qUX0N2q",
+	"imPJoBuQItdLYzLxqTFZFLGobd1xDC9vr5jBd6e14pV6mIbg1c5tTHOQHcWCyAfJ0G9/+59ov9FsNtEf",
+	"smIsCUMUcZ+CNAe4ryhH5/zyCm1jKbE3BIEAVWEECHoIE5nPTQ0u21+ftY4P0Ou42XxC0G4zfe7w+Lh1",
+	"dnyo/T0NdEG0FKIEQSVWGqLgjmn20wM5zJq4PUgfT7K+2/bspAfw6NdZ2XZ587+xT7lRVRLnqWHkiay4",
+	"NBkQdBAuIgMZJm2KFPyx0/p6u3P29fZ3pN9BVU7qagU+qaHWn9svwM74dedSSbYK18Y4oD6kEagf/ojH",
+	"WBe7rSElkscBhHCikGZEgoz6BMhETROTJoq0l15s6W92muj0q4TyKO2vFWaCgxJu1eETyH+ICY+YJik7",
+	"zZqmDVdXh0ffnLbOjDt460CpKa77MRbViBN1RlYn3Szuy9xvVRhvhkUanRJHwLBFX9K7mmtmHcWBpBHm",
+	"cludWD0pFZ7RiCXq4udu8uPili7XNMi31O4rHjAp7MMYkK5kadu7XBx1rjl2WkZ8pi+AsynS3RbMsu7F",
+	"oX8cajg1vOzz8OssuZ6d/YedBdYHygvXtBFRK6Ox2x+zPxYU8dIOT4tSGSlkb8tVikuNUUQoFtXEagV0",
+	"REP8eQDnunK6Pot14aHmtv88ae4ijF5enECEk+Ea1Z19BPUIFftTMu6RJkr1YyoiJoBUowxsFP+ywq4Y",
+	"GpOMF/YcVLUH0WqGV4nU8NRAx0R4mA9wUvzQtu/MteXk4GtJbye4zE9o+G6zsXzH7H2omKeeyRFxO3UH",
+	"6tx7enHP0fS0vS11o0+au662+T7lxDOuD8Xs8yPnrU4nTI+a38e0bfF3YXHSoLM6ntyCsWlx0OihRWzn",
+	"GacuNR5lKqvDrFqDxgOpuUqXDDpAzFNoxRH5QAdkxtJaQ6nUOYNRl06MepX1it6QFuiY6r7C4ksJTg+9",
+	"sO4DL1EK1lKOkh7kPva1XpLEUi2NuV5AQ+rhoFtC9PEpHoTMgM6aymUs10DcTIpq7W010LnkDCzOSTTv",
+	"xflJK62P033VumpdtM8OL9qHZ7OI24kzxD1ON/jQzMHpyh4NwQ8JH1/Qt5gjwIubX4SkHhOoeri1YSxU",
+	"3NrflIFHLyWpqk2CHELaxt/C+tsNdBaHXmJIcaTDHOsd5L2Jm4iCXy1J7BFhNi1qSp1VmpDxpdElQYH5",
+	"iHLNgoC9r8fR/JYbOWX7BbzzMlqTAfyTA9XaqceScgyRO4oQKM7OicdGJPSV2Lgmca3dheiSE1MaqOfH",
+	"BNqA99Bv//EfqDpkkxoasskfnjzdf5PYgr7Ymi+d3BJs3j6hTRf2SGMfSL08jSs8QZ+NyiORf10YIjXP",
+	"RLYFEW7gJaID3TTx5tdA0hFOHCs09IKY+ngLMbTb3AURQwfFIUERvvk1zJomourx+dFLcOx0WmfH7bOv",
+	"a+jw4tt6c6e5wP7V8a8/F8NXcqBlDGC72gB2FwGNOpgzFwz4aIHLB2Afv5iK91rZTXwbcV/z8T3Qvr27",
+	"5qJG2T8lflLLGxEheQxRj4qs9LGAqLkOzwZVA7zYW8BYO2pHD42pwqIeGerD0fJJgBToo2pns/o9xHls",
+	"SLlP8i6LdPpqa980MyYh9Rka3fwc0hFD1dbTLTRBIUPXMQQZV1tfbOnCtRSFrIb2dnet+Kz22dH5aeek",
+	"ddUCnt0jnDMuvn/TQ1UsZVrNUoLVQKFKDQmJuYSm1HoBAxLgRAGAtdSQhwMvDjDqmZe6QyyGPVRN2Dya",
+	"mJSBNNKrF/nXDV1EA/1rUkaz57Le00F4W7Ggj7h5t7gJMYLrREqXCKyy2q9vLLKqPYhxgH6IiQmLjIgU",
+	"2x8jYvJRub9NQskplL7gDJEwwD+ChGR6fyEcKPiPdeaoSf1sbjXQTOzBBCpmWEkCC7L8rXFdVTE8Ztny",
+	"rJy/h1sdQ634CCyQkk/uqTFfOr8zBchcadbK7ZE0LB+GKfFbhurpIeoqsGljKVGYYAG2xfWihMZU4mBT",
+	"frILQkZRgH9kSA0SEMka6AQDI4fceK04Twjqvcc8pOEAWK/CeeiUDwl2RKdPoioeU8FqirXrEjzsAGlz",
+	"1O4CqfmV3uJDk5vNsh4l5wfUEF5booTUkf+AG0SsEZw3JDiQwx8LzU7t0Dc1EUBq5wyaJySFEyHXSG2C",
+	"x6SvKAHUmNPlqarqwYChIfYI2la69ORHxTvVMDHhkiGq1hIyt1HpG7OwlUxC5ANW2AxvsHfqv2McxOCz",
+	"MIXgnqvvAbLL4YJeTloLbpbNZIdDhLz5CY3pmOVNLH+uHzHOSQBLrbePF6XZzTz/qVb5c93w2FLvW8+a",
+	"Ja8CgsSLOZWTyvPv39gAeULHJCRCJI30MKrGApv+GCRA3x2+sLU7MRGSjGaBMorVyxoYaagA2vQGkOwd",
+	"CYtTRo/SiCOrjmBi11QSnUcaqB2Ob34KqI8RQx72Yy+rY7M3VRjcCYTtdEGbTNPMZulwMqbkvbuqARlT",
+	"EWdlR34H2cz2mrXIoG94OovZuvdZAGF88Dx7YEWj3JUCJmOOc0CZKde0vJCRjDunEKAuTe8D9aShRyOs",
+	"/uoT5DH1p085qu41n6D22av21eFV+/ys2zo9bJ90T9uXp4dXR9+ANq6U+rT9ns8a6JiMYxKMCTqFIFYl",
+	"f4UxGWPoXcmJuPkZFxVmuhuoPnUWijxNV3en3bL37qPg0u0AvAFNIJABGeBg24s5N9fjJI2dtLPpCUaX",
+	"nUPFhWOBDfNlYZ9h7tNwAFYe3SHNB6BEnNShzXUo6YiSUDInVTxRqzgyi1ibP1u7SZl0xOkYe5NuzIPK",
+	"82Tb5kslJpufIX8Ztrzb3H1a32nWfY6v1Zok4SORfx2+Sn8qenUJkSB3DK6SI3oKENPAKyc+a3lgdrsK",
+	"ouTNP/iIhkygCdLXRn3sW6gAlzNfLBiRQlBPqWBWt1tRWuxJxhuowxnUB1ffRJyNqVog1pCN/ti+QlUo",
+	"Dd58ttVAGmkNtRY0fB2O05YnExtp0mqpSZEUmFyhWQRpbj7RRB0j/+aXEJDKp5wOKG+8Dl3odEpuQcjV",
+	"6yN+0V0mD2+fkvP02fKw7ibmR1Mn/tDge9N8Zd0QZH18uiy8hRIjMqcIUGGsftrxG9reebo+RMSJLhDR",
+	"QB0FrQr/dMQYPGD1sepFQxaSXg31TMUw9RH7PidC9Gqvwx4ZET4goTfpmm5Yva2szxXqhXEQ9CBFHNRU",
+	"q1q7YjK9KMDymvFRAzIAugEb9HQm6xgHjBOx5UIOXbnhdPm29jZqwL7y3EV/U/nD/hfoSbOJdnafoL39",
+	"p18sQ/yTpd1ThsBcfLQ74f+TYeT9VK+ICL+mwWIMjgFoEqa2bUQtAEmn9nAxLY7pRghKrkzvWKMYcNEG",
+	"6u3t7qKj87PL1llauqV7/vLq+PCqddzTHkYkQFvI2HSRmnBklrcO8s0T7hZJb7cgopktLIWkjkTQo/wl",
+	"pK4E9ohed6JIjVcTLcthYSbaFSOiEQ4Ba5ZYC3SoSfghE8jHkgnUv/lJ6PQGU1Op9jqET7vNrTIonF8F",
+	"hqX5WDhR+3WYegIleY44iYikPLCSx6yFTUyUgK3/ObjykfaUJHKkOrh1SAR7HxKeIxBa4+0uphPmwfnk",
+	"opaWQH1eOTqv1Co+FVGAJ11T8+4wxAjqzylmGTAPB+pbnbiUCQpPms2d3SfLSgnZET1EOcFjoa3YGA/Y",
+	"I1nbuNxvDppbp7+AbGUPPjfXZAhYrqFuMQFrBeg6hph/bqqxQMsuSDg6mA1UCLFH3L1yFczEIeqAen7E",
+	"fJKER+xsNZDEH7rUR34M4OqbniC7u+jjNSWBb36vIU+9d3hy0To8/kv3ovV1+/KqddE6/uQopA2Vk6a6",
+	"4t5xKEROntHRZ3lypZUk+BnsIpVT4pMguPk5nCU+AQ3JDqSfBgFBO03039Bus/6kCSR0YLhNKCn7IaZg",
+	"GzXKFixkhGkAJZ11N+L/blYjYt7wWDG9miF5R0mp88tY6ewgPM78llUqg+fQZeOwcdkAOFW3qA8utzdz",
+	"IpVnydz1L9XkJohYL3Yp6W3m8u8pwGS5RsXGrr1iWc1aLhR7Nkbdh+pI0LFVzwQ22jl1m2+Bfq9Gg38n",
+	"7vSiXsZ5yuq00mvhDsqrTpPi7YCxdzpfbr7hUhe7ikckTENEoXoJCHpTZJmIfPMoXUXaLhbKlKjpMZF5",
+	"OQ15dpUuOYElzieu7pLyPplbJNgqh/UU2vxaf9m155v1Z4f1f8P1H998fOqsQP9ms93HLw04OFD6wtxJ",
+	"vjfE78Dnapr6pjASMY68m198OmCJp57lA7RIPaDhuwIQN2DsAHDTvL8Qwl9RoTuDgqyjjeVp+eaJnfF8",
+	"kGJAssC0EgMnosAJNdMp/w6a1J/zORCTZwIs2dNnXF75BTUt0wO8HhVdxaN/rqBvXu0a6C3qWh0UT4ba",
+	"H5ngg1givJoahnnCm3WX9hO6jd3ysSG3u1sNpIQVSjhB7es6BOoVlU5eT7y9k+rJKwthzXsSwgpt4JvG",
+	"wMdqzjq/Z9okXoIQ2IY5J6/Z1v0si1vOnqbtAUwYvmigtongVVidxPeD58kn1zSkfEuzSPW1nctjenGq",
+	"B/Ws7l6053xwaBa1yYJQMEVRb5NkAQ/f42lWuoBnJLc820wJfliTYSyEru2PEWfXRECwQGBEnJXmWlyI",
+	"rZObaUE6p11PpoGUdmz3eIX0MElHpPujduRG0IzymniSac4VoAjf/CzctaBoOIolZK75RETxzT/EFsqb",
+	"iSHUAZoM3PzSQKm7OSnx1kvYXC+JR0vbC3gsZB51oVAnzjBolvU54mns4cxG9AEcINYP6ABLxikk8OBs",
+	"geAw08dEPiiNLZRErQWUG030M+0m2Ya7ozMN5dO9Cig1dBSPKs93Uq2FhpIMQBncVB5rLPVJ3XYhHj3q",
+	"Y1j+SlV4gInYqMItrNQdZDQ9ASRfgsyNcKi7bS9NsLbJB49EK6bYrUW7nMbnI0o4x9DR6OZnjBi6pm/h",
+	"zyHjwGt1Bg0OlCKo83F0Np7ahRbnIk7GFOtsG4yuiTfEzp4DGpJbyfYrG2sYMDXRPxVG3k8LAAsaTHus",
+	"m5/xXaPT9kclon6aVwbrgozYmLgA8REIVgaCb2NqWtjeFhjU7oos1pyd1kDTmWdDteykr1/7H/c+1dU/",
+	"u8k//1LUe60AtO0mpYUpNUqCvOZs1NvuSdbLbB2WlKl77AqEhQepXpKIGhpiITHabzZ1d1xwTvCtA/iD",
+	"BAETNTVEH4c+eYtRdXTzk0CceFSHT0Scjghnuu6hebeBHKpcoQJmb65cw0udx1Vbvs1umgFW0A/TJh1d",
+	"6JBXvnde0ZBE3tJI6m7d4yhwrCvlofxgUNt6+aEWYM8R3H8ZPDuhIyo3WzPK7mCuecdsKAWVd6N533WM",
+	"gtrXIj29dOfjNYluoWR5Ol11wVNKMfjIqMQICmBJPIJofY+FSXEv8C6op0ZYeMxEwqTdJI3lx1hyv9hq",
+	"oBerNsJPPdj5VuAPspaDXmuuo/jttsOyhn5siLUyXnKCuYHutO5C4p1cBzXLyQ631t2/tDh1aM+XIwWu",
+	"lvszqPbYdf+z6LqfgPj6jfdXgfEh8d7VaXgvUO6uOgaGFAhWTSIU1DFNDE3YRUPTGtIngemmiaqHT/N1",
+	"xprP0NE3raM/tc+637XPjs+/c/AvtfN2OI1Sj/B9W8FHQUAG+dKUd0e5kzjS+4fqM6U7BFpMC6yYEavi",
+	"SE8RXz8OaDhoJCuvs7Au6CDsWV3t7bqfuq6XDwVtTwtioJJg9kcQ31SMc0KcRjiMzSXfD7iD+P8AoP1Q",
+	"wSy2nQJogrRdBRJGBOHjnGdPKyJPyysiB+g6Jly7/EaYD6zYwiQi+/zl1WX7uNU9aR0ed6/apy7lRZ/Y",
+	"ncpTlwGTt25L/9xQ887TFUJDXAULqEdl7N8HAoesLobs/QNQNU4xf2c9e8Yu1boeQXN9UDvF3MMc4VhA",
+	"EbH7ALOIs4iJhyAVddRKQqJjujV/gFSdhEOA6TwpaqF4yJiEHkE6TXHvSzS0OMds4IXeprWWw0ASHmJJ",
+	"x+SRzv8z0nkDbxzhFBLuBQM5gWbV90/nL2Ahj/akz0Df9ob4R1uAQQzKrkCN1/uBcaPPPgRGcxqTcWZE",
+	"wjbDQVUsb34ZgWtFB/UZ7rPVQGk8ni6iKDN95Oj87MVJ+yjNXz9IRlveg3KRHtRaLpQNB8k/crYHnuwX",
+	"cTbgeJS4TjJf4KaQf4xpgE2/4qJ4ixcmliKgfU4EqkYBDiUNAox++4//TAJdoMiD+tsgXlbcoQZleInE",
+	"oQ824SlNf4JGNz99oCPmDKZAE93llgiT0p05Q8c09OIA+7iB2qF269Mxfg4WCfUKVLYgwhZFcZAeKVeE",
+	"IZRYDQjzQ9Te010wWYuiVK5D+7xKhXCYWIbiAJq1Yxs2NLR6bN7gJenMlRpnI2EoG42osO65KJ0hjxaP",
+	"wW+VY6p+z7pUQ+2FKdpVGPVmHfjGEiesouMLM3PyLussPaeH+4qQhcTv6fiMpMcGEToJx5N0DPt/HTeb",
+	"Twj6QlOUpIrOftKeIzH/w1SGpglnhAdLOoMJyJWYSbeuerGQzKd4qzD0rJXtfNXAMxLGI3WFSbUaQQch",
+	"8XWdGk/XaaxV0sNRN3zncWMbCGp7DEVbjnBmHdYKAtE6Nz8NKHTjyDDgc4xLs7F7TmxauT4IAbCgjUel",
+	"VfOdwLM0QxwqIc7EiFMht3RM80yJByf5Ah9RIrRVWzuKAFLrsaSFf6d11T07v+oeHh21Li/b4B/ScQIg",
+	"C0PErolwSBWzw07nvH12BU1A1bsQKNA67rbPEnq74yCK5xFZp/fX3cS55RZ5TwVlskNyhZQm/mvcp4SD",
+	"H9vu730LVWVuu8HnP3dvpD6nfPWWaSwi4TxN0i4VXyRcnUCpjQCLtNw8aI2uFmTVtHy1qGW1AxUVGjMP",
+	"RKFJ2ilDJCIV0C1T8pK7B3ZLSG1r8evKR6bcQlr2D+Qitex38Il8iAB339ytQpPtsEidaVtX8hk2O2gv",
+	"gLhluh6MyKhPuG5+sIFo8QtS10vgCAdoRMWImXrvGvrV2q1+DVald6xQlTKOqud7Ww10BAiCdO3ML4os",
+	"GzrIOdds4wEHfmfrvCeeaB3UHCyyCqw9sqrVcNXuV7kGdpZiWdsfsz9MJYUsb3IaOwEHp5qmZEh4gERs",
+	"GjshyCPzCRKEI93hiS3BqlA7TMsAIIZCZmG6KZvmckQoTjOvdc6eq3tatpGEwz7648xV8+K7vnumsVjJ",
+	"b1uAPNcaVgz+29CNwd+gy29qkUWc8GsSEp2RbxAqjMmYoSoJMlaX4NgYBwQSMrU3AT1BnEDTByaUZrK7",
+	"h4aourf7zG5gddG6bJ0dd0/ap+2rLadTj4T+WrhEwjF9qMi0e8fIBGexVrup0qRdP1isiQANHuVtvWyq",
+	"MJ5V+a/QrppOfWom3GiNbDVFkfieGK4/Q9E9tclrg5K4y7J9C0Fs+2MsoAHwPJmhQwn3oYaq0gkFM/3M",
+	"BB3Emp0beRlVPewNb/4BLoG0Ax2oyxicKrimW/Xu7DnJ1YiNiQaTUqQqMQByIim0iXhk+RdwFAWiZwlo",
+	"MxSKw1VskMu/FFnDaHddyTOGBIFeX0oOHXDsa33y5tdA0qSmOqruNZ+hk8PLq+7h8Wn7rHt0eHZ2ftX9",
+	"qtW9aJ2ev2odbx1AfVNmmkFakmxa/FTSiCnWuosuzk9a2oZ7cnL+Xeu4++L8onv1l07LldEyxOHAQOsF",
+	"CzYVzJk0QIJp7qu5AWBkMdG2qkCyR3VxhTRMXSY1hdO1sVeB4xzpIsKSzq1QYnuRp10k5Z0sDfTVza9C",
+	"t0EQdBQFBPy/IVOMwfIaI6ZjZA5MVZIGOucDJGIBekoaxvYEnV98fXjW/jct+16+vOy0zo5bx/PCr5W0",
+	"0Ul2W8oy+kOloML2l83SflKHdTUFkQoOgkottbbCoSra4ROPYKGd0EGwhPtZn1nRqneb5ZcdgHvVuerd",
+	"Zk2NakrxqTEXF+bbEDUy11nCPxthU/rmM5QpO8ne0jCymZiPJaqPJwRhTUftYoqz/TEicl4187SY87QX",
+	"FkrSyRk3y8kWmliipk2wDhA1MS+DGHOf4jDpqIiqEZHPp78FSXsLWu2PqaD9YI6V6muSkJVNakwd4g7c",
+	"gnrgnu4SAx1KIAMRaOhnCOpp+fM4TFEaVaF5Q0A8GfNctYJ5oK5ufS11qkRVMiJTVIiIrEuOQ3ENetZt",
+	"NNqHPuhKndIibC3xITIEraeTVkDluu53iLwyy9skFCdzfPZN95O7ns6pi4gsAMbkjVvotu8Etnvut2+A",
+	"1ycKDLGEGqTQg//q4vDs8kXrYroDP3RST6TCCAuIeNY2U6BuSXLEiIoRRgrXjqHFhUjZRWGXzTsC9gKS",
+	"fWr2lNyQkmqrYwgnUCdobXHrcyqjf4sN/tdALruzPzw+16oaYJF12taSgsJOJJjSWnQTabHVQB2s5Ezj",
+	"UFGgCXL4AbqmgeQMvlICi6+kCYmDAt2ErFFK8XZ0imkupHaBWIQ9ZgpTSpaE7UZGtk58F2lt78Uqyeel",
+	"gpAy6kcSE/177/K4JhKfGCqXxYhnwmoZNE5Zo7vmtanOnzCNGczVncMUvnI2IaZTulDcgrMQP0c4wpx4",
+	"BNFwRHyKkyqGBPhMAGvPIt8LYk8U0b/XdolBHOZ7JfYpl8MuFL/Vr3P2gY7gz2scCFLThXGhh+tOvblf",
+	"32mqM+5zQtS2viJ4ABZNg5YnavxaJSSxJGByrEygcasgHyrPK9dkhOFpKC+uVlTx2WD5DoQdIu8pJmYB",
+	"1/78Og0++E6xv5euhobulKRkdhtD9dxCc8grY4hIXRUgBVe/3qpZhhAICXSWVj3ZmvIDO4wboClyMoZC",
+	"gCZex6O4SGO8P+F5dfz7PeLLvXWYWw6iV1FbExtJoesvqb5ooD0HwnbDtxKtcA6QT4XHSYQVUBdmzic8",
+	"3uVD0B64lXj8nfSMW5Zt3pmyewu94e6vq+5jfzlumsutQBfsDnM2n9v2MPcLmV1Ld40TqIpDSIwX2oJP",
+	"fZNY2tNKMBoz6hO/t4UmKOI3vyjJViCfCZpkqe40Gw2IMUG6O2oq7xstvqfW0SWh5JSIXhGrO1KL3SD6",
+	"wPiuxCTMQyJ/ByZQvVAdvOjF4Uw8HNz2DIBw4jHur8k7nJC17RMvwByv2JHJ4ktziwIbtqQh7clWA30L",
+	"Lu6enp34PbSNenGo+5WqP3Xfjh/iqZzDtACE4Vz0mv4Qk1loPNbjKnBpQR/4B5rgML3Oe1LmsnNy4Jah",
+	"MchAymN6w0q92ODstF1WY75xz3maICT2wYWkQH373KBNAbfYNlT69tF5tqmFS4V6tbPVQC+Iko9/+9v/",
+	"REM2QRP029/+CylyN6IklOqh3S3dksePAWp96/0nmdB5eHHcbZ1dXfyle/yyc9I+OrxqbdVg2P1mM2ma",
+	"KlD11dOtWsrZDGNTezC5Ua++MCnIvZB8kF0/Jj0IlTN1DHXOsa7pLJmniJZPAuRhefNTwAYMVfsYRjQ/",
+	"OyMxFYl+8ARnapkPmd5wYzF4JDhrmVsMtWHQqJCECsXKERktdCygMdsf1YeJ+tqnIopXKdpuqM7iSIGW",
+	"nmpOXcRjvQYbDTeSl4i5f8YkWVwN8Q7ZM2z9MYtrkoKBYbdkRn4pBf4gXU7Kg79iLHU/vjP4d/ViPpqR",
+	"kw+QDiZVjFrzsJ4ORu2h6usKfhtrf6vxViZy9utKysEzJqoLvwMMm0gyxVUdrU7VoIAh5IM8jjdWshfm",
+	"MXPckzWnFGIaO1sYkzGeElEeGdvyAQ4Astq3nj/LjTA1QwXulqctQmokORZK/UUgpIICcX3zs6Aea6CX",
+	"FskLWUb1Uplai9Nn51fd49bRyeFF63gWiV/Btv8Z2ag2KjxmQwOyvTKHcaeMdMyof68IdzIdMv1DTHRJ",
+	"UZCpb35BvlosBFg/aeoaGzXb4VJDltFLUEQE0go/nJuJp6BhCmtKQd1XHNe0RkFjU6Y0yeJ4dd4+Np2w",
+	"uq0/d9punGXU3zTG5uZ4yEzXmMMfGezyDFadXA7hS6K5QtsCJE9kY9PCAgeWQ2PGjWCJjp3k8VLxfu9o",
+	"6K9cvzaFqj+pUebVm/RjT3Y9LHHABrdUcjIpDUI48btYlq/we8c1cqevxRmXntSuf6yOm493n5FYnXX+",
+	"S8iut+sAivzrQvfik+YuwujlxQmKOElaFFd39tGIhltgIu0cvzDOzjSOwBQBNxZUEE4Z2m3uJrHtb1lf",
+	"MUV882uIBEEDXfCjenjxbb2509xqoFaAvr1AOIpDqPnfM0I4LDdd/P9/+K9zvZAd/3ppG6wOez+h4bvN",
+	"Vkw9Zu/DgGFfzzSLQ1MHnpxzFRy6epHP0fT0vS0FGbvN3VtcphePSCj/yPpOTD9+gUho7i9NQXmiFzCd",
+	"ogb9rrXkA3aE/BbzsQ6brAd5t/kugBwpFqjr+/ZCy3da8Ltn72+S9bUZt29iTDJFPLBA1fb+1kFS+x/t",
+	"NrMUlKTOB6q2v9xqoNQZIgn67a//tyIXE2wi7RQJmXY56YvwCdptNhMvsyv2+GuOQ0UdCGDexpRaGP5h",
+	"BRi1rENTRykk7pv8dLZO+swdhBS/StatI33vNtnnsxLtX2kDErej/3EuwGKJrFD1u/r5+UAhlVvyNwNA",
+	"TnOa4rygcM6JFe6RFvoiuTUXlNIpqoy3YYTPT3JHtqxFuGJK+n1W2HJrpf1SUrgKuOu6visz4lqZxGkL",
+	"V1ysO01S22y81oHiuAOS9s/R4ptO83nZThxEDDoB4aAw1sOKPk6Cj5PY4WcOHn2K+bsOkcdZIt7DiiBO",
+	"FvYwA4gVadQuvWscBMSjv8dA4s+K6ZrGsR4b5e9kcUhwiuafCinAdhz67PbJwHFq3w6wMHU0E4yFDg1R",
+	"fPMPkXqUXp4dny80T78MfZbH6/vCEU60QvKIGrce5SiG2CM8gXNN/9eF9RItnEzOl0iTvkw+a9IlKQ2K",
+	"P0AXZ3UwMtliZi6KcUyQxKM+vflHCGUSsmZPhfno81otPXbyeQBB92lnnrSrVlGChra1iLsywoyox5k3",
+	"pNFaNDxeJMnpqADBAgXrPLHEHSBBBnFohQacto8uzo++aXe6R+cXF60jqBoHpZIb6GhII4TfkpA5Hj88",
+	"uWgdHv+le3h52f76rHWcy5AMTN/WtCGQZiWu4KFOrPDpND2Vhyb8pSt7mNKfsbCnUJWrMvmYT/a7csMK",
+	"OggxR0xj7IDy3M2WYqrZ07NcNRoyyebZYaYIyElWwwQJTf51q/8QCck4HmSxEAmCf7nlSsxRs3WI7MD8",
+	"94cqikBd6yV81iLgmmD4bUxNtJ05rMVQpyFrnRTnEvzsj53W19uds6+3vyP9zvY3rfaRTgpBp19B9WIF",
+	"nNRnHHFSVwKkTzCq7jR391D0Af0BjWhIsYw5Rrv7T1H0YQtNkKB8rMutTjs8tWtyt4YuW0f1ZnOvkHFl",
+	"QF3EekZxIGmEudy+ZnxU97HEeZDGvk8lGFQ6XE0hIZHHVCCJrK8+Vq6p7tGeRgT0aYghrGC2/kXGor7X",
+	"72WVjVj/LfEeIiczQPf7TopekintLMn0dvbvkhpcxn2qWBInZBQF+MfVKMMMLxJDzMmcGmM0RFCcL2vJ",
+	"SwJdyNOHbiCmxL5AVY2gu1uFqtqlnmqDgA0zFLVsaEFRyt+DzmRWitQrmEvqO5sxmJubuW34Pm1GX9uk",
+	"ldr0PIP+yzu//fXvz9KIzE77LLNO+wTt/fbXvz9VPw6oZEJnEe40M9ezUmkuvzm8aCXdYVAr0ICHoHSq",
+	"IKa825gg/EN88/Oc4lYABQ+7rRos8b4SAGEFvj6lQjxJPL6PRmR1XjzpiJSh5NKYWEB6tz/CvzOeWZc3",
+	"1QLuxe1GLhI35MMneIl7cP1DXt0zCLGhEZZDq4ilvphyIaEFUaezdqd02wUs9zAgXCoaqluH4NTcV5st",
+	"H3K629jdqqGIiERUQxPgzpyBSTbt6mp5/UyREZ9wsMOj6p/rnU79BSdiGBIhtooi+y7NujcrmB5BhhwO",
+	"ktkcBOqCiHhEwulClfYmFkuYuad/D9qg2bWxnl7rouqzoSN3bESVdEQCGpJCaL5SckLNCkjLGfx1ybfU",
+	"VVA9qml2HzBdupaBcmhXhJsCXpzVyoEK87hPPMIxyl+wpUYedtq6DEpRifFkQ8uEvc+2JSZWv3Ps+yT0",
+	"41GlVhljzzODJxnh6g8cRYyGcqQL9CeV/oW2NXmYk25Aw3dLdNmwY35uKU7+mrNRpTAYvq4AofxgoLQs",
+	"P9TvyaGTAFIJf06AkUIPAn9IquTQ3xtxu2OZ7BsqJOMUB1Y5FM5CFtz8MqAeu0d6mBRtn2PdPcKhRwII",
+	"xc6VCbf6zeZcZAdZSwWkG1yyOa1u0+Q3LQ/o0itF8xR2DNFrvN8q9Fe5RXv61Fa3Q32GTn8DSbzofpcq",
+	"PL9xW0ErHN/8rNvLQjMGPNVrQTHwrPesLtEE0kAsGOSB6u4hiIRJd/UDJCgKmaKZIUFeTEIlJQuCAmJ6",
+	"nqKslg3XrhNEBDELSKrvOYSBdkgl1eYECwMepEUhWd9S5oTdu0VeGyIfo37us9U79egMvVBSRyxJgJek",
+	"FzPc7z2hg6GsD4E7F2u4p8Snpg60Hc2SRYhMkCShD4s7QBj0YYXpAUZjzGmSxa3UAog42mmi/4+iCs/y",
+	"TtDd/dWV3e9gJ9+YjWyQ9+UnciBSJur4BBT9fzK9d2b/QMRT+LhTUQ8MQgtbYymBK22KBbCqhTAfS5ZA",
+	"PPRBO7CiRUiopD3MsRLkjlgIFnQdA04SS7hPUK9zfnmF8gvZjsOAee96qLrX3FHvdS9a375sX7SOt4yB",
+	"XnfcSvIStNS30zQG9yRqFPX+XL9gfSZF/QoPUMho6JMP7kRPsEL6uqDdLF+c4gRm7VZzlvm7AJ5PUh8I",
+	"HMVW2rxFg3KmSgJIw3rqL2GEpXpLvtm0Nyo5JFfhXJiEQtu01OB5J47O5gPsXE+8mFM5qTz//o2jaG92",
+	"Qqga3fzaD6jHtkpYh6NYPbo81sPd2Q3LXLC6fOBgbtgisXkfYniZQP2A/RATbLXUQztoiKp7u6mz7Pzo",
+	"T4DmN3/7QKXGbE0rPMah0SISRKeG+yQZo5payXozyNNzVZSHX6ZQfiMF4rOJ7inGT69gjnPsmAhzKz47",
+	"yCizAM1caTckdJ0qqkJmvhK2TAb/w0T03d8PYWiHEuqB6OA8xS21xpgA+SpUQiG6q+DBEqwehRR12m3F",
+	"w0dJRPwQi2GS0JGWzU0Ss6GwwLCHqiTQxY4CMoa3IF0dqg9szSsSVs5QPZzrxIqwlISr1/79+2b9Ga5f",
+	"H9ZfvPn4dO/Tv9xxlRO1o6TyFZxxgf8nkKlnc+/+YPCVXUsAGYjDVt0BC/Z8U9HhFpmULZoasM0SNrY/",
+	"pp9XhGBF60dRLG0YhlrNogG+C6WnBYnwkgZAayWOaT8k6qn3eklw0N5WA11gSRA0zjO5xN8dvjgokj1R",
+	"OzQ9fiRBTAeOqvF5seVSY0bL8r+UQQ8shpWHiRHpTkqjRVYUxip08WBt+suils6ZNzYDlBUx2SCetTJE",
+	"UtiWX/XHSp9gTvhhrJSM798oYBCEj93KUAd4VlJ7JOaBAj4pI/F8extHtBERGWEhIsZlA0eR+m57vFOZ",
+	"7Xx5TATmnAUBQ1VYtSDoD+iKY3JN3225x44aAfNwMGRCpgO/SU9uhjLgIPbRJMlp9ZPIXo8yK0RiIiTc",
+	"/mxnThJKbBqQoqrPPLEdDbEg9Z3t5n5drWfko//zv540dray4UbEMdTpTCfGuePtWuOBFWt2xKubf/AR",
+	"DZmAlix0jHUIm6meJKwGn2SAA8cAr9LiKcZH89tf/56mtE2yVv5zF/rEWqiVAj8723m+d9oEjXQvgPnD",
+	"7225/cGuGdpgLM9scqUm2Lcm0Nb2ouEPTY21pACjT1AUYInB72tc/paXf+6sT7emare5gC81KWZxB/aY",
+	"u9vNvWzMnd/++ncbaKykR8fQriYyAEZJhXeBqi92EUTm5O7Xd45muhzAqXNim2T1+BpETWeEgqGhHJ5r",
+	"sa5AUqUSWs3oXSMaMXl2vNQWV0PchKNMtE0u57Ccc9Y2zCf2OsexUAiAEiygHpWxT8wp6Ipt6Sk8qaHD",
+	"44t6c8cmIVYshRMUByRU4nfEuBrxmggdozqBIu4spH0aADGYO4cexEWWDfdhwhTn8oHIjN3cbA5M2geV",
+	"sbRPbz79vwEAAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

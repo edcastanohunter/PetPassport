@@ -30,6 +30,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 )
@@ -41,6 +42,7 @@ type handlers struct {
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 	*clinicalhttp.ClinicalHandlers
+	*schedulinghttp.SchedulingHandlers
 }
 
 type nopWriter struct{}

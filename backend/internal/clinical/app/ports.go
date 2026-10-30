@@ -63,8 +63,9 @@ type Membership interface {
 // persistidas: el adaptador devuelve ErrAppointmentNotFound salvo que el
 // agregado se abra sin cita.
 type AppointmentAccess interface {
-	// CheckedIn informa si la cita pertenece a la mascota y está checked_in.
-	CheckedIn(ctx context.Context, appointmentID, petID uuid.UUID) (bool, error)
+	// CheckedIn informa si la cita pertenece a la mascota y a la organización
+	// y está checked_in (ErrAppointmentNotFound si no existe o no coincide).
+	CheckedIn(ctx context.Context, appointmentID, petID, orgID uuid.UUID) (bool, error)
 }
 
 // Repository persiste y rehidrata el agregado Encounter (ARQ-004).

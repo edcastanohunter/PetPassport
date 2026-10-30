@@ -270,7 +270,7 @@ func (s *Service) handleOpen(ctx context.Context, cmd bus.Command) (bus.Result, 
 		if s.appointments == nil {
 			return bus.Result{}, &kernel.NotFoundError{Resource: "appointment"}
 		}
-		ok, err := s.appointments.CheckedIn(ctx, *c.AppointmentID, c.PetID)
+		ok, err := s.appointments.CheckedIn(ctx, *c.AppointmentID, c.PetID, c.OrganizationID)
 		if err != nil {
 			var nf ErrAppointmentNotFound
 			if errors.As(err, &nf) {

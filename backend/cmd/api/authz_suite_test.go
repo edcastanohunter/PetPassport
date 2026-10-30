@@ -231,11 +231,12 @@ func newSuiteHandlers() apiHandlers {
 	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, Logger: logger})
 	orgSvc := orgapp.NewService(orgapp.Options{Queries: fakeOrgQueries{}, Tokens: failingTokens{}, Logger: logger})
 	return apiHandlers{
-		Handlers:         identityHandlers,
-		AdminHandlers:    identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-		PetHandlers:      pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
-		OrgHandlers:      orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
-		ClinicalHandlers: newSuiteClinicalHandlers(idem, logger),
+		Handlers:           identityHandlers,
+		AdminHandlers:      identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+		PetHandlers:        pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
+		OrgHandlers:        orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		ClinicalHandlers:   newSuiteClinicalHandlers(idem, logger),
+		SchedulingHandlers: newSuiteSchedulingHandlers(idem, logger),
 	}
 }
 
@@ -294,6 +295,10 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(uuid.New()).Convert(f.Type))
 		case f.Name == "EncounterId":
 			field.Set(reflect.ValueOf(encID).Convert(f.Type))
+		case f.Name == "AppointmentId":
+			field.Set(reflect.ValueOf(apptID).Convert(f.Type))
+		case f.Name == "ProfessionalId":
+			field.Set(reflect.ValueOf(targetID).Convert(f.Type))
 		case f.Name == "AttachmentId":
 			field.Set(reflect.ValueOf(attID).Convert(f.Type))
 		case f.Name == "JobId":

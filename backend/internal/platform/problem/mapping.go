@@ -101,6 +101,14 @@ var titles = map[Code]string{
 	Code("PIN_REQUIRED"):          "PIN requerido",
 	Code("PIN_INVALID"):           "PIN incorrecto",
 	Code("SHARE_LOCKED"):          "Enlace bloqueado",
+
+	Code("SLOT_UNAVAILABLE"):     "Franja no disponible",
+	Code("INVALID_TRANSITION"):   "Estado de la cita no válido",
+	Code("OUTSIDE_LEAD_TIME"):    "Fuera de la antelación permitida",
+	Code("REQUEST_LIMIT"):        "Límite de solicitudes",
+	Code("PROPOSAL_EXPIRED"):     "Propuesta caducada",
+	Code("CHECKIN_WINDOW"):       "Fuera de la ventana de check-in",
+	Code("INVALID_PROFESSIONAL"): "Profesional no válido",
 }
 
 func titleFor(c Code) string {
