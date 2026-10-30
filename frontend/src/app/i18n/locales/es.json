@@ -10,7 +10,8 @@
     "profile": "Mi perfil",
     "menu": "Menú",
     "language": "Idioma",
-    "skipToContent": "Saltar al contenido"
+    "skipToContent": "Saltar al contenido",
+    "inbox": "Bandeja"
   },
   "common": {
     "loading": "Cargando…",
@@ -1089,6 +1090,44 @@
       "cancelAsk": "¿Cancelar esta cita?",
       "cancelYes": "Sí, cancelar",
       "lateWarning": "Faltan menos de {hours} h: se registrará como cancelación tardía (sin penalización)."
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "intro": "Elige qué correos quieres recibir. Los avisos de seguridad siempre se envían.",
+    "emailLegend": "Correos",
+    "digestLegend": "Resúmenes",
+    "saved": "Preferencias guardadas.",
+    "category": {
+      "appointments": "Citas",
+      "preventive_care": "Cuidado preventivo",
+      "clinical": "Información clínica",
+      "account": "Cuenta y vínculos",
+      "security": "Seguridad"
+    },
+    "categoryHint": {
+      "appointments": "Confirmaciones, cambios y recordatorios de tus citas.",
+      "preventive_care": "Recordatorios de vacunas, antiparasitarios y controles.",
+      "clinical": "Consultas firmadas, adendas y anulaciones en el carnet.",
+      "account": "Invitaciones, transferencias de tutela y vínculos con clínicas.",
+      "security": "Avisos de acceso y cambios críticos. No se pueden desactivar."
+    },
+    "digest": {
+      "clinicDailyAgenda": "Agenda diaria de la clínica",
+      "clinicDailyAgendaHint": "Cada día a las 07:00 (hora de la clínica), solo si hay citas."
+    },
+    "inbox": {
+      "title": "Bandeja",
+      "empty": "No tienes nada pendiente de responder.",
+      "proposal": "{clinic} propone otra franja para {pet}.",
+      "allAppointments": "Ver todas mis citas"
+    },
+    "unsubscribe": {
+      "title": "Darse de baja",
+      "done": "Listo: no recibirás más correos de {category}.",
+      "undo": "Puedes volver a activarlos cuando quieras desde tus preferencias.",
+      "manage": "Gestionar mis notificaciones",
+      "invalid": "Este enlace no es válido o ya caducó. Entra en tu cuenta para gestionar tus notificaciones."
     }
   }
 }

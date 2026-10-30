@@ -30,6 +30,9 @@ import VerifyCardPage from '@/features/card/VerifyCardPage.vue'
 import OrgAgendaPage from '@/features/scheduling/OrgAgendaPage.vue'
 import AgendaSettingsPage from '@/features/scheduling/AgendaSettingsPage.vue'
 import GuardianAppointmentsPage from '@/features/scheduling/GuardianAppointmentsPage.vue'
+import InboxPage from '@/features/notifications/InboxPage.vue'
+import NotificationSettingsPage from '@/features/notifications/NotificationSettingsPage.vue'
+import UnsubscribePage from '@/features/notifications/UnsubscribePage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
@@ -144,6 +147,18 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/inbox',
+        name: 'inbox',
+        component: InboxPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/settings/notifications',
+        name: 'notification-settings',
+        component: NotificationSettingsPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/profile',
         name: 'profile',
         component: ProfilePage,
@@ -225,6 +240,12 @@ export function createAppRouter() {
       },
       { path: '/admin/users', name: 'admin-users', component: AdminUsersPage, meta: adminMeta },
       { path: '/admin/audit', name: 'admin-audit', component: AdminAuditPage, meta: adminMeta },
+      {
+        path: '/unsubscribe/:token',
+        name: 'unsubscribe',
+        component: UnsubscribePage,
+        meta: { layout: 'public' },
+      },
       {
         path: '/verify/encounters/:encounterId',
         name: 'verify-encounter',

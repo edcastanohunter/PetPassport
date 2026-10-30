@@ -10,7 +10,8 @@
     "profile": "My profile",
     "menu": "Menu",
     "language": "Language",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "inbox": "Inbox"
   },
   "common": {
     "loading": "Loading…",
@@ -1089,6 +1090,44 @@
       "cancelAsk": "Cancel this appointment?",
       "cancelYes": "Yes, cancel",
       "lateWarning": "Less than {hours} h left: it will be recorded as a late cancellation (no penalty)."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "intro": "Choose which emails you want to receive. Security notices are always sent.",
+    "emailLegend": "Emails",
+    "digestLegend": "Digests",
+    "saved": "Preferences saved.",
+    "category": {
+      "appointments": "Appointments",
+      "preventive_care": "Preventive care",
+      "clinical": "Clinical information",
+      "account": "Account and links",
+      "security": "Security"
+    },
+    "categoryHint": {
+      "appointments": "Confirmations, changes and reminders for your appointments.",
+      "preventive_care": "Reminders for vaccines, parasite control and check-ups.",
+      "clinical": "Signed visits, addenda and voided entries on the health card.",
+      "account": "Invitations, guardianship transfers and clinic links.",
+      "security": "Sign-in notices and critical changes. They cannot be turned off."
+    },
+    "digest": {
+      "clinicDailyAgenda": "Clinic daily agenda",
+      "clinicDailyAgendaHint": "Every day at 07:00 (clinic time), only when there are appointments."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "empty": "Nothing is waiting for your reply.",
+      "proposal": "{clinic} proposes another slot for {pet}.",
+      "allAppointments": "See all my appointments"
+    },
+    "unsubscribe": {
+      "title": "Unsubscribe",
+      "done": "Done: you will no longer receive {category} emails.",
+      "undo": "You can turn them back on any time in your preferences.",
+      "manage": "Manage my notifications",
+      "invalid": "This link is not valid or has expired. Sign in to manage your notifications."
     }
   }
 }

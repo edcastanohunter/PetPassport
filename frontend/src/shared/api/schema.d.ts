@@ -92,6 +92,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preferencias de notificación
+         * @description Categorías de email y resúmenes opcionales del actor (PP-F2-API-010, NOT-004). Sin fila guardada
+         *     devuelve los valores por defecto (todas las categorías activas, ningún resumen).
+         */
+        get: operations["getNotificationPreferences"];
+        /**
+         * Guardar preferencias de notificación
+         * @description Reemplaza las preferencias. `security` siempre queda activa: se ignora el valor enviado. Las
+         *     preferencias se consultan al enviar, no al programar.
+         */
+        put: operations["putNotificationPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: components["parameters"]["UnsubscribeToken"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Darse de baja de una categoría por enlace (público)
+         * @description Sin sesión (NOT-004). El token HMAC de los correos identifica usuario y categoría; también sirve
+         *     de destino de `List-Unsubscribe-Post` (un clic). Idempotente. Token inválido o caducado → 404.
+         */
+        post: operations["unsubscribeNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/email/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Proveedor de email transaccional (`generic` mientras no se elija proveedor, NOT-007). */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Webhook de rebotes y quejas del proveedor de email (público, firmado)
+         * @description Verifica `X-PP-Signature: sha256=<hex>` (HMAC-SHA256 del cuerpo con el secreto del proveedor) y
+         *     añade las direcciones a `notifications.suppressions`. Firma inválida → 401; proveedor sin
+         *     configurar → 404.
+         */
+        post: operations["emailProviderWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pets": {
         parameters: {
             query?: never;
@@ -2302,6 +2376,30 @@ export interface components {
             accept_terms_version: components["schemas"]["ConsentVersion"];
             accept_privacy_version: components["schemas"]["ConsentVersion"];
         };
+        NotificationPreferences: {
+            /** @description Una clave por categoría; `security` siempre es true. */
+            email: {
+                appointments: boolean;
+                preventive_care: boolean;
+                clinical: boolean;
+                account: boolean;
+                security: boolean;
+            };
+            digest: {
+                clinic_daily_agenda: boolean;
+            };
+        };
+        UnsubscribeResult: {
+            /** @description Categoría dada de baja (appointments|preventive_care|clinical|account). */
+            category: string;
+        };
+        EmailWebhookPayload: {
+            events: {
+                /** @description bounce | complaint */
+                type: string;
+                address: string;
+            }[];
+        };
         UpdateMeRequest: {
             display_name?: components["schemas"]["DisplayName"];
             locale?: components["schemas"]["Locale"];
@@ -3349,6 +3447,7 @@ export interface components {
         IfMatch: number;
         EntryId: string;
         ShareToken: string;
+        UnsubscribeToken: string;
         AppointmentId: string;
         ProfessionalId: string;
     };
@@ -3499,6 +3598,113 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preferencias vigentes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description Preferencias guardadas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unsubscribeNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: components["parameters"]["UnsubscribeToken"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categoría dada de baja */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnsubscribeResult"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    emailProviderWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-PP-Signature": string;
+            };
+            path: {
+                /** @description Proveedor de email transaccional (`generic` mientras no se elija proveedor, NOT-007). */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailWebhookPayload"];
+            };
+        };
+        responses: {
+            /** @description Eventos registrados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
