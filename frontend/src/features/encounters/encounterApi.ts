@@ -132,6 +132,16 @@ export async function encounterPdf(id: string): Promise<PdfState> {
   return { ready: true, link: res.data as DownloadLink }
 }
 
+/** PDF del carnet (M2.2): misma semántica 200/202 que el de consulta. */
+export async function cardPdf(petId: string): Promise<PdfState> {
+  const res = await api().GET('/pets/{petId}/card/pdf', {
+    params: { path: { petId }, header: { Accept: 'application/json' } },
+  })
+  if (res.error) throw res.error
+  if (res.response.status === 202) return { ready: false, job: res.data as DocumentJob }
+  return { ready: true, link: res.data as DownloadLink }
+}
+
 export async function documentJob(jobId: string): Promise<DocumentJob> {
   return must(await api().GET('/documents/{jobId}', { params: { path: { jobId } } }))
 }

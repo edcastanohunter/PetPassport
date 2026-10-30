@@ -1235,6 +1235,450 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pets/{petId}/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Carnet de vacunación
+         * @description Entradas (anuladas incluidas con `status voided`) y próximas dosis (PRD-010..014). Vista síncrona sobre `card_entries`.
+         */
+        get: operations["getPetCard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * PDF del carnet con QR de verificación
+         * @description 302 a URL prefirmada (15 min) del PDF de la versión vigente del carnet o 202 con el job si aún se genera (ARQ-010). El QR apunta a `/verify/cards/{petId}?h=`.
+         */
+        get: operations["getPetCardPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar vacuna o preventivo
+         * @description Miembro clínico con vínculo activo (V1). Fecha ≤ hoy y ≥ nacimiento (V2), sin duplicado activo (V3 → 409 CARD_ENTRY_DUPLICATE), ≤ 500 entradas (V6), próxima dosis posterior (V7). Sin `next_due` se propone desde el protocolo del catálogo (basis protocol).
+         */
+        post: operations["recordCardEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/declarations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Declarar una vacuna de un carnet anterior
+         * @description Solo el tutor (PRD-013). Queda `declared` / `unverified` hasta que una clínica vinculada la verifique.
+         */
+        post: operations["declareCardEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/entries/{entryId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verificar una entrada declarada
+         * @description Clínica vinculada tras ver el carnet físico. Una entrada no declarada → 409 ENTRY_NOT_DECLARED.
+         */
+        post: operations["verifyCardEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/entries/{entryId}/dispute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disputar una entrada declarada */
+        post: operations["disputeCardEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/entries/{entryId}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Anular una entrada
+         * @description La organización que la registró dentro de 30 días, super_admin, o el tutor si es una declaración sin verificar (V5). Fuera de ventana → 403 VOID_WINDOW_EXPIRED.
+         */
+        post: operations["voidCardEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/entries/{entryId}/next-due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Ajustar la próxima dosis
+         * @description Clínica vinculada; queda con basis `clinic` ("ajustado por la clínica"). Fecha posterior a la aplicación (V7).
+         */
+        put: operations["adjustCardNextDue"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/card/next-due/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /** Previsualizar la próxima dosis propuesta */
+        get: operations["getCardNextDueProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/vaccinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atajo - registrar una vacuna desde la consulta
+         * @description Igual que POST /pets/{petId}/card/entries pero enlaza la entrada al encuentro (PRD-010). Solo en borrador y por un miembro clínico de la organización del encuentro.
+         */
+        post: operations["recordEncounterVaccination"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalogs/vaccines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de vacunas activas */
+        get: operations["listVaccineCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalogs/protocols": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Protocolos de vacunación activos */
+        get: operations["listVaccinationProtocols"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/catalogs/vaccines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Crear vacuna del catálogo
+         * @description Solo super_admin, con motivo; auditado (API-005).
+         */
+        post: operations["createVaccine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/catalogs/vaccines/{vaccineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vaccineId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Actualizar vacuna del catálogo */
+        put: operations["updateVaccine"];
+        post?: never;
+        /**
+         * Desactivar vacuna del catálogo
+         * @description Baja lógica (`active = false`): las entradas ya registradas conservan su referencia.
+         */
+        delete: operations["deactivateVaccine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/catalogs/protocols": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Crear protocolo de vacunación */
+        post: operations["createVaccinationProtocol"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/catalogs/protocols/{protocolId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                protocolId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Actualizar protocolo de vacunación */
+        put: operations["updateVaccinationProtocol"];
+        post?: never;
+        /** Desactivar protocolo */
+        delete: operations["deactivateVaccinationProtocol"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Enlaces compartidos activos
+         * @description Sin token. Incluye el contador de accesos (SEC-002).
+         */
+        get: operations["listPetShares"];
+        put?: never;
+        /**
+         * Crear enlace compartido
+         * @description Solo el tutor. Caducidad 1–90 días, PIN opcional de 4–6 dígitos, ≤ 10 activos (409 SHARE_LIMIT). El token solo se devuelve aquí.
+         */
+        post: operations["createPetShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/shares/{shareId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                shareId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revocar enlace compartido */
+        delete: operations["revokePetShare"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/share/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: components["parameters"]["ShareToken"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Carnet compartido (público)
+         * @description Sin autenticación. Sin datos de contacto; microchip enmascarado. Con PIN exige el token de `POST /share/{token}/unlock` (401 PIN_REQUIRED). Caducado o revocado → 410 SHARE_EXPIRED. `X-Robots-Tag noindex`.
+         */
+        get: operations["getSharedRecord"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/share/{token}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: components["parameters"]["ShareToken"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Introducir el PIN de un enlace (público)
+         * @description 5 fallos bloquean el enlace 1 h (429 SHARE_LOCKED). Éxito → token corto de sesión de enlace (cabecera `X-PP-Share-Unlock`).
+         */
+        post: operations["unlockSharedRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/verify/cards/{petId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Verificación pública del carnet
+         * @description Sin autenticación ni PII. Compara el hash de las entradas activas con `h` (el que lleva el QR del PDF).
+         */
+        get: operations["verifyCard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -2026,6 +2470,227 @@ export interface components {
             content_hash?: string;
             organization_name?: string;
         };
+        /** @enum {string} */
+        CardEntryKind: "vaccine" | "deworming" | "ectoparasite";
+        CardProduct: {
+            /** Format: uuid */
+            catalog_id?: string | null;
+            name: string;
+        };
+        CardNextDue: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            basis: "protocol" | "clinic" | "guardian";
+        };
+        CardEntry: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["CardEntryKind"];
+            product: components["schemas"]["CardProduct"];
+            /** Format: date */
+            administered_at: string;
+            lot?: string | null;
+            manufacturer?: string | null;
+            /** Format: date */
+            expiry_date?: string | null;
+            route?: string | null;
+            site?: string | null;
+            dose_label?: string | null;
+            weight_kg?: number | null;
+            /** @enum {string} */
+            source: "recorded" | "declared" | "imported";
+            /** @enum {string} */
+            verification: "verified" | "unverified" | "disputed";
+            /** @enum {string} */
+            status: "active" | "voided";
+            void_reason?: string | null;
+            /** Format: uuid */
+            recorded_by_organization_id?: string | null;
+            /** Format: uuid */
+            encounter_id?: string | null;
+            next_due?: components["schemas"]["CardNextDue"] | null;
+            has_evidence: boolean;
+        };
+        NextDueItem: {
+            /** Format: uuid */
+            entry_id: string;
+            kind: components["schemas"]["CardEntryKind"];
+            product_name: string;
+            /** Format: date */
+            due_date: string;
+            basis: string;
+            /** @enum {string} */
+            status: "upcoming" | "overdue" | "satisfied" | "cancelled";
+        };
+        Card: {
+            /** Format: uuid */
+            pet_id: string;
+            species: string;
+            entries: components["schemas"]["CardEntry"][];
+            next_due: components["schemas"]["NextDueItem"][];
+        };
+        RecordCardEntryRequest: {
+            kind: components["schemas"]["CardEntryKind"];
+            product: components["schemas"]["CardProduct"];
+            /** Format: date */
+            administered_at: string;
+            lot?: string;
+            manufacturer?: string;
+            /** Format: date */
+            expiry_date?: string;
+            route?: string;
+            site?: string;
+            dose_label?: string;
+            weight_kg?: number;
+            /** Format: uuid */
+            encounter_id?: string;
+            /** Format: date */
+            next_due_date?: string;
+        };
+        DeclareCardEntryRequest: {
+            kind: components["schemas"]["CardEntryKind"];
+            product: components["schemas"]["CardProduct"];
+            /** Format: date */
+            administered_at: string;
+            lot?: string;
+            dose_label?: string;
+            evidence_object_key?: string;
+        };
+        CardNoteRequest: {
+            note?: string;
+        };
+        VoidCardEntryRequest: {
+            reason: string;
+        };
+        AdjustNextDueRequest: {
+            /** Format: date */
+            date: string;
+        };
+        NextDueProposal: {
+            /** Format: date */
+            date?: string | null;
+            basis?: string | null;
+            explanation: string;
+        };
+        Vaccine: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            species: string[];
+            diseases: string[];
+            /** @enum {string} */
+            type: "core" | "non_core";
+            routes: string[];
+            active: boolean;
+        };
+        VaccineList: {
+            data: components["schemas"]["Vaccine"][];
+        };
+        VaccineWriteRequest: {
+            name: string;
+            species: string[];
+            diseases: string[];
+            /** @enum {string} */
+            type: "core" | "non_core";
+            routes: string[];
+            reason: string;
+        };
+        CatalogReasonRequest: {
+            reason: string;
+        };
+        SeriesDose: {
+            min_age_weeks?: number;
+            min_interval_days?: number;
+        };
+        Protocol: {
+            /** Format: uuid */
+            id: string;
+            country: string;
+            species: string;
+            /** Format: uuid */
+            vaccine_id: string;
+            initial_series: components["schemas"]["SeriesDose"][];
+            booster_interval_months?: number | null;
+            legal_validity_months?: number | null;
+            notes?: string;
+            active: boolean;
+        };
+        ProtocolList: {
+            data: components["schemas"]["Protocol"][];
+        };
+        ProtocolWriteRequest: {
+            country: string;
+            species: string;
+            /** Format: uuid */
+            vaccine_id: string;
+            initial_series: components["schemas"]["SeriesDose"][];
+            booster_interval_months?: number;
+            legal_validity_months?: number;
+            notes?: string;
+            reason: string;
+        };
+        CreateShareRequest: {
+            /** @enum {string} */
+            scope: "vaccination_card" | "full_record";
+            expires_in_days: number;
+            pin?: string;
+        };
+        CreatedShare: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        Share: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            scope: "vaccination_card" | "full_record";
+            has_pin: boolean;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+            access_count: number;
+            /** Format: date-time */
+            last_access_at?: string | null;
+        };
+        ShareList: {
+            data: components["schemas"]["Share"][];
+        };
+        UnlockShareRequest: {
+            pin: string;
+        };
+        UnlockedShare: {
+            token: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        SharedPet: {
+            name: string;
+            species: string;
+            breed?: string | null;
+            sex: string;
+            /** Format: date */
+            birth_date?: string | null;
+            microchip_masked?: string | null;
+        };
+        SharedRecord: {
+            /** @enum {string} */
+            scope: "vaccination_card" | "full_record";
+            pet: components["schemas"]["SharedPet"];
+            card: components["schemas"]["Card"];
+            /** Format: date-time */
+            verified_at: string;
+        };
+        CardVerification: {
+            valid: boolean;
+            entries: number;
+            /** Format: date-time */
+            verified_at?: string;
+        };
     };
     responses: {
         /** @description Consulta actualizada */
@@ -2076,6 +2741,8 @@ export interface components {
         IdempotencyKey: string;
         /** @description Versión conocida del recurso (ETag de la última lectura). */
         IfMatch: number;
+        EntryId: string;
+        ShareToken: string;
     };
     requestBodies: never;
     headers: {
@@ -4104,6 +4771,739 @@ export interface operations {
             };
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Carnet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetCardPdf: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+                Accept?: components["parameters"]["AcceptLink"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada del PDF (con `Accept: application/json`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description PDF en generación */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentJob"];
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    recordCardEntry: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordCardEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada registrada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    declareCardEntry: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclareCardEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada declarada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    verifyCardEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CardNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada verificada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    disputeCardEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CardNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada disputada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    voidCardEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidCardEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada anulada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adjustCardNextDue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustNextDueRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada con la nueva próxima dosis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getCardNextDueProposal: {
+        parameters: {
+            query: {
+                kind: components["schemas"]["CardEntryKind"];
+                product_catalog_id?: string;
+                administered_at: string;
+            };
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Propuesta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextDueProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    recordEncounterVaccination: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordCardEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Entrada registrada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardEntry"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listVaccineCatalog: {
+        parameters: {
+            query?: {
+                species?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vacunas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VaccineList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listVaccinationProtocols: {
+        parameters: {
+            query?: {
+                country?: string;
+                species?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Protocolos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtocolList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createVaccine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VaccineWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Vacuna creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vaccine"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateVaccine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vaccineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VaccineWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Vacuna actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vaccine"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deactivateVaccine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vaccineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Desactivada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createVaccinationProtocol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Protocolo creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Protocol"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateVaccinationProtocol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                protocolId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Protocolo actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Protocol"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deactivateVaccinationProtocol: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                protocolId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Desactivado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPetShares: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enlaces */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPetShare: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShareRequest"];
+            };
+        };
+        responses: {
+            /** @description Enlace creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedShare"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokePetShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                shareId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revocado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSharedRecord: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token devuelto por `POST /share/{token}/unlock` (solo enlaces con PIN). */
+                "X-PP-Share-Unlock"?: string;
+            };
+            path: {
+                token: components["parameters"]["ShareToken"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contenido compartido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            410: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unlockSharedRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: components["parameters"]["ShareToken"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlockShareRequest"];
+            };
+        };
+        responses: {
+            /** @description Desbloqueado; el token se envía en `X-PP-Share-Unlock` (vigencia 15 min) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlockedShare"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            410: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    verifyCard: {
+        parameters: {
+            query: {
+                h: string;
+            };
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardVerification"];
+                };
+            };
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

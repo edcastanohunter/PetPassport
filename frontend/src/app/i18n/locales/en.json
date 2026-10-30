@@ -143,7 +143,21 @@
     "ENCOUNTER_ALREADY_OPENED": "The encounter is already open.",
     "NO_CHANGES": "There are no changes to save.",
     "PAYLOAD_TOO_LARGE": "The file is larger than 10 MB.",
-    "UNSUPPORTED_MEDIA_TYPE": "Unsupported or unsafe file (JPEG, PNG, WebP or PDF without active content)."
+    "UNSUPPORTED_MEDIA_TYPE": "Unsupported or unsafe file (JPEG, PNG, WebP or PDF without active content).",
+    "VOID_WINDOW_EXPIRED": "The window to void this entry has passed.",
+    "VOID_NOT_ALLOWED": "You cannot void this entry.",
+    "GUARDIAN_REQUIRED": "Only the guardian can do this.",
+    "CARD_ENTRY_DUPLICATE": "An identical entry already exists on the card.",
+    "CARD_ENTRIES_LIMIT": "The card reached the maximum number of entries.",
+    "ENTRY_NOT_DECLARED": "Only declared entries can be verified or disputed.",
+    "ENTRY_NOT_ACTIVE": "This entry is already voided.",
+    "SHARE_LIMIT": "You reached the maximum of active links. Revoke one.",
+    "SHARE_ALREADY_CREATED": "This link was already created.",
+    "SHARE_EXPIRED": "This link has expired or was revoked.",
+    "SHARE_LOCKED": "Too many attempts. Try again in an hour.",
+    "PIN_REQUIRED": "This link requires a PIN.",
+    "PIN_INVALID": "Wrong PIN.",
+    "CATALOG_DUPLICATE": "That entry already exists in the catalog."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -758,7 +772,6 @@
       "card": "Card",
       "appointments": "Appointments",
       "weight": "Weight",
-      "cardSoon": "The vaccination card will be available soon.",
       "appointmentsSoon": "Appointments will be available soon."
     },
     "summary": {
@@ -842,6 +855,97 @@
       "clinic": "Clinic",
       "signedAt": "Signed on",
       "version": "Signed version"
+    }
+  },
+  "card": {
+    "title": "Vaccination card",
+    "back": "Back to pet",
+    "link": "Vaccination card",
+    "linkHint": "Vaccines, dewormings and sharing links.",
+    "empty": "No vaccines or preventives recorded yet.",
+    "lot": "Lot",
+    "kind": {
+      "vaccine": "Vaccine",
+      "deworming": "Deworming",
+      "ectoparasite": "External parasite treatment"
+    },
+    "badge": {
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "disputed": "Disputed",
+      "voided": "Voided"
+    },
+    "source": {
+      "recorded": "Recorded by a clinic",
+      "declared": "Declared by the guardian",
+      "imported": "Imported"
+    },
+    "nextDue": {
+      "title": "Upcoming doses",
+      "next": "next",
+      "status": {
+        "upcoming": "upcoming",
+        "overdue": "overdue",
+        "satisfied": "done",
+        "cancelled": "cancelled"
+      }
+    },
+    "record": {
+      "title": "Record a vaccine or preventive",
+      "kind": "Type",
+      "catalog": "Catalog product",
+      "other": "Other (free text)",
+      "product": "Product",
+      "date": "Administration date",
+      "dose": "Dose",
+      "nextDue": "Next dose (optional)",
+      "submit": "Record"
+    },
+    "action": {
+      "verify": "Verify",
+      "dispute": "Dispute",
+      "void": "Void"
+    },
+    "void": {
+      "reason": "Reason",
+      "confirm": "Confirm void",
+      "byGuardian": "Voided by the guardian"
+    },
+    "declare": {
+      "title": "Declare a vaccine",
+      "hint": "Anything you declare stays \"unverified\" until a clinic confirms it.",
+      "submit": "Declare"
+    },
+    "share": {
+      "title": "Share the card",
+      "scope": "Content",
+      "expires": "Expires in",
+      "pin": "PIN (4 to 6 digits, optional)",
+      "create": "Create link",
+      "createdHint": "Copy the link now: it will not be shown again.",
+      "scopes": {
+        "vaccination_card": "Vaccination card only",
+        "full_record": "Full record"
+      },
+      "days": "{n} days",
+      "withPin": "PIN protected",
+      "until": "until",
+      "accesses": "{n} views",
+      "revoke": "Revoke"
+    },
+    "shared": {
+      "title": "Shared card",
+      "pinPrompt": "This link is protected. Enter the PIN.",
+      "unlock": "Unlock",
+      "notFound": "This link does not exist or was revoked.",
+      "verifiedAt": "Verified on {when}"
+    },
+    "verify": {
+      "title": "Card verification",
+      "valid": "The card matches the current record.",
+      "invalid": "The card does not match the current record.",
+      "entries": "{n} entries",
+      "notFound": "This card was not found."
     }
   }
 }

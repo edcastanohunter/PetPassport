@@ -13,6 +13,7 @@ import {
   type TimelineItem,
 } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
+import ClinicCardPanel from '@/features/card/ClinicCardPanel.vue'
 import { useCommand } from '@/shared/composables/useCommand'
 import { openEncounter } from '@/features/encounters/encounterApi'
 import PatientSummaryPanel from '@/features/records/PatientSummaryPanel.vue'
@@ -398,12 +399,12 @@ function typeLabel(k: string) {
           </button>
         </div>
 
-        <p
-          v-if="tab === 'card'"
-          class="rounded-lg border border-dashed border-surface-200 p-6 text-center text-sm text-surface-500 dark:border-surface-800"
-        >
-          {{ t('records.tabs.cardSoon') }}
-        </p>
+        <ClinicCardPanel
+          v-if="tab === 'card' && pet"
+          :pet-id="petId"
+          :species="pet.species"
+          :can-write="canOpen"
+        />
         <p
           v-if="tab === 'appointments'"
           class="rounded-lg border border-dashed border-surface-200 p-6 text-center text-sm text-surface-500 dark:border-surface-800"

@@ -45,6 +45,18 @@ export type WeightPoint = components['schemas']['WeightPoint']
 export type WeightHistory = components['schemas']['WeightHistory']
 export type PetClinicalSummary = components['schemas']['PetClinicalSummary']
 export type EncounterVerification = components['schemas']['EncounterVerification']
+export type Card = components['schemas']['Card']
+export type CardEntry = components['schemas']['CardEntry']
+export type CardEntryKind = components['schemas']['CardEntryKind']
+export type NextDueItem = components['schemas']['NextDueItem']
+export type NextDueProposal = components['schemas']['NextDueProposal']
+export type Vaccine = components['schemas']['Vaccine']
+export type Protocol = components['schemas']['Protocol']
+export type Share = components['schemas']['Share']
+export type CreatedShare = components['schemas']['CreatedShare']
+export type SharedRecord = components['schemas']['SharedRecord']
+export type CardVerification = components['schemas']['CardVerification']
+export type UnlockedShare = components['schemas']['UnlockedShare']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

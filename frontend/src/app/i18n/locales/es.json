@@ -143,7 +143,21 @@
     "ENCOUNTER_ALREADY_OPENED": "La consulta ya está abierta.",
     "NO_CHANGES": "No hay cambios que guardar.",
     "PAYLOAD_TOO_LARGE": "El archivo supera 10 MB.",
-    "UNSUPPORTED_MEDIA_TYPE": "Formato no admitido o archivo no seguro (JPEG, PNG, WebP o PDF sin contenido activo)."
+    "UNSUPPORTED_MEDIA_TYPE": "Formato no admitido o archivo no seguro (JPEG, PNG, WebP o PDF sin contenido activo).",
+    "VOID_WINDOW_EXPIRED": "Ya pasó la ventana para anular este registro.",
+    "VOID_NOT_ALLOWED": "No puedes anular este registro.",
+    "GUARDIAN_REQUIRED": "Solo el tutor puede hacerlo.",
+    "CARD_ENTRY_DUPLICATE": "Ya existe un registro igual en el carnet.",
+    "CARD_ENTRIES_LIMIT": "El carnet alcanzó el máximo de registros.",
+    "ENTRY_NOT_DECLARED": "Solo se pueden verificar o disputar registros declarados.",
+    "ENTRY_NOT_ACTIVE": "Este registro ya está anulado.",
+    "SHARE_LIMIT": "Alcanzaste el máximo de enlaces activos. Revoca alguno.",
+    "SHARE_ALREADY_CREATED": "Este enlace ya fue creado.",
+    "SHARE_EXPIRED": "Este enlace caducó o fue revocado.",
+    "SHARE_LOCKED": "Demasiados intentos. Inténtalo de nuevo en una hora.",
+    "PIN_REQUIRED": "Este enlace requiere un PIN.",
+    "PIN_INVALID": "PIN incorrecto.",
+    "CATALOG_DUPLICATE": "Ya existe ese registro en el catálogo."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -758,7 +772,6 @@
       "card": "Carnet",
       "appointments": "Citas",
       "weight": "Peso",
-      "cardSoon": "El carnet de vacunación estará disponible próximamente.",
       "appointmentsSoon": "Las citas estarán disponibles próximamente."
     },
     "summary": {
@@ -842,6 +855,97 @@
       "clinic": "Clínica",
       "signedAt": "Firmada el",
       "version": "Versión firmada"
+    }
+  },
+  "card": {
+    "title": "Carnet de vacunación",
+    "back": "Volver a la mascota",
+    "link": "Carnet de vacunación",
+    "linkHint": "Vacunas, desparasitaciones y enlaces para compartir.",
+    "empty": "Aún no hay vacunas ni preventivos registrados.",
+    "lot": "Lote",
+    "kind": {
+      "vaccine": "Vacuna",
+      "deworming": "Desparasitación",
+      "ectoparasite": "Antiparasitario externo"
+    },
+    "badge": {
+      "verified": "Verificado",
+      "unverified": "No verificado",
+      "disputed": "En disputa",
+      "voided": "Anulado"
+    },
+    "source": {
+      "recorded": "Registrado por una clínica",
+      "declared": "Declarado por el tutor",
+      "imported": "Importado"
+    },
+    "nextDue": {
+      "title": "Próximas dosis",
+      "next": "próxima",
+      "status": {
+        "upcoming": "próxima",
+        "overdue": "vencida",
+        "satisfied": "cumplida",
+        "cancelled": "cancelada"
+      }
+    },
+    "record": {
+      "title": "Registrar vacuna o preventivo",
+      "kind": "Tipo",
+      "catalog": "Producto del catálogo",
+      "other": "Otro (texto libre)",
+      "product": "Producto",
+      "date": "Fecha de aplicación",
+      "dose": "Dosis",
+      "nextDue": "Próxima dosis (opcional)",
+      "submit": "Registrar"
+    },
+    "action": {
+      "verify": "Verificar",
+      "dispute": "Disputar",
+      "void": "Anular"
+    },
+    "void": {
+      "reason": "Motivo",
+      "confirm": "Confirmar anulación",
+      "byGuardian": "Anulada por el tutor"
+    },
+    "declare": {
+      "title": "Declarar una vacuna",
+      "hint": "Lo que declares quedará como «no verificado» hasta que una clínica lo confirme.",
+      "submit": "Declarar"
+    },
+    "share": {
+      "title": "Compartir el carnet",
+      "scope": "Contenido",
+      "expires": "Caduca en",
+      "pin": "PIN (4 a 6 dígitos, opcional)",
+      "create": "Crear enlace",
+      "createdHint": "Copia el enlace ahora: no se volverá a mostrar.",
+      "scopes": {
+        "vaccination_card": "Solo carnet de vacunación",
+        "full_record": "Historial completo"
+      },
+      "days": "{n} días",
+      "withPin": "con PIN",
+      "until": "hasta",
+      "accesses": "{n} accesos",
+      "revoke": "Revocar"
+    },
+    "shared": {
+      "title": "Carnet compartido",
+      "pinPrompt": "Este enlace está protegido. Introduce el PIN.",
+      "unlock": "Desbloquear",
+      "notFound": "Este enlace no existe o fue revocado.",
+      "verifiedAt": "Verificado el {when}"
+    },
+    "verify": {
+      "title": "Verificación del carnet",
+      "valid": "El carnet coincide con el registro vigente.",
+      "invalid": "El carnet no coincide con el registro vigente.",
+      "entries": "{n} registros",
+      "notFound": "No se encontró este carnet."
     }
   }
 }

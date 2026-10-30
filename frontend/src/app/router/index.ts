@@ -24,6 +24,9 @@ import EncounterEditorPage from '@/features/encounters/EncounterEditorPage.vue'
 import PetHistoryPage from '@/features/records/PetHistoryPage.vue'
 import PetEncounterPage from '@/features/records/PetEncounterPage.vue'
 import VerifyEncounterPage from '@/features/records/VerifyEncounterPage.vue'
+import GuardianCardPage from '@/features/card/GuardianCardPage.vue'
+import SharedRecordPage from '@/features/card/SharedRecordPage.vue'
+import VerifyCardPage from '@/features/card/VerifyCardPage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
@@ -126,6 +129,12 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/pets/:petId/card',
+        name: 'pet-card',
+        component: GuardianCardPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/profile',
         name: 'profile',
         component: ProfilePage,
@@ -199,6 +208,18 @@ export function createAppRouter() {
         path: '/verify/encounters/:encounterId',
         name: 'verify-encounter',
         component: VerifyEncounterPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/share/:token',
+        name: 'shared-record',
+        component: SharedRecordPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/verify/cards/:petId',
+        name: 'verify-card',
+        component: VerifyCardPage,
         meta: { layout: 'public' },
       },
       { path: '/403', name: 'forbidden', component: ForbiddenPage, meta: { layout: 'public' } },
