@@ -34,7 +34,15 @@
     "terms": "Términos del servicio",
     "privacy": "Política de privacidad",
     "version": "Versión",
-    "pendingReview": "Texto en revisión legal. La versión definitiva se publicará antes de la apertura del piloto."
+    "pendingReview": "Texto en revisión legal. La versión definitiva se publicará antes de la apertura del piloto.",
+    "privacyUpdate": {
+      "title": "Qué cambia en esta versión",
+      "sharing": "Compartimos la historia clínica de tu mascota solo con las clínicas que tú vinculas, y puedes revocar el vínculo en cualquier momento.",
+      "requests": "Una clínica puede solicitar el vínculo; nada se comparte hasta que lo apruebes.",
+      "publicLinks": "Los enlaces públicos de la cartilla no incluyen datos de contacto y caducan.",
+      "reminders": "Te enviamos recordatorios por correo (citas, vacunas, controles); puedes elegir cuáles recibir.",
+      "rights": "Puedes pedir una copia de tus datos escribiéndonos; la entregamos de forma segura."
+    }
   },
   "auth": {
     "signingIn": "Iniciando sesión…",
@@ -165,7 +173,11 @@
     "REQUEST_LIMIT": "Ya tienes 3 solicitudes pendientes en esta clínica para esta mascota.",
     "PROPOSAL_EXPIRED": "La propuesta venció. Solicita otra cita.",
     "CHECKIN_WINDOW": "El check-in solo se permite el día de la cita, desde 2 horas antes.",
-    "INVALID_PROFESSIONAL": "El profesional debe ser un veterinario activo de la clínica."
+    "INVALID_PROFESSIONAL": "El profesional debe ser un veterinario activo de la clínica.",
+    "CARE_LINK_ALREADY_ACTIVE": "Esta mascota ya está vinculada a tu clínica.",
+    "REQUEST_PENDING": "Ya hay una solicitud pendiente de tu clínica para esta mascota.",
+    "CARE_LINK_REQUEST_NOT_FOUND": "No encontramos esa solicitud.",
+    "CARE_LINK_REQUEST_NOT_PENDING": "La solicitud ya fue respondida o caducó."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -284,6 +296,20 @@
       "from": "{name} quiere transferirte la tutela.",
       "accept": "Aceptar tutela",
       "invalid": "El enlace es inválido o ha caducado."
+    },
+    "alerts": {
+      "title": "Alertas",
+      "none": "Sin alertas registradas.",
+      "edit": "Editar alertas",
+      "add": "Añadir alerta",
+      "kindLabel": "Tipo de alerta",
+      "textLabel": "Descripción",
+      "kind": {
+        "allergy": "Alergia",
+        "chronic_condition": "Condición crónica",
+        "behavior": "Conducta",
+        "other": "Otra"
+      }
     }
   },
   "orgs": {
@@ -426,6 +452,41 @@
       "guardianContact": "Contacto del tutor",
       "history": "Historia clínica",
       "historySoon": "Disponible próximamente."
+    },
+    "requests": {
+      "title": "Solicitar acceso a una mascota",
+      "hint": "Busca la mascota por microchip o por el email de su tutor. El tutor recibirá la solicitud y decidirá si te da acceso; caduca a los 14 días.",
+      "searchBy": "Buscar por",
+      "byMicrochip": "Microchip",
+      "byEmail": "Email del tutor",
+      "chipPlaceholder": "Número de microchip",
+      "emailPlaceholder": "tutor{'@'}ejemplo.com",
+      "noResults": "No encontramos ninguna mascota con ese dato.",
+      "guardian": "Tutor",
+      "message": "Mensaje para el tutor",
+      "send": "Solicitar acceso a {name}",
+      "sent": "Solicitud enviada. El tutor la verá en su bandeja.",
+      "mine": "Solicitudes enviadas",
+      "expires": "Caduca el {date}",
+      "status": {
+        "pending": "Pendiente",
+        "approved": "Aprobada",
+        "declined": "Rechazada",
+        "expired": "Caducada"
+      }
+    },
+    "stats": {
+      "title": "Actividad de la clínica",
+      "metric": "Indicador",
+      "encounters": "Consultas firmadas",
+      "confirmed": "Citas confirmadas",
+      "completed": "Citas completadas",
+      "cancelled": "Citas canceladas",
+      "noShow": "Citas no asistidas",
+      "newPatients": "Nuevos pacientes",
+      "vaccinations": "Vacunas aplicadas",
+      "openFollowUps": "Controles pendientes",
+      "lag": "Datos con unos {seconds} s de retraso."
     }
   },
   "admin": {
@@ -1120,7 +1181,17 @@
       "title": "Bandeja",
       "empty": "No tienes nada pendiente de responder.",
       "proposal": "{clinic} propone otra franja para {pet}.",
-      "allAppointments": "Ver todas mis citas"
+      "allAppointments": "Ver todas mis citas",
+      "careLink": "{clinic} solicita acceso a la ficha de {pet}.",
+      "approve": "Aprobar",
+      "decline": "Rechazar",
+      "approved": "Acceso aprobado.",
+      "declined": "Solicitud rechazada.",
+      "accepted": "Cita confirmada.",
+      "expires": "Caduca el {date}",
+      "followUp": "{clinic} recomienda un control para {pet}.",
+      "dueOn": "Para el {date}",
+      "book": "Agendar una cita"
     },
     "unsubscribe": {
       "title": "Darse de baja",

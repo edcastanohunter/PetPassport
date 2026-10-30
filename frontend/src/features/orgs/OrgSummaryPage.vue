@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { ApiError } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
+import OrgStatsCard from './OrgStatsCard.vue'
 import { useOrgStore } from './orgStore'
 
 // Resumen de organización (FE-007): banner de estado (pendiente /
@@ -20,6 +21,11 @@ const error = ref<string | null>(null)
 const copied = ref(false)
 const membership = computed(() => session.membershipFor(orgId.value))
 const isAdmin = computed(() => ADMIN_ROLES.includes(membership.value?.role ?? ''))
+const seesStats = computed(
+  () =>
+    membership.value?.type === 'clinic' &&
+    ['clinic_admin', 'veterinarian'].includes(membership.value.role),
+)
 const seesPatients = computed(
   () => membership.value?.type === 'clinic' && CLINIC_ROLES.includes(membership.value.role),
 )
@@ -114,6 +120,8 @@ function printCard() {
           </button>
         </div>
       </div>
+
+      <OrgStatsCard v-if="seesStats && org.status === 'active'" class="no-print" :org-id="orgId" />
 
       <nav class="no-print grid gap-3 sm:grid-cols-3" :aria-label="t('orgs.quickLinks')">
         <RouterLink

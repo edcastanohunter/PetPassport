@@ -18,6 +18,7 @@ import ClinicCardPanel from '@/features/card/ClinicCardPanel.vue'
 import { useCommand } from '@/shared/composables/useCommand'
 import { openEncounter } from '@/features/encounters/encounterApi'
 import PatientSummaryPanel from '@/features/records/PatientSummaryPanel.vue'
+import PetAlertsPanel from '@/features/pets/PetAlertsPanel.vue'
 import TimelineList from '@/features/records/TimelineList.vue'
 import WeightPanel from '@/features/records/WeightPanel.vue'
 
@@ -289,6 +290,13 @@ function typeLabel(k: string) {
         <div v-show="tab === 'summary'" class="grid gap-6 md:grid-cols-2">
           <PatientSummaryPanel :pet-id="petId" :show-access="false" @loaded="summary = $event" />
           <div class="space-y-4">
+            <PetAlertsPanel
+              v-if="pet"
+              class="card"
+              :pet="pet"
+              :editable="canOpen"
+              @changed="pet = $event"
+            />
             <dl v-if="pet" class="card grid grid-cols-2 gap-4">
               <div>
                 <dt class="text-sm text-surface-500">{{ t('pets.form.sex') }}</dt>

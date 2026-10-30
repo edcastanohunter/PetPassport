@@ -100,26 +100,43 @@ describe('UnsubscribePage (FE-012)', () => {
   })
 })
 
-describe('InboxPage (FE-012)', () => {
+describe('InboxPage (FE-012, PRD-020)', () => {
   beforeEach(() => {
     GET.mockReset()
     POST.mockReset()
   })
 
+  const proposal = {
+    id: 'a1',
+    kind: 'appointment_proposal',
+    ref_id: 'a1',
+    pet_id: 'p1',
+    pet_name: 'Luna',
+    organization_id: 'o1',
+    title: 'Clínica Sur',
+    body: 'Control',
+    status: 'pending',
+    created_at: '2026-11-01T10:00:00Z',
+  }
+  const request = {
+    id: 'r1',
+    kind: 'care_link_request',
+    ref_id: 'r1',
+    pet_id: 'p1',
+    pet_name: 'Luna',
+    organization_id: 'o2',
+    title: 'Clínica Norte',
+    body: 'Atendemos a Luna',
+    status: 'pending',
+    created_at: '2026-11-02T10:00:00Z',
+    expires_at: '2026-11-16T10:00:00Z',
+  }
+
   it('lista propuestas de cita y las acepta', async () => {
-    const proposal = {
-      id: 'a1',
-      status: 'proposed',
-      pet_name: 'Luna',
-      organization_name: 'Clínica Sur',
-      start: '2026-11-03T15:00:00Z',
-      end: '2026-11-03T15:30:00Z',
-      time_zone: 'America/Bogota',
-    }
     GET.mockResolvedValueOnce({ data: { data: [proposal] } }).mockResolvedValueOnce({
       data: { data: [] },
     })
-    POST.mockResolvedValue({ data: { ...proposal, status: 'confirmed' } })
+    POST.mockResolvedValue({ data: {} })
     const w = mount(InboxPage, { global: { plugins: [i18n()], stubs } })
     await flushPromises()
     expect(w.findAll('[data-testid="inbox-item"]')).toHaveLength(1)
@@ -130,5 +147,41 @@ describe('InboxPage (FE-012)', () => {
       params: { path: { appointmentId: 'a1' } },
     })
     expect(w.find('[data-testid="inbox-empty"]').exists()).toBe(true)
+  })
+
+  it('aprueba una solicitud de vínculo de una clínica', async () => {
+    GET.mockResolvedValueOnce({ data: { data: [request] } }).mockResolvedValueOnce({
+      data: { data: [] },
+    })
+    POST.mockResolvedValue({ data: {} })
+    const w = mount(InboxPage, { global: { plugins: [i18n()], stubs } })
+    await flushPromises()
+    expect(w.get('[data-testid="inbox-carelink"]').text()).toContain(
+      'Clínica Norte solicita acceso a la ficha de Luna',
+    )
+    await w.get('[data-testid="inbox-approve"]').trigger('click')
+    await flushPromises()
+    expect(POST).toHaveBeenCalledWith('/pets/{petId}/care-link-requests/{requestId}/approve', {
+      params: { path: { petId: 'p1', requestId: 'r1' } },
+    })
+    expect(w.get('[data-testid="inbox-done"]').text()).toBe('Acceso aprobado.')
+    expect(w.find('[data-testid="inbox-empty"]').exists()).toBe(true)
+  })
+
+  it('rechaza la solicitud y, si ya caducó, recarga y muestra el error', async () => {
+    GET.mockResolvedValue({ data: { data: [request] } })
+    POST.mockResolvedValueOnce({ data: {} }).mockResolvedValueOnce({
+      error: new ApiError({ code: 'CARE_LINK_REQUEST_NOT_PENDING' }, 409),
+    })
+    const w = mount(InboxPage, { global: { plugins: [i18n()], stubs } })
+    await flushPromises()
+    await w.get('[data-testid="inbox-decline"]').trigger('click')
+    await flushPromises()
+    expect(POST).toHaveBeenLastCalledWith('/pets/{petId}/care-link-requests/{requestId}/decline', {
+      params: { path: { petId: 'p1', requestId: 'r1' } },
+    })
+    await w.get('[data-testid="inbox-approve"]').trigger('click')
+    await flushPromises()
+    expect(w.get('[role="alert"]').text()).toBe('La solicitud ya fue respondida o caducó.')
   })
 })

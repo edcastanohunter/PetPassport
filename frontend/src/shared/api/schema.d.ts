@@ -658,6 +658,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{orgId}/pet-lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Buscar una mascota para solicitar el vínculo
+         * @description Por microchip exacto o por email del tutor. Devuelve como máximo 5 resultados mínimos (nombre, especie, tutor enmascarado); sin resultados devuelve lista vacía con el mismo tiempo de respuesta. 20 búsquedas por hora y usuario (PRD-020).
+         */
+        get: operations["lookupPetForRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/care-link-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Solicitudes de vínculo de la clínica
+         * @description Las más recientes primero; filtro opcional por estado.
+         */
+        get: operations["listCareLinkRequests"];
+        put?: never;
+        /**
+         * Solicitar el vínculo con una mascota
+         * @description La solicitud queda pendiente 14 días para que la decida el tutor (PRD-020). Con vínculo activo → 409 CARE_LINK_ALREADY_ACTIVE; con otra solicitud pendiente de la clínica → 409 REQUEST_PENDING.
+         */
+        post: operations["requestCareLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Estadísticas mensuales de la clínica
+         * @description Mes pedido (por defecto el actual, UTC) y el anterior. Vista derivada asíncrona con cabecera X-PP-Freshness (PRD-026).
+         */
+        get: operations["getOrgStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bandeja del tutor
+         * @description Solicitudes de vínculo pendientes, propuestas de cita y controles pendientes, lo más reciente primero (FE-012).
+         */
+        get: operations["getInbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/care-link-requests/{requestId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                requestId: components["parameters"]["RequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aprobar una solicitud de vínculo
+         * @description Solo el tutor. Crea el vínculo con la clínica solicitante (máximo 20 activos). Solicitud ya resuelta o vencida → 409 CARE_LINK_REQUEST_NOT_PENDING.
+         */
+        post: operations["approveCareLinkRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/care-link-requests/{requestId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                requestId: components["parameters"]["RequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rechazar una solicitud de vínculo */
+        post: operations["declineCareLinkRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reemplazar las alertas del perfil
+         * @description Tutor o clínica con vínculo activo. Hasta 20 alertas de 200 caracteres (DOM-013).
+         */
+        put: operations["putPetAlerts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{orgId}/patients": {
         parameters: {
             query?: never;
@@ -2298,10 +2453,104 @@ export interface components {
             pending_transfer?: components["schemas"]["PendingTransfer"] | null;
             /** @description Solo con pet:guardian_contact:read (ficha de paciente de clínica). */
             guardian_contact?: components["schemas"]["GuardianContact"] | null;
+            alerts?: components["schemas"]["PetAlert"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        PetAlert: {
+            /** @enum {string} */
+            kind: "allergy" | "chronic_condition" | "behavior" | "other";
+            text: string;
+        };
+        PutPetAlertsRequest: {
+            alerts: components["schemas"]["PetAlert"][];
+        };
+        PetLookupResult: {
+            /** Format: uuid */
+            pet_id: string;
+            name: string;
+            species: components["schemas"]["Species"];
+            /** @description Nombre del tutor enmascarado (inicial y asteriscos). */
+            guardian_masked: string;
+        };
+        PetLookupList: {
+            data: components["schemas"]["PetLookupResult"][];
+        };
+        RequestCareLinkBody: {
+            /** Format: uuid */
+            pet_id: string;
+            message?: string;
+        };
+        DeclineCareLinkBody: {
+            reason?: string;
+        };
+        CareLinkRequestItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pet_id: string;
+            pet_name: string;
+            /** Format: uuid */
+            organization_id: string;
+            message?: string | null;
+            /** @enum {string} */
+            status: "pending" | "approved" | "declined" | "expired";
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            resolved_at?: string | null;
+        };
+        CareLinkRequestList: {
+            data: components["schemas"]["CareLinkRequestItem"][];
+        };
+        InboxItem: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "care_link_request" | "appointment_proposal" | "follow_up";
+            /**
+             * Format: uuid
+             * @description Id de la solicitud, la cita o la consulta de origen.
+             */
+            ref_id: string;
+            /** Format: uuid */
+            pet_id?: string | null;
+            pet_name?: string | null;
+            /** Format: uuid */
+            organization_id?: string | null;
+            title: string;
+            body?: string | null;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        InboxList: {
+            data: components["schemas"]["InboxItem"][];
+        };
+        MonthStats: {
+            month: string;
+            encounters_signed: number;
+            appointments: {
+                confirmed: number;
+                completed: number;
+                cancelled: number;
+                no_show: number;
+            };
+            new_patients: number;
+            vaccinations: number;
+        };
+        OrgStats: {
+            current: components["schemas"]["MonthStats"];
+            previous: components["schemas"]["MonthStats"];
+            /** @description Controles pendientes hoy (no depende del mes). */
+            open_follow_ups: number;
+            freshness: components["schemas"]["Freshness"];
         };
         CareLink: {
             /** Format: uuid */
@@ -3434,6 +3683,7 @@ export interface components {
         Limit: number;
         PetId: string;
         OrgId: string;
+        RequestId: string;
         OrganizationId: string;
         UserId: string;
         InvitationId: string;
@@ -4567,6 +4817,247 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    lookupPetForRequest: {
+        parameters: {
+            query?: {
+                microchip?: string;
+                guardian_email?: string;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultados mínimos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetLookupList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listCareLinkRequests: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "declined" | "expired";
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Solicitudes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareLinkRequestList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    requestCareLink: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestCareLinkBody"];
+            };
+        };
+        responses: {
+            /** @description Solicitud creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareLinkRequestItem"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrgStats: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estadísticas */
+            200: {
+                headers: {
+                    "X-PP-Freshness": components["headers"]["X-PP-Freshness"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgStats"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bandeja */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    approveCareLinkRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                requestId: components["parameters"]["RequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vínculo creado */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    declineCareLinkRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+                requestId: components["parameters"]["RequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeclineCareLinkBody"];
+            };
+        };
+        responses: {
+            /** @description Solicitud rechazada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putPetAlerts: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutPetAlertsRequest"];
+            };
+        };
+        responses: {
+            /** @description Mascota con las alertas actualizadas */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

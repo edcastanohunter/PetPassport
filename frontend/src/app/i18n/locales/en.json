@@ -34,7 +34,15 @@
     "terms": "Terms of service",
     "privacy": "Privacy policy",
     "version": "Version",
-    "pendingReview": "This text is under legal review. The final version will be published before the pilot opens."
+    "pendingReview": "This text is under legal review. The final version will be published before the pilot opens.",
+    "privacyUpdate": {
+      "title": "What changes in this version",
+      "sharing": "We share your pet's clinical history only with the clinics you link, and you can revoke a link at any time.",
+      "requests": "A clinic can request a link; nothing is shared until you approve it.",
+      "publicLinks": "Public record links carry no contact details and expire.",
+      "reminders": "We email you reminders (appointments, vaccines, follow-ups); you choose which ones to receive.",
+      "rights": "You can ask us for a copy of your data; we deliver it securely."
+    }
   },
   "auth": {
     "signingIn": "Signing in…",
@@ -165,7 +173,11 @@
     "REQUEST_LIMIT": "You already have 3 pending requests at this clinic for this pet.",
     "PROPOSAL_EXPIRED": "The proposal has expired. Request a new appointment.",
     "CHECKIN_WINDOW": "Check-in is only allowed on the appointment day, from 2 hours before.",
-    "INVALID_PROFESSIONAL": "The professional must be an active veterinarian of the clinic."
+    "INVALID_PROFESSIONAL": "The professional must be an active veterinarian of the clinic.",
+    "CARE_LINK_ALREADY_ACTIVE": "This pet is already linked to your clinic.",
+    "REQUEST_PENDING": "Your clinic already has a pending request for this pet.",
+    "CARE_LINK_REQUEST_NOT_FOUND": "We could not find that request.",
+    "CARE_LINK_REQUEST_NOT_PENDING": "The request was already answered or has expired."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -284,6 +296,20 @@
       "from": "{name} wants to transfer guardianship to you.",
       "accept": "Accept guardianship",
       "invalid": "The link is invalid or has expired."
+    },
+    "alerts": {
+      "title": "Alerts",
+      "none": "No alerts recorded.",
+      "edit": "Edit alerts",
+      "add": "Add alert",
+      "kindLabel": "Alert type",
+      "textLabel": "Description",
+      "kind": {
+        "allergy": "Allergy",
+        "chronic_condition": "Chronic condition",
+        "behavior": "Behavior",
+        "other": "Other"
+      }
     }
   },
   "orgs": {
@@ -426,6 +452,41 @@
       "guardianContact": "Guardian contact",
       "history": "Clinical history",
       "historySoon": "Coming soon."
+    },
+    "requests": {
+      "title": "Request access to a pet",
+      "hint": "Find the pet by microchip or by its guardian's email. The guardian receives the request and decides whether to grant access; it expires after 14 days.",
+      "searchBy": "Search by",
+      "byMicrochip": "Microchip",
+      "byEmail": "Guardian email",
+      "chipPlaceholder": "Microchip number",
+      "emailPlaceholder": "guardian{'@'}example.com",
+      "noResults": "We found no pet matching that.",
+      "guardian": "Guardian",
+      "message": "Message to the guardian",
+      "send": "Request access to {name}",
+      "sent": "Request sent. The guardian will see it in their inbox.",
+      "mine": "Sent requests",
+      "expires": "Expires {date}",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "declined": "Declined",
+        "expired": "Expired"
+      }
+    },
+    "stats": {
+      "title": "Clinic activity",
+      "metric": "Metric",
+      "encounters": "Signed encounters",
+      "confirmed": "Confirmed appointments",
+      "completed": "Completed appointments",
+      "cancelled": "Cancelled appointments",
+      "noShow": "No-show appointments",
+      "newPatients": "New patients",
+      "vaccinations": "Vaccinations given",
+      "openFollowUps": "Pending follow-ups",
+      "lag": "Data is about {seconds} s behind."
     }
   },
   "admin": {
@@ -1120,7 +1181,17 @@
       "title": "Inbox",
       "empty": "Nothing is waiting for your reply.",
       "proposal": "{clinic} proposes another slot for {pet}.",
-      "allAppointments": "See all my appointments"
+      "allAppointments": "See all my appointments",
+      "careLink": "{clinic} asks for access to {pet}'s record.",
+      "approve": "Approve",
+      "decline": "Decline",
+      "approved": "Access approved.",
+      "declined": "Request declined.",
+      "accepted": "Appointment confirmed.",
+      "expires": "Expires {date}",
+      "followUp": "{clinic} recommends a follow-up for {pet}.",
+      "dueOn": "Due {date}",
+      "book": "Book an appointment"
     },
     "unsubscribe": {
       "title": "Unsubscribe",

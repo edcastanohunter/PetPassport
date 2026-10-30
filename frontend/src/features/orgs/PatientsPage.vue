@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, ApiError, type PatientRow } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
+import CareLinkRequestPanel from './CareLinkRequestPanel.vue'
 import { useOrgStore } from './orgStore'
 
 // Pacientes de la clínica (FE-008, PRD-016): búsqueda simple (q), paginación
@@ -216,6 +217,8 @@ function open(row: PatientRow) {
         {{ t('orgs.patients.more') }}
       </button>
       <p v-if="loading" class="text-surface-500">{{ t('common.loading') }}</p>
+
+      <CareLinkRequestPanel :org-id="orgId" />
     </template>
   </section>
 </template>
