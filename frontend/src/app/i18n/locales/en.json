@@ -21,7 +21,8 @@
     "optional": "optional",
     "cancel": "Cancel",
     "saving": "Saving…",
-    "errorGeneric": "Something went wrong."
+    "errorGeneric": "Something went wrong.",
+    "delete": "Delete"
   },
   "home": {
     "title": "Your pet's health passport",
@@ -127,7 +128,22 @@
     "IDEMPOTENCY_KEY_REUSED": "A previous attempt was reused with different data. Please try again.",
     "REQUEST_IN_PROGRESS": "The previous request is still in progress.",
     "INTERNAL": "An unexpected error occurred.",
-    "REASON_REQUIRED": "Provide a reason of at least 10 characters."
+    "REASON_REQUIRED": "Provide a reason of at least 10 characters.",
+    "PET_NOT_ACCESSIBLE": "The organization has no active link with this pet.",
+    "ENCOUNTER_INCOMPLETE": "Some requirements to sign the encounter are missing.",
+    "ENCOUNTER_NOT_DRAFT": "The encounter is no longer a draft.",
+    "ENCOUNTER_NOT_SIGNED": "The encounter is not signed.",
+    "NOT_ATTENDING_VET": "Only the attending veterinarian can sign or add addenda.",
+    "ROLE_REQUIRED_VETERINARIAN": "Only a veterinarian can edit this section.",
+    "ATTENDING_VET_NOT_ELIGIBLE": "The selected professional is not an active veterinarian of the clinic.",
+    "DISCARD_NOT_ALLOWED": "Only the admin or the attending veterinarian can discard.",
+    "ATTACHMENT_NOT_FOUND": "The attachment does not exist.",
+    "ATTACHMENT_LIMIT": "The attachment limit was reached.",
+    "ADDENDA_LIMIT": "The addenda limit was reached.",
+    "ENCOUNTER_ALREADY_OPENED": "The encounter is already open.",
+    "NO_CHANGES": "There are no changes to save.",
+    "PAYLOAD_TOO_LARGE": "The file is larger than 10 MB.",
+    "UNSUPPORTED_MEDIA_TYPE": "Unsupported or unsafe file (JPEG, PNG, WebP or PDF without active content)."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -289,7 +305,8 @@
       "patientsHint": "Linked pets and their profile",
       "members": "Members",
       "settings": "Settings",
-      "settingsHint": "Profile, address and contact"
+      "settingsHint": "Profile, address and contact",
+      "encounters": "Encounters"
     },
     "form": {
       "type": "Organization type",
@@ -469,5 +486,362 @@
   "freshness": {
     "updating": "Updating… ({seconds} s behind)",
     "reload": "Reload"
+  },
+  "encounters": {
+    "attendingVet": "Attending veterinarian",
+    "abandoned": "Abandoned",
+    "notFound": "The encounter does not exist or you have no access.",
+    "type": {
+      "consultation": "Consultation",
+      "follow_up": "Follow-up",
+      "emergency": "Emergency",
+      "vaccination": "Vaccination",
+      "surgery": "Surgery",
+      "procedure": "Procedure",
+      "other": "Other"
+    },
+    "status": {
+      "draft": "Draft",
+      "signed": "Signed",
+      "discarded": "Discarded"
+    },
+    "editor": {
+      "title": "Encounter in progress",
+      "nav": "Encounter sections",
+      "readOnlyClinical": "Diagnoses, plan and follow-up can only be edited by a veterinarian; they are shown read-only here."
+    },
+    "detail": {
+      "title": "Signed encounter"
+    },
+    "nav": {
+      "reason": "Reason and vitals",
+      "subjective": "S",
+      "objective": "O",
+      "assessment": "A",
+      "plan": "P",
+      "attachments": "Attachments",
+      "followUp": "Follow-up",
+      "complete": "(complete)",
+      "incomplete": "(pending)"
+    },
+    "sections": {
+      "vitals": "Vitals",
+      "subjective": "Subjective (history)",
+      "objective": "Objective (physical exam)",
+      "assessment": "Assessment (diagnoses)",
+      "plan": "Plan",
+      "attachments": "Attachments",
+      "followUp": "Recommended follow-up"
+    },
+    "fields": {
+      "type": "Encounter type",
+      "reason": "Reason",
+      "startedAt": "Start",
+      "noVet": "Unassigned",
+      "system": "System",
+      "finding": "Finding",
+      "note": "Note",
+      "diagnosis": "Diagnosis {n}",
+      "certainty": "Certainty",
+      "addDiagnosis": "Add diagnosis",
+      "dueDate": "Date",
+      "followUpReason": "Follow-up reason",
+      "clearFollowUp": "Remove follow-up"
+    },
+    "vitals": {
+      "weight_kg": "Weight (kg)",
+      "temp_c": "Temperature (°C)",
+      "heart_rate_bpm": "Heart rate (bpm)",
+      "resp_rate_rpm": "Respiratory rate (rpm)",
+      "body_condition": "Body condition (1–9)",
+      "crt_seconds": "CRT (s)",
+      "hydration_pct": "Dehydration (%)",
+      "mucosa": "Mucous membranes",
+      "prefilled": "Last recorded weight ({date}); confirm or correct it."
+    },
+    "mucosa": {
+      "pink": "Pink",
+      "pale": "Pale",
+      "white": "White",
+      "cyanotic": "Cyanotic",
+      "icteric": "Icteric",
+      "hyperemic": "Hyperemic"
+    },
+    "systems": {
+      "integumentary": "Skin and coat",
+      "musculoskeletal": "Musculoskeletal",
+      "cardiovascular": "Cardiovascular",
+      "respiratory": "Respiratory",
+      "digestive": "Digestive",
+      "genitourinary": "Genitourinary",
+      "nervous": "Nervous",
+      "eyes": "Eyes",
+      "ears": "Ears",
+      "lymph": "Lymphatic",
+      "oral": "Oral cavity"
+    },
+    "finding": {
+      "normal": "Normal",
+      "abnormal": "Abnormal",
+      "not_examined": "Not examined"
+    },
+    "certainty": {
+      "presumptive": "Presumptive",
+      "confirmed": "Confirmed",
+      "differential": "Differential",
+      "ruled_out": "Ruled out"
+    },
+    "doseUnit": {
+      "mg": "mg",
+      "ml": "ml",
+      "ui": "IU",
+      "tablet": "tablet(s)",
+      "capsule": "capsule(s)",
+      "drop": "drop(s)",
+      "mg_per_kg": "mg/kg",
+      "ml_per_kg": "ml/kg"
+    },
+    "route": {
+      "oral": "Oral",
+      "sc": "Subcutaneous",
+      "im": "Intramuscular",
+      "iv": "Intravenous",
+      "topical": "Topical",
+      "ophthalmic": "Ophthalmic",
+      "otic": "Otic",
+      "inhaled": "Inhaled",
+      "rectal": "Rectal"
+    },
+    "plan": {
+      "medications": "Medication",
+      "medication": "Drug",
+      "presentation": "Presentation",
+      "dose": "Dose",
+      "unit": "Unit",
+      "route": "Route",
+      "frequency": "Frequency",
+      "duration": "Duration",
+      "durationDays": "Duration (days)",
+      "every": "Every",
+      "hours": "hours",
+      "daysUnit": "days",
+      "once": "Single dose",
+      "every_hours": "every {n} h",
+      "every_days": "every {n} days",
+      "days": "{n} days",
+      "instructions": "Instructions",
+      "addMedication": "Add drug",
+      "perDose": "Per dose: {amount} {unit} (weight {weight} kg)",
+      "total": "course total: {amount} {unit}",
+      "procedures": "Procedures performed",
+      "procedure": "Procedure",
+      "addProcedure": "Add procedure",
+      "recommendations": "Recommendations"
+    },
+    "attachments": {
+      "none": "No attachments.",
+      "image": "Image",
+      "pending": "Pending addendum",
+      "visible": "Visible to the guardian",
+      "hidden": "Hidden from the guardian",
+      "hide": "Hide from guardian",
+      "show": "Show to guardian",
+      "hideReason": "Reason for hiding",
+      "description": "Description",
+      "visibleToGuardian": "Visible to the guardian",
+      "add": "Attach file",
+      "photo": "Take photo"
+    },
+    "autosave": {
+      "saving": "Saving…",
+      "saved": "Saved {time}",
+      "error": "Could not save: {reason}",
+      "conflict": "Conflict: someone else changed the encounter."
+    },
+    "conflict": {
+      "title": "The encounter changed while you were editing",
+      "body": "Autosave stopped so it does not overwrite someone else's changes. Review the differences and reload the current version.",
+      "diff": "Show differences",
+      "noDiff": "Your content matches the server version.",
+      "reload": "Reload current version",
+      "sections": {
+        "header": "Reason, S or O",
+        "vitals": "Vitals",
+        "diagnoses": "Diagnoses",
+        "plan": "Plan",
+        "followUp": "Recommended follow-up"
+      }
+    },
+    "sign": {
+      "title": "Signature",
+      "button": "Sign",
+      "confirmTitle": "Sign the encounter?",
+      "confirmBody": "Once signed, the encounter cannot be modified; you can add addenda.",
+      "confirm": "Sign now",
+      "signing": "Signing…",
+      "req": {
+        "attending_vet": "An attending veterinarian is assigned",
+        "is_attending": "You sign as the attending veterinarian",
+        "content": "At least one diagnosis, or reason and physical exam",
+        "started_at": "The start date is not in the future"
+      }
+    },
+    "discard": {
+      "button": "Discard draft",
+      "reason": "Reason for discarding",
+      "confirm": "Discard"
+    },
+    "seal": {
+      "signedBy": "Signed by {name} on {date}",
+      "hash": "Fingerprint",
+      "verify": "Public verification"
+    },
+    "pdf": {
+      "download": "Download PDF",
+      "generating": "Generating…",
+      "open": "Open PDF",
+      "failed": "The PDF could not be retrieved. Try again later."
+    },
+    "addenda": {
+      "title": "Addenda",
+      "item": "Addendum {n}",
+      "add": "Add addendum",
+      "new": "New addendum",
+      "reason": "Reason",
+      "text": "Text",
+      "attachments": "Attachments (max. {max})",
+      "sign": "Sign addendum"
+    },
+    "addendumReason": {
+      "correction": "Correction",
+      "additional_findings": "Additional findings",
+      "lab_results": "Lab results",
+      "other": "Other"
+    },
+    "list": {
+      "title": "Encounters",
+      "hint": "Open an encounter from the patient record.",
+      "filter": "Filter by status",
+      "filters": {
+        "all": "All",
+        "draft": "Drafts",
+        "abandoned": "Abandoned",
+        "signed": "Signed",
+        "discarded": "Discarded"
+      },
+      "empty": "No encounters match this filter.",
+      "date": "Date",
+      "patient": "Patient",
+      "status": "Status",
+      "actions": "Actions",
+      "resume": "Resume",
+      "view": "View"
+    },
+    "open": {
+      "button": "Open encounter",
+      "title": "New encounter",
+      "submit": "Open"
+    },
+    "vaccinePanel": {
+      "title": "Record vaccine",
+      "soon": "Recording vaccines linked to the encounter arrives with the vaccination card."
+    }
+  },
+  "records": {
+    "patient": "Patient",
+    "custodyBanner": "Access limited to your own encounters: the guardian revoked the link with this clinic.",
+    "tabs": {
+      "label": "Record sections",
+      "summary": "Summary",
+      "history": "History",
+      "encounters": "Encounters",
+      "card": "Card",
+      "appointments": "Appointments",
+      "weight": "Weight",
+      "cardSoon": "The vaccination card will be available soon.",
+      "appointmentsSoon": "Appointments will be available soon."
+    },
+    "summary": {
+      "title": "Patient summary",
+      "alerts": "Alerts",
+      "noAlerts": "No alerts recorded.",
+      "weight": "Current weight",
+      "noWeight": "No weight recorded.",
+      "lastEncounter": "Last encounter",
+      "noEncounters": "No signed encounters.",
+      "nextDue": "Upcoming doses",
+      "nextDueSoon": "Available with the vaccination card.",
+      "followUps": "Pending follow-ups",
+      "noFollowUps": "No pending follow-ups."
+    },
+    "timeline": {
+      "filterKind": "Type",
+      "filterClinic": "Clinic",
+      "all": "All",
+      "empty": "No events in the history yet.",
+      "otherClinic": "Another clinic",
+      "otherClinicBadge": "Another clinic",
+      "kinds": {
+        "encounter": "Encounter",
+        "addendum": "Addendum",
+        "vaccine": "Vaccine",
+        "preventive": "Preventive",
+        "appointment": "Appointment",
+        "guardianship": "Guardianship",
+        "care_link": "Link"
+      },
+      "titles": {
+        "encounter": {
+          "signed": "Encounter signed",
+          "addendum": "Addendum added"
+        },
+        "care_link": {
+          "granted": "Clinic linked",
+          "revoked": "Link revoked"
+        },
+        "guardianship": {
+          "transferred": "Guardianship transferred"
+        }
+      }
+    },
+    "history": {
+      "title": "{name}'s medical history",
+      "view": "History view",
+      "views": {
+        "cards": "Encounters",
+        "timeline": "Timeline"
+      },
+      "empty": "No signed encounters yet.",
+      "diagnoses": "Diagnosis",
+      "addenda": "{n} addendum(a)",
+      "back": "Back to history",
+      "link": "Medical history",
+      "linkHint": "Signed encounters, addenda and documents"
+    },
+    "weight": {
+      "title": "Weight history",
+      "empty": "No weight records.",
+      "trend": "Change: {delta} over {days} days",
+      "alert": "Weight change above 10% in {days} days",
+      "showTable": "Show as table",
+      "showChart": "Show chart",
+      "date": "Date",
+      "kg": "Weight (kg)",
+      "origin": "Source",
+      "aria": "Weight chart with {count} records; latest {last} on {date}. Use the arrow keys to move between points.",
+      "source": {
+        "encounter": "Encounter",
+        "vaccination": "Vaccination"
+      }
+    },
+    "verify": {
+      "title": "Encounter verification",
+      "valid": "Authentic document: the signed encounter has not been altered.",
+      "invalid": "The fingerprint does not match the signed encounter.",
+      "notFound": "There is no signed encounter with this identifier.",
+      "clinic": "Clinic",
+      "signedAt": "Signed on",
+      "version": "Signed version"
+    }
   }
 }

@@ -231,10 +231,11 @@ func newSuiteHandlers() apiHandlers {
 	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, Logger: logger})
 	orgSvc := orgapp.NewService(orgapp.Options{Queries: fakeOrgQueries{}, Tokens: failingTokens{}, Logger: logger})
 	return apiHandlers{
-		Handlers:      identityHandlers,
-		AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-		PetHandlers:   pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
-		OrgHandlers:   orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		Handlers:         identityHandlers,
+		AdminHandlers:    identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+		PetHandlers:      pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
+		OrgHandlers:      orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		ClinicalHandlers: newSuiteClinicalHandlers(idem, logger),
 	}
 }
 
@@ -291,11 +292,20 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(targetID).Convert(f.Type))
 		case f.Name == "InvitationId":
 			field.Set(reflect.ValueOf(uuid.New()).Convert(f.Type))
+		case f.Name == "EncounterId":
+			field.Set(reflect.ValueOf(encID).Convert(f.Type))
+		case f.Name == "AttachmentId":
+			field.Set(reflect.ValueOf(attID).Convert(f.Type))
+		case f.Name == "JobId":
+			field.Set(reflect.ValueOf(jobID).Convert(f.Type))
 		case f.Name == "Token":
 			field.SetString("tok_tok_tok_tok_tok_tok_tok")
 		case f.Name == "Body" && f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct &&
 			!strings.Contains(f.Type.Elem().PkgPath(), "mime"):
 			field.Set(reflect.New(f.Type.Elem()))
+			if pf := field.Elem().FieldByName("PetId"); pf.IsValid() && pf.CanSet() && pf.Kind() == reflect.Array {
+				pf.Set(reflect.ValueOf(petID).Convert(pf.Type())) // abrir consulta sobre la mascota del fixture
+			}
 		}
 	}
 	ctx := auth.WithPrincipal(context.Background(), who.p)

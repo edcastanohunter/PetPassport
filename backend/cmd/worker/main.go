@@ -181,12 +181,17 @@ func run() error {
 	health.SetReady(true)
 	logger.Info("worker ready", "group", a.cfg.Group, "projections", a.subs.Names())
 
-	err = sup.Run(ctx,
-		worker.Runner{Name: "instance-heartbeat", Run: func(ctx context.Context) error { return lock.Heartbeat(ctx, 10*time.Second) }},
-		worker.Runner{Name: "projections", Run: a.subs.Run},
-		worker.Runner{Name: "outbox", Run: consumer.Run},
-		worker.Runner{Name: "command-scheduler", Run: cmdRunner.Run},
-	)
+	runners := []worker.Runner{
+		{Name: "instance-heartbeat", Run: func(ctx context.Context) error { return lock.Heartbeat(ctx, 10*time.Second) }},
+		{Name: "projections", Run: a.subs.Run},
+		{Name: "outbox", Run: consumer.Run},
+		{Name: "command-scheduler", Run: cmdRunner.Run},
+	}
+	clinical, err := clinicalRunners(ctx, a, logger)
+	if err != nil {
+		return err
+	}
+	err = sup.Run(ctx, append(runners, clinical...)...)
 	health.SetReady(false)
 	logger.Info("worker stopped")
 	return err

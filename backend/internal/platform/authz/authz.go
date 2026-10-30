@@ -67,6 +67,18 @@ const (
 	AdminAuditRead      Action = "admin:audit:read"
 )
 
+// Acciones de Clinical Records F2 (SEC-001, docs/phase-2/08 §2).
+const (
+	RecordRead            Action = "record:read"
+	EncounterList         Action = "encounter:list"
+	EncounterRead         Action = "encounter:read"
+	EncounterOpen         Action = "encounter:open"
+	EncounterEdit         Action = "encounter:edit"
+	EncounterClinicalEdit Action = "encounter:clinical_edit"
+	EncounterSign         Action = "encounter:sign"
+	EncounterDiscard      Action = "encounter:discard"
+)
+
 // ReasonOrgSuspended es el motivo de denegación de org:patients:list cuando
 // la organización del miembro está suspendida (→ 403 ORGANIZATION_SUSPENDED).
 const ReasonOrgSuspended = "organization suspended"
@@ -89,6 +101,30 @@ type PetResource struct {
 	ID                   uuid.UUID
 	GuardianID           uuid.UUID
 	ActiveCareLinkOrgIDs []uuid.UUID
+}
+
+// EncounterResource es la vista de autorización de un encuentro (SEC-001).
+// PetLinked lo resuelve el handler con PetAccess: sin vínculo activo la org
+// solo conserva lectura de lo que firmó (custodia, ADR-010).
+type EncounterResource struct {
+	ID             uuid.UUID
+	PetID          uuid.UUID
+	OrganizationID uuid.UUID
+	GuardianID     uuid.UUID
+	AttendingVetID *uuid.UUID
+	Status         string // draft | signed | discarded
+	PetLinked      bool
+	// LinkedOrgIDs son las orgs con vínculo activo a la mascota: sus miembros
+	// leen también las consultas firmadas de otras clínicas (PRD-009, L).
+	LinkedOrgIDs []uuid.UUID
+}
+
+// PetRecordResource es la vista de autorización de una ficha de paciente.
+type PetRecordResource struct {
+	PetID         uuid.UUID
+	GuardianID    uuid.UUID
+	LinkedOrgIDs  []uuid.UUID
+	CustodyOrgIDs []uuid.UUID
 }
 
 // Decision es el resultado de una política.
@@ -289,6 +325,218 @@ func orgPatientsList(p auth.Principal, res Resource) Decision {
 	return deny("not a clinic member")
 }
 
+// ---------------------------------------------------------- clinical records
+
+func encounterResource(res Resource) (*EncounterResource, bool) {
+	r, ok := res.(EncounterResource)
+	if !ok || r.ID == uuid.Nil {
+		return nil, false
+	}
+	return &r, true
+}
+
+func recordResource(res Resource) (*PetRecordResource, bool) {
+	r, ok := res.(PetRecordResource)
+	if !ok || r.PetID == uuid.Nil {
+		return nil, false
+	}
+	return &r, true
+}
+
+// activeClinicMember: membresía activa con rol clínico en una org activa.
+func activeClinicMember(p auth.Principal, orgID uuid.UUID) (auth.Membership, bool) {
+	m, ok := membership(p, orgID)
+	if !ok || m.OrgStatus != "active" || m.OrgType != "clinic" || !clinicReaderRoles[m.Role] {
+		return auth.Membership{}, false
+	}
+	return m, true
+}
+
+func isVetMembership(m auth.Membership) bool { return m.Role == "veterinarian" }
+
+// EncounterVisible: el actor puede ver la existencia del encuentro (si no,
+// 404). Tutor solo encuentra firmados; la org necesita vínculo o custodia.
+func EncounterVisible(p auth.Principal, r EncounterResource) bool {
+	if p.Account.Suspended {
+		return false
+	}
+	if p.UserID == r.GuardianID && r.Status == "signed" {
+		return true
+	}
+	if _, ok := activeClinicMember(p, r.OrganizationID); ok {
+		return r.PetLinked || r.Status == "signed"
+	}
+	if r.Status == "signed" {
+		for _, id := range r.LinkedOrgIDs {
+			if _, ok := activeClinicMember(p, id); ok {
+				return true
+			}
+		}
+	}
+	return isSuperAdmin(p)
+}
+
+// RecordVisible: el actor puede ver la ficha/historial de la mascota.
+func RecordVisible(p auth.Principal, r PetRecordResource) bool {
+	if p.Account.Suspended {
+		return false
+	}
+	if p.UserID == r.GuardianID || isSuperAdmin(p) {
+		return true
+	}
+	for _, id := range append(append([]uuid.UUID{}, r.LinkedOrgIDs...), r.CustodyOrgIDs...) {
+		if _, ok := activeClinicMember(p, id); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func recordReadPolicy(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := recordResource(res)
+	if !ok {
+		return deny("pet record resource required")
+	}
+	if RecordVisible(p, *r) {
+		if isSuperAdmin(p) && p.UserID != r.GuardianID {
+			return Decision{Allow: true, Reason: "super_admin"}
+		}
+		return allow
+	}
+	return deny("no access to pet record")
+}
+
+func encounterMember(p auth.Principal, r *EncounterResource) (auth.Membership, bool) {
+	return activeClinicMember(p, r.OrganizationID)
+}
+
+// encounterList: miembro clínico de la organización (la lista filtra por
+// vínculo/custodia en la consulta).
+func encounterList(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if _, member := encounterMember(p, r); member {
+		return allow
+	}
+	if isSuperAdmin(p) {
+		return Decision{Allow: true, Reason: "super_admin"}
+	}
+	return deny("not a clinic member")
+}
+
+// encounterOpen: miembro clínico con vínculo activo (E1).
+func encounterOpen(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if _, member := encounterMember(p, r); member && r.PetLinked {
+		return allow
+	}
+	return deny("not linked to pet")
+}
+
+// encounterRead: G si firmado; L/C; super_admin (auditado).
+func encounterRead(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if EncounterVisible(p, *r) {
+		if isSuperAdmin(p) {
+			return Decision{Allow: true, Reason: "super_admin"}
+		}
+		return allow
+	}
+	return deny("encounter not visible")
+}
+
+// encounterEdit: cualquier rol clínico con vínculo y borrador.
+func encounterEdit(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if _, member := encounterMember(p, r); member && r.PetLinked && r.Status == "draft" {
+		return allow
+	}
+	return deny("encounter not editable")
+}
+
+// encounterClinicalEdit: solo veterinario con vínculo y borrador (E4).
+func encounterClinicalEdit(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if m, member := encounterMember(p, r); member && r.PetLinked && r.Status == "draft" && isVetMembership(m) {
+		return allow
+	}
+	return deny("clinical edit requires veterinarian")
+}
+
+// encounterSign: veterinario responsable del encuentro con vínculo (firmar y
+// adendar, SEC-001: "V y responsable"). El estado lo valida el dominio
+// (E3/E9); E5 reafirma la responsabilidad.
+func encounterSign(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if m, member := encounterMember(p, r); member && r.PetLinked && isVetMembership(m) &&
+		(r.Status == "draft" || r.Status == "signed") &&
+		r.AttendingVetID != nil && *r.AttendingVetID == p.UserID {
+		return allow
+	}
+	return deny("not the attending veterinarian")
+}
+
+// encounterDiscard: RA con vínculo, V responsable del borrador o super_admin.
+func encounterDiscard(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := encounterResource(res)
+	if !ok {
+		return deny("encounter resource required")
+	}
+	if m, member := encounterMember(p, r); member && r.PetLinked && r.Status == "draft" {
+		if m.Role == "clinic_admin" {
+			return allow
+		}
+		if isVetMembership(m) && r.AttendingVetID != nil && *r.AttendingVetID == p.UserID {
+			return allow
+		}
+	}
+	if isSuperAdmin(p) {
+		return Decision{Allow: true, Reason: "super_admin"}
+	}
+	return deny("only clinic admin, attending vet or super_admin")
+}
+
 // superAdminOnly: acciones de administración de plataforma (admin:*).
 func superAdminOnly(p auth.Principal, _ Resource) Decision {
 	if d := authenticatedOnly(p, nil); !d.Allow {
@@ -338,6 +586,15 @@ var policies = map[Action]Policy{
 	AdminUserSuspend:    superAdminOnly,
 	AdminUserReactivate: superAdminOnly,
 	AdminAuditRead:      superAdminOnly,
+
+	RecordRead:            recordReadPolicy,
+	EncounterList:         encounterList,
+	EncounterRead:         encounterRead,
+	EncounterOpen:         encounterOpen,
+	EncounterEdit:         encounterEdit,
+	EncounterClinicalEdit: encounterClinicalEdit,
+	EncounterSign:         encounterSign,
+	EncounterDiscard:      encounterDiscard,
 }
 
 // Can evalúa la política de la acción. Acciones sin política → deny.

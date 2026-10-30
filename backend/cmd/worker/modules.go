@@ -27,6 +27,7 @@ func newRegistry() (*eventstore.Registry, error) {
 	petinfra.RegisterEvents(reg)
 	petinfra.RegisterUpcasters(reg)
 	orginfra.RegisterEvents(reg)
+	clinicalinfra.RegisterEvents(reg)
 	if err := reg.Validate(); err != nil {
 		return nil, fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -44,6 +45,7 @@ func newSyncRunner(pool *db.Pool, reg *eventstore.Registry, logger *slog.Logger)
 	orginfra.RegisterSyncProjectors(runner, reg)
 	petinfra.RegisterSyncProjectors(runner, reg,
 		petinfra.NewGuardianAdapter(identitySvc), petinfra.NewOrganizationAdapter(orgQueries))
+	clinicalinfra.RegisterSyncProjectors(runner, reg)
 	return runner
 }
 
@@ -52,6 +54,8 @@ func newSyncRunner(pool *db.Pool, reg *eventstore.Registry, logger *slog.Logger)
 // F1 siguen síncronas en el api (ADR-009 §1): no se registran aquí.
 func registerAsyncProjections(subs *projection.Subscriptions) {
 	subs.Register(clinicalinfra.NewTimelineProjector())
+	subs.Register(clinicalinfra.NewWeightProjector())
+	subs.Register(clinicalinfra.NewCustodyProjector())
 }
 
 // registerProcessManagers registra los PM del outbox y los comandos que el

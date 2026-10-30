@@ -29,6 +29,12 @@ tags:
     description: Invitaciones de miembros (docs/phase-1/05-api.md §3.5)
   - name: admin
     description: Administración de plataforma, solo super_admin (docs/phase-1/05-api.md §3.6)
+  - name: encounters
+    description: Consultas clínicas (docs/phase-2/04-api.md §1–2)
+  - name: records
+    description: Historial, resumen y peso de la mascota (docs/phase-2/04-api.md §3)
+  - name: documents
+    description: Documentos generados y verificación pública (docs/phase-2/04-api.md §13)
 security:
   - bearerAuth: []
 paths:
@@ -1535,6 +1541,735 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/encounters:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: openEncounter
+      summary: Abrir consulta
+      description: Miembro clínico (clinic_admin, veterinarian, receptionist) de una clínica activa con vínculo activo a la mascota (E1). Sin vínculo → 403 PET_NOT_ACCESSIBLE; desde cita sin check-in → 409 APPOINTMENT_NOT_CHECKED_IN (PRD-001).
+      tags: [encounters]
+      x-pp-action: encounter:open
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenEncounterRequest"
+      responses:
+        "201":
+          description: Consulta abierta en borrador
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Encounter"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listOrgEncounters
+      summary: Consultas de la organización
+      description: Miembros de la clínica. Incluye `abandoned` para borradores sin actividad > 7 días (PRD-005). Solo consultas de mascotas con vínculo activo o firmadas por la organización (custodia).
+      tags: [encounters]
+      x-pp-action: encounter:list
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, signed, discarded, abandoned]
+        - name: pet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: professional_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de consultas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncounterPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    get:
+      operationId: getEncounter
+      summary: Detalle de la consulta
+      description: Tutor solo firmadas y adjuntos visibles; miembros con vínculo (L) o custodia (C) de la organización; super_admin con motivo (auditado). Toda lectura de un miembro de organización se audita (SEC-005). No visible → 404.
+      tags: [encounters]
+      x-pp-action: encounter:read
+      responses:
+        "200":
+          description: Consulta
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Encounter"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateEncounter
+      summary: Editar motivo, tipo, inicio, S/O o responsable (autoguardado)
+      description: Borrador con vínculo; cualquier rol clínico (RN-07). Campos ausentes no cambian. No borrador → 409 ENCOUNTER_NOT_DRAFT; versión distinta → 409 CONFLICT_VERSION (PRD-003).
+      tags: [encounters]
+      x-pp-action: encounter:edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEncounterRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/vitals:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    put:
+      operationId: putEncounterVitals
+      summary: Registrar constantes vitales
+      description: Reemplazo completo. La respuesta incluye `warnings[]` por rangos de especie (aviso, no bloqueo; PRD-002).
+      tags: [encounters]
+      x-pp-action: encounter:edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Vitals"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/diagnoses:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    put:
+      operationId: putEncounterDiagnoses
+      summary: Fijar diagnósticos (A)
+      description: Solo veterinario de la organización, en borrador (E4). Otro rol → 403 ROLE_REQUIRED_VETERINARIAN.
+      tags: [encounters]
+      x-pp-action: encounter:clinical_edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiagnosesRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/plan:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    put:
+      operationId: putEncounterPlan
+      summary: Fijar el plan (P)
+      description: Solo veterinario, en borrador (E4). Medicación estructurada (base de Prescription en F4).
+      tags: [encounters]
+      x-pp-action: encounter:clinical_edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Plan"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/follow-up:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    put:
+      operationId: putEncounterFollowUp
+      summary: Recomendar control
+      description: Solo veterinario, en borrador. `due_date` ∈ (hoy, hoy+365] (PRD-007).
+      tags: [encounters]
+      x-pp-action: encounter:clinical_edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FollowUp"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteEncounterFollowUp
+      summary: Retirar el control recomendado
+      tags: [encounters]
+      x-pp-action: encounter:clinical_edit
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/sign:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: signEncounter
+      summary: Firmar la consulta
+      description: Solo el veterinario responsable (E5). Contenido mínimo (E6) y no futura (E7) → si no, 422 ENCOUNTER_INCOMPLETE con `errors[]` (attending_vet, content, started_at). Congela el contenido, calcula `content_hash` (ARQ-010) y encola el PDF (`pdf.status = pending`).
+      tags: [encounters]
+      x-pp-action: encounter:sign
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/addenda:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: addEncounterAddendum
+      summary: Añadir adenda a una consulta firmada
+      description: Veterinario responsable (SEC-001). Texto ≤ 5.000 + motivo; adjuntos subidos antes con POST /attachments (≤ 5). Sin firmar → 409 ENCOUNTER_NOT_SIGNED; > 20 → 409 ADDENDA_LIMIT. Regenera el PDF (PRD-006).
+      tags: [encounters]
+      x-pp-action: encounter:sign
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddendumRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/EncounterCreated"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/discard:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: discardEncounter
+      summary: Descartar un borrador
+      description: clinic_admin, el veterinario responsable o super_admin, con motivo. Nunca firmado.
+      tags: [encounters]
+      x-pp-action: encounter:discard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/EncounterOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/pdf:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    get:
+      operationId: getEncounterPdf
+      summary: PDF de la consulta firmada
+      description: 302 a URL prefirmada (15 min) del PDF vigente (última adenda incluida) o 202 con el job si aún se genera (DOCUMENT_PENDING, ARQ-010).
+      tags: [encounters]
+      x-pp-action: encounter:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada del PDF (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "202":
+          description: PDF en generación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJob"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/attachments:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: uploadEncounterAttachment
+      summary: Subir adjunto
+      description: JPEG/PNG/WebP (re-encode, EXIF sin GPS) o PDF validado (sin JavaScript, formularios ni adjuntos embebidos, ≤ 50 páginas), ≤ 10 MB (SEC-003). En borrador se añade al cuerpo (≤ 10, 409 ATTACHMENT_LIMIT); en una consulta firmada queda preparado para la siguiente adenda (solo el responsable).
+      tags: [encounters]
+      x-pp-action: encounter:edit
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+                  maxLength: 200
+                visible_to_guardian:
+                  type: boolean
+                  default: true
+      responses:
+        "201":
+          description: Adjunto subido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "415":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/attachments/{attachmentId}:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+      - $ref: "#/components/parameters/AttachmentId"
+    get:
+      operationId: getEncounterAttachment
+      summary: Descargar adjunto
+      description: 302 a URL prefirmada (15 min, PDF con Content-Disposition attachment). El tutor solo ve adjuntos `visible_to_guardian` de consultas firmadas. Descarga auditada (SEC-005).
+      tags: [encounters]
+      x-pp-action: encounter:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: setEncounterAttachmentVisibility
+      summary: Cambiar visibilidad para el tutor
+      description: Solo veterinario de la organización, en cualquier estado; ocultar exige motivo (auditado, SEC-003).
+      tags: [encounters]
+      x-pp-action: encounter:clinical_edit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachmentVisibilityRequest"
+      responses:
+        "200":
+          description: Adjunto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteEncounterAttachment
+      summary: Eliminar adjunto
+      description: Solo en borrador (PRD-004).
+      tags: [encounters]
+      x-pp-action: encounter:edit
+      responses:
+        "204":
+          description: Eliminado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/timeline:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetTimeline
+      summary: Historial clínico cronológico
+      description: Tutor, clínicas con vínculo (L) o custodia (C, solo lo propio) y super_admin. Vista derivada asíncrona con cabecera X-PP-Freshness (ARQ-012, API-013).
+      tags: [records]
+      x-pp-action: record:read
+      parameters:
+        - name: kind
+          in: query
+          schema:
+            type: string
+            enum: [encounter, addendum, vaccine, preventive, appointment, guardianship, care_link]
+        - name: organization_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de la línea de tiempo
+          headers:
+            X-PP-Freshness:
+              $ref: "#/components/headers/X-PP-Freshness"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimelinePage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/encounters:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: listPetEncounters
+      summary: Consultas firmadas de la mascota
+      description: Visibles para el actor (custodia incluida; RN-10). La clínica con vínculo ve también sus borradores.
+      tags: [records]
+      x-pp-action: record:read
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de consultas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncounterPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/weight-history:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetWeightHistory
+      summary: Historial de peso con tendencia
+      description: Mediciones de consultas firmadas y tendencia; alerta si la variación supera el 10 % en 90 días (PRD-025). Vista derivada (X-PP-Freshness).
+      tags: [records]
+      x-pp-action: record:read
+      responses:
+        "200":
+          description: Historial de peso
+          headers:
+            X-PP-Freshness:
+              $ref: "#/components/headers/X-PP-Freshness"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightHistory"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/summary:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetSummary
+      summary: Resumen de la ficha clínica
+      description: Alertas, última consulta, próximas dosis (M2.2), peso actual y controles pendientes (PRD-009). Vista derivada (X-PP-Freshness).
+      tags: [records]
+      x-pp-action: record:read
+      responses:
+        "200":
+          description: Resumen
+          headers:
+            X-PP-Freshness:
+              $ref: "#/components/headers/X-PP-Freshness"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetClinicalSummary"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /documents/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getDocumentJob
+      summary: Estado de un documento en generación
+      description: Jobs de PDF encolados al firmar o adendar (API-013). Visible para quien puede leer el documento de origen.
+      tags: [documents]
+      x-pp-action: encounter:read
+      responses:
+        "200":
+          description: Estado del job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJob"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /verify/encounters/{encounterId}:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    get:
+      operationId: verifyEncounter
+      summary: Verificación pública de una consulta firmada
+      description: Sin autenticación ni PII. Recomputa el hash desde es.events y lo compara con el firmado y con `hash` (SEC-004). Rate limit en el WAF; `X-Robots-Tag noindex`. Inexistente o sin firmar → 404.
+      tags: [documents]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: hash
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{64}$"
+      responses:
+        "200":
+          description: Resultado de la verificación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncounterVerification"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -1568,6 +2303,34 @@ components:
       bearerFormat: JWT
       description: Access token emitido por Keycloak (realm `petpassport`, audiencia `petpassport-api`).
   parameters:
+    EncounterId:
+      name: encounterId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttachmentId:
+      name: attachmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 200
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
     PetId:
       name: petId
       in: path
@@ -1613,6 +2376,13 @@ components:
         minLength: 20
         maxLength: 64
         pattern: "^[A-Za-z0-9_-]+$"
+    AcceptLink:
+      name: Accept
+      in: header
+      required: false
+      description: "Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch)."
+      schema:
+        type: string
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -1631,6 +2401,10 @@ components:
         format: int64
         minimum: 1
   headers:
+    X-PP-Freshness:
+      description: Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013).
+      schema:
+        type: string
     ETag:
       description: Versión del recurso; enviar en If-Match para los comandos.
       schema:
@@ -1755,6 +2529,7 @@ components:
     Species:
       type: string
       enum: [dog, cat, bird, rabbit, reptile, rodent, equine, ferret, fish, other]
+      x-enum-varnames: [Dog, Cat, Bird, Rabbit, Reptile, Rodent, Equine, Ferret, Fish, Other]
     SpeciesOther:
       type: string
       description: Obligatoria si species = other; 1–40.
@@ -2664,7 +3439,687 @@ components:
                 type: string
               code:
                 type: string
+    EncounterType:
+      type: string
+      enum: [consultation, follow_up, emergency, vaccination, surgery, procedure, other]
+      x-enum-varnames: [EncounterTypeConsultation, EncounterTypeFollowUp, EncounterTypeEmergency, EncounterTypeVaccination, EncounterTypeSurgery, EncounterTypeProcedure, EncounterTypeOther]
+    AddendumReason:
+      type: string
+      enum: [correction, additional_findings, lab_results, other]
+      x-enum-varnames: [AddendumCorrection, AddendumAdditionalFindings, AddendumLabResults, AddendumOther]
+    EncounterStatus:
+      type: string
+      enum: [draft, signed, discarded]
+    OpenEncounterRequest:
+      type: object
+      additionalProperties: false
+      required: [pet_id, type, reason]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/EncounterType"
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        started_at:
+          type: string
+          format: date-time
+        attending_vet_id:
+          type: string
+          format: uuid
+        appointment_id:
+          type: string
+          format: uuid
+    UpdateEncounterRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        type:
+          $ref: "#/components/schemas/EncounterType"
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        started_at:
+          type: string
+          format: date-time
+        attending_vet_id:
+          type: string
+          format: uuid
+        subjective:
+          type: string
+          maxLength: 5000
+        objective:
+          $ref: "#/components/schemas/Objective"
+    Vitals:
+      type: object
+      additionalProperties: false
+      properties:
+        weight_kg:
+          type: number
+          minimum: 0.01
+          maximum: 500
+        temp_c:
+          type: number
+          minimum: 30
+          maximum: 45
+        heart_rate_bpm:
+          type: integer
+          minimum: 20
+          maximum: 400
+        resp_rate_rpm:
+          type: integer
+          minimum: 5
+          maximum: 200
+        body_condition:
+          type: integer
+          minimum: 1
+          maximum: 9
+        mucosa:
+          type: string
+          enum: [pink, pale, white, cyanotic, icteric, hyperemic]
+        crt_seconds:
+          type: number
+          minimum: 0.5
+          maximum: 5
+        hydration_pct:
+          type: number
+          minimum: 0
+          maximum: 15
+    VitalWarning:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+          enum: [LOW, HIGH]
+        message:
+          type: string
+    Finding:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [normal, abnormal, not_examined]
+        note:
+          type: string
+          maxLength: 500
+    Objective:
+      type: object
+      additionalProperties: false
+      properties:
+        narrative:
+          type: string
+          maxLength: 5000
+        systems:
+          type: object
+          description: "Hallazgos por sistema: integumentary, musculoskeletal, cardiovascular, respiratory, digestive, genitourinary, nervous, eyes, ears, lymph, oral."
+          additionalProperties:
+            $ref: "#/components/schemas/Finding"
+    Diagnosis:
+      type: object
+      additionalProperties: false
+      required: [text, certainty]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 200
+        code:
+          type: object
+          additionalProperties: false
+          required: [system, value]
+          properties:
+            system:
+              type: string
+              maxLength: 40
+            value:
+              type: string
+              maxLength: 40
+        certainty:
+          type: string
+          enum: [presumptive, confirmed, differential, ruled_out]
+    DiagnosesRequest:
+      type: object
+      additionalProperties: false
+      required: [diagnoses]
+      properties:
+        diagnoses:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Diagnosis"
+    Frequency:
+      type: object
+      additionalProperties: false
+      properties:
+        once:
+          type: boolean
+        every:
+          type: integer
+          minimum: 1
+          maximum: 90
+        unit:
+          type: string
+          enum: [hours, days]
+    MedicationItem:
+      type: object
+      additionalProperties: false
+      required: [medication_name, dose, dose_unit, route, frequency]
+      properties:
+        medication_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        presentation:
+          type: string
+          maxLength: 120
+        dose:
+          type: number
+          exclusiveMinimum: 0
+        dose_unit:
+          type: string
+          enum: [mg, ml, ui, tablet, capsule, drop, mg_per_kg, ml_per_kg]
+        route:
+          type: string
+          enum: [oral, sc, im, iv, topical, ophthalmic, otic, inhaled, rectal]
+        frequency:
+          $ref: "#/components/schemas/Frequency"
+        duration_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+        instructions:
+          type: string
+          maxLength: 300
+    Procedure:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        notes:
+          type: string
+          maxLength: 1000
+    Plan:
+      type: object
+      additionalProperties: false
+      properties:
+        medications:
+          type: array
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/MedicationItem"
+        procedures:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Procedure"
+        recommendations:
+          type: string
+          maxLength: 5000
+    FollowUp:
+      type: object
+      additionalProperties: false
+      required: [due_date, reason]
+      properties:
+        due_date:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+    Attachment:
+      type: object
+      required: [id, content_type, size, visible_to_guardian, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        content_type:
+          type: string
+          enum: [jpeg, png, webp, pdf]
+        size:
+          type: integer
+        description:
+          type: string
+        visible_to_guardian:
+          type: boolean
+        addendum_seq:
+          type: integer
+        pending_addendum:
+          type: boolean
+          description: Subido a una consulta firmada; se adjunta con la siguiente adenda.
+        created_at:
+          type: string
+          format: date-time
+    AttachmentVisibilityRequest:
+      type: object
+      additionalProperties: false
+      required: [visible_to_guardian]
+      properties:
+        visible_to_guardian:
+          type: boolean
+        reason:
+          type: string
+          maxLength: 200
+    UserRef:
+      type: object
+      required: [id, display_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+    Signature:
+      type: object
+      required: [signed_by, signed_at, stream_version, content_hash]
+      properties:
+        signed_by:
+          $ref: "#/components/schemas/UserRef"
+        signed_at:
+          type: string
+          format: date-time
+        stream_version:
+          type: integer
+          format: int64
+        content_hash:
+          type: string
+          description: SHA-256 en hex del JSON canónico (RFC 8785) de los eventos hasta stream_version (ARQ-010).
+        jws:
+          type: string
+          description: Reservado para la firma criptográfica del servidor (F5, SEC-004).
+    Addendum:
+      type: object
+      required: [seq, text, reason, signed_by, signed_at, attachments]
+      properties:
+        seq:
+          type: integer
+        text:
+          type: string
+        reason:
+          $ref: "#/components/schemas/AddendumReason"
+        signed_by:
+          $ref: "#/components/schemas/UserRef"
+        signed_at:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+    AddendumRequest:
+      type: object
+      additionalProperties: false
+      required: [text, reason]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        reason:
+          $ref: "#/components/schemas/AddendumReason"
+        attachment_ids:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uuid
+    ReasonRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    DownloadLink:
+      type: object
+      required: [url, expires_at]
+      properties:
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    DocumentJob:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, rendering, ready, failed]
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    EncounterPdf:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [none, pending, rendering, ready, failed]
+        job_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    PetRef:
+      type: object
+      required: [id, name, species]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: string
+    Encounter:
+      type: object
+      required: [id, version, pet, organization_id, type, status, started_at, reason, diagnoses, plan, attachments, addenda, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        pet:
+          $ref: "#/components/schemas/PetRef"
+        organization_id:
+          type: string
+          format: uuid
+        appointment_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/EncounterType"
+        status:
+          $ref: "#/components/schemas/EncounterStatus"
+        abandoned:
+          type: boolean
+        started_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        attending_vet:
+          $ref: "#/components/schemas/UserRef"
+        vitals:
+          $ref: "#/components/schemas/Vitals"
+        subjective:
+          type: string
+        objective:
+          $ref: "#/components/schemas/Objective"
+        diagnoses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Diagnosis"
+        plan:
+          $ref: "#/components/schemas/Plan"
+        follow_up:
+          $ref: "#/components/schemas/FollowUp"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+        signature:
+          $ref: "#/components/schemas/Signature"
+        addenda:
+          type: array
+          items:
+            $ref: "#/components/schemas/Addendum"
+        pdf:
+          $ref: "#/components/schemas/EncounterPdf"
+        warnings:
+          type: array
+          description: Avisos de rango por especie de las constantes (solo en PUT /vitals y lecturas clínicas).
+          items:
+            $ref: "#/components/schemas/VitalWarning"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EncounterSummary:
+      type: object
+      required: [id, version, pet, organization_id, type, status, started_at, reason, abandoned, last_activity_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        pet:
+          $ref: "#/components/schemas/PetRef"
+        organization_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/EncounterType"
+        status:
+          $ref: "#/components/schemas/EncounterStatus"
+        started_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        attending_vet_id:
+          type: string
+          format: uuid
+        attending_vet_name:
+          type: string
+        organization_name:
+          type: string
+        diagnoses:
+          type: array
+          description: Textos de diagnóstico (tarjetas del historial, FE-009).
+          items:
+            type: string
+        addenda_count:
+          type: integer
+        signed_at:
+          type: string
+          format: date-time
+        abandoned:
+          type: boolean
+        last_activity_at:
+          type: string
+          format: date-time
+    EncounterPage:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EncounterSummary"
+        next_cursor:
+          type: string
+    Freshness:
+      type: object
+      required: [lag_seconds]
+      properties:
+        lag_seconds:
+          type: number
+    TimelineItem:
+      type: object
+      required: [occurred_at, kind, ref_id, title, visibility]
+      properties:
+        occurred_at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [encounter, addendum, vaccine, preventive, appointment, guardianship, care_link]
+        ref_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          description: Clave estable traducible (p. ej. encounter.signed).
+        summary:
+          type: string
+        visibility:
+          type: string
+          enum: [guardian, org, both]
+    TimelinePage:
+      type: object
+      required: [data, freshness]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineItem"
+        next_cursor:
+          type: string
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+    WeightPoint:
+      type: object
+      required: [measured_at, weight_kg, source]
+      properties:
+        measured_at:
+          type: string
+          format: date-time
+        weight_kg:
+          type: number
+        source:
+          type: string
+          enum: [encounter, vaccination]
+        organization_id:
+          type: string
+          format: uuid
+    WeightHistory:
+      type: object
+      required: [data, trend, freshness]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeightPoint"
+        trend:
+          type: object
+          required: [window_days, alert]
+          properties:
+            delta_kg:
+              type: number
+            delta_pct:
+              type: number
+            window_days:
+              type: integer
+            alert:
+              type: boolean
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+    FollowUpItem:
+      type: object
+      required: [encounter_id, organization_id, due_date, reason]
+      properties:
+        encounter_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+        reason:
+          type: string
+    PetClinicalSummary:
+      type: object
+      required: [alerts, next_due, open_follow_ups, freshness]
+      properties:
+        alerts:
+          type: array
+          items:
+            type: string
+        last_encounter:
+          $ref: "#/components/schemas/EncounterSummary"
+        next_due:
+          type: array
+          description: Próximas dosis del carnet (llegan con VaccinationCard, M2.2).
+          items:
+            type: object
+        current_weight:
+          $ref: "#/components/schemas/WeightPoint"
+        open_follow_ups:
+          type: array
+          items:
+            $ref: "#/components/schemas/FollowUpItem"
+        access:
+          type: string
+          enum: [guardian, linked, custody, admin]
+          description: Nivel de acceso del actor; `custody` muestra el banner "Acceso limitado a sus propias consultas" (FE-005).
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+    EncounterVerification:
+      type: object
+      required: [valid, signed_at, stream_version]
+      properties:
+        valid:
+          type: boolean
+          description: El hash recomputado coincide con el firmado y, si se envía, con `hash`.
+        signed_at:
+          type: string
+          format: date-time
+        stream_version:
+          type: integer
+          format: int64
+        content_hash:
+          type: string
+          description: Solo se devuelve si la verificación es válida.
+        organization_name:
+          type: string
   responses:
+    EncounterOK:
+      description: Consulta actualizada
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Encounter"
+    EncounterCreated:
+      description: Adenda creada; devuelve la consulta
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Encounter"
     Problem:
       description: Error
       content:

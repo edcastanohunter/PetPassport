@@ -821,6 +821,420 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{orgId}/encounters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultas de la organización
+         * @description Miembros de la clínica. Incluye `abandoned` para borradores sin actividad > 7 días (PRD-005). Solo consultas de mascotas con vínculo activo o firmadas por la organización (custodia).
+         */
+        get: operations["listOrgEncounters"];
+        put?: never;
+        /**
+         * Abrir consulta
+         * @description Miembro clínico (clinic_admin, veterinarian, receptionist) de una clínica activa con vínculo activo a la mascota (E1). Sin vínculo → 403 PET_NOT_ACCESSIBLE; desde cita sin check-in → 409 APPOINTMENT_NOT_CHECKED_IN (PRD-001).
+         */
+        post: operations["openEncounter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de la consulta
+         * @description Tutor solo firmadas y adjuntos visibles; miembros con vínculo (L) o custodia (C) de la organización; super_admin con motivo (auditado). Toda lectura de un miembro de organización se audita (SEC-005). No visible → 404.
+         */
+        get: operations["getEncounter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Editar motivo, tipo, inicio, S/O o responsable (autoguardado)
+         * @description Borrador con vínculo; cualquier rol clínico (RN-07). Campos ausentes no cambian. No borrador → 409 ENCOUNTER_NOT_DRAFT; versión distinta → 409 CONFLICT_VERSION (PRD-003).
+         */
+        patch: operations["updateEncounter"];
+        trace?: never;
+    };
+    "/encounters/{encounterId}/vitals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registrar constantes vitales
+         * @description Reemplazo completo. La respuesta incluye `warnings[]` por rangos de especie (aviso, no bloqueo; PRD-002).
+         */
+        put: operations["putEncounterVitals"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/diagnoses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Fijar diagnósticos (A)
+         * @description Solo veterinario de la organización, en borrador (E4). Otro rol → 403 ROLE_REQUIRED_VETERINARIAN.
+         */
+        put: operations["putEncounterDiagnoses"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Fijar el plan (P)
+         * @description Solo veterinario, en borrador (E4). Medicación estructurada (base de Prescription en F4).
+         */
+        put: operations["putEncounterPlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/follow-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Recomendar control
+         * @description Solo veterinario, en borrador. `due_date` ∈ (hoy, hoy+365] (PRD-007).
+         */
+        put: operations["putEncounterFollowUp"];
+        post?: never;
+        /** Retirar el control recomendado */
+        delete: operations["deleteEncounterFollowUp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Firmar la consulta
+         * @description Solo el veterinario responsable (E5). Contenido mínimo (E6) y no futura (E7) → si no, 422 ENCOUNTER_INCOMPLETE con `errors[]` (attending_vet, content, started_at). Congela el contenido, calcula `content_hash` (ARQ-010) y encola el PDF (`pdf.status = pending`).
+         */
+        post: operations["signEncounter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/addenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Añadir adenda a una consulta firmada
+         * @description Veterinario responsable (SEC-001). Texto ≤ 5.000 + motivo; adjuntos subidos antes con POST /attachments (≤ 5). Sin firmar → 409 ENCOUNTER_NOT_SIGNED; > 20 → 409 ADDENDA_LIMIT. Regenera el PDF (PRD-006).
+         */
+        post: operations["addEncounterAddendum"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Descartar un borrador
+         * @description clinic_admin, el veterinario responsable o super_admin, con motivo. Nunca firmado.
+         */
+        post: operations["discardEncounter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * PDF de la consulta firmada
+         * @description 302 a URL prefirmada (15 min) del PDF vigente (última adenda incluida) o 202 con el job si aún se genera (DOCUMENT_PENDING, ARQ-010).
+         */
+        get: operations["getEncounterPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subir adjunto
+         * @description JPEG/PNG/WebP (re-encode, EXIF sin GPS) o PDF validado (sin JavaScript, formularios ni adjuntos embebidos, ≤ 50 páginas), ≤ 10 MB (SEC-003). En borrador se añade al cuerpo (≤ 10, 409 ATTACHMENT_LIMIT); en una consulta firmada queda preparado para la siguiente adenda (solo el responsable).
+         */
+        post: operations["uploadEncounterAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Descargar adjunto
+         * @description 302 a URL prefirmada (15 min, PDF con Content-Disposition attachment). El tutor solo ve adjuntos `visible_to_guardian` de consultas firmadas. Descarga auditada (SEC-005).
+         */
+        get: operations["getEncounterAttachment"];
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar adjunto
+         * @description Solo en borrador (PRD-004).
+         */
+        delete: operations["deleteEncounterAttachment"];
+        options?: never;
+        head?: never;
+        /**
+         * Cambiar visibilidad para el tutor
+         * @description Solo veterinario de la organización, en cualquier estado; ocultar exige motivo (auditado, SEC-003).
+         */
+        patch: operations["setEncounterAttachmentVisibility"];
+        trace?: never;
+    };
+    "/pets/{petId}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Historial clínico cronológico
+         * @description Tutor, clínicas con vínculo (L) o custodia (C, solo lo propio) y super_admin. Vista derivada asíncrona con cabecera X-PP-Freshness (ARQ-012, API-013).
+         */
+        get: operations["getPetTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/encounters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultas firmadas de la mascota
+         * @description Visibles para el actor (custodia incluida; RN-10). La clínica con vínculo ve también sus borradores.
+         */
+        get: operations["listPetEncounters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/weight-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Historial de peso con tendencia
+         * @description Mediciones de consultas firmadas y tendencia; alerta si la variación supera el 10 % en 90 días (PRD-025). Vista derivada (X-PP-Freshness).
+         */
+        get: operations["getPetWeightHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pets/{petId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Resumen de la ficha clínica
+         * @description Alertas, última consulta, próximas dosis (M2.2), peso actual y controles pendientes (PRD-009). Vista derivada (X-PP-Freshness).
+         */
+        get: operations["getPetSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Estado de un documento en generación
+         * @description Jobs de PDF encolados al firmar o adendar (API-013). Visible para quien puede leer el documento de origen.
+         */
+        get: operations["getDocumentJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/verify/encounters/{encounterId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Verificación pública de una consulta firmada
+         * @description Sin autenticación ni PII. Recomputa el hash desde es.events y lo compara con el firmado y con `hash` (SEC-004). Rate limit en el WAF; `X-Robots-Tag noindex`. Inexistente o sin firmar → 404.
+         */
+        get: operations["verifyEncounter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1290,8 +1704,350 @@ export interface components {
                 code: string;
             }[];
         };
+        /** @enum {string} */
+        EncounterType: "consultation" | "follow_up" | "emergency" | "vaccination" | "surgery" | "procedure" | "other";
+        /** @enum {string} */
+        AddendumReason: "correction" | "additional_findings" | "lab_results" | "other";
+        /** @enum {string} */
+        EncounterStatus: "draft" | "signed" | "discarded";
+        OpenEncounterRequest: {
+            /** Format: uuid */
+            pet_id: string;
+            type: components["schemas"]["EncounterType"];
+            reason: string;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: uuid */
+            attending_vet_id?: string;
+            /** Format: uuid */
+            appointment_id?: string;
+        };
+        UpdateEncounterRequest: {
+            type?: components["schemas"]["EncounterType"];
+            reason?: string;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: uuid */
+            attending_vet_id?: string;
+            subjective?: string;
+            objective?: components["schemas"]["Objective"];
+        };
+        Vitals: {
+            weight_kg?: number;
+            temp_c?: number;
+            heart_rate_bpm?: number;
+            resp_rate_rpm?: number;
+            body_condition?: number;
+            /** @enum {string} */
+            mucosa?: "pink" | "pale" | "white" | "cyanotic" | "icteric" | "hyperemic";
+            crt_seconds?: number;
+            hydration_pct?: number;
+        };
+        VitalWarning: {
+            field: string;
+            /** @enum {string} */
+            code: "LOW" | "HIGH";
+            message: string;
+        };
+        Finding: {
+            /** @enum {string} */
+            status: "normal" | "abnormal" | "not_examined";
+            note?: string;
+        };
+        Objective: {
+            narrative?: string;
+            /** @description Hallazgos por sistema: integumentary, musculoskeletal, cardiovascular, respiratory, digestive, genitourinary, nervous, eyes, ears, lymph, oral. */
+            systems?: {
+                [key: string]: components["schemas"]["Finding"];
+            };
+        };
+        Diagnosis: {
+            text: string;
+            code?: {
+                system: string;
+                value: string;
+            };
+            /** @enum {string} */
+            certainty: "presumptive" | "confirmed" | "differential" | "ruled_out";
+        };
+        DiagnosesRequest: {
+            diagnoses: components["schemas"]["Diagnosis"][];
+        };
+        Frequency: {
+            once?: boolean;
+            every?: number;
+            /** @enum {string} */
+            unit?: "hours" | "days";
+        };
+        MedicationItem: {
+            medication_name: string;
+            presentation?: string;
+            dose: number;
+            /** @enum {string} */
+            dose_unit: "mg" | "ml" | "ui" | "tablet" | "capsule" | "drop" | "mg_per_kg" | "ml_per_kg";
+            /** @enum {string} */
+            route: "oral" | "sc" | "im" | "iv" | "topical" | "ophthalmic" | "otic" | "inhaled" | "rectal";
+            frequency: components["schemas"]["Frequency"];
+            duration_days?: number;
+            instructions?: string;
+        };
+        Procedure: {
+            name: string;
+            notes?: string;
+        };
+        Plan: {
+            medications?: components["schemas"]["MedicationItem"][];
+            procedures?: components["schemas"]["Procedure"][];
+            recommendations?: string;
+        };
+        FollowUp: {
+            /** Format: date */
+            due_date: string;
+            reason: string;
+        };
+        Attachment: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            content_type: "jpeg" | "png" | "webp" | "pdf";
+            size: number;
+            description?: string;
+            visible_to_guardian: boolean;
+            addendum_seq?: number;
+            /** @description Subido a una consulta firmada; se adjunta con la siguiente adenda. */
+            pending_addendum?: boolean;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AttachmentVisibilityRequest: {
+            visible_to_guardian: boolean;
+            reason?: string;
+        };
+        UserRef: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+        };
+        Signature: {
+            signed_by: components["schemas"]["UserRef"];
+            /** Format: date-time */
+            signed_at: string;
+            /** Format: int64 */
+            stream_version: number;
+            /** @description SHA-256 en hex del JSON canónico (RFC 8785) de los eventos hasta stream_version (ARQ-010). */
+            content_hash: string;
+            /** @description Reservado para la firma criptográfica del servidor (F5, SEC-004). */
+            jws?: string;
+        };
+        Addendum: {
+            seq: number;
+            text: string;
+            reason: components["schemas"]["AddendumReason"];
+            signed_by: components["schemas"]["UserRef"];
+            /** Format: date-time */
+            signed_at: string;
+            attachments: components["schemas"]["Attachment"][];
+        };
+        AddendumRequest: {
+            text: string;
+            reason: components["schemas"]["AddendumReason"];
+            attachment_ids?: string[];
+        };
+        ReasonRequest: {
+            reason: string;
+        };
+        DownloadLink: {
+            url: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        DocumentJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "rendering" | "ready" | "failed";
+            url?: string;
+            /** Format: date-time */
+            expires_at?: string;
+        };
+        EncounterPdf: {
+            /** @enum {string} */
+            status: "none" | "pending" | "rendering" | "ready" | "failed";
+            /** Format: uuid */
+            job_id?: string;
+            version?: number;
+            url?: string;
+            /** Format: date-time */
+            expires_at?: string;
+        };
+        PetRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            species: string;
+        };
+        Encounter: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            pet: components["schemas"]["PetRef"];
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: uuid */
+            appointment_id?: string;
+            type: components["schemas"]["EncounterType"];
+            status: components["schemas"]["EncounterStatus"];
+            abandoned?: boolean;
+            /** Format: date-time */
+            started_at: string;
+            reason: string;
+            attending_vet?: components["schemas"]["UserRef"];
+            vitals?: components["schemas"]["Vitals"];
+            subjective?: string;
+            objective?: components["schemas"]["Objective"];
+            diagnoses: components["schemas"]["Diagnosis"][];
+            plan: components["schemas"]["Plan"];
+            follow_up?: components["schemas"]["FollowUp"];
+            attachments: components["schemas"]["Attachment"][];
+            signature?: components["schemas"]["Signature"];
+            addenda: components["schemas"]["Addendum"][];
+            pdf?: components["schemas"]["EncounterPdf"];
+            /** @description Avisos de rango por especie de las constantes (solo en PUT /vitals y lecturas clínicas). */
+            warnings?: components["schemas"]["VitalWarning"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        EncounterSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            version: number;
+            pet: components["schemas"]["PetRef"];
+            /** Format: uuid */
+            organization_id: string;
+            type: components["schemas"]["EncounterType"];
+            status: components["schemas"]["EncounterStatus"];
+            /** Format: date-time */
+            started_at: string;
+            reason: string;
+            /** Format: uuid */
+            attending_vet_id?: string;
+            attending_vet_name?: string;
+            organization_name?: string;
+            /** @description Textos de diagnóstico (tarjetas del historial, FE-009). */
+            diagnoses?: string[];
+            addenda_count?: number;
+            /** Format: date-time */
+            signed_at?: string;
+            abandoned: boolean;
+            /** Format: date-time */
+            last_activity_at: string;
+        };
+        EncounterPage: {
+            data: components["schemas"]["EncounterSummary"][];
+            next_cursor?: string;
+        };
+        Freshness: {
+            lag_seconds: number;
+        };
+        TimelineItem: {
+            /** Format: date-time */
+            occurred_at: string;
+            /** @enum {string} */
+            kind: "encounter" | "addendum" | "vaccine" | "preventive" | "appointment" | "guardianship" | "care_link";
+            /** Format: uuid */
+            ref_id: string;
+            /** Format: uuid */
+            organization_id?: string;
+            /** @description Clave estable traducible (p. ej. encounter.signed). */
+            title: string;
+            summary?: string;
+            /** @enum {string} */
+            visibility: "guardian" | "org" | "both";
+        };
+        TimelinePage: {
+            data: components["schemas"]["TimelineItem"][];
+            next_cursor?: string;
+            freshness: components["schemas"]["Freshness"];
+        };
+        WeightPoint: {
+            /** Format: date-time */
+            measured_at: string;
+            weight_kg: number;
+            /** @enum {string} */
+            source: "encounter" | "vaccination";
+            /** Format: uuid */
+            organization_id?: string;
+        };
+        WeightHistory: {
+            data: components["schemas"]["WeightPoint"][];
+            trend: {
+                delta_kg?: number;
+                delta_pct?: number;
+                window_days: number;
+                alert: boolean;
+            };
+            freshness: components["schemas"]["Freshness"];
+        };
+        FollowUpItem: {
+            /** Format: uuid */
+            encounter_id: string;
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: date */
+            due_date: string;
+            reason: string;
+        };
+        PetClinicalSummary: {
+            alerts: string[];
+            last_encounter?: components["schemas"]["EncounterSummary"];
+            /** @description Próximas dosis del carnet (llegan con VaccinationCard, M2.2). */
+            next_due: Record<string, never>[];
+            current_weight?: components["schemas"]["WeightPoint"];
+            open_follow_ups: components["schemas"]["FollowUpItem"][];
+            /**
+             * @description Nivel de acceso del actor; `custody` muestra el banner "Acceso limitado a sus propias consultas" (FE-005).
+             * @enum {string}
+             */
+            access?: "guardian" | "linked" | "custody" | "admin";
+            freshness: components["schemas"]["Freshness"];
+        };
+        EncounterVerification: {
+            /** @description El hash recomputado coincide con el firmado y, si se envía, con `hash`. */
+            valid: boolean;
+            /** Format: date-time */
+            signed_at: string;
+            /** Format: int64 */
+            stream_version: number;
+            /** @description Solo se devuelve si la verificación es válida. */
+            content_hash?: string;
+            organization_name?: string;
+        };
     };
     responses: {
+        /** @description Consulta actualizada */
+        EncounterOK: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Encounter"];
+            };
+        };
+        /** @description Adenda creada; devuelve la consulta */
+        EncounterCreated: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Encounter"];
+            };
+        };
         /** @description Error */
         Problem: {
             headers: {
@@ -1303,6 +2059,10 @@ export interface components {
         };
     };
     parameters: {
+        EncounterId: string;
+        AttachmentId: string;
+        Cursor: string;
+        Limit: number;
         PetId: string;
         OrgId: string;
         OrganizationId: string;
@@ -1310,6 +2070,8 @@ export interface components {
         InvitationId: string;
         /** @description Token de un solo uso (32 bytes en base64url). */
         Token: string;
+        /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+        AcceptLink: string;
         /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
         IdempotencyKey: string;
         /** @description Versión conocida del recurso (ETag de la última lectura). */
@@ -1317,6 +2079,8 @@ export interface components {
     };
     requestBodies: never;
     headers: {
+        /** @description Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013). */
+        "X-PP-Freshness": string;
         /** @description Versión del recurso; enviar en If-Match para los comandos. */
         ETag: number;
         /** @description Identificador de correlación (UUID). Se acepta entrante y siempre se devuelve. */
@@ -2664,6 +3428,681 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgEncounters: {
+        parameters: {
+            query?: {
+                status?: "draft" | "signed" | "discarded" | "abandoned";
+                pet_id?: string;
+                professional_id?: string;
+                from?: string;
+                to?: string;
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de consultas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    openEncounter: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenEncounterRequest"];
+            };
+        };
+        responses: {
+            /** @description Consulta abierta en borrador */
+            201: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Encounter"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEncounter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Consulta */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Encounter"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateEncounter: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEncounterRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putEncounterVitals: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Vitals"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putEncounterDiagnoses: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnosesRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putEncounterPlan: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Plan"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    putEncounterFollowUp: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUp"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteEncounterFollowUp: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    signEncounter: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addEncounterAddendum: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddendumRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["EncounterCreated"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    discardEncounter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["EncounterOK"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEncounterPdf: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+                Accept?: components["parameters"]["AcceptLink"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada del PDF (con `Accept: application/json`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description PDF en generación */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentJob"];
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    uploadEncounterAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    description?: string;
+                    /** @default true */
+                    visible_to_guardian?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Adjunto subido */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            415: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEncounterAttachment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+                Accept?: components["parameters"]["AcceptLink"];
+            };
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada (con `Accept: application/json`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteEncounterAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    setEncounterAttachmentVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+                attachmentId: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentVisibilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Adjunto actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetTimeline: {
+        parameters: {
+            query?: {
+                kind?: "encounter" | "addendum" | "vaccine" | "preventive" | "appointment" | "guardianship" | "care_link";
+                organization_id?: string;
+                from?: string;
+                to?: string;
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de la línea de tiempo */
+            200: {
+                headers: {
+                    "X-PP-Freshness": components["headers"]["X-PP-Freshness"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelinePage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPetEncounters: {
+        parameters: {
+            query?: {
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de consultas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetWeightHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Historial de peso */
+            200: {
+                headers: {
+                    "X-PP-Freshness": components["headers"]["X-PP-Freshness"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeightHistory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPetSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumen */
+            200: {
+                headers: {
+                    "X-PP-Freshness": components["headers"]["X-PP-Freshness"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetClinicalSummary"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDocumentJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado del job */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentJob"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    verifyEncounter: {
+        parameters: {
+            query?: {
+                hash?: string;
+            };
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado de la verificación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterVerification"];
+                };
+            };
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };

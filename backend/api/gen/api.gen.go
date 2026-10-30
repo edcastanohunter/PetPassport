@@ -25,6 +25,30 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AddendumReason.
+const (
+	AddendumAdditionalFindings AddendumReason = "additional_findings"
+	AddendumCorrection         AddendumReason = "correction"
+	AddendumLabResults         AddendumReason = "lab_results"
+	AddendumOther              AddendumReason = "other"
+)
+
+// Valid indicates whether the value is a known member of the AddendumReason enum.
+func (e AddendumReason) Valid() bool {
+	switch e {
+	case AddendumAdditionalFindings:
+		return true
+	case AddendumCorrection:
+		return true
+	case AddendumLabResults:
+		return true
+	case AddendumOther:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminUserRowStatus.
 const (
 	AdminUserRowStatusActive    AdminUserRowStatus = "active"
@@ -43,6 +67,30 @@ func (e AdminUserRowStatus) Valid() bool {
 	}
 }
 
+// Defines values for AttachmentContentType.
+const (
+	Jpeg AttachmentContentType = "jpeg"
+	Pdf  AttachmentContentType = "pdf"
+	Png  AttachmentContentType = "png"
+	Webp AttachmentContentType = "webp"
+)
+
+// Valid indicates whether the value is a known member of the AttachmentContentType enum.
+func (e AttachmentContentType) Valid() bool {
+	switch e {
+	case Jpeg:
+		return true
+	case Pdf:
+		return true
+	case Png:
+		return true
+	case Webp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CareLinkStatus.
 const (
 	CareLinkStatusActive  CareLinkStatus = "active"
@@ -55,6 +103,174 @@ func (e CareLinkStatus) Valid() bool {
 	case CareLinkStatusActive:
 		return true
 	case CareLinkStatusRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DiagnosisCertainty.
+const (
+	Confirmed    DiagnosisCertainty = "confirmed"
+	Differential DiagnosisCertainty = "differential"
+	Presumptive  DiagnosisCertainty = "presumptive"
+	RuledOut     DiagnosisCertainty = "ruled_out"
+)
+
+// Valid indicates whether the value is a known member of the DiagnosisCertainty enum.
+func (e DiagnosisCertainty) Valid() bool {
+	switch e {
+	case Confirmed:
+		return true
+	case Differential:
+		return true
+	case Presumptive:
+		return true
+	case RuledOut:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocumentJobStatus.
+const (
+	DocumentJobStatusFailed    DocumentJobStatus = "failed"
+	DocumentJobStatusPending   DocumentJobStatus = "pending"
+	DocumentJobStatusReady     DocumentJobStatus = "ready"
+	DocumentJobStatusRendering DocumentJobStatus = "rendering"
+)
+
+// Valid indicates whether the value is a known member of the DocumentJobStatus enum.
+func (e DocumentJobStatus) Valid() bool {
+	switch e {
+	case DocumentJobStatusFailed:
+		return true
+	case DocumentJobStatusPending:
+		return true
+	case DocumentJobStatusReady:
+		return true
+	case DocumentJobStatusRendering:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EncounterPdfStatus.
+const (
+	EncounterPdfStatusFailed    EncounterPdfStatus = "failed"
+	EncounterPdfStatusNone      EncounterPdfStatus = "none"
+	EncounterPdfStatusPending   EncounterPdfStatus = "pending"
+	EncounterPdfStatusReady     EncounterPdfStatus = "ready"
+	EncounterPdfStatusRendering EncounterPdfStatus = "rendering"
+)
+
+// Valid indicates whether the value is a known member of the EncounterPdfStatus enum.
+func (e EncounterPdfStatus) Valid() bool {
+	switch e {
+	case EncounterPdfStatusFailed:
+		return true
+	case EncounterPdfStatusNone:
+		return true
+	case EncounterPdfStatusPending:
+		return true
+	case EncounterPdfStatusReady:
+		return true
+	case EncounterPdfStatusRendering:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EncounterStatus.
+const (
+	EncounterStatusDiscarded EncounterStatus = "discarded"
+	EncounterStatusDraft     EncounterStatus = "draft"
+	EncounterStatusSigned    EncounterStatus = "signed"
+)
+
+// Valid indicates whether the value is a known member of the EncounterStatus enum.
+func (e EncounterStatus) Valid() bool {
+	switch e {
+	case EncounterStatusDiscarded:
+		return true
+	case EncounterStatusDraft:
+		return true
+	case EncounterStatusSigned:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EncounterType.
+const (
+	EncounterTypeConsultation EncounterType = "consultation"
+	EncounterTypeEmergency    EncounterType = "emergency"
+	EncounterTypeFollowUp     EncounterType = "follow_up"
+	EncounterTypeOther        EncounterType = "other"
+	EncounterTypeProcedure    EncounterType = "procedure"
+	EncounterTypeSurgery      EncounterType = "surgery"
+	EncounterTypeVaccination  EncounterType = "vaccination"
+)
+
+// Valid indicates whether the value is a known member of the EncounterType enum.
+func (e EncounterType) Valid() bool {
+	switch e {
+	case EncounterTypeConsultation:
+		return true
+	case EncounterTypeEmergency:
+		return true
+	case EncounterTypeFollowUp:
+		return true
+	case EncounterTypeOther:
+		return true
+	case EncounterTypeProcedure:
+		return true
+	case EncounterTypeSurgery:
+		return true
+	case EncounterTypeVaccination:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FindingStatus.
+const (
+	Abnormal    FindingStatus = "abnormal"
+	Normal      FindingStatus = "normal"
+	NotExamined FindingStatus = "not_examined"
+)
+
+// Valid indicates whether the value is a known member of the FindingStatus enum.
+func (e FindingStatus) Valid() bool {
+	switch e {
+	case Abnormal:
+		return true
+	case Normal:
+		return true
+	case NotExamined:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FrequencyUnit.
+const (
+	Days  FrequencyUnit = "days"
+	Hours FrequencyUnit = "hours"
+)
+
+// Valid indicates whether the value is a known member of the FrequencyUnit enum.
+func (e FrequencyUnit) Valid() bool {
+	switch e {
+	case Days:
+		return true
+	case Hours:
 		return true
 	default:
 		return false
@@ -130,6 +346,81 @@ func (e MeStatus) Valid() bool {
 	case MeStatusActive:
 		return true
 	case MeStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MedicationItemDoseUnit.
+const (
+	Capsule MedicationItemDoseUnit = "capsule"
+	Drop    MedicationItemDoseUnit = "drop"
+	Mg      MedicationItemDoseUnit = "mg"
+	MgPerKg MedicationItemDoseUnit = "mg_per_kg"
+	Ml      MedicationItemDoseUnit = "ml"
+	MlPerKg MedicationItemDoseUnit = "ml_per_kg"
+	Tablet  MedicationItemDoseUnit = "tablet"
+	Ui      MedicationItemDoseUnit = "ui"
+)
+
+// Valid indicates whether the value is a known member of the MedicationItemDoseUnit enum.
+func (e MedicationItemDoseUnit) Valid() bool {
+	switch e {
+	case Capsule:
+		return true
+	case Drop:
+		return true
+	case Mg:
+		return true
+	case MgPerKg:
+		return true
+	case Ml:
+		return true
+	case MlPerKg:
+		return true
+	case Tablet:
+		return true
+	case Ui:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MedicationItemRoute.
+const (
+	Im         MedicationItemRoute = "im"
+	Inhaled    MedicationItemRoute = "inhaled"
+	Iv         MedicationItemRoute = "iv"
+	Ophthalmic MedicationItemRoute = "ophthalmic"
+	Oral       MedicationItemRoute = "oral"
+	Otic       MedicationItemRoute = "otic"
+	Rectal     MedicationItemRoute = "rectal"
+	Sc         MedicationItemRoute = "sc"
+	Topical    MedicationItemRoute = "topical"
+)
+
+// Valid indicates whether the value is a known member of the MedicationItemRoute enum.
+func (e MedicationItemRoute) Valid() bool {
+	switch e {
+	case Im:
+		return true
+	case Inhaled:
+		return true
+	case Iv:
+		return true
+	case Ophthalmic:
+		return true
+	case Oral:
+		return true
+	case Otic:
+		return true
+	case Rectal:
+		return true
+	case Sc:
+		return true
+	case Topical:
 		return true
 	default:
 		return false
@@ -331,6 +622,30 @@ func (e PetStatus) Valid() bool {
 	}
 }
 
+// Defines values for PetClinicalSummaryAccess.
+const (
+	PetClinicalSummaryAccessAdmin    PetClinicalSummaryAccess = "admin"
+	PetClinicalSummaryAccessCustody  PetClinicalSummaryAccess = "custody"
+	PetClinicalSummaryAccessGuardian PetClinicalSummaryAccess = "guardian"
+	PetClinicalSummaryAccessLinked   PetClinicalSummaryAccess = "linked"
+)
+
+// Valid indicates whether the value is a known member of the PetClinicalSummaryAccess enum.
+func (e PetClinicalSummaryAccess) Valid() bool {
+	switch e {
+	case PetClinicalSummaryAccessAdmin:
+		return true
+	case PetClinicalSummaryAccessCustody:
+		return true
+	case PetClinicalSummaryAccessGuardian:
+		return true
+	case PetClinicalSummaryAccessLinked:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PetListItemStatus.
 const (
 	PetListItemStatusActive   PetListItemStatus = "active"
@@ -412,6 +727,126 @@ func (e Species) Valid() bool {
 	}
 }
 
+// Defines values for TimelineItemKind.
+const (
+	TimelineItemKindAddendum     TimelineItemKind = "addendum"
+	TimelineItemKindAppointment  TimelineItemKind = "appointment"
+	TimelineItemKindCareLink     TimelineItemKind = "care_link"
+	TimelineItemKindEncounter    TimelineItemKind = "encounter"
+	TimelineItemKindGuardianship TimelineItemKind = "guardianship"
+	TimelineItemKindPreventive   TimelineItemKind = "preventive"
+	TimelineItemKindVaccine      TimelineItemKind = "vaccine"
+)
+
+// Valid indicates whether the value is a known member of the TimelineItemKind enum.
+func (e TimelineItemKind) Valid() bool {
+	switch e {
+	case TimelineItemKindAddendum:
+		return true
+	case TimelineItemKindAppointment:
+		return true
+	case TimelineItemKindCareLink:
+		return true
+	case TimelineItemKindEncounter:
+		return true
+	case TimelineItemKindGuardianship:
+		return true
+	case TimelineItemKindPreventive:
+		return true
+	case TimelineItemKindVaccine:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TimelineItemVisibility.
+const (
+	TimelineItemVisibilityBoth     TimelineItemVisibility = "both"
+	TimelineItemVisibilityGuardian TimelineItemVisibility = "guardian"
+	TimelineItemVisibilityOrg      TimelineItemVisibility = "org"
+)
+
+// Valid indicates whether the value is a known member of the TimelineItemVisibility enum.
+func (e TimelineItemVisibility) Valid() bool {
+	switch e {
+	case TimelineItemVisibilityBoth:
+		return true
+	case TimelineItemVisibilityGuardian:
+		return true
+	case TimelineItemVisibilityOrg:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VitalWarningCode.
+const (
+	HIGH VitalWarningCode = "HIGH"
+	LOW  VitalWarningCode = "LOW"
+)
+
+// Valid indicates whether the value is a known member of the VitalWarningCode enum.
+func (e VitalWarningCode) Valid() bool {
+	switch e {
+	case HIGH:
+		return true
+	case LOW:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VitalsMucosa.
+const (
+	Cyanotic  VitalsMucosa = "cyanotic"
+	Hyperemic VitalsMucosa = "hyperemic"
+	Icteric   VitalsMucosa = "icteric"
+	Pale      VitalsMucosa = "pale"
+	Pink      VitalsMucosa = "pink"
+	White     VitalsMucosa = "white"
+)
+
+// Valid indicates whether the value is a known member of the VitalsMucosa enum.
+func (e VitalsMucosa) Valid() bool {
+	switch e {
+	case Cyanotic:
+		return true
+	case Hyperemic:
+		return true
+	case Icteric:
+		return true
+	case Pale:
+		return true
+	case Pink:
+		return true
+	case White:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WeightPointSource.
+const (
+	WeightPointSourceEncounter   WeightPointSource = "encounter"
+	WeightPointSourceVaccination WeightPointSource = "vaccination"
+)
+
+// Valid indicates whether the value is a known member of the WeightPointSource enum.
+func (e WeightPointSource) Valid() bool {
+	switch e {
+	case WeightPointSourceEncounter:
+		return true
+	case WeightPointSourceVaccination:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminListUsersParamsStatus.
 const (
 	AdminListUsersParamsStatusActive    AdminListUsersParamsStatus = "active"
@@ -424,6 +859,30 @@ func (e AdminListUsersParamsStatus) Valid() bool {
 	case AdminListUsersParamsStatusActive:
 		return true
 	case AdminListUsersParamsStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListOrgEncountersParamsStatus.
+const (
+	ListOrgEncountersParamsStatusAbandoned ListOrgEncountersParamsStatus = "abandoned"
+	ListOrgEncountersParamsStatusDiscarded ListOrgEncountersParamsStatus = "discarded"
+	ListOrgEncountersParamsStatusDraft     ListOrgEncountersParamsStatus = "draft"
+	ListOrgEncountersParamsStatusSigned    ListOrgEncountersParamsStatus = "signed"
+)
+
+// Valid indicates whether the value is a known member of the ListOrgEncountersParamsStatus enum.
+func (e ListOrgEncountersParamsStatus) Valid() bool {
+	switch e {
+	case ListOrgEncountersParamsStatusAbandoned:
+		return true
+	case ListOrgEncountersParamsStatusDiscarded:
+		return true
+	case ListOrgEncountersParamsStatusDraft:
+		return true
+	case ListOrgEncountersParamsStatusSigned:
 		return true
 	default:
 		return false
@@ -496,6 +955,59 @@ func (e ListPetsParamsStatus) Valid() bool {
 	}
 }
 
+// Defines values for GetPetTimelineParamsKind.
+const (
+	GetPetTimelineParamsKindAddendum     GetPetTimelineParamsKind = "addendum"
+	GetPetTimelineParamsKindAppointment  GetPetTimelineParamsKind = "appointment"
+	GetPetTimelineParamsKindCareLink     GetPetTimelineParamsKind = "care_link"
+	GetPetTimelineParamsKindEncounter    GetPetTimelineParamsKind = "encounter"
+	GetPetTimelineParamsKindGuardianship GetPetTimelineParamsKind = "guardianship"
+	GetPetTimelineParamsKindPreventive   GetPetTimelineParamsKind = "preventive"
+	GetPetTimelineParamsKindVaccine      GetPetTimelineParamsKind = "vaccine"
+)
+
+// Valid indicates whether the value is a known member of the GetPetTimelineParamsKind enum.
+func (e GetPetTimelineParamsKind) Valid() bool {
+	switch e {
+	case GetPetTimelineParamsKindAddendum:
+		return true
+	case GetPetTimelineParamsKindAppointment:
+		return true
+	case GetPetTimelineParamsKindCareLink:
+		return true
+	case GetPetTimelineParamsKindEncounter:
+		return true
+	case GetPetTimelineParamsKindGuardianship:
+		return true
+	case GetPetTimelineParamsKindPreventive:
+		return true
+	case GetPetTimelineParamsKindVaccine:
+		return true
+	default:
+		return false
+	}
+}
+
+// Addendum defines model for Addendum.
+type Addendum struct {
+	Attachments []Attachment   `json:"attachments"`
+	Reason      AddendumReason `json:"reason"`
+	Seq         int            `json:"seq"`
+	SignedAt    time.Time      `json:"signed_at"`
+	SignedBy    UserRef        `json:"signed_by"`
+	Text        string         `json:"text"`
+}
+
+// AddendumReason defines model for AddendumReason.
+type AddendumReason string
+
+// AddendumRequest defines model for AddendumRequest.
+type AddendumRequest struct {
+	AttachmentIds *[]openapi_types.UUID `json:"attachment_ids,omitempty"`
+	Reason        AddendumReason        `json:"reason"`
+	Text          string                `json:"text"`
+}
+
 // Address defines model for Address.
 type Address struct {
 	City string `json:"city"`
@@ -548,6 +1060,29 @@ type AdminUserRow struct {
 
 // AdminUserRowStatus defines model for AdminUserRow.Status.
 type AdminUserRowStatus string
+
+// Attachment defines model for Attachment.
+type Attachment struct {
+	AddendumSeq *int                  `json:"addendum_seq,omitempty"`
+	ContentType AttachmentContentType `json:"content_type"`
+	CreatedAt   time.Time             `json:"created_at"`
+	Description *string               `json:"description,omitempty"`
+	Id          openapi_types.UUID    `json:"id"`
+
+	// PendingAddendum Subido a una consulta firmada; se adjunta con la siguiente adenda.
+	PendingAddendum   *bool `json:"pending_addendum,omitempty"`
+	Size              int   `json:"size"`
+	VisibleToGuardian bool  `json:"visible_to_guardian"`
+}
+
+// AttachmentContentType defines model for Attachment.ContentType.
+type AttachmentContentType string
+
+// AttachmentVisibilityRequest defines model for AttachmentVisibilityRequest.
+type AttachmentVisibilityRequest struct {
+	Reason            *string `json:"reason,omitempty"`
+	VisibleToGuardian bool    `json:"visible_to_guardian"`
+}
 
 // AuditEntry defines model for AuditEntry.
 type AuditEntry struct {
@@ -661,8 +1196,43 @@ type DeceasedRequest struct {
 	DeceasedAt *openapi_types.Date `json:"deceased_at,omitempty"`
 }
 
+// DiagnosesRequest defines model for DiagnosesRequest.
+type DiagnosesRequest struct {
+	Diagnoses []Diagnosis `json:"diagnoses"`
+}
+
+// Diagnosis defines model for Diagnosis.
+type Diagnosis struct {
+	Certainty DiagnosisCertainty `json:"certainty"`
+	Code      *struct {
+		System string `json:"system"`
+		Value  string `json:"value"`
+	} `json:"code,omitempty"`
+	Text string `json:"text"`
+}
+
+// DiagnosisCertainty defines model for Diagnosis.Certainty.
+type DiagnosisCertainty string
+
 // DisplayName defines model for DisplayName.
 type DisplayName = string
+
+// DocumentJob defines model for DocumentJob.
+type DocumentJob struct {
+	ExpiresAt *time.Time         `json:"expires_at,omitempty"`
+	Id        openapi_types.UUID `json:"id"`
+	Status    DocumentJobStatus  `json:"status"`
+	Url       *string            `json:"url,omitempty"`
+}
+
+// DocumentJobStatus defines model for DocumentJob.Status.
+type DocumentJobStatus string
+
+// DownloadLink defines model for DownloadLink.
+type DownloadLink struct {
+	ExpiresAt time.Time `json:"expires_at"`
+	Url       string    `json:"url"`
+}
 
 // EmailAddress defines model for EmailAddress.
 type EmailAddress = openapi_types.Email
@@ -674,6 +1244,132 @@ type EmergencyContact struct {
 	// Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
 	Phone        Phone   `json:"phone"`
 	Relationship *string `json:"relationship,omitempty"`
+}
+
+// Encounter defines model for Encounter.
+type Encounter struct {
+	Abandoned      *bool               `json:"abandoned,omitempty"`
+	Addenda        []Addendum          `json:"addenda"`
+	AppointmentId  *openapi_types.UUID `json:"appointment_id,omitempty"`
+	Attachments    []Attachment        `json:"attachments"`
+	AttendingVet   *UserRef            `json:"attending_vet,omitempty"`
+	CreatedAt      time.Time           `json:"created_at"`
+	Diagnoses      []Diagnosis         `json:"diagnoses"`
+	FollowUp       *FollowUp           `json:"follow_up,omitempty"`
+	Id             openapi_types.UUID  `json:"id"`
+	Objective      *Objective          `json:"objective,omitempty"`
+	OrganizationId openapi_types.UUID  `json:"organization_id"`
+	Pdf            *EncounterPdf       `json:"pdf,omitempty"`
+	Pet            PetRef              `json:"pet"`
+	Plan           Plan                `json:"plan"`
+	Reason         string              `json:"reason"`
+	Signature      *Signature          `json:"signature,omitempty"`
+	StartedAt      time.Time           `json:"started_at"`
+	Status         EncounterStatus     `json:"status"`
+	Subjective     *string             `json:"subjective,omitempty"`
+	Type           EncounterType       `json:"type"`
+	UpdatedAt      time.Time           `json:"updated_at"`
+	Version        int64               `json:"version"`
+	Vitals         *Vitals             `json:"vitals,omitempty"`
+
+	// Warnings Avisos de rango por especie de las constantes (solo en PUT /vitals y lecturas clínicas).
+	Warnings *[]VitalWarning `json:"warnings,omitempty"`
+}
+
+// EncounterPage defines model for EncounterPage.
+type EncounterPage struct {
+	Data       []EncounterSummary `json:"data"`
+	NextCursor *string            `json:"next_cursor,omitempty"`
+}
+
+// EncounterPdf defines model for EncounterPdf.
+type EncounterPdf struct {
+	ExpiresAt *time.Time          `json:"expires_at,omitempty"`
+	JobId     *openapi_types.UUID `json:"job_id,omitempty"`
+	Status    EncounterPdfStatus  `json:"status"`
+	Url       *string             `json:"url,omitempty"`
+	Version   *int                `json:"version,omitempty"`
+}
+
+// EncounterPdfStatus defines model for EncounterPdf.Status.
+type EncounterPdfStatus string
+
+// EncounterStatus defines model for EncounterStatus.
+type EncounterStatus string
+
+// EncounterSummary defines model for EncounterSummary.
+type EncounterSummary struct {
+	Abandoned        bool                `json:"abandoned"`
+	AddendaCount     *int                `json:"addenda_count,omitempty"`
+	AttendingVetId   *openapi_types.UUID `json:"attending_vet_id,omitempty"`
+	AttendingVetName *string             `json:"attending_vet_name,omitempty"`
+
+	// Diagnoses Textos de diagnóstico (tarjetas del historial, FE-009).
+	Diagnoses        *[]string          `json:"diagnoses,omitempty"`
+	Id               openapi_types.UUID `json:"id"`
+	LastActivityAt   time.Time          `json:"last_activity_at"`
+	OrganizationId   openapi_types.UUID `json:"organization_id"`
+	OrganizationName *string            `json:"organization_name,omitempty"`
+	Pet              PetRef             `json:"pet"`
+	Reason           string             `json:"reason"`
+	SignedAt         *time.Time         `json:"signed_at,omitempty"`
+	StartedAt        time.Time          `json:"started_at"`
+	Status           EncounterStatus    `json:"status"`
+	Type             EncounterType      `json:"type"`
+	Version          int64              `json:"version"`
+}
+
+// EncounterType defines model for EncounterType.
+type EncounterType string
+
+// EncounterVerification defines model for EncounterVerification.
+type EncounterVerification struct {
+	// ContentHash Solo se devuelve si la verificación es válida.
+	ContentHash      *string   `json:"content_hash,omitempty"`
+	OrganizationName *string   `json:"organization_name,omitempty"`
+	SignedAt         time.Time `json:"signed_at"`
+	StreamVersion    int64     `json:"stream_version"`
+
+	// Valid El hash recomputado coincide con el firmado y, si se envía, con `hash`.
+	Valid bool `json:"valid"`
+}
+
+// Finding defines model for Finding.
+type Finding struct {
+	Note   *string       `json:"note,omitempty"`
+	Status FindingStatus `json:"status"`
+}
+
+// FindingStatus defines model for Finding.Status.
+type FindingStatus string
+
+// FollowUp defines model for FollowUp.
+type FollowUp struct {
+	DueDate openapi_types.Date `json:"due_date"`
+	Reason  string             `json:"reason"`
+}
+
+// FollowUpItem defines model for FollowUpItem.
+type FollowUpItem struct {
+	DueDate        openapi_types.Date `json:"due_date"`
+	EncounterId    openapi_types.UUID `json:"encounter_id"`
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+	Reason         string             `json:"reason"`
+}
+
+// Frequency defines model for Frequency.
+type Frequency struct {
+	Every *int           `json:"every,omitempty"`
+	Once  *bool          `json:"once,omitempty"`
+	Unit  *FrequencyUnit `json:"unit,omitempty"`
+}
+
+// FrequencyUnit defines model for Frequency.Unit.
+type FrequencyUnit string
+
+// Freshness defines model for Freshness.
+type Freshness struct {
+	LagSeconds float32 `json:"lag_seconds"`
 }
 
 // GuardianContact defines model for GuardianContact.
@@ -753,6 +1449,24 @@ type Me struct {
 // MeStatus defines model for Me.Status.
 type MeStatus string
 
+// MedicationItem defines model for MedicationItem.
+type MedicationItem struct {
+	Dose           float32                `json:"dose"`
+	DoseUnit       MedicationItemDoseUnit `json:"dose_unit"`
+	DurationDays   *int                   `json:"duration_days,omitempty"`
+	Frequency      Frequency              `json:"frequency"`
+	Instructions   *string                `json:"instructions,omitempty"`
+	MedicationName string                 `json:"medication_name"`
+	Presentation   *string                `json:"presentation,omitempty"`
+	Route          MedicationItemRoute    `json:"route"`
+}
+
+// MedicationItemDoseUnit defines model for MedicationItem.DoseUnit.
+type MedicationItemDoseUnit string
+
+// MedicationItemRoute defines model for MedicationItem.Route.
+type MedicationItemRoute string
+
 // Member defines model for Member.
 type Member struct {
 	DisplayName string             `json:"display_name"`
@@ -801,6 +1515,14 @@ type MicrochipRequest struct {
 // Neutered defines model for Neutered.
 type Neutered string
 
+// Objective defines model for Objective.
+type Objective struct {
+	Narrative *string `json:"narrative,omitempty"`
+
+	// Systems Hallazgos por sistema: integumentary, musculoskeletal, cardiovascular, respiratory, digestive, genitourinary, nervous, eyes, ears, lymph, oral.
+	Systems *map[string]Finding `json:"systems,omitempty"`
+}
+
 // OnboardingRequest defines model for OnboardingRequest.
 type OnboardingRequest struct {
 	AcceptPrivacyVersion ConsentVersion `json:"accept_privacy_version"`
@@ -813,6 +1535,16 @@ type OnboardingRequest struct {
 
 	// Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
 	Phone *Phone `json:"phone,omitempty"`
+}
+
+// OpenEncounterRequest defines model for OpenEncounterRequest.
+type OpenEncounterRequest struct {
+	AppointmentId  *openapi_types.UUID `json:"appointment_id,omitempty"`
+	AttendingVetId *openapi_types.UUID `json:"attending_vet_id,omitempty"`
+	PetId          openapi_types.UUID  `json:"pet_id"`
+	Reason         string              `json:"reason"`
+	StartedAt      *time.Time          `json:"started_at,omitempty"`
+	Type           EncounterType       `json:"type"`
 }
 
 // OrgContact defines model for OrgContact.
@@ -939,6 +1671,23 @@ type Pet struct {
 // PetStatus defines model for Pet.Status.
 type PetStatus string
 
+// PetClinicalSummary defines model for PetClinicalSummary.
+type PetClinicalSummary struct {
+	// Access Nivel de acceso del actor; `custody` muestra el banner "Acceso limitado a sus propias consultas" (FE-005).
+	Access        *PetClinicalSummaryAccess `json:"access,omitempty"`
+	Alerts        []string                  `json:"alerts"`
+	CurrentWeight *WeightPoint              `json:"current_weight,omitempty"`
+	Freshness     Freshness                 `json:"freshness"`
+	LastEncounter *EncounterSummary         `json:"last_encounter,omitempty"`
+
+	// NextDue Próximas dosis del carnet (llegan con VaccinationCard, M2.2).
+	NextDue       []map[string]interface{} `json:"next_due"`
+	OpenFollowUps []FollowUpItem           `json:"open_follow_ups"`
+}
+
+// PetClinicalSummaryAccess Nivel de acceso del actor; `custody` muestra el banner "Acceso limitado a sus propias consultas" (FE-005).
+type PetClinicalSummaryAccess string
+
 // PetListItem defines model for PetListItem.
 type PetListItem struct {
 	ActiveLinks int                `json:"active_links"`
@@ -965,6 +1714,13 @@ type PetPage struct {
 	NextCursor *string       `json:"next_cursor"`
 }
 
+// PetRef defines model for PetRef.
+type PetRef struct {
+	Id      openapi_types.UUID `json:"id"`
+	Name    string             `json:"name"`
+	Species string             `json:"species"`
+}
+
 // Phone E.164; se aceptan espacios, guiones y paréntesis que se eliminan al normalizar.
 type Phone = string
 
@@ -975,6 +1731,13 @@ type Photo struct {
 
 	// Url URL prefirmada (15 min) de la foto (ARQ-012).
 	Url string `json:"url"`
+}
+
+// Plan defines model for Plan.
+type Plan struct {
+	Medications     *[]MedicationItem `json:"medications,omitempty"`
+	Procedures      *[]Procedure      `json:"procedures,omitempty"`
+	Recommendations *string           `json:"recommendations,omitempty"`
 }
 
 // Problem Error en formato application/problem+json (RFC 9457) con código estable del catálogo.
@@ -993,6 +1756,17 @@ type Problem struct {
 	Type     string  `json:"type"`
 }
 
+// Procedure defines model for Procedure.
+type Procedure struct {
+	Name  string  `json:"name"`
+	Notes *string `json:"notes,omitempty"`
+}
+
+// ReasonRequest defines model for ReasonRequest.
+type ReasonRequest struct {
+	Reason string `json:"reason"`
+}
+
 // RevokeCareLinkRequest defines model for RevokeCareLinkRequest.
 type RevokeCareLinkRequest struct {
 	Reason *string `json:"reason,omitempty"`
@@ -1000,6 +1774,18 @@ type RevokeCareLinkRequest struct {
 
 // Sex defines model for Sex.
 type Sex string
+
+// Signature defines model for Signature.
+type Signature struct {
+	// ContentHash SHA-256 en hex del JSON canónico (RFC 8785) de los eventos hasta stream_version (ARQ-010).
+	ContentHash string `json:"content_hash"`
+
+	// Jws Reservado para la firma criptográfica del servidor (F5, SEC-004).
+	Jws           *string   `json:"jws,omitempty"`
+	SignedAt      time.Time `json:"signed_at"`
+	SignedBy      UserRef   `json:"signed_by"`
+	StreamVersion int64     `json:"stream_version"`
+}
 
 // Species defines model for Species.
 type Species string
@@ -1016,6 +1802,32 @@ type TaxId struct {
 	Value string `json:"value"`
 }
 
+// TimelineItem defines model for TimelineItem.
+type TimelineItem struct {
+	Kind           TimelineItemKind    `json:"kind"`
+	OccurredAt     time.Time           `json:"occurred_at"`
+	OrganizationId *openapi_types.UUID `json:"organization_id,omitempty"`
+	RefId          openapi_types.UUID  `json:"ref_id"`
+	Summary        *string             `json:"summary,omitempty"`
+
+	// Title Clave estable traducible (p. ej. encounter.signed).
+	Title      string                 `json:"title"`
+	Visibility TimelineItemVisibility `json:"visibility"`
+}
+
+// TimelineItemKind defines model for TimelineItem.Kind.
+type TimelineItemKind string
+
+// TimelineItemVisibility defines model for TimelineItem.Visibility.
+type TimelineItemVisibility string
+
+// TimelinePage defines model for TimelinePage.
+type TimelinePage struct {
+	Data       []TimelineItem `json:"data"`
+	Freshness  Freshness      `json:"freshness"`
+	NextCursor *string        `json:"next_cursor,omitempty"`
+}
+
 // TransferPreview defines model for TransferPreview.
 type TransferPreview struct {
 	ExpiresAt               time.Time `json:"expires_at"`
@@ -1027,6 +1839,16 @@ type TransferPreview struct {
 // TransferRequest defines model for TransferRequest.
 type TransferRequest struct {
 	ToEmail EmailAddress `json:"to_email"`
+}
+
+// UpdateEncounterRequest defines model for UpdateEncounterRequest.
+type UpdateEncounterRequest struct {
+	AttendingVetId *openapi_types.UUID `json:"attending_vet_id,omitempty"`
+	Objective      *Objective          `json:"objective,omitempty"`
+	Reason         *string             `json:"reason,omitempty"`
+	StartedAt      *time.Time          `json:"started_at,omitempty"`
+	Subjective     *string             `json:"subjective,omitempty"`
+	Type           *EncounterType      `json:"type,omitempty"`
 }
 
 // UpdateMeRequest defines model for UpdateMeRequest.
@@ -1073,6 +1895,72 @@ type UpdatePetRequest struct {
 	SpeciesOther *SpeciesOther `json:"species_other,omitempty"`
 }
 
+// UserRef defines model for UserRef.
+type UserRef struct {
+	DisplayName string             `json:"display_name"`
+	Id          openapi_types.UUID `json:"id"`
+}
+
+// VitalWarning defines model for VitalWarning.
+type VitalWarning struct {
+	Code    VitalWarningCode `json:"code"`
+	Field   string           `json:"field"`
+	Message string           `json:"message"`
+}
+
+// VitalWarningCode defines model for VitalWarning.Code.
+type VitalWarningCode string
+
+// Vitals defines model for Vitals.
+type Vitals struct {
+	BodyCondition *int          `json:"body_condition,omitempty"`
+	CrtSeconds    *float32      `json:"crt_seconds,omitempty"`
+	HeartRateBpm  *int          `json:"heart_rate_bpm,omitempty"`
+	HydrationPct  *float32      `json:"hydration_pct,omitempty"`
+	Mucosa        *VitalsMucosa `json:"mucosa,omitempty"`
+	RespRateRpm   *int          `json:"resp_rate_rpm,omitempty"`
+	TempC         *float32      `json:"temp_c,omitempty"`
+	WeightKg      *float32      `json:"weight_kg,omitempty"`
+}
+
+// VitalsMucosa defines model for Vitals.Mucosa.
+type VitalsMucosa string
+
+// WeightHistory defines model for WeightHistory.
+type WeightHistory struct {
+	Data      []WeightPoint `json:"data"`
+	Freshness Freshness     `json:"freshness"`
+	Trend     struct {
+		Alert      bool     `json:"alert"`
+		DeltaKg    *float32 `json:"delta_kg,omitempty"`
+		DeltaPct   *float32 `json:"delta_pct,omitempty"`
+		WindowDays int      `json:"window_days"`
+	} `json:"trend"`
+}
+
+// WeightPoint defines model for WeightPoint.
+type WeightPoint struct {
+	MeasuredAt     time.Time           `json:"measured_at"`
+	OrganizationId *openapi_types.UUID `json:"organization_id,omitempty"`
+	Source         WeightPointSource   `json:"source"`
+	WeightKg       float32             `json:"weight_kg"`
+}
+
+// WeightPointSource defines model for WeightPoint.Source.
+type WeightPointSource string
+
+// AcceptLink defines model for AcceptLink.
+type AcceptLink = string
+
+// AttachmentId defines model for AttachmentId.
+type AttachmentId = openapi_types.UUID
+
+// Cursor defines model for Cursor.
+type Cursor = string
+
+// EncounterId defines model for EncounterId.
+type EncounterId = openapi_types.UUID
+
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = openapi_types.UUID
 
@@ -1081,6 +1969,9 @@ type IfMatch = int64
 
 // InvitationId defines model for InvitationId.
 type InvitationId = openapi_types.UUID
+
+// Limit defines model for Limit.
+type Limit = int
 
 // OrgId defines model for OrgId.
 type OrgId = openapi_types.UUID
@@ -1096,6 +1987,12 @@ type Token = string
 
 // UserId defines model for UserId.
 type UserId = openapi_types.UUID
+
+// EncounterCreated defines model for EncounterCreated.
+type EncounterCreated = Encounter
+
+// EncounterOK defines model for EncounterOK.
+type EncounterOK = Encounter
 
 // AdminListAuditLogParams defines parameters for AdminListAuditLog.
 type AdminListAuditLogParams struct {
@@ -1126,6 +2023,73 @@ type AdminListUsersParams struct {
 // AdminListUsersParamsStatus defines parameters for AdminListUsers.
 type AdminListUsersParamsStatus string
 
+// UpdateEncounterParams defines parameters for UpdateEncounter.
+type UpdateEncounterParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// AddEncounterAddendumParams defines parameters for AddEncounterAddendum.
+type AddEncounterAddendumParams struct {
+	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// UploadEncounterAttachmentMultipartBody defines parameters for UploadEncounterAttachment.
+type UploadEncounterAttachmentMultipartBody struct {
+	Description       *string            `json:"description,omitempty"`
+	File              openapi_types.File `json:"file"`
+	VisibleToGuardian *bool              `json:"visible_to_guardian,omitempty"`
+}
+
+// GetEncounterAttachmentParams defines parameters for GetEncounterAttachment.
+type GetEncounterAttachmentParams struct {
+	// Accept Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch).
+	Accept *AcceptLink `json:"Accept,omitempty"`
+}
+
+// PutEncounterDiagnosesParams defines parameters for PutEncounterDiagnoses.
+type PutEncounterDiagnosesParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// DeleteEncounterFollowUpParams defines parameters for DeleteEncounterFollowUp.
+type DeleteEncounterFollowUpParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// PutEncounterFollowUpParams defines parameters for PutEncounterFollowUp.
+type PutEncounterFollowUpParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// GetEncounterPdfParams defines parameters for GetEncounterPdf.
+type GetEncounterPdfParams struct {
+	// Accept Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch).
+	Accept *AcceptLink `json:"Accept,omitempty"`
+}
+
+// PutEncounterPlanParams defines parameters for PutEncounterPlan.
+type PutEncounterPlanParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// SignEncounterParams defines parameters for SignEncounter.
+type SignEncounterParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
+// PutEncounterVitalsParams defines parameters for PutEncounterVitals.
+type PutEncounterVitalsParams struct {
+	// IfMatch Versión conocida del recurso (ETag de la última lectura).
+	IfMatch IfMatch `json:"If-Match"`
+}
+
 // CreateOrganizationParams defines parameters for CreateOrganization.
 type CreateOrganizationParams struct {
 	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
@@ -1141,6 +2105,26 @@ type LookupOrganizationParams struct {
 type UpdateOrganizationParams struct {
 	// IfMatch Versión conocida del recurso (ETag de la última lectura).
 	IfMatch IfMatch `json:"If-Match"`
+}
+
+// ListOrgEncountersParams defines parameters for ListOrgEncounters.
+type ListOrgEncountersParams struct {
+	Status         *ListOrgEncountersParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	PetId          *openapi_types.UUID            `form:"pet_id,omitempty" json:"pet_id,omitempty"`
+	ProfessionalId *openapi_types.UUID            `form:"professional_id,omitempty" json:"professional_id,omitempty"`
+	From           *time.Time                     `form:"from,omitempty" json:"from,omitempty"`
+	To             *time.Time                     `form:"to,omitempty" json:"to,omitempty"`
+	Cursor         *Cursor                        `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit          *Limit                         `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListOrgEncountersParamsStatus defines parameters for ListOrgEncounters.
+type ListOrgEncountersParamsStatus string
+
+// OpenEncounterParams defines parameters for OpenEncounter.
+type OpenEncounterParams struct {
+	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
 // ListInvitationsParams defines parameters for ListInvitations.
@@ -1198,6 +2182,12 @@ type MarkPetDeceasedParams struct {
 	IfMatch IfMatch `json:"If-Match"`
 }
 
+// ListPetEncountersParams defines parameters for ListPetEncounters.
+type ListPetEncountersParams struct {
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // PutPetMicrochipParams defines parameters for PutPetMicrochip.
 type PutPetMicrochipParams struct {
 	// IfMatch Versión conocida del recurso (ETag de la última lectura).
@@ -1209,10 +2199,28 @@ type PutPetPhotoMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
+// GetPetTimelineParams defines parameters for GetPetTimeline.
+type GetPetTimelineParams struct {
+	Kind           *GetPetTimelineParamsKind `form:"kind,omitempty" json:"kind,omitempty"`
+	OrganizationId *openapi_types.UUID       `form:"organization_id,omitempty" json:"organization_id,omitempty"`
+	From           *time.Time                `form:"from,omitempty" json:"from,omitempty"`
+	To             *time.Time                `form:"to,omitempty" json:"to,omitempty"`
+	Cursor         *Cursor                   `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit          *Limit                    `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetPetTimelineParamsKind defines parameters for GetPetTimeline.
+type GetPetTimelineParamsKind string
+
 // InitiatePetTransferParams defines parameters for InitiatePetTransfer.
 type InitiatePetTransferParams struct {
 	// IdempotencyKey UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008).
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// VerifyEncounterParams defines parameters for VerifyEncounter.
+type VerifyEncounterParams struct {
+	Hash *string `form:"hash,omitempty" json:"hash,omitempty"`
 }
 
 // AdminReactivateOrganizationJSONRequestBody defines body for AdminReactivateOrganization for application/json ContentType.
@@ -1233,6 +2241,33 @@ type AdminReactivateUserJSONRequestBody = AdminReasonRequest
 // AdminSuspendUserJSONRequestBody defines body for AdminSuspendUser for application/json ContentType.
 type AdminSuspendUserJSONRequestBody = AdminReasonRequest
 
+// UpdateEncounterJSONRequestBody defines body for UpdateEncounter for application/json ContentType.
+type UpdateEncounterJSONRequestBody = UpdateEncounterRequest
+
+// AddEncounterAddendumJSONRequestBody defines body for AddEncounterAddendum for application/json ContentType.
+type AddEncounterAddendumJSONRequestBody = AddendumRequest
+
+// UploadEncounterAttachmentMultipartRequestBody defines body for UploadEncounterAttachment for multipart/form-data ContentType.
+type UploadEncounterAttachmentMultipartRequestBody UploadEncounterAttachmentMultipartBody
+
+// SetEncounterAttachmentVisibilityJSONRequestBody defines body for SetEncounterAttachmentVisibility for application/json ContentType.
+type SetEncounterAttachmentVisibilityJSONRequestBody = AttachmentVisibilityRequest
+
+// PutEncounterDiagnosesJSONRequestBody defines body for PutEncounterDiagnoses for application/json ContentType.
+type PutEncounterDiagnosesJSONRequestBody = DiagnosesRequest
+
+// DiscardEncounterJSONRequestBody defines body for DiscardEncounter for application/json ContentType.
+type DiscardEncounterJSONRequestBody = ReasonRequest
+
+// PutEncounterFollowUpJSONRequestBody defines body for PutEncounterFollowUp for application/json ContentType.
+type PutEncounterFollowUpJSONRequestBody = FollowUp
+
+// PutEncounterPlanJSONRequestBody defines body for PutEncounterPlan for application/json ContentType.
+type PutEncounterPlanJSONRequestBody = Plan
+
+// PutEncounterVitalsJSONRequestBody defines body for PutEncounterVitals for application/json ContentType.
+type PutEncounterVitalsJSONRequestBody = Vitals
+
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateMeRequest
 
@@ -1247,6 +2282,9 @@ type CreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
+// OpenEncounterJSONRequestBody defines body for OpenEncounter for application/json ContentType.
+type OpenEncounterJSONRequestBody = OpenEncounterRequest
 
 // CreateInvitationJSONRequestBody defines body for CreateInvitation for application/json ContentType.
 type CreateInvitationJSONRequestBody = CreateInvitationRequest
@@ -1369,6 +2407,54 @@ type ServerInterface interface {
 	// AdminSuspendUser Suspender un usuario
 	// (POST /admin/users/{userId}/suspend)
 	AdminSuspendUser(w http.ResponseWriter, r *http.Request, userId UserId)
+	// GetDocumentJob Estado de un documento en generación
+	// (GET /documents/{jobId})
+	GetDocumentJob(w http.ResponseWriter, r *http.Request, jobId openapi_types.UUID)
+	// GetEncounter Detalle de la consulta
+	// (GET /encounters/{encounterId})
+	GetEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId)
+	// UpdateEncounter Editar motivo, tipo, inicio, S/O o responsable (autoguardado)
+	// (PATCH /encounters/{encounterId})
+	UpdateEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params UpdateEncounterParams)
+	// AddEncounterAddendum Añadir adenda a una consulta firmada
+	// (POST /encounters/{encounterId}/addenda)
+	AddEncounterAddendum(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params AddEncounterAddendumParams)
+	// UploadEncounterAttachment Subir adjunto
+	// (POST /encounters/{encounterId}/attachments)
+	UploadEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId)
+	// DeleteEncounterAttachment Eliminar adjunto
+	// (DELETE /encounters/{encounterId}/attachments/{attachmentId})
+	DeleteEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId)
+	// GetEncounterAttachment Descargar adjunto
+	// (GET /encounters/{encounterId}/attachments/{attachmentId})
+	GetEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId, params GetEncounterAttachmentParams)
+	// SetEncounterAttachmentVisibility Cambiar visibilidad para el tutor
+	// (PATCH /encounters/{encounterId}/attachments/{attachmentId})
+	SetEncounterAttachmentVisibility(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId)
+	// PutEncounterDiagnoses Fijar diagnósticos (A)
+	// (PUT /encounters/{encounterId}/diagnoses)
+	PutEncounterDiagnoses(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterDiagnosesParams)
+	// DiscardEncounter Descartar un borrador
+	// (POST /encounters/{encounterId}/discard)
+	DiscardEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId)
+	// DeleteEncounterFollowUp Retirar el control recomendado
+	// (DELETE /encounters/{encounterId}/follow-up)
+	DeleteEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params DeleteEncounterFollowUpParams)
+	// PutEncounterFollowUp Recomendar control
+	// (PUT /encounters/{encounterId}/follow-up)
+	PutEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterFollowUpParams)
+	// GetEncounterPdf PDF de la consulta firmada
+	// (GET /encounters/{encounterId}/pdf)
+	GetEncounterPdf(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params GetEncounterPdfParams)
+	// PutEncounterPlan Fijar el plan (P)
+	// (PUT /encounters/{encounterId}/plan)
+	PutEncounterPlan(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterPlanParams)
+	// SignEncounter Firmar la consulta
+	// (POST /encounters/{encounterId}/sign)
+	SignEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params SignEncounterParams)
+	// PutEncounterVitals Registrar constantes vitales
+	// (PUT /encounters/{encounterId}/vitals)
+	PutEncounterVitals(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterVitalsParams)
 	// GetHealthz Liveness pública (usada por el WAF)
 	// (GET /healthz)
 	GetHealthz(w http.ResponseWriter, r *http.Request)
@@ -1405,6 +2491,12 @@ type ServerInterface interface {
 	// UpdateOrganization Editar el perfil
 	// (PATCH /organizations/{orgId})
 	UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams)
+	// ListOrgEncounters Consultas de la organización
+	// (GET /organizations/{orgId}/encounters)
+	ListOrgEncounters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgEncountersParams)
+	// OpenEncounter Abrir consulta
+	// (POST /organizations/{orgId}/encounters)
+	OpenEncounter(w http.ResponseWriter, r *http.Request, orgId OrgId, params OpenEncounterParams)
 	// ListInvitations Invitaciones de la organización
 	// (GET /organizations/{orgId}/invitations)
 	ListInvitations(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListInvitationsParams)
@@ -1462,6 +2554,9 @@ type ServerInterface interface {
 	// UndoPetDeceased Deshacer fallecimiento
 	// (POST /pets/{petId}/deceased/undo)
 	UndoPetDeceased(w http.ResponseWriter, r *http.Request, petId PetId)
+	// ListPetEncounters Consultas firmadas de la mascota
+	// (GET /pets/{petId}/encounters)
+	ListPetEncounters(w http.ResponseWriter, r *http.Request, petId PetId, params ListPetEncountersParams)
 	// PutPetMicrochip Asignar o corregir el microchip
 	// (PUT /pets/{petId}/microchip)
 	PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams)
@@ -1471,12 +2566,24 @@ type ServerInterface interface {
 	// PutPetPhoto Subir o reemplazar la foto
 	// (PUT /pets/{petId}/photo)
 	PutPetPhoto(w http.ResponseWriter, r *http.Request, petId PetId)
+	// GetPetSummary Resumen de la ficha clínica
+	// (GET /pets/{petId}/summary)
+	GetPetSummary(w http.ResponseWriter, r *http.Request, petId PetId)
+	// GetPetTimeline Historial clínico cronológico
+	// (GET /pets/{petId}/timeline)
+	GetPetTimeline(w http.ResponseWriter, r *http.Request, petId PetId, params GetPetTimelineParams)
 	// CancelPetTransfer Cancelar transferencia pendiente
 	// (DELETE /pets/{petId}/transfer)
 	CancelPetTransfer(w http.ResponseWriter, r *http.Request, petId PetId)
 	// InitiatePetTransfer Iniciar transferencia de tutela
 	// (POST /pets/{petId}/transfer)
 	InitiatePetTransfer(w http.ResponseWriter, r *http.Request, petId PetId, params InitiatePetTransferParams)
+	// GetPetWeightHistory Historial de peso con tendencia
+	// (GET /pets/{petId}/weight-history)
+	GetPetWeightHistory(w http.ResponseWriter, r *http.Request, petId PetId)
+	// VerifyEncounter Verificación pública de una consulta firmada
+	// (GET /verify/encounters/{encounterId})
+	VerifyEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params VerifyEncounterParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1534,6 +2641,102 @@ func (_ Unimplemented) AdminReactivateUser(w http.ResponseWriter, r *http.Reques
 // AdminSuspendUser Suspender un usuario
 // (POST /admin/users/{userId}/suspend)
 func (_ Unimplemented) AdminSuspendUser(w http.ResponseWriter, r *http.Request, userId UserId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDocumentJob Estado de un documento en generación
+// (GET /documents/{jobId})
+func (_ Unimplemented) GetDocumentJob(w http.ResponseWriter, r *http.Request, jobId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetEncounter Detalle de la consulta
+// (GET /encounters/{encounterId})
+func (_ Unimplemented) GetEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateEncounter Editar motivo, tipo, inicio, S/O o responsable (autoguardado)
+// (PATCH /encounters/{encounterId})
+func (_ Unimplemented) UpdateEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params UpdateEncounterParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddEncounterAddendum Añadir adenda a una consulta firmada
+// (POST /encounters/{encounterId}/addenda)
+func (_ Unimplemented) AddEncounterAddendum(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params AddEncounterAddendumParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadEncounterAttachment Subir adjunto
+// (POST /encounters/{encounterId}/attachments)
+func (_ Unimplemented) UploadEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteEncounterAttachment Eliminar adjunto
+// (DELETE /encounters/{encounterId}/attachments/{attachmentId})
+func (_ Unimplemented) DeleteEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetEncounterAttachment Descargar adjunto
+// (GET /encounters/{encounterId}/attachments/{attachmentId})
+func (_ Unimplemented) GetEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId, params GetEncounterAttachmentParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetEncounterAttachmentVisibility Cambiar visibilidad para el tutor
+// (PATCH /encounters/{encounterId}/attachments/{attachmentId})
+func (_ Unimplemented) SetEncounterAttachmentVisibility(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutEncounterDiagnoses Fijar diagnósticos (A)
+// (PUT /encounters/{encounterId}/diagnoses)
+func (_ Unimplemented) PutEncounterDiagnoses(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterDiagnosesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DiscardEncounter Descartar un borrador
+// (POST /encounters/{encounterId}/discard)
+func (_ Unimplemented) DiscardEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteEncounterFollowUp Retirar el control recomendado
+// (DELETE /encounters/{encounterId}/follow-up)
+func (_ Unimplemented) DeleteEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params DeleteEncounterFollowUpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutEncounterFollowUp Recomendar control
+// (PUT /encounters/{encounterId}/follow-up)
+func (_ Unimplemented) PutEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterFollowUpParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetEncounterPdf PDF de la consulta firmada
+// (GET /encounters/{encounterId}/pdf)
+func (_ Unimplemented) GetEncounterPdf(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params GetEncounterPdfParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutEncounterPlan Fijar el plan (P)
+// (PUT /encounters/{encounterId}/plan)
+func (_ Unimplemented) PutEncounterPlan(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterPlanParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SignEncounter Firmar la consulta
+// (POST /encounters/{encounterId}/sign)
+func (_ Unimplemented) SignEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params SignEncounterParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PutEncounterVitals Registrar constantes vitales
+// (PUT /encounters/{encounterId}/vitals)
+func (_ Unimplemented) PutEncounterVitals(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterVitalsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1606,6 +2809,18 @@ func (_ Unimplemented) GetOrganization(w http.ResponseWriter, r *http.Request, o
 // UpdateOrganization Editar el perfil
 // (PATCH /organizations/{orgId})
 func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request, orgId OrgId, params UpdateOrganizationParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListOrgEncounters Consultas de la organización
+// (GET /organizations/{orgId}/encounters)
+func (_ Unimplemented) ListOrgEncounters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgEncountersParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// OpenEncounter Abrir consulta
+// (POST /organizations/{orgId}/encounters)
+func (_ Unimplemented) OpenEncounter(w http.ResponseWriter, r *http.Request, orgId OrgId, params OpenEncounterParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1723,6 +2938,12 @@ func (_ Unimplemented) UndoPetDeceased(w http.ResponseWriter, r *http.Request, p
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListPetEncounters Consultas firmadas de la mascota
+// (GET /pets/{petId}/encounters)
+func (_ Unimplemented) ListPetEncounters(w http.ResponseWriter, r *http.Request, petId PetId, params ListPetEncountersParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // PutPetMicrochip Asignar o corregir el microchip
 // (PUT /pets/{petId}/microchip)
 func (_ Unimplemented) PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams) {
@@ -1741,6 +2962,18 @@ func (_ Unimplemented) PutPetPhoto(w http.ResponseWriter, r *http.Request, petId
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetPetSummary Resumen de la ficha clínica
+// (GET /pets/{petId}/summary)
+func (_ Unimplemented) GetPetSummary(w http.ResponseWriter, r *http.Request, petId PetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetPetTimeline Historial clínico cronológico
+// (GET /pets/{petId}/timeline)
+func (_ Unimplemented) GetPetTimeline(w http.ResponseWriter, r *http.Request, petId PetId, params GetPetTimelineParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // CancelPetTransfer Cancelar transferencia pendiente
 // (DELETE /pets/{petId}/transfer)
 func (_ Unimplemented) CancelPetTransfer(w http.ResponseWriter, r *http.Request, petId PetId) {
@@ -1750,6 +2983,18 @@ func (_ Unimplemented) CancelPetTransfer(w http.ResponseWriter, r *http.Request,
 // InitiatePetTransfer Iniciar transferencia de tutela
 // (POST /pets/{petId}/transfer)
 func (_ Unimplemented) InitiatePetTransfer(w http.ResponseWriter, r *http.Request, petId PetId, params InitiatePetTransferParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetPetWeightHistory Historial de peso con tendencia
+// (GET /pets/{petId}/weight-history)
+func (_ Unimplemented) GetPetWeightHistory(w http.ResponseWriter, r *http.Request, petId PetId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifyEncounter Verificación pública de una consulta firmada
+// (GET /verify/encounters/{encounterId})
+func (_ Unimplemented) VerifyEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params VerifyEncounterParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2160,6 +3405,721 @@ func (siw *ServerInterfaceWrapper) AdminSuspendUser(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// GetDocumentJob operation middleware
+func (siw *ServerInterfaceWrapper) GetDocumentJob(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "jobId" -------------
+	var jobId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "jobId", chi.URLParam(r, "jobId"), &jobId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "jobId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDocumentJob(w, r, jobId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEncounter operation middleware
+func (siw *ServerInterfaceWrapper) GetEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEncounter(w, r, encounterId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEncounter operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateEncounterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEncounter(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddEncounterAddendum operation middleware
+func (siw *ServerInterfaceWrapper) AddEncounterAddendum(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddEncounterAddendumParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddEncounterAddendum(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadEncounterAttachment operation middleware
+func (siw *ServerInterfaceWrapper) UploadEncounterAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadEncounterAttachment(w, r, encounterId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteEncounterAttachment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEncounterAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteEncounterAttachment(w, r, encounterId, attachmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEncounterAttachment operation middleware
+func (siw *ServerInterfaceWrapper) GetEncounterAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEncounterAttachmentParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Accept" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Accept")]; found {
+		var Accept AcceptLink
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Accept", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Accept", valueList[0], &Accept, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Accept", Err: err})
+			return
+		}
+
+		params.Accept = &Accept
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEncounterAttachment(w, r, encounterId, attachmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetEncounterAttachmentVisibility operation middleware
+func (siw *ServerInterfaceWrapper) SetEncounterAttachmentVisibility(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "attachmentId" -------------
+	var attachmentId AttachmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "attachmentId", chi.URLParam(r, "attachmentId"), &attachmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "attachmentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetEncounterAttachmentVisibility(w, r, encounterId, attachmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutEncounterDiagnoses operation middleware
+func (siw *ServerInterfaceWrapper) PutEncounterDiagnoses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEncounterDiagnosesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutEncounterDiagnoses(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DiscardEncounter operation middleware
+func (siw *ServerInterfaceWrapper) DiscardEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DiscardEncounter(w, r, encounterId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteEncounterFollowUp operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEncounterFollowUp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteEncounterFollowUpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteEncounterFollowUp(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutEncounterFollowUp operation middleware
+func (siw *ServerInterfaceWrapper) PutEncounterFollowUp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEncounterFollowUpParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutEncounterFollowUp(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEncounterPdf operation middleware
+func (siw *ServerInterfaceWrapper) GetEncounterPdf(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEncounterPdfParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Accept" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Accept")]; found {
+		var Accept AcceptLink
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Accept", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Accept", valueList[0], &Accept, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Accept", Err: err})
+			return
+		}
+
+		params.Accept = &Accept
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEncounterPdf(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutEncounterPlan operation middleware
+func (siw *ServerInterfaceWrapper) PutEncounterPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEncounterPlanParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutEncounterPlan(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SignEncounter operation middleware
+func (siw *ServerInterfaceWrapper) SignEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SignEncounterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SignEncounter(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutEncounterVitals operation middleware
+func (siw *ServerInterfaceWrapper) PutEncounterVitals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutEncounterVitalsParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "If-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-Match")]; found {
+		var IfMatch IfMatch
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-Match", valueList[0], &IfMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "integer", Format: "int64"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-Match", Err: err})
+			return
+		}
+
+		params.IfMatch = IfMatch
+
+	} else {
+		err := fmt.Errorf("Header parameter If-Match is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "If-Match", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutEncounterVitals(w, r, encounterId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealthz operation middleware
 func (siw *ServerInterfaceWrapper) GetHealthz(w http.ResponseWriter, r *http.Request) {
 
@@ -2445,6 +4405,180 @@ func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateOrganization(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrgEncounters operation middleware
+func (siw *ServerInterfaceWrapper) ListOrgEncounters(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrgEncountersParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "pet_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pet_id", r.URL.Query(), &params.PetId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pet_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pet_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "professional_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "professional_id", r.URL.Query(), &params.ProfessionalId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "professional_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "professional_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrgEncounters(w, r, orgId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// OpenEncounter operation middleware
+func (siw *ServerInterfaceWrapper) OpenEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OpenEncounterParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: "uuid"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OpenEncounter(w, r, orgId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3209,6 +5343,61 @@ func (siw *ServerInterfaceWrapper) UndoPetDeceased(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListPetEncounters operation middleware
+func (siw *ServerInterfaceWrapper) ListPetEncounters(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPetEncountersParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPetEncounters(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PutPetMicrochip operation middleware
 func (siw *ServerInterfaceWrapper) PutPetMicrochip(w http.ResponseWriter, r *http.Request) {
 
@@ -3315,6 +5504,139 @@ func (siw *ServerInterfaceWrapper) PutPetPhoto(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetPetSummary operation middleware
+func (siw *ServerInterfaceWrapper) GetPetSummary(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPetSummary(w, r, petId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPetTimeline operation middleware
+func (siw *ServerInterfaceWrapper) GetPetTimeline(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPetTimelineParams
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "organization_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "organization_id", r.URL.Query(), &params.OrganizationId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "organization_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPetTimeline(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CancelPetTransfer operation middleware
 func (siw *ServerInterfaceWrapper) CancelPetTransfer(w http.ResponseWriter, r *http.Request) {
 
@@ -3386,6 +5708,74 @@ func (siw *ServerInterfaceWrapper) InitiatePetTransfer(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.InitiatePetTransfer(w, r, petId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPetWeightHistory operation middleware
+func (siw *ServerInterfaceWrapper) GetPetWeightHistory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "petId" -------------
+	var petId PetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "petId", chi.URLParam(r, "petId"), &petId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "petId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPetWeightHistory(w, r, petId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyEncounter operation middleware
+func (siw *ServerInterfaceWrapper) VerifyEncounter(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "encounterId" -------------
+	var encounterId EncounterId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "encounterId", chi.URLParam(r, "encounterId"), &encounterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "encounterId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VerifyEncounterParams
+
+	// ------------- Optional query parameter "hash" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "hash", r.URL.Query(), &params.Hash, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "hash"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hash", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyEncounter(w, r, encounterId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3641,10 +6031,97 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/admin/audit-log", wrapper.AdminListAuditLog)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/encounters", wrapper.ListOrgEncounters)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/encounters", wrapper.OpenEncounter)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/encounters/{encounterId}", wrapper.GetEncounter)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/encounters/{encounterId}", wrapper.UpdateEncounter)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/encounters/{encounterId}/vitals", wrapper.PutEncounterVitals)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/encounters/{encounterId}/diagnoses", wrapper.PutEncounterDiagnoses)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/encounters/{encounterId}/plan", wrapper.PutEncounterPlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/encounters/{encounterId}/follow-up", wrapper.DeleteEncounterFollowUp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/encounters/{encounterId}/follow-up", wrapper.PutEncounterFollowUp)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/encounters/{encounterId}/sign", wrapper.SignEncounter)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/encounters/{encounterId}/addenda", wrapper.AddEncounterAddendum)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/encounters/{encounterId}/discard", wrapper.DiscardEncounter)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/encounters/{encounterId}/pdf", wrapper.GetEncounterPdf)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/encounters/{encounterId}/attachments", wrapper.UploadEncounterAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/encounters/{encounterId}/attachments/{attachmentId}", wrapper.DeleteEncounterAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/encounters/{encounterId}/attachments/{attachmentId}", wrapper.GetEncounterAttachment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/encounters/{encounterId}/attachments/{attachmentId}", wrapper.SetEncounterAttachmentVisibility)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{petId}/timeline", wrapper.GetPetTimeline)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{petId}/encounters", wrapper.ListPetEncounters)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{petId}/weight-history", wrapper.GetPetWeightHistory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/pets/{petId}/summary", wrapper.GetPetSummary)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/documents/{jobId}", wrapper.GetDocumentJob)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/verify/encounters/{encounterId}", wrapper.VerifyEncounter)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/healthz", wrapper.GetHealthz)
 	})
 
 	return r
+}
+
+type EncounterCreatedResponseHeaders struct {
+	ETag *int64
+}
+type EncounterCreatedJSONResponse struct {
+	Body Encounter
+
+	Headers EncounterCreatedResponseHeaders
+}
+
+type EncounterOKResponseHeaders struct {
+	ETag *int64
+}
+type EncounterOKJSONResponse struct {
+	Body Encounter
+
+	Headers EncounterOKResponseHeaders
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
@@ -4599,6 +7076,1713 @@ type AdminSuspendUserdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response AdminSuspendUserdefaultApplicationProblemPlusJSONResponse) VisitAdminSuspendUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentJobRequestObject struct {
+	JobId openapi_types.UUID `json:"jobId"`
+}
+
+type GetDocumentJobResponseObject interface {
+	VisitGetDocumentJobResponse(w http.ResponseWriter) error
+}
+
+type GetDocumentJob200JSONResponse DocumentJob
+
+func (response GetDocumentJob200JSONResponse) VisitGetDocumentJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentJob401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetDocumentJob401ApplicationProblemPlusJSONResponse) VisitGetDocumentJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentJob404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetDocumentJob404ApplicationProblemPlusJSONResponse) VisitGetDocumentJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDocumentJobdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetDocumentJobdefaultApplicationProblemPlusJSONResponse) VisitGetDocumentJobResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+}
+
+type GetEncounterResponseObject interface {
+	VisitGetEncounterResponse(w http.ResponseWriter) error
+}
+
+type GetEncounter200ResponseHeaders struct {
+	ETag *int64
+}
+
+type GetEncounter200JSONResponse struct {
+	Body    Encounter
+	Headers GetEncounter200ResponseHeaders
+}
+
+func (response GetEncounter200JSONResponse) VisitGetEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounter401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetEncounter401ApplicationProblemPlusJSONResponse) VisitGetEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounter404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetEncounter404ApplicationProblemPlusJSONResponse) VisitGetEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetEncounterdefaultApplicationProblemPlusJSONResponse) VisitGetEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounterRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      UpdateEncounterParams
+	Body        *UpdateEncounterJSONRequestBody
+}
+
+type UpdateEncounterResponseObject interface {
+	VisitUpdateEncounterResponse(w http.ResponseWriter) error
+}
+
+type UpdateEncounter200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response UpdateEncounter200JSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounter401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateEncounter401ApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounter403ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateEncounter403ApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounter404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateEncounter404ApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounter409ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateEncounter409ApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounter422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateEncounter422ApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UpdateEncounterdefaultApplicationProblemPlusJSONResponse) VisitUpdateEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendumRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      AddEncounterAddendumParams
+	Body        *AddEncounterAddendumJSONRequestBody
+}
+
+type AddEncounterAddendumResponseObject interface {
+	VisitAddEncounterAddendumResponse(w http.ResponseWriter) error
+}
+
+type AddEncounterAddendum201JSONResponse struct{ EncounterCreatedJSONResponse }
+
+func (response AddEncounterAddendum201JSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendum401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddEncounterAddendum401ApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendum403ApplicationProblemPlusJSONResponse Problem
+
+func (response AddEncounterAddendum403ApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendum404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddEncounterAddendum404ApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendum409ApplicationProblemPlusJSONResponse Problem
+
+func (response AddEncounterAddendum409ApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendum422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddEncounterAddendum422ApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEncounterAddendumdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response AddEncounterAddendumdefaultApplicationProblemPlusJSONResponse) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachmentRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Body        *multipart.Reader
+}
+
+type UploadEncounterAttachmentResponseObject interface {
+	VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error
+}
+
+type UploadEncounterAttachment201JSONResponse Attachment
+
+func (response UploadEncounterAttachment201JSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UploadEncounterAttachment401ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment403ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment403ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment404ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment409ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment409ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment413ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment413ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment415ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment415ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(415)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachment422ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadEncounterAttachment422ApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadEncounterAttachmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UploadEncounterAttachmentdefaultApplicationProblemPlusJSONResponse) VisitUploadEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterAttachmentRequestObject struct {
+	EncounterId  EncounterId  `json:"encounterId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+}
+
+type DeleteEncounterAttachmentResponseObject interface {
+	VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error
+}
+
+type DeleteEncounterAttachment204Response struct {
+}
+
+func (response DeleteEncounterAttachment204Response) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteEncounterAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteEncounterAttachment401ApplicationProblemPlusJSONResponse) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterAttachment403ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterAttachment403ApplicationProblemPlusJSONResponse) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterAttachment404ApplicationProblemPlusJSONResponse) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterAttachment409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterAttachment409ApplicationProblemPlusJSONResponse) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterAttachmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DeleteEncounterAttachmentdefaultApplicationProblemPlusJSONResponse) VisitDeleteEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterAttachmentRequestObject struct {
+	EncounterId  EncounterId  `json:"encounterId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+	Params       GetEncounterAttachmentParams
+}
+
+type GetEncounterAttachmentResponseObject interface {
+	VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error
+}
+
+type GetEncounterAttachment200JSONResponse DownloadLink
+
+func (response GetEncounterAttachment200JSONResponse) VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterAttachment302ResponseHeaders struct {
+	Location *string
+}
+
+type GetEncounterAttachment302Response struct {
+	Headers GetEncounterAttachment302ResponseHeaders
+}
+
+func (response GetEncounterAttachment302Response) VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error {
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(302)
+	return nil
+}
+
+type GetEncounterAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetEncounterAttachment401ApplicationProblemPlusJSONResponse) VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetEncounterAttachment404ApplicationProblemPlusJSONResponse) VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterAttachmentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetEncounterAttachmentdefaultApplicationProblemPlusJSONResponse) VisitGetEncounterAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibilityRequestObject struct {
+	EncounterId  EncounterId  `json:"encounterId"`
+	AttachmentId AttachmentId `json:"attachmentId"`
+	Body         *SetEncounterAttachmentVisibilityJSONRequestBody
+}
+
+type SetEncounterAttachmentVisibilityResponseObject interface {
+	VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error
+}
+
+type SetEncounterAttachmentVisibility200JSONResponse Attachment
+
+func (response SetEncounterAttachmentVisibility200JSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibility401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetEncounterAttachmentVisibility401ApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibility403ApplicationProblemPlusJSONResponse Problem
+
+func (response SetEncounterAttachmentVisibility403ApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibility404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetEncounterAttachmentVisibility404ApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibility409ApplicationProblemPlusJSONResponse Problem
+
+func (response SetEncounterAttachmentVisibility409ApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibility422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetEncounterAttachmentVisibility422ApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetEncounterAttachmentVisibilitydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response SetEncounterAttachmentVisibilitydefaultApplicationProblemPlusJSONResponse) VisitSetEncounterAttachmentVisibilityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnosesRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      PutEncounterDiagnosesParams
+	Body        *PutEncounterDiagnosesJSONRequestBody
+}
+
+type PutEncounterDiagnosesResponseObject interface {
+	VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error
+}
+
+type PutEncounterDiagnoses200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response PutEncounterDiagnoses200JSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnoses401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutEncounterDiagnoses401ApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnoses403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterDiagnoses403ApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnoses404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterDiagnoses404ApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnoses409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterDiagnoses409ApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnoses422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterDiagnoses422ApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterDiagnosesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutEncounterDiagnosesdefaultApplicationProblemPlusJSONResponse) VisitPutEncounterDiagnosesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounterRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Body        *DiscardEncounterJSONRequestBody
+}
+
+type DiscardEncounterResponseObject interface {
+	VisitDiscardEncounterResponse(w http.ResponseWriter) error
+}
+
+type DiscardEncounter200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response DiscardEncounter200JSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounter401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DiscardEncounter401ApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounter403ApplicationProblemPlusJSONResponse Problem
+
+func (response DiscardEncounter403ApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounter404ApplicationProblemPlusJSONResponse Problem
+
+func (response DiscardEncounter404ApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounter409ApplicationProblemPlusJSONResponse Problem
+
+func (response DiscardEncounter409ApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounter422ApplicationProblemPlusJSONResponse Problem
+
+func (response DiscardEncounter422ApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscardEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DiscardEncounterdefaultApplicationProblemPlusJSONResponse) VisitDiscardEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUpRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      DeleteEncounterFollowUpParams
+}
+
+type DeleteEncounterFollowUpResponseObject interface {
+	VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error
+}
+
+type DeleteEncounterFollowUp200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response DeleteEncounterFollowUp200JSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUp401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteEncounterFollowUp401ApplicationProblemPlusJSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUp403ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterFollowUp403ApplicationProblemPlusJSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUp404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterFollowUp404ApplicationProblemPlusJSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUp409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteEncounterFollowUp409ApplicationProblemPlusJSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteEncounterFollowUpdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DeleteEncounterFollowUpdefaultApplicationProblemPlusJSONResponse) VisitDeleteEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUpRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      PutEncounterFollowUpParams
+	Body        *PutEncounterFollowUpJSONRequestBody
+}
+
+type PutEncounterFollowUpResponseObject interface {
+	VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error
+}
+
+type PutEncounterFollowUp200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response PutEncounterFollowUp200JSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUp401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutEncounterFollowUp401ApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUp403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterFollowUp403ApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUp404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterFollowUp404ApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUp409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterFollowUp409ApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUp422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterFollowUp422ApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterFollowUpdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutEncounterFollowUpdefaultApplicationProblemPlusJSONResponse) VisitPutEncounterFollowUpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterPdfRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      GetEncounterPdfParams
+}
+
+type GetEncounterPdfResponseObject interface {
+	VisitGetEncounterPdfResponse(w http.ResponseWriter) error
+}
+
+type GetEncounterPdf200JSONResponse DownloadLink
+
+func (response GetEncounterPdf200JSONResponse) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterPdf202JSONResponse DocumentJob
+
+func (response GetEncounterPdf202JSONResponse) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterPdf302ResponseHeaders struct {
+	Location *string
+}
+
+type GetEncounterPdf302Response struct {
+	Headers GetEncounterPdf302ResponseHeaders
+}
+
+func (response GetEncounterPdf302Response) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(302)
+	return nil
+}
+
+type GetEncounterPdf401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetEncounterPdf401ApplicationProblemPlusJSONResponse) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterPdf404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetEncounterPdf404ApplicationProblemPlusJSONResponse) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEncounterPdfdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetEncounterPdfdefaultApplicationProblemPlusJSONResponse) VisitGetEncounterPdfResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlanRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      PutEncounterPlanParams
+	Body        *PutEncounterPlanJSONRequestBody
+}
+
+type PutEncounterPlanResponseObject interface {
+	VisitPutEncounterPlanResponse(w http.ResponseWriter) error
+}
+
+type PutEncounterPlan200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response PutEncounterPlan200JSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlan401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutEncounterPlan401ApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlan403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterPlan403ApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlan404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterPlan404ApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlan409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterPlan409ApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlan422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterPlan422ApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterPlandefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutEncounterPlandefaultApplicationProblemPlusJSONResponse) VisitPutEncounterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounterRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      SignEncounterParams
+}
+
+type SignEncounterResponseObject interface {
+	VisitSignEncounterResponse(w http.ResponseWriter) error
+}
+
+type SignEncounter200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response SignEncounter200JSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounter401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SignEncounter401ApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounter403ApplicationProblemPlusJSONResponse Problem
+
+func (response SignEncounter403ApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounter404ApplicationProblemPlusJSONResponse Problem
+
+func (response SignEncounter404ApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounter409ApplicationProblemPlusJSONResponse Problem
+
+func (response SignEncounter409ApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounter422ApplicationProblemPlusJSONResponse Problem
+
+func (response SignEncounter422ApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response SignEncounterdefaultApplicationProblemPlusJSONResponse) VisitSignEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitalsRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      PutEncounterVitalsParams
+	Body        *PutEncounterVitalsJSONRequestBody
+}
+
+type PutEncounterVitalsResponseObject interface {
+	VisitPutEncounterVitalsResponse(w http.ResponseWriter) error
+}
+
+type PutEncounterVitals200JSONResponse struct{ EncounterOKJSONResponse }
+
+func (response PutEncounterVitals200JSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitals401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutEncounterVitals401ApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitals403ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterVitals403ApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitals404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterVitals404ApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitals409ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterVitals409ApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitals422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutEncounterVitals422ApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutEncounterVitalsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PutEncounterVitalsdefaultApplicationProblemPlusJSONResponse) VisitPutEncounterVitalsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -5593,6 +9777,217 @@ type UpdateOrganizationdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UpdateOrganizationdefaultApplicationProblemPlusJSONResponse) VisitUpdateOrganizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgEncountersRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params ListOrgEncountersParams
+}
+
+type ListOrgEncountersResponseObject interface {
+	VisitListOrgEncountersResponse(w http.ResponseWriter) error
+}
+
+type ListOrgEncounters200JSONResponse EncounterPage
+
+func (response ListOrgEncounters200JSONResponse) VisitListOrgEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgEncounters401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListOrgEncounters401ApplicationProblemPlusJSONResponse) VisitListOrgEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgEncounters403ApplicationProblemPlusJSONResponse Problem
+
+func (response ListOrgEncounters403ApplicationProblemPlusJSONResponse) VisitListOrgEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgEncounters422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListOrgEncounters422ApplicationProblemPlusJSONResponse) VisitListOrgEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOrgEncountersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListOrgEncountersdefaultApplicationProblemPlusJSONResponse) VisitListOrgEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounterRequestObject struct {
+	OrgId  OrgId `json:"orgId"`
+	Params OpenEncounterParams
+	Body   *OpenEncounterJSONRequestBody
+}
+
+type OpenEncounterResponseObject interface {
+	VisitOpenEncounterResponse(w http.ResponseWriter) error
+}
+
+type OpenEncounter201ResponseHeaders struct {
+	ETag     *int64
+	Location *string
+}
+
+type OpenEncounter201JSONResponse struct {
+	Body    Encounter
+	Headers OpenEncounter201ResponseHeaders
+}
+
+func (response OpenEncounter201JSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.ETag != nil {
+		w.Header().Set("ETag", fmt.Sprint(*response.Headers.ETag))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounter401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response OpenEncounter401ApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounter403ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenEncounter403ApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounter404ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenEncounter404ApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounter409ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenEncounter409ApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounter422ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenEncounter422ApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response OpenEncounterdefaultApplicationProblemPlusJSONResponse) VisitOpenEncounterResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -7443,6 +11838,76 @@ func (response UndoPetDeceaseddefaultApplicationProblemPlusJSONResponse) VisitUn
 	return err
 }
 
+type ListPetEncountersRequestObject struct {
+	PetId  PetId `json:"petId"`
+	Params ListPetEncountersParams
+}
+
+type ListPetEncountersResponseObject interface {
+	VisitListPetEncountersResponse(w http.ResponseWriter) error
+}
+
+type ListPetEncounters200JSONResponse EncounterPage
+
+func (response ListPetEncounters200JSONResponse) VisitListPetEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPetEncounters401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListPetEncounters401ApplicationProblemPlusJSONResponse) VisitListPetEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPetEncounters404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListPetEncounters404ApplicationProblemPlusJSONResponse) VisitListPetEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPetEncountersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListPetEncountersdefaultApplicationProblemPlusJSONResponse) VisitListPetEncountersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type PutPetMicrochipRequestObject struct {
 	PetId  PetId `json:"petId"`
 	Params PutPetMicrochipParams
@@ -7765,6 +12230,179 @@ func (response PutPetPhotodefaultApplicationProblemPlusJSONResponse) VisitPutPet
 	return err
 }
 
+type GetPetSummaryRequestObject struct {
+	PetId PetId `json:"petId"`
+}
+
+type GetPetSummaryResponseObject interface {
+	VisitGetPetSummaryResponse(w http.ResponseWriter) error
+}
+
+type GetPetSummary200ResponseHeaders struct {
+	XPPFreshness *string
+}
+
+type GetPetSummary200JSONResponse struct {
+	Body    PetClinicalSummary
+	Headers GetPetSummary200ResponseHeaders
+}
+
+func (response GetPetSummary200JSONResponse) VisitGetPetSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XPPFreshness != nil {
+		w.Header().Set("X-PP-Freshness", fmt.Sprint(*response.Headers.XPPFreshness))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetSummary401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetPetSummary401ApplicationProblemPlusJSONResponse) VisitGetPetSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetSummary404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetPetSummary404ApplicationProblemPlusJSONResponse) VisitGetPetSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetSummarydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetPetSummarydefaultApplicationProblemPlusJSONResponse) VisitGetPetSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetTimelineRequestObject struct {
+	PetId  PetId `json:"petId"`
+	Params GetPetTimelineParams
+}
+
+type GetPetTimelineResponseObject interface {
+	VisitGetPetTimelineResponse(w http.ResponseWriter) error
+}
+
+type GetPetTimeline200ResponseHeaders struct {
+	XPPFreshness *string
+}
+
+type GetPetTimeline200JSONResponse struct {
+	Body    TimelinePage
+	Headers GetPetTimeline200ResponseHeaders
+}
+
+func (response GetPetTimeline200JSONResponse) VisitGetPetTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XPPFreshness != nil {
+		w.Header().Set("X-PP-Freshness", fmt.Sprint(*response.Headers.XPPFreshness))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetTimeline401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetPetTimeline401ApplicationProblemPlusJSONResponse) VisitGetPetTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetTimeline404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetPetTimeline404ApplicationProblemPlusJSONResponse) VisitGetPetTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetTimeline422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetPetTimeline422ApplicationProblemPlusJSONResponse) VisitGetPetTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetTimelinedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetPetTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetPetTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CancelPetTransferRequestObject struct {
 	PetId PetId `json:"petId"`
 }
@@ -7971,6 +12609,155 @@ func (response InitiatePetTransferdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type GetPetWeightHistoryRequestObject struct {
+	PetId PetId `json:"petId"`
+}
+
+type GetPetWeightHistoryResponseObject interface {
+	VisitGetPetWeightHistoryResponse(w http.ResponseWriter) error
+}
+
+type GetPetWeightHistory200ResponseHeaders struct {
+	XPPFreshness *string
+}
+
+type GetPetWeightHistory200JSONResponse struct {
+	Body    WeightHistory
+	Headers GetPetWeightHistory200ResponseHeaders
+}
+
+func (response GetPetWeightHistory200JSONResponse) VisitGetPetWeightHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XPPFreshness != nil {
+		w.Header().Set("X-PP-Freshness", fmt.Sprint(*response.Headers.XPPFreshness))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetWeightHistory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetPetWeightHistory401ApplicationProblemPlusJSONResponse) VisitGetPetWeightHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetWeightHistory404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetPetWeightHistory404ApplicationProblemPlusJSONResponse) VisitGetPetWeightHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPetWeightHistorydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetPetWeightHistorydefaultApplicationProblemPlusJSONResponse) VisitGetPetWeightHistoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyEncounterRequestObject struct {
+	EncounterId EncounterId `json:"encounterId"`
+	Params      VerifyEncounterParams
+}
+
+type VerifyEncounterResponseObject interface {
+	VisitVerifyEncounterResponse(w http.ResponseWriter) error
+}
+
+type VerifyEncounter200JSONResponse EncounterVerification
+
+func (response VerifyEncounter200JSONResponse) VisitVerifyEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyEncounter404ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyEncounter404ApplicationProblemPlusJSONResponse) VisitVerifyEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyEncounter422ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyEncounter422ApplicationProblemPlusJSONResponse) VisitVerifyEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyEncounterdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response VerifyEncounterdefaultApplicationProblemPlusJSONResponse) VisitVerifyEncounterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// AdminListAuditLog Registro de auditoría
@@ -8000,6 +12787,54 @@ type StrictServerInterface interface {
 	// AdminSuspendUser Suspender un usuario
 	// (POST /admin/users/{userId}/suspend)
 	AdminSuspendUser(ctx context.Context, request AdminSuspendUserRequestObject) (AdminSuspendUserResponseObject, error)
+	// GetDocumentJob Estado de un documento en generación
+	// (GET /documents/{jobId})
+	GetDocumentJob(ctx context.Context, request GetDocumentJobRequestObject) (GetDocumentJobResponseObject, error)
+	// GetEncounter Detalle de la consulta
+	// (GET /encounters/{encounterId})
+	GetEncounter(ctx context.Context, request GetEncounterRequestObject) (GetEncounterResponseObject, error)
+	// UpdateEncounter Editar motivo, tipo, inicio, S/O o responsable (autoguardado)
+	// (PATCH /encounters/{encounterId})
+	UpdateEncounter(ctx context.Context, request UpdateEncounterRequestObject) (UpdateEncounterResponseObject, error)
+	// AddEncounterAddendum Añadir adenda a una consulta firmada
+	// (POST /encounters/{encounterId}/addenda)
+	AddEncounterAddendum(ctx context.Context, request AddEncounterAddendumRequestObject) (AddEncounterAddendumResponseObject, error)
+	// UploadEncounterAttachment Subir adjunto
+	// (POST /encounters/{encounterId}/attachments)
+	UploadEncounterAttachment(ctx context.Context, request UploadEncounterAttachmentRequestObject) (UploadEncounterAttachmentResponseObject, error)
+	// DeleteEncounterAttachment Eliminar adjunto
+	// (DELETE /encounters/{encounterId}/attachments/{attachmentId})
+	DeleteEncounterAttachment(ctx context.Context, request DeleteEncounterAttachmentRequestObject) (DeleteEncounterAttachmentResponseObject, error)
+	// GetEncounterAttachment Descargar adjunto
+	// (GET /encounters/{encounterId}/attachments/{attachmentId})
+	GetEncounterAttachment(ctx context.Context, request GetEncounterAttachmentRequestObject) (GetEncounterAttachmentResponseObject, error)
+	// SetEncounterAttachmentVisibility Cambiar visibilidad para el tutor
+	// (PATCH /encounters/{encounterId}/attachments/{attachmentId})
+	SetEncounterAttachmentVisibility(ctx context.Context, request SetEncounterAttachmentVisibilityRequestObject) (SetEncounterAttachmentVisibilityResponseObject, error)
+	// PutEncounterDiagnoses Fijar diagnósticos (A)
+	// (PUT /encounters/{encounterId}/diagnoses)
+	PutEncounterDiagnoses(ctx context.Context, request PutEncounterDiagnosesRequestObject) (PutEncounterDiagnosesResponseObject, error)
+	// DiscardEncounter Descartar un borrador
+	// (POST /encounters/{encounterId}/discard)
+	DiscardEncounter(ctx context.Context, request DiscardEncounterRequestObject) (DiscardEncounterResponseObject, error)
+	// DeleteEncounterFollowUp Retirar el control recomendado
+	// (DELETE /encounters/{encounterId}/follow-up)
+	DeleteEncounterFollowUp(ctx context.Context, request DeleteEncounterFollowUpRequestObject) (DeleteEncounterFollowUpResponseObject, error)
+	// PutEncounterFollowUp Recomendar control
+	// (PUT /encounters/{encounterId}/follow-up)
+	PutEncounterFollowUp(ctx context.Context, request PutEncounterFollowUpRequestObject) (PutEncounterFollowUpResponseObject, error)
+	// GetEncounterPdf PDF de la consulta firmada
+	// (GET /encounters/{encounterId}/pdf)
+	GetEncounterPdf(ctx context.Context, request GetEncounterPdfRequestObject) (GetEncounterPdfResponseObject, error)
+	// PutEncounterPlan Fijar el plan (P)
+	// (PUT /encounters/{encounterId}/plan)
+	PutEncounterPlan(ctx context.Context, request PutEncounterPlanRequestObject) (PutEncounterPlanResponseObject, error)
+	// SignEncounter Firmar la consulta
+	// (POST /encounters/{encounterId}/sign)
+	SignEncounter(ctx context.Context, request SignEncounterRequestObject) (SignEncounterResponseObject, error)
+	// PutEncounterVitals Registrar constantes vitales
+	// (PUT /encounters/{encounterId}/vitals)
+	PutEncounterVitals(ctx context.Context, request PutEncounterVitalsRequestObject) (PutEncounterVitalsResponseObject, error)
 	// GetHealthz Liveness pública (usada por el WAF)
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
@@ -8036,6 +12871,12 @@ type StrictServerInterface interface {
 	// UpdateOrganization Editar el perfil
 	// (PATCH /organizations/{orgId})
 	UpdateOrganization(ctx context.Context, request UpdateOrganizationRequestObject) (UpdateOrganizationResponseObject, error)
+	// ListOrgEncounters Consultas de la organización
+	// (GET /organizations/{orgId}/encounters)
+	ListOrgEncounters(ctx context.Context, request ListOrgEncountersRequestObject) (ListOrgEncountersResponseObject, error)
+	// OpenEncounter Abrir consulta
+	// (POST /organizations/{orgId}/encounters)
+	OpenEncounter(ctx context.Context, request OpenEncounterRequestObject) (OpenEncounterResponseObject, error)
 	// ListInvitations Invitaciones de la organización
 	// (GET /organizations/{orgId}/invitations)
 	ListInvitations(ctx context.Context, request ListInvitationsRequestObject) (ListInvitationsResponseObject, error)
@@ -8093,6 +12934,9 @@ type StrictServerInterface interface {
 	// UndoPetDeceased Deshacer fallecimiento
 	// (POST /pets/{petId}/deceased/undo)
 	UndoPetDeceased(ctx context.Context, request UndoPetDeceasedRequestObject) (UndoPetDeceasedResponseObject, error)
+	// ListPetEncounters Consultas firmadas de la mascota
+	// (GET /pets/{petId}/encounters)
+	ListPetEncounters(ctx context.Context, request ListPetEncountersRequestObject) (ListPetEncountersResponseObject, error)
 	// PutPetMicrochip Asignar o corregir el microchip
 	// (PUT /pets/{petId}/microchip)
 	PutPetMicrochip(ctx context.Context, request PutPetMicrochipRequestObject) (PutPetMicrochipResponseObject, error)
@@ -8102,12 +12946,24 @@ type StrictServerInterface interface {
 	// PutPetPhoto Subir o reemplazar la foto
 	// (PUT /pets/{petId}/photo)
 	PutPetPhoto(ctx context.Context, request PutPetPhotoRequestObject) (PutPetPhotoResponseObject, error)
+	// GetPetSummary Resumen de la ficha clínica
+	// (GET /pets/{petId}/summary)
+	GetPetSummary(ctx context.Context, request GetPetSummaryRequestObject) (GetPetSummaryResponseObject, error)
+	// GetPetTimeline Historial clínico cronológico
+	// (GET /pets/{petId}/timeline)
+	GetPetTimeline(ctx context.Context, request GetPetTimelineRequestObject) (GetPetTimelineResponseObject, error)
 	// CancelPetTransfer Cancelar transferencia pendiente
 	// (DELETE /pets/{petId}/transfer)
 	CancelPetTransfer(ctx context.Context, request CancelPetTransferRequestObject) (CancelPetTransferResponseObject, error)
 	// InitiatePetTransfer Iniciar transferencia de tutela
 	// (POST /pets/{petId}/transfer)
 	InitiatePetTransfer(ctx context.Context, request InitiatePetTransferRequestObject) (InitiatePetTransferResponseObject, error)
+	// GetPetWeightHistory Historial de peso con tendencia
+	// (GET /pets/{petId}/weight-history)
+	GetPetWeightHistory(ctx context.Context, request GetPetWeightHistoryRequestObject) (GetPetWeightHistoryResponseObject, error)
+	// VerifyEncounter Verificación pública de una consulta firmada
+	// (GET /verify/encounters/{encounterId})
+	VerifyEncounter(ctx context.Context, request VerifyEncounterRequestObject) (VerifyEncounterResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -8418,6 +13274,498 @@ func (sh *strictHandler) AdminSuspendUser(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminSuspendUserResponseObject); ok {
 		if err := validResponse.VisitAdminSuspendUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDocumentJob operation middleware
+func (sh *strictHandler) GetDocumentJob(w http.ResponseWriter, r *http.Request, jobId openapi_types.UUID) {
+	var request GetDocumentJobRequestObject
+
+	request.JobId = jobId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDocumentJob(ctx, request.(GetDocumentJobRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDocumentJob")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDocumentJobResponseObject); ok {
+		if err := validResponse.VisitGetDocumentJobResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEncounter operation middleware
+func (sh *strictHandler) GetEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	var request GetEncounterRequestObject
+
+	request.EncounterId = encounterId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEncounter(ctx, request.(GetEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEncounterResponseObject); ok {
+		if err := validResponse.VisitGetEncounterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEncounter operation middleware
+func (sh *strictHandler) UpdateEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params UpdateEncounterParams) {
+	var request UpdateEncounterRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body UpdateEncounterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEncounter(ctx, request.(UpdateEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEncounterResponseObject); ok {
+		if err := validResponse.VisitUpdateEncounterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddEncounterAddendum operation middleware
+func (sh *strictHandler) AddEncounterAddendum(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params AddEncounterAddendumParams) {
+	var request AddEncounterAddendumRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body AddEncounterAddendumJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddEncounterAddendum(ctx, request.(AddEncounterAddendumRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddEncounterAddendum")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddEncounterAddendumResponseObject); ok {
+		if err := validResponse.VisitAddEncounterAddendumResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadEncounterAttachment operation middleware
+func (sh *strictHandler) UploadEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	var request UploadEncounterAttachmentRequestObject
+
+	request.EncounterId = encounterId
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadEncounterAttachment(ctx, request.(UploadEncounterAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadEncounterAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadEncounterAttachmentResponseObject); ok {
+		if err := validResponse.VisitUploadEncounterAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteEncounterAttachment operation middleware
+func (sh *strictHandler) DeleteEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId) {
+	var request DeleteEncounterAttachmentRequestObject
+
+	request.EncounterId = encounterId
+	request.AttachmentId = attachmentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEncounterAttachment(ctx, request.(DeleteEncounterAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEncounterAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteEncounterAttachmentResponseObject); ok {
+		if err := validResponse.VisitDeleteEncounterAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEncounterAttachment operation middleware
+func (sh *strictHandler) GetEncounterAttachment(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId, params GetEncounterAttachmentParams) {
+	var request GetEncounterAttachmentRequestObject
+
+	request.EncounterId = encounterId
+	request.AttachmentId = attachmentId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEncounterAttachment(ctx, request.(GetEncounterAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEncounterAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEncounterAttachmentResponseObject); ok {
+		if err := validResponse.VisitGetEncounterAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetEncounterAttachmentVisibility operation middleware
+func (sh *strictHandler) SetEncounterAttachmentVisibility(w http.ResponseWriter, r *http.Request, encounterId EncounterId, attachmentId AttachmentId) {
+	var request SetEncounterAttachmentVisibilityRequestObject
+
+	request.EncounterId = encounterId
+	request.AttachmentId = attachmentId
+
+	var body SetEncounterAttachmentVisibilityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetEncounterAttachmentVisibility(ctx, request.(SetEncounterAttachmentVisibilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetEncounterAttachmentVisibility")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetEncounterAttachmentVisibilityResponseObject); ok {
+		if err := validResponse.VisitSetEncounterAttachmentVisibilityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutEncounterDiagnoses operation middleware
+func (sh *strictHandler) PutEncounterDiagnoses(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterDiagnosesParams) {
+	var request PutEncounterDiagnosesRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body PutEncounterDiagnosesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutEncounterDiagnoses(ctx, request.(PutEncounterDiagnosesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutEncounterDiagnoses")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutEncounterDiagnosesResponseObject); ok {
+		if err := validResponse.VisitPutEncounterDiagnosesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DiscardEncounter operation middleware
+func (sh *strictHandler) DiscardEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId) {
+	var request DiscardEncounterRequestObject
+
+	request.EncounterId = encounterId
+
+	var body DiscardEncounterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DiscardEncounter(ctx, request.(DiscardEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DiscardEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DiscardEncounterResponseObject); ok {
+		if err := validResponse.VisitDiscardEncounterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteEncounterFollowUp operation middleware
+func (sh *strictHandler) DeleteEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params DeleteEncounterFollowUpParams) {
+	var request DeleteEncounterFollowUpRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEncounterFollowUp(ctx, request.(DeleteEncounterFollowUpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEncounterFollowUp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteEncounterFollowUpResponseObject); ok {
+		if err := validResponse.VisitDeleteEncounterFollowUpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutEncounterFollowUp operation middleware
+func (sh *strictHandler) PutEncounterFollowUp(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterFollowUpParams) {
+	var request PutEncounterFollowUpRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body PutEncounterFollowUpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutEncounterFollowUp(ctx, request.(PutEncounterFollowUpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutEncounterFollowUp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutEncounterFollowUpResponseObject); ok {
+		if err := validResponse.VisitPutEncounterFollowUpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEncounterPdf operation middleware
+func (sh *strictHandler) GetEncounterPdf(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params GetEncounterPdfParams) {
+	var request GetEncounterPdfRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEncounterPdf(ctx, request.(GetEncounterPdfRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEncounterPdf")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEncounterPdfResponseObject); ok {
+		if err := validResponse.VisitGetEncounterPdfResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutEncounterPlan operation middleware
+func (sh *strictHandler) PutEncounterPlan(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterPlanParams) {
+	var request PutEncounterPlanRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body PutEncounterPlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutEncounterPlan(ctx, request.(PutEncounterPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutEncounterPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutEncounterPlanResponseObject); ok {
+		if err := validResponse.VisitPutEncounterPlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SignEncounter operation middleware
+func (sh *strictHandler) SignEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params SignEncounterParams) {
+	var request SignEncounterRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SignEncounter(ctx, request.(SignEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SignEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SignEncounterResponseObject); ok {
+		if err := validResponse.VisitSignEncounterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutEncounterVitals operation middleware
+func (sh *strictHandler) PutEncounterVitals(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params PutEncounterVitalsParams) {
+	var request PutEncounterVitalsRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	var body PutEncounterVitalsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutEncounterVitals(ctx, request.(PutEncounterVitalsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutEncounterVitals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutEncounterVitalsResponseObject); ok {
+		if err := validResponse.VisitPutEncounterVitalsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8754,6 +14102,67 @@ func (sh *strictHandler) UpdateOrganization(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateOrganizationResponseObject); ok {
 		if err := validResponse.VisitUpdateOrganizationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListOrgEncounters operation middleware
+func (sh *strictHandler) ListOrgEncounters(w http.ResponseWriter, r *http.Request, orgId OrgId, params ListOrgEncountersParams) {
+	var request ListOrgEncountersRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOrgEncounters(ctx, request.(ListOrgEncountersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOrgEncounters")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOrgEncountersResponseObject); ok {
+		if err := validResponse.VisitListOrgEncountersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OpenEncounter operation middleware
+func (sh *strictHandler) OpenEncounter(w http.ResponseWriter, r *http.Request, orgId OrgId, params OpenEncounterParams) {
+	var request OpenEncounterRequestObject
+
+	request.OrgId = orgId
+	request.Params = params
+
+	var body OpenEncounterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OpenEncounter(ctx, request.(OpenEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OpenEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OpenEncounterResponseObject); ok {
+		if err := validResponse.VisitOpenEncounterResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -9318,6 +14727,33 @@ func (sh *strictHandler) UndoPetDeceased(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// ListPetEncounters operation middleware
+func (sh *strictHandler) ListPetEncounters(w http.ResponseWriter, r *http.Request, petId PetId, params ListPetEncountersParams) {
+	var request ListPetEncountersRequestObject
+
+	request.PetId = petId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPetEncounters(ctx, request.(ListPetEncountersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPetEncounters")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPetEncountersResponseObject); ok {
+		if err := validResponse.VisitListPetEncountersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PutPetMicrochip operation middleware
 func (sh *strictHandler) PutPetMicrochip(w http.ResponseWriter, r *http.Request, petId PetId, params PutPetMicrochipParams) {
 	var request PutPetMicrochipRequestObject
@@ -9411,6 +14847,59 @@ func (sh *strictHandler) PutPetPhoto(w http.ResponseWriter, r *http.Request, pet
 	}
 }
 
+// GetPetSummary operation middleware
+func (sh *strictHandler) GetPetSummary(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request GetPetSummaryRequestObject
+
+	request.PetId = petId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPetSummary(ctx, request.(GetPetSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPetSummary")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPetSummaryResponseObject); ok {
+		if err := validResponse.VisitGetPetSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPetTimeline operation middleware
+func (sh *strictHandler) GetPetTimeline(w http.ResponseWriter, r *http.Request, petId PetId, params GetPetTimelineParams) {
+	var request GetPetTimelineRequestObject
+
+	request.PetId = petId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPetTimeline(ctx, request.(GetPetTimelineRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPetTimeline")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPetTimelineResponseObject); ok {
+		if err := validResponse.VisitGetPetTimelineResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CancelPetTransfer operation middleware
 func (sh *strictHandler) CancelPetTransfer(w http.ResponseWriter, r *http.Request, petId PetId) {
 	var request CancelPetTransferRequestObject
@@ -9471,185 +14960,338 @@ func (sh *strictHandler) InitiatePetTransfer(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// GetPetWeightHistory operation middleware
+func (sh *strictHandler) GetPetWeightHistory(w http.ResponseWriter, r *http.Request, petId PetId) {
+	var request GetPetWeightHistoryRequestObject
+
+	request.PetId = petId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPetWeightHistory(ctx, request.(GetPetWeightHistoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPetWeightHistory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPetWeightHistoryResponseObject); ok {
+		if err := validResponse.VisitGetPetWeightHistoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyEncounter operation middleware
+func (sh *strictHandler) VerifyEncounter(w http.ResponseWriter, r *http.Request, encounterId EncounterId, params VerifyEncounterParams) {
+	var request VerifyEncounterRequestObject
+
+	request.EncounterId = encounterId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyEncounter(ctx, request.(VerifyEncounterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyEncounter")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyEncounterResponseObject); ok {
+		if err := validResponse.VisitVerifyEncounterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

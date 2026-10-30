@@ -21,7 +21,8 @@
     "optional": "opcional",
     "cancel": "Cancelar",
     "saving": "Guardando…",
-    "errorGeneric": "Ocurrió un error inesperado."
+    "errorGeneric": "Ocurrió un error inesperado.",
+    "delete": "Eliminar"
   },
   "home": {
     "title": "El pasaporte de salud de tu mascota",
@@ -127,7 +128,22 @@
     "IDEMPOTENCY_KEY_REUSED": "Se reutilizó un intento anterior con datos distintos. Vuelve a intentarlo.",
     "REQUEST_IN_PROGRESS": "La solicitud anterior aún está en curso.",
     "INTERNAL": "Ocurrió un error inesperado.",
-    "REASON_REQUIRED": "Indica un motivo de al menos 10 caracteres."
+    "REASON_REQUIRED": "Indica un motivo de al menos 10 caracteres.",
+    "PET_NOT_ACCESSIBLE": "La organización no tiene vínculo activo con esta mascota.",
+    "ENCOUNTER_INCOMPLETE": "Faltan requisitos para firmar la consulta.",
+    "ENCOUNTER_NOT_DRAFT": "La consulta ya no está en borrador.",
+    "ENCOUNTER_NOT_SIGNED": "La consulta no está firmada.",
+    "NOT_ATTENDING_VET": "Solo el profesional responsable puede firmar o añadir adendas.",
+    "ROLE_REQUIRED_VETERINARIAN": "Esta sección solo la edita un veterinario.",
+    "ATTENDING_VET_NOT_ELIGIBLE": "El profesional elegido no es veterinario activo de la clínica.",
+    "DISCARD_NOT_ALLOWED": "Solo el administrador o el profesional responsable pueden descartar.",
+    "ATTACHMENT_NOT_FOUND": "El adjunto no existe.",
+    "ATTACHMENT_LIMIT": "Se alcanzó el máximo de adjuntos.",
+    "ADDENDA_LIMIT": "Se alcanzó el máximo de adendas.",
+    "ENCOUNTER_ALREADY_OPENED": "La consulta ya está abierta.",
+    "NO_CHANGES": "No hay cambios que guardar.",
+    "PAYLOAD_TOO_LARGE": "El archivo supera 10 MB.",
+    "UNSUPPORTED_MEDIA_TYPE": "Formato no admitido o archivo no seguro (JPEG, PNG, WebP o PDF sin contenido activo)."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -289,7 +305,8 @@
       "patientsHint": "Mascotas vinculadas y su ficha",
       "members": "Miembros",
       "settings": "Ajustes",
-      "settingsHint": "Perfil, dirección y contacto"
+      "settingsHint": "Perfil, dirección y contacto",
+      "encounters": "Consultas"
     },
     "form": {
       "type": "Tipo de organización",
@@ -469,5 +486,362 @@
   "freshness": {
     "updating": "Actualizando… (hace {seconds} s)",
     "reload": "Recargar"
+  },
+  "encounters": {
+    "attendingVet": "Profesional responsable",
+    "abandoned": "Abandonado",
+    "notFound": "La consulta no existe o no tienes acceso.",
+    "type": {
+      "consultation": "Consulta",
+      "follow_up": "Control",
+      "emergency": "Urgencia",
+      "vaccination": "Vacunación",
+      "surgery": "Cirugía",
+      "procedure": "Procedimiento",
+      "other": "Otra"
+    },
+    "status": {
+      "draft": "Borrador",
+      "signed": "Firmada",
+      "discarded": "Descartada"
+    },
+    "editor": {
+      "title": "Consulta en curso",
+      "nav": "Secciones de la consulta",
+      "readOnlyClinical": "Diagnósticos, plan y control solo los edita un veterinario; aquí se muestran en solo lectura."
+    },
+    "detail": {
+      "title": "Consulta firmada"
+    },
+    "nav": {
+      "reason": "Motivo y constantes",
+      "subjective": "S",
+      "objective": "O",
+      "assessment": "A",
+      "plan": "P",
+      "attachments": "Adjuntos",
+      "followUp": "Control",
+      "complete": "(completa)",
+      "incomplete": "(pendiente)"
+    },
+    "sections": {
+      "vitals": "Constantes",
+      "subjective": "Subjetivo (anamnesis)",
+      "objective": "Objetivo (examen físico)",
+      "assessment": "Evaluación (diagnósticos)",
+      "plan": "Plan",
+      "attachments": "Adjuntos",
+      "followUp": "Control recomendado"
+    },
+    "fields": {
+      "type": "Tipo de atención",
+      "reason": "Motivo",
+      "startedAt": "Inicio",
+      "noVet": "Sin asignar",
+      "system": "Sistema",
+      "finding": "Hallazgo",
+      "note": "Nota",
+      "diagnosis": "Diagnóstico {n}",
+      "certainty": "Certeza",
+      "addDiagnosis": "Añadir diagnóstico",
+      "dueDate": "Fecha",
+      "followUpReason": "Motivo del control",
+      "clearFollowUp": "Quitar control"
+    },
+    "vitals": {
+      "weight_kg": "Peso (kg)",
+      "temp_c": "Temperatura (°C)",
+      "heart_rate_bpm": "Frec. cardiaca (lpm)",
+      "resp_rate_rpm": "Frec. respiratoria (rpm)",
+      "body_condition": "Condición corporal (1–9)",
+      "crt_seconds": "TRC (s)",
+      "hydration_pct": "Deshidratación (%)",
+      "mucosa": "Mucosas",
+      "prefilled": "Último peso registrado ({date}); confírmalo o corrígelo."
+    },
+    "mucosa": {
+      "pink": "Rosadas",
+      "pale": "Pálidas",
+      "white": "Blancas",
+      "cyanotic": "Cianóticas",
+      "icteric": "Ictéricas",
+      "hyperemic": "Hiperémicas"
+    },
+    "systems": {
+      "integumentary": "Piel y anexos",
+      "musculoskeletal": "Musculoesquelético",
+      "cardiovascular": "Cardiovascular",
+      "respiratory": "Respiratorio",
+      "digestive": "Digestivo",
+      "genitourinary": "Genitourinario",
+      "nervous": "Nervioso",
+      "eyes": "Ojos",
+      "ears": "Oídos",
+      "lymph": "Linfático",
+      "oral": "Cavidad oral"
+    },
+    "finding": {
+      "normal": "Normal",
+      "abnormal": "Anormal",
+      "not_examined": "No examinado"
+    },
+    "certainty": {
+      "presumptive": "Presuntivo",
+      "confirmed": "Confirmado",
+      "differential": "Diferencial",
+      "ruled_out": "Descartado"
+    },
+    "doseUnit": {
+      "mg": "mg",
+      "ml": "ml",
+      "ui": "UI",
+      "tablet": "comprimido(s)",
+      "capsule": "cápsula(s)",
+      "drop": "gota(s)",
+      "mg_per_kg": "mg/kg",
+      "ml_per_kg": "ml/kg"
+    },
+    "route": {
+      "oral": "Oral",
+      "sc": "Subcutánea",
+      "im": "Intramuscular",
+      "iv": "Intravenosa",
+      "topical": "Tópica",
+      "ophthalmic": "Oftálmica",
+      "otic": "Ótica",
+      "inhaled": "Inhalada",
+      "rectal": "Rectal"
+    },
+    "plan": {
+      "medications": "Medicación",
+      "medication": "Medicamento",
+      "presentation": "Presentación",
+      "dose": "Dosis",
+      "unit": "Unidad",
+      "route": "Vía",
+      "frequency": "Frecuencia",
+      "duration": "Duración",
+      "durationDays": "Duración (días)",
+      "every": "Cada",
+      "hours": "horas",
+      "daysUnit": "días",
+      "once": "Dosis única",
+      "every_hours": "cada {n} h",
+      "every_days": "cada {n} días",
+      "days": "{n} días",
+      "instructions": "Indicaciones",
+      "addMedication": "Añadir medicamento",
+      "perDose": "Por toma: {amount} {unit} (peso {weight} kg)",
+      "total": "total del tratamiento: {amount} {unit}",
+      "procedures": "Procedimientos realizados",
+      "procedure": "Procedimiento",
+      "addProcedure": "Añadir procedimiento",
+      "recommendations": "Recomendaciones"
+    },
+    "attachments": {
+      "none": "Sin adjuntos.",
+      "image": "Imagen",
+      "pending": "Pendiente de adenda",
+      "visible": "Visible para el tutor",
+      "hidden": "Oculto al tutor",
+      "hide": "Ocultar al tutor",
+      "show": "Mostrar al tutor",
+      "hideReason": "Motivo para ocultarlo",
+      "description": "Descripción",
+      "visibleToGuardian": "Visible para el tutor",
+      "add": "Adjuntar archivo",
+      "photo": "Tomar foto"
+    },
+    "autosave": {
+      "saving": "Guardando…",
+      "saved": "Guardado {time}",
+      "error": "No se pudo guardar: {reason}",
+      "conflict": "Conflicto: otra persona modificó la consulta."
+    },
+    "conflict": {
+      "title": "La consulta cambió mientras la editabas",
+      "body": "El autoguardado se detuvo para no sobrescribir los cambios de otra persona. Revisa las diferencias y recarga la versión actual.",
+      "diff": "Ver diferencias",
+      "noDiff": "Tu contenido coincide con la versión del servidor.",
+      "reload": "Recargar versión actual",
+      "sections": {
+        "header": "Motivo, S u O",
+        "vitals": "Constantes",
+        "diagnoses": "Diagnósticos",
+        "plan": "Plan",
+        "followUp": "Control recomendado"
+      }
+    },
+    "sign": {
+      "title": "Firma",
+      "button": "Firmar",
+      "confirmTitle": "¿Firmar la consulta?",
+      "confirmBody": "Al firmar, la consulta no podrá modificarse; podrá añadir adendas.",
+      "confirm": "Firmar ahora",
+      "signing": "Firmando…",
+      "req": {
+        "attending_vet": "Hay un profesional responsable asignado",
+        "is_attending": "Firmas como profesional responsable",
+        "content": "Al menos un diagnóstico, o motivo y examen físico",
+        "started_at": "La fecha de inicio no es futura"
+      }
+    },
+    "discard": {
+      "button": "Descartar borrador",
+      "reason": "Motivo del descarte",
+      "confirm": "Descartar"
+    },
+    "seal": {
+      "signedBy": "Firmada por {name} el {date}",
+      "hash": "Huella",
+      "verify": "Verificación pública"
+    },
+    "pdf": {
+      "download": "Descargar PDF",
+      "generating": "Generando…",
+      "open": "Abrir PDF",
+      "failed": "No se pudo obtener el PDF. Inténtalo más tarde."
+    },
+    "addenda": {
+      "title": "Adendas",
+      "item": "Adenda {n}",
+      "add": "Añadir adenda",
+      "new": "Nueva adenda",
+      "reason": "Motivo",
+      "text": "Texto",
+      "attachments": "Adjuntos (máx. {max})",
+      "sign": "Firmar adenda"
+    },
+    "addendumReason": {
+      "correction": "Corrección",
+      "additional_findings": "Hallazgos adicionales",
+      "lab_results": "Resultados de laboratorio",
+      "other": "Otro"
+    },
+    "list": {
+      "title": "Consultas",
+      "hint": "Abre una consulta desde la ficha del paciente.",
+      "filter": "Filtrar por estado",
+      "filters": {
+        "all": "Todas",
+        "draft": "Borradores",
+        "abandoned": "Abandonados",
+        "signed": "Firmadas",
+        "discarded": "Descartadas"
+      },
+      "empty": "No hay consultas con este filtro.",
+      "date": "Fecha",
+      "patient": "Paciente",
+      "status": "Estado",
+      "actions": "Acciones",
+      "resume": "Retomar",
+      "view": "Ver"
+    },
+    "open": {
+      "button": "Abrir consulta",
+      "title": "Nueva consulta",
+      "submit": "Abrir"
+    },
+    "vaccinePanel": {
+      "title": "Registrar vacuna",
+      "soon": "El registro de vacunas vinculado a la consulta llega con el carnet."
+    }
+  },
+  "records": {
+    "patient": "Paciente",
+    "custodyBanner": "Acceso limitado a sus propias consultas: el tutor revocó el vínculo con esta clínica.",
+    "tabs": {
+      "label": "Secciones de la ficha",
+      "summary": "Resumen",
+      "history": "Historial",
+      "encounters": "Consultas",
+      "card": "Carnet",
+      "appointments": "Citas",
+      "weight": "Peso",
+      "cardSoon": "El carnet de vacunación estará disponible próximamente.",
+      "appointmentsSoon": "Las citas estarán disponibles próximamente."
+    },
+    "summary": {
+      "title": "Resumen del paciente",
+      "alerts": "Alertas",
+      "noAlerts": "Sin alertas registradas.",
+      "weight": "Peso actual",
+      "noWeight": "Sin peso registrado.",
+      "lastEncounter": "Última consulta",
+      "noEncounters": "Sin consultas firmadas.",
+      "nextDue": "Próximas dosis",
+      "nextDueSoon": "Disponible con el carnet de vacunación.",
+      "followUps": "Controles pendientes",
+      "noFollowUps": "Sin controles pendientes."
+    },
+    "timeline": {
+      "filterKind": "Tipo",
+      "filterClinic": "Clínica",
+      "all": "Todos",
+      "empty": "Aún no hay eventos en el historial.",
+      "otherClinic": "Otra clínica",
+      "otherClinicBadge": "Otra clínica",
+      "kinds": {
+        "encounter": "Consulta",
+        "addendum": "Adenda",
+        "vaccine": "Vacuna",
+        "preventive": "Preventivo",
+        "appointment": "Cita",
+        "guardianship": "Tutela",
+        "care_link": "Vínculo"
+      },
+      "titles": {
+        "encounter": {
+          "signed": "Consulta firmada",
+          "addendum": "Adenda añadida"
+        },
+        "care_link": {
+          "granted": "Clínica vinculada",
+          "revoked": "Vínculo revocado"
+        },
+        "guardianship": {
+          "transferred": "Tutela transferida"
+        }
+      }
+    },
+    "history": {
+      "title": "Historial clínico de {name}",
+      "view": "Vista del historial",
+      "views": {
+        "cards": "Consultas",
+        "timeline": "Línea de tiempo"
+      },
+      "empty": "Todavía no hay consultas firmadas.",
+      "diagnoses": "Diagnóstico",
+      "addenda": "{n} adenda(s)",
+      "back": "Volver al historial",
+      "link": "Historial clínico",
+      "linkHint": "Consultas firmadas, adendas y documentos"
+    },
+    "weight": {
+      "title": "Historial de peso",
+      "empty": "Sin registros de peso.",
+      "trend": "Variación: {delta} en {days} días",
+      "alert": "Variación de peso superior al 10 % en {days} días",
+      "showTable": "Ver como tabla",
+      "showChart": "Ver gráfico",
+      "date": "Fecha",
+      "kg": "Peso (kg)",
+      "origin": "Origen",
+      "aria": "Gráfico de peso con {count} registros; último {last} el {date}. Usa las flechas para recorrer los puntos.",
+      "source": {
+        "encounter": "Consulta",
+        "vaccination": "Vacunación"
+      }
+    },
+    "verify": {
+      "title": "Verificación de consulta",
+      "valid": "Documento auténtico: la consulta firmada no ha sido alterada.",
+      "invalid": "La huella no coincide con la consulta firmada.",
+      "notFound": "No existe una consulta firmada con este identificador.",
+      "clinic": "Clínica",
+      "signedAt": "Firmada el",
+      "version": "Versión firmada"
+    }
   }
 }

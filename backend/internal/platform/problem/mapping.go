@@ -73,7 +73,19 @@ var titles = map[Code]string{
 	InvitationEmailMismatch: "Invitación para otro email",
 	InvitationResendLimit:   "Límite de reenvíos",
 	ReasonRequired:          "Motivo obligatorio",
-	Unavailable:             "No disponible",
+
+	PetNotAccessible:             "Mascota no accesible",
+	EncounterIncomplete:          "Consulta incompleta",
+	NotAttendingVet:              "No es el profesional responsable",
+	RoleRequiredVeterinarian:     "Requiere rol veterinario",
+	AttendingVetNotEligible:      "Profesional no elegible",
+	DiscardNotAllowed:            "Descarte no permitido",
+	AttachmentNotFound:           "Adjunto no encontrado",
+	Code("ENCOUNTER_NOT_DRAFT"):  "La consulta no está en borrador",
+	Code("ENCOUNTER_NOT_SIGNED"): "La consulta no está firmada",
+	Code("ATTACHMENT_LIMIT"):     "Límite de adjuntos",
+	Code("ADDENDA_LIMIT"):        "Límite de adendas",
+	Unavailable:                  "No disponible",
 }
 
 func titleFor(c Code) string {

@@ -79,3 +79,16 @@ func (m *MinIO) PresignGet(ctx context.Context, key string, ttl time.Duration) (
 	}
 	return u.String(), nil
 }
+
+// PresignDownload emite una URL prefirmada que fuerza la descarga con el
+// Content-Type fijado por el servidor (SEC-003: adjuntos PDF).
+func (m *MinIO) PresignDownload(ctx context.Context, key string, ttl time.Duration, filename, contentType string) (string, error) {
+	q := url.Values{}
+	q.Set("response-content-disposition", `attachment; filename="`+filename+`"`)
+	q.Set("response-content-type", contentType)
+	u, err := m.client.PresignedGetObject(ctx, m.bucket, key, ttl, q)
+	if err != nil {
+		return "", fmt.Errorf("storage: presign download: %w", err)
+	}
+	return u.String(), nil
+}

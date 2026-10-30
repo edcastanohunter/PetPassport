@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
@@ -30,6 +31,7 @@ type handlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*clinicalhttp.ClinicalHandlers
 }
 
 type env struct {
