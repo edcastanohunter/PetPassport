@@ -435,7 +435,7 @@ rebuild la API sirve la tabla parcial y las vistas muestran "Actualizando…".
 
 `deploy.sh` detecta las migraciones con cabecera `-- rebuild: <nombre>` no aplicadas aún: detiene el
 worker antes de migrar, lo arranca después y recuerda en el log el `rebuild` pendiente. El runbook
-completo de F2 (tiempos esperados, dead-letter, restauración con replay) es INF-005 (M2.5).
+completo de F2 (tiempos esperados, dead-letter, restauración con replay) está en §15.3–§15.8 (INF-005).
 
 ### 15.1 Rebuild de las proyecciones primarias (`rebuild --sync`, solo desastre)
 
@@ -470,3 +470,75 @@ transacción: mientras dura, los comandos del api anterior **esperan** (no falla
 ~2 M de eventos; por encima, desplegar en una ventana de bajo tráfico anunciada (algunos comandos
 pueden agotar el timeout y el usuario reintenta). El modo mantenimiento no sirve aquí: lo crea esta
 misma migración y el api anterior no lo conoce. Consultar el volumen: `SELECT count(*) FROM es.events;`.
+
+### 15.3 Rebuild parcial o total de proyecciones asíncronas (INF-005)
+
+Proyecciones asíncronas registradas: `clinical.*`, `scheduling.*`, `notifications.*` y
+`partnernetwork.org_stats` (estadísticas mensuales de la clínica, PRD-026). `worker status` las lista.
+
+- **Parcial**: `rebuild --projection <nombre>` (una) o `--to-position <N>` (hasta un punto, para
+  diagnosticar). Las vistas de esa proyección muestran "Actualizando…" y el resto de la API no se ve afectado.
+- **Total**: `rebuild --all`. Tiempos esperados: replay por lotes de 500 eventos; **orden de magnitud
+  ~1–2 min por 100 000 eventos por proyección** (estimación; el valor real con >10 000 eventos de
+  staging es evidencia pendiente de la salida de F2, `docs/phase-2/00` §5). Anotar aquí el tiempo medido
+  tras cada ensayo.
+- Seguimiento: logs del worker y `SELECT * FROM projection_rebuild_progress;`.
+- Reanudar una proyección en `failed`: corregir la causa (log con el evento y el error), luego
+  `podman exec pp-worker /worker resume --projection <nombre>`; si el estado quedó incoherente,
+  `rebuild --projection <nombre>`.
+
+### 15.4 Worker atascado
+
+1. `worker status` y `SELECT instance_id, heartbeat_at FROM worker_instances ORDER BY heartbeat_at DESC;`
+   Un `heartbeat_at` con más de 60 s indica worker caído o colgado (ver §7.8 WorkerDown).
+2. Un lock huérfano (proceso muerto, sesión viva en Postgres) bloquea al nuevo worker:
+   `SELECT pid, state, query_start FROM pg_stat_activity WHERE application_name LIKE 'pp-worker%';`
+   y, si la sesión es de un worker que ya no existe, `SELECT pg_terminate_backend(<pid>);`.
+3. `podman restart pp-worker`. Comprobar que `worker status` muestra los checkpoints avanzando.
+
+### 15.5 Dead-letter (outbox y notificaciones)
+
+- Outbox: `SELECT global_position, event_type, attempts, last_error FROM es.outbox WHERE dead_letter ORDER BY global_position DESC LIMIT 50;`
+  (alerta §7.12). Corregir la causa y reintentar con `UPDATE es.outbox SET dead_letter=false, attempts=0, next_attempt_at=now() WHERE global_position = <n>;`
+  (el outbox **no** es `es.events`: esta operación está permitida).
+- Notificaciones: `SELECT id, template, last_error FROM notification_deliveries WHERE dead_letter;`
+  (alerta §7.14). Reencolar solo si la causa fue del proveedor; si la dirección rebota, no reintentar.
+- No registrar direcciones de correo en tickets: usar el `id` de la entrega.
+
+### 15.6 Restauración con replay
+
+Tras restaurar un respaldo (§9) a un punto anterior al fallo: `es.events` es la fuente de verdad, las
+proyecciones se reconstruyen. Orden: (1) restaurar, (2) `worker rebuild --sync` (§15.1) para las
+primarias, (3) `worker rebuild --all` para las asíncronas, (4) comprobar `worker status` sin lag y
+smoke de §5. Los recordatorios y trabajos del scheduler se regeneran por replay; verificar que no se
+duplican correos (la clave de idempotencia de cada entrega lo impide).
+
+### 15.7 Rotación del secreto del proveedor de correo y verificación SPF/DKIM
+
+1. Crear la nueva clave en el proveedor, actualizar el secreto del entorno (§13) y reiniciar
+   `pp-api` y `pp-worker`.
+2. Enviar un correo de prueba (registro de un usuario de staging) y confirmar la entrega en Mailpit/proveedor.
+3. Revocar la clave anterior. Si hubo entregas fallidas durante la ventana, reencolarlas (§15.5).
+4. SPF/DKIM/DMARC: `dig +short TXT <dominio>`, `dig +short TXT <selector>._domainkey.<dominio>` y
+   revisar las cabeceras `Authentication-Results` de un correo real. Revisión trimestral junto a §9.1.
+
+### 15.8 Retención de datos (DAT-008)
+
+El bucle diario de mantenimiento del worker ejecuta `runRetention`: elimina las particiones de
+auditoría de más de 2 años (`platform.drop_audit_partitions_before`), las entregas de notificación
+enviadas o suprimidas de más de 180 días y los trabajos del scheduler despachados o cancelados de más de
+30 días. **Nunca** toca `es.events`. Los plazos son una propuesta de ingeniería a confirmar con asesoría
+legal (ver PR de M2.5). Los registros del job no incluyen datos personales.
+
+## 16. Exportación de datos del usuario (SEC-006)
+
+Solicitud de portabilidad (ACCESS/portabilidad, RGPD/Ley 1581): la atiende un operador autorizado.
+
+1. Verificar la identidad de quien solicita desde su correo registrado y obtener su `user_id`.
+2. `podman exec pp-worker /worker export --user <uuid> --out /tmp/export-<uuid>.json`
+   (lectura en transacción de solo lectura; incluye cuenta, mascotas, vínculos, solicitudes de
+   vínculo, historial clínico visible para el tutor, carnet sin claves de evidencia, citas y
+   preferencias; **excluye** hashes de token y claves internas).
+3. Entregar el archivo por un canal cifrado acordado con la persona (no por correo en claro) y borrarlo
+   del servidor: `podman exec pp-worker rm /tmp/export-<uuid>.json`.
+4. Registrar la solicitud (fecha, operador, `user_id`) en el libro de incidencias. Plazo máximo: 15 días hábiles.
