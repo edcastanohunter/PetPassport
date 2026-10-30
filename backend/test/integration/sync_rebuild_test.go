@@ -128,8 +128,8 @@ func TestProjection_SyncRebuildPrimaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rebuild --sync: %v", err)
 	}
-	// Primarios: organizaciones, mascotas, reacciones y (F2) encuentros.
-	if report.Events == 0 || len(report.Projectors) != 4 {
+	// Primarios: organizaciones, mascotas, reacciones y (F2) encuentros y carnet.
+	if report.Events == 0 || len(report.Projectors) != 5 {
 		t.Fatalf("informe: %+v", report)
 	}
 	if after := dumpPrimaries(t, e); after != before {

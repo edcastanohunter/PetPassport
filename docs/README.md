@@ -41,7 +41,7 @@ seguridad, infraestructura y calidad.
 | IAM | Keycloak 26.x (OIDC / PKCE) |
 | Datos | PostgreSQL 17 (Event Store + read models), OpenSearch (F3), Redis (F3) |
 | Borde | WAF gestionado + Traefik v3 como API Gateway |
-| Infra | Docker, GitHub Actions, OpenTelemetry, Prometheus/Grafana |
+| Infra | Podman (Quadlet), GitHub Actions, OpenTelemetry, Prometheus/Grafana |
 
 ## Cómo contribuir a las specs
 
