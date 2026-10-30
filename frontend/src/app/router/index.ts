@@ -27,6 +27,9 @@ import VerifyEncounterPage from '@/features/records/VerifyEncounterPage.vue'
 import GuardianCardPage from '@/features/card/GuardianCardPage.vue'
 import SharedRecordPage from '@/features/card/SharedRecordPage.vue'
 import VerifyCardPage from '@/features/card/VerifyCardPage.vue'
+import OrgAgendaPage from '@/features/scheduling/OrgAgendaPage.vue'
+import AgendaSettingsPage from '@/features/scheduling/AgendaSettingsPage.vue'
+import GuardianAppointmentsPage from '@/features/scheduling/GuardianAppointmentsPage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
@@ -135,6 +138,12 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/appointments',
+        name: 'appointments',
+        component: GuardianAppointmentsPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/profile',
         name: 'profile',
         component: ProfilePage,
@@ -182,6 +191,18 @@ export function createAppRouter() {
         name: 'org-encounter',
         component: EncounterEditorPage,
         meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
+        path: '/org/:orgId/agenda',
+        name: 'org-agenda',
+        component: OrgAgendaPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
+        path: '/org/:orgId/settings/agendas',
+        name: 'org-agendas',
+        component: AgendaSettingsPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: ADMIN_ROLES },
       },
       {
         path: '/org/:orgId/members',
