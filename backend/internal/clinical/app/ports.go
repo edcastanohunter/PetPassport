@@ -26,10 +26,11 @@ const (
 
 // PetSummary son los datos mínimos de la mascota que Clinical muestra.
 type PetSummary struct {
-	PetID    uuid.UUID
-	Name     string
-	Species  string
-	Deceased bool
+	PetID     uuid.UUID
+	Name      string
+	Species   string
+	Deceased  bool
+	BirthDate *string // fecha civil (YYYY-MM-DD) si se conoce
 }
 
 // PetAccess es la única puerta de Clinical a Pet Registry (SEC-007: IDOR por
@@ -299,6 +300,9 @@ type Freshness interface {
 
 // DocumentJobKindEncounterPDF es el tipo de trabajo del PDF de consulta.
 const DocumentJobKindEncounterPDF = "encounter_pdf"
+
+// DocumentJobKindCardPDF es el tipo de trabajo del PDF del carnet (M2.2).
+const DocumentJobKindCardPDF = "card_pdf"
 
 // DocumentJobView es un trabajo de document_jobs (ARQ-010, INF-004).
 type DocumentJobView struct {

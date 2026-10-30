@@ -107,3 +107,24 @@ type SyncSpecies struct {
 	PetID   uuid.UUID
 	Species string
 }
+
+// CommandName implementa bus.Command.
+func (RecordEntry) CommandName() string { return "clinical.RecordEntry" }
+
+// CommandName implementa bus.Command.
+func (DeclareEntry) CommandName() string { return "clinical.DeclareEntry" }
+
+// CommandName implementa bus.Command.
+func (VerifyEntry) CommandName() string { return "clinical.VerifyEntry" }
+
+// CommandName implementa bus.Command.
+func (DisputeEntry) CommandName() string { return "clinical.DisputeEntry" }
+
+// CommandName implementa bus.Command.
+func (VoidEntry) CommandName() string { return "clinical.VoidEntry" }
+
+// CommandName implementa bus.Command.
+func (AdjustNextDue) CommandName() string { return "clinical.AdjustNextDue" }
+
+// CommandName implementa bus.Command.
+func (SyncSpecies) CommandName() string { return "clinical.SyncSpecies" }

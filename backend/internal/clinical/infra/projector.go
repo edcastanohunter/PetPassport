@@ -277,4 +277,5 @@ func (a *SyncProjector) Apply(ctx context.Context, events []eventstore.StoredEve
 // RegisterSyncProjectors registra las proyecciones síncronas de Clinical.
 func RegisterSyncProjectors(runner *projection.Runner, reg *eventstore.Registry) {
 	runner.Register(NewEncountersProjector(reg))
+	runner.Register(NewCardEntriesProjector(reg))
 }

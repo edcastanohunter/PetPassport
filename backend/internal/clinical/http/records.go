@@ -286,10 +286,16 @@ func (h *ClinicalHandlers) GetDocumentJob(ctx context.Context, req gen.GetDocume
 	if err != nil {
 		return nil, err
 	}
-	if job.Kind != app.DocumentJobKindEncounterPDF {
+	var access error
+	switch job.Kind {
+	case app.DocumentJobKindEncounterPDF:
+		_, _, access = h.load(ctx, p, job.RefID, authz.EncounterRead)
+	case app.DocumentJobKindCardPDF:
+		_, access = h.record(ctx, p, job.RefID)
+	default:
 		return nil, &kernel.NotFoundError{Resource: "document"}
 	}
-	if _, _, err := h.load(ctx, p, job.RefID, authz.EncounterRead); err != nil {
+	if err := access; err != nil {
 		var nf *kernel.NotFoundError
 		var fb *kernel.ForbiddenError
 		if errors.As(err, &nf) || errors.As(err, &fb) {

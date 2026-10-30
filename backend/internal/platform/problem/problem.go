@@ -90,6 +90,21 @@ var defaultStatus = map[Code]int{
 	AttendingVetNotEligible:  http.StatusUnprocessableEntity,
 	DiscardNotAllowed:        http.StatusForbidden,
 	AttachmentNotFound:       http.StatusNotFound,
+
+	Code("VOID_WINDOW_EXPIRED"):   http.StatusForbidden,
+	Code("VOID_NOT_ALLOWED"):      http.StatusForbidden,
+	Code("GUARDIAN_REQUIRED"):     http.StatusForbidden,
+	Code("CARD_ENTRY_DUPLICATE"):  http.StatusConflict,
+	Code("CARD_ENTRIES_LIMIT"):    http.StatusConflict,
+	Code("ENTRY_NOT_DECLARED"):    http.StatusConflict,
+	Code("ENTRY_NOT_ACTIVE"):      http.StatusConflict,
+	Code("SHARE_LIMIT"):           http.StatusConflict,
+	Code("SHARE_ALREADY_CREATED"): http.StatusConflict,
+	Code("CATALOG_DUPLICATE"):     http.StatusConflict,
+	Code("SHARE_EXPIRED"):         http.StatusGone,
+	Code("PIN_REQUIRED"):          http.StatusUnauthorized,
+	Code("PIN_INVALID"):           http.StatusUnauthorized,
+	Code("SHARE_LOCKED"):          http.StatusTooManyRequests,
 }
 
 // FieldError describe un error de validación por campo.

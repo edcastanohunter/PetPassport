@@ -209,12 +209,30 @@ func run() error {
 		Logger:       logger,
 	})
 	clinicalSvc.RegisterCommands(commands)
+	cardQueries := clinicalinfra.NewCardQueries(pool.Pool)
+	cardSvc := clinicalapp.NewCardService(clinicalapp.CardOptions{
+		Repo:       clinicalinfra.NewCardRepository(store, registry, nil, nil),
+		UoW:        unit,
+		Projects:   clinicalinfra.NewSyncProjector(runner),
+		PetAccess:  clinicalPets,
+		Membership: clinicalinfra.NewMembership(pool.Pool),
+		Catalog:    cardQueries,
+		Logger:     logger,
+	})
+	cardSvc.RegisterCommands(commands)
 	clinicalinfra.RegisterSyncProjectors(runner, registry)
 	clinicalHandlers := clinicalhttp.NewClinicalHandlers(clinicalhttp.Deps{
 		Commands: clinicalSvc, Queries: clinicalQueries, Pets: clinicalPets,
 		Documents: clinicalinfra.NewDocuments(pool.Pool), Uploads: clinicalinfra.NewUploads(pool.Pool),
 		Freshness: clinicalinfra.NewFreshness(pool.Pool), Auditor: clinicalinfra.NewReadAuditor(pool.Pool),
 		Idem: idemStore, Objects: objects, Logger: logger,
+		CardDeps: clinicalhttp.CardDeps{
+			Card: cardSvc, CardQueries: cardQueries, Catalog: cardQueries,
+			CatalogAdmin:  clinicalinfra.NewCatalogAdmin(pool.Pool),
+			CardDocs:      clinicalinfra.NewDocuments(pool.Pool),
+			Shares:        clinicalapp.NewShareService(clinicalinfra.NewShareStore(pool.Pool), cardQueries, cardQueries, nil, nil),
+			PublicBaseURL: cfg.PublicBaseURL,
+		},
 	})
 
 	// Administración (API-008): service account de Keycloak (IAM-011). Sin

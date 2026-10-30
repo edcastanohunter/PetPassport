@@ -56,6 +56,7 @@ func registerAsyncProjections(subs *projection.Subscriptions) {
 	subs.Register(clinicalinfra.NewTimelineProjector())
 	subs.Register(clinicalinfra.NewWeightProjector())
 	subs.Register(clinicalinfra.NewCustodyProjector())
+	subs.Register(clinicalinfra.NewVaccinationDueProjector())
 }
 
 // registerProcessManagers registra los PM del outbox y los comandos que el

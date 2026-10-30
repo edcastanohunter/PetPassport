@@ -161,6 +161,7 @@ var suite = map[Action][]suiteRow{
 	AdminUserSuspend:    {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminUserReactivate: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminAuditRead:      {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminCatalogWrite:   {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 
 	// Clinical Records (SEC-001, docs/phase-2/08 §2). tutor, vetL, admL,
 	// recL, vetU, vetS, phAd, phar, pend, stranger, super.
@@ -197,6 +198,12 @@ var suite = map[Action][]suiteRow{
 		{encDraftRes, [11]bool{N, Y, Y, N, N, N, N, N, N, N, Y}},
 		{encSignedRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}},
 	},
+	// Carnet de vacunación: la custodia no escribe; el tutor declara y comparte.
+	CardRecord:  {{recordCustodyRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
+	CardVerify:  {{recordCustodyRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
+	CardVoid:    {{recordCustodyRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	CardDeclare: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
+	ShareManage: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

@@ -65,6 +65,7 @@ const (
 	AdminUserSuspend    Action = "admin:user:suspend"
 	AdminUserReactivate Action = "admin:user:reactivate"
 	AdminAuditRead      Action = "admin:audit:read"
+	AdminCatalogWrite   Action = "admin:catalog:write"
 )
 
 // Acciones de Clinical Records F2 (SEC-001, docs/phase-2/08 §2).
@@ -77,6 +78,15 @@ const (
 	EncounterClinicalEdit Action = "encounter:clinical_edit"
 	EncounterSign         Action = "encounter:sign"
 	EncounterDiscard      Action = "encounter:discard"
+)
+
+// Acciones del carnet de vacunación (PP-F2-SEC-001, docs/phase-2/04 §4–6).
+const (
+	CardRecord  Action = "card:record"
+	CardDeclare Action = "card:declare"
+	CardVerify  Action = "card:verify"
+	CardVoid    Action = "card:void"
+	ShareManage Action = "share:manage"
 )
 
 // ReasonOrgSuspended es el motivo de denegación de org:patients:list cuando
@@ -409,6 +419,68 @@ func recordReadPolicy(p auth.Principal, res Resource) Decision {
 	return deny("no access to pet record")
 }
 
+// linkedClinicMember: miembro clínico activo de una organización con vínculo
+// activo a la mascota (la custodia no basta para escribir en el carnet).
+func linkedClinicMember(p auth.Principal, r PetRecordResource) bool {
+	for _, id := range r.LinkedOrgIDs {
+		if _, ok := activeClinicMember(p, id); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// cardWrite: card:record y card:verify — solo clínica con vínculo activo.
+func cardWrite(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := recordResource(res)
+	if !ok {
+		return deny("pet record resource required")
+	}
+	if p.Account.Suspended || !linkedClinicMember(p, *r) {
+		return deny("no active care link")
+	}
+	return allow
+}
+
+// cardVoid: clínica vinculada, tutor (solo declaradas; lo decide el dominio,
+// V5) o super_admin.
+func cardVoid(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := recordResource(res)
+	if !ok {
+		return deny("pet record resource required")
+	}
+	switch {
+	case p.Account.Suspended:
+		return deny("account suspended")
+	case isSuperAdmin(p):
+		return Decision{Allow: true, Reason: "super_admin"}
+	case p.UserID == r.GuardianID, linkedClinicMember(p, *r):
+		return allow
+	}
+	return deny("not allowed to void entries")
+}
+
+// guardianOnly: card:declare y share:manage — solo el tutor.
+func guardianOnly(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	r, ok := recordResource(res)
+	if !ok {
+		return deny("pet record resource required")
+	}
+	if p.Account.Suspended || p.UserID != r.GuardianID {
+		return deny("guardian only")
+	}
+	return allow
+}
+
 func encounterMember(p auth.Principal, r *EncounterResource) (auth.Membership, bool) {
 	return activeClinicMember(p, r.OrganizationID)
 }
@@ -586,6 +658,7 @@ var policies = map[Action]Policy{
 	AdminUserSuspend:    superAdminOnly,
 	AdminUserReactivate: superAdminOnly,
 	AdminAuditRead:      superAdminOnly,
+	AdminCatalogWrite:   superAdminOnly,
 
 	RecordRead:            recordReadPolicy,
 	EncounterList:         encounterList,
@@ -595,6 +668,11 @@ var policies = map[Action]Policy{
 	EncounterClinicalEdit: encounterClinicalEdit,
 	EncounterSign:         encounterSign,
 	EncounterDiscard:      encounterDiscard,
+	CardRecord:            cardWrite,
+	CardVerify:            cardWrite,
+	CardVoid:              cardVoid,
+	CardDeclare:           guardianOnly,
+	ShareManage:           guardianOnly,
 }
 
 // Can evalúa la política de la acción. Acciones sin política → deny.

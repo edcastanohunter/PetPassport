@@ -31,6 +31,12 @@ tags:
     description: Administración de plataforma, solo super_admin (docs/phase-1/05-api.md §3.6)
   - name: encounters
     description: Consultas clínicas (docs/phase-2/04-api.md §1–2)
+  - name: card
+    description: Carnet de vacunación y preventivos (F2 M2.2)
+  - name: catalogs
+    description: Catálogos de referencia de vacunas y protocolos (F2 M2.2)
+  - name: shares
+    description: Enlaces compartidos de solo lectura (F2 M2.2)
   - name: records
     description: Historial, resumen y peso de la mascota (docs/phase-2/04-api.md §3)
   - name: documents
@@ -2270,6 +2276,750 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /pets/{petId}/card:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetCard
+      summary: Carnet de vacunación
+      description: Entradas (anuladas incluidas con `status voided`) y próximas dosis (PRD-010..014). Vista síncrona sobre `card_entries`.
+      tags: [card]
+      x-pp-action: record:read
+      responses:
+        "200":
+          description: Carnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/pdf:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetCardPdf
+      summary: PDF del carnet con QR de verificación
+      description: 302 a URL prefirmada (15 min) del PDF de la versión vigente del carnet o 202 con el job si aún se genera (ARQ-010). El QR apunta a `/verify/cards/{petId}?h=`.
+      tags: [card]
+      x-pp-action: record:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada del PDF (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "202":
+          description: PDF en generación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJob"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: recordCardEntry
+      summary: Registrar vacuna o preventivo
+      description: Miembro clínico con vínculo activo (V1). Fecha ≤ hoy y ≥ nacimiento (V2), sin duplicado activo (V3 → 409 CARD_ENTRY_DUPLICATE), ≤ 500 entradas (V6), próxima dosis posterior (V7). Sin `next_due` se propone desde el protocolo del catálogo (basis protocol).
+      tags: [card]
+      x-pp-action: card:record
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/declarations:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: declareCardEntry
+      summary: Declarar una vacuna de un carnet anterior
+      description: Solo el tutor (PRD-013). Queda `declared` / `unverified` hasta que una clínica vinculada la verifique.
+      tags: [card]
+      x-pp-action: card:declare
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclareCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada declarada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/verify:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: verifyCardEntry
+      summary: Verificar una entrada declarada
+      description: Clínica vinculada tras ver el carnet físico. Una entrada no declarada → 409 ENTRY_NOT_DECLARED.
+      tags: [card]
+      x-pp-action: card:verify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardNoteRequest"
+      responses:
+        "200":
+          description: Entrada verificada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/dispute:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: disputeCardEntry
+      summary: Disputar una entrada declarada
+      tags: [card]
+      x-pp-action: card:verify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardNoteRequest"
+      responses:
+        "200":
+          description: Entrada disputada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/void:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: voidCardEntry
+      summary: Anular una entrada
+      description: La organización que la registró dentro de 30 días, super_admin, o el tutor si es una declaración sin verificar (V5). Fuera de ventana → 403 VOID_WINDOW_EXPIRED.
+      tags: [card]
+      x-pp-action: card:void
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidCardEntryRequest"
+      responses:
+        "200":
+          description: Entrada anulada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/next-due:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    put:
+      operationId: adjustCardNextDue
+      summary: Ajustar la próxima dosis
+      description: Clínica vinculada; queda con basis `clinic` ("ajustado por la clínica"). Fecha posterior a la aplicación (V7).
+      tags: [card]
+      x-pp-action: card:record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustNextDueRequest"
+      responses:
+        "200":
+          description: Entrada con la nueva próxima dosis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/next-due/proposal:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getCardNextDueProposal
+      summary: Previsualizar la próxima dosis propuesta
+      tags: [card]
+      x-pp-action: card:record
+      parameters:
+        - name: kind
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/CardEntryKind"
+        - name: product_catalog_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: administered_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Propuesta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextDueProposal"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/vaccinations:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: recordEncounterVaccination
+      summary: Atajo - registrar una vacuna desde la consulta
+      description: Igual que POST /pets/{petId}/card/entries pero enlaza la entrada al encuentro (PRD-010). Solo en borrador y por un miembro clínico de la organización del encuentro.
+      tags: [card]
+      x-pp-action: encounter:edit
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /catalogs/vaccines:
+    get:
+      operationId: listVaccineCatalog
+      summary: Catálogo de vacunas activas
+      tags: [catalogs]
+      x-pp-action: me:read
+      parameters:
+        - name: species
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: Vacunas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaccineList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /catalogs/protocols:
+    get:
+      operationId: listVaccinationProtocols
+      summary: Protocolos de vacunación activos
+      tags: [catalogs]
+      x-pp-action: me:read
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        - name: species
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Protocolos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtocolList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/vaccines:
+    post:
+      operationId: createVaccine
+      summary: Crear vacuna del catálogo
+      description: Solo super_admin, con motivo; auditado (API-005).
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccineWriteRequest"
+      responses:
+        "201":
+          description: Vacuna creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccine"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/vaccines/{vaccineId}:
+    parameters:
+      - name: vaccineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: updateVaccine
+      summary: Actualizar vacuna del catálogo
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccineWriteRequest"
+      responses:
+        "200":
+          description: Vacuna actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccine"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deactivateVaccine
+      summary: Desactivar vacuna del catálogo
+      description: "Baja lógica (`active = false`): las entradas ya registradas conservan su referencia."
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogReasonRequest"
+      responses:
+        "204":
+          description: Desactivada
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/protocols:
+    post:
+      operationId: createVaccinationProtocol
+      summary: Crear protocolo de vacunación
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtocolWriteRequest"
+      responses:
+        "201":
+          description: Protocolo creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Protocol"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/protocols/{protocolId}:
+    parameters:
+      - name: protocolId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: updateVaccinationProtocol
+      summary: Actualizar protocolo de vacunación
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtocolWriteRequest"
+      responses:
+        "200":
+          description: Protocolo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Protocol"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deactivateVaccinationProtocol
+      summary: Desactivar protocolo
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogReasonRequest"
+      responses:
+        "204":
+          description: Desactivado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/shares:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: listPetShares
+      summary: Enlaces compartidos activos
+      description: Sin token. Incluye el contador de accesos (SEC-002).
+      tags: [shares]
+      x-pp-action: share:manage
+      responses:
+        "200":
+          description: Enlaces
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createPetShare
+      summary: Crear enlace compartido
+      description: Solo el tutor. Caducidad 1–90 días, PIN opcional de 4–6 dígitos, ≤ 10 activos (409 SHARE_LIMIT). El token solo se devuelve aquí.
+      tags: [shares]
+      x-pp-action: share:manage
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShareRequest"
+      responses:
+        "201":
+          description: Enlace creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedShare"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/shares/{shareId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - name: shareId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: revokePetShare
+      summary: Revocar enlace compartido
+      tags: [shares]
+      x-pp-action: share:manage
+      responses:
+        "204":
+          description: Revocado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /share/{token}:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+    get:
+      operationId: getSharedRecord
+      summary: Carnet compartido (público)
+      description: Sin autenticación. Sin datos de contacto; microchip enmascarado. Con PIN exige el token de `POST /share/{token}/unlock` (401 PIN_REQUIRED). Caducado o revocado → 410 SHARE_EXPIRED. `X-Robots-Tag noindex`.
+      tags: [shares]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: X-PP-Share-Unlock
+          in: header
+          description: Token devuelto por `POST /share/{token}/unlock` (solo enlaces con PIN).
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        "200":
+          description: Contenido compartido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /share/{token}/unlock:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+    post:
+      operationId: unlockSharedRecord
+      summary: Introducir el PIN de un enlace (público)
+      description: 5 fallos bloquean el enlace 1 h (429 SHARE_LOCKED). Éxito → token corto de sesión de enlace (cabecera `X-PP-Share-Unlock`).
+      tags: [shares]
+      security: []
+      x-pp-action: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockShareRequest"
+      responses:
+        "200":
+          description: Desbloqueado; el token se envía en `X-PP-Share-Unlock` (vigencia 15 min)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnlockedShare"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /verify/cards/{petId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: verifyCard
+      summary: Verificación pública del carnet
+      description: Sin autenticación ni PII. Compara el hash de las entradas activas con `h` (el que lleva el QR del PDF).
+      tags: [documents]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: h
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{64}$"
+      responses:
+        "200":
+          description: Resultado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardVerification"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -2400,6 +3150,22 @@ components:
         type: integer
         format: int64
         minimum: 1
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ShareToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 20
+        maxLength: 64
+        pattern: "^[A-Za-z0-9_-]+$"
   headers:
     X-PP-Freshness:
       description: Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013).
@@ -4101,6 +4867,483 @@ components:
           description: Solo se devuelve si la verificación es válida.
         organization_name:
           type: string
+    CardEntryKind:
+      type: string
+      enum: [vaccine, deworming, ectoparasite]
+    CardProduct:
+      type: object
+      required: [name]
+      properties:
+        catalog_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+    CardNextDue:
+      type: object
+      required: [date, basis]
+      properties:
+        date:
+          type: string
+          format: date
+        basis:
+          type: string
+          enum: [protocol, clinic, guardian]
+    CardEntry:
+      type: object
+      required: [id, kind, product, administered_at, source, verification, status, has_evidence]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          nullable: true
+        manufacturer:
+          type: string
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          nullable: true
+        route:
+          type: string
+          nullable: true
+        site:
+          type: string
+          nullable: true
+        dose_label:
+          type: string
+          nullable: true
+        weight_kg:
+          type: number
+          nullable: true
+        source:
+          type: string
+          enum: [recorded, declared, imported]
+        verification:
+          type: string
+          enum: [verified, unverified, disputed]
+        status:
+          type: string
+          enum: [active, voided]
+        void_reason:
+          type: string
+          nullable: true
+        recorded_by_organization_id:
+          type: string
+          format: uuid
+          nullable: true
+        encounter_id:
+          type: string
+          format: uuid
+          nullable: true
+        next_due:
+          allOf:
+            - $ref: "#/components/schemas/CardNextDue"
+          nullable: true
+        has_evidence:
+          type: boolean
+    NextDueItem:
+      type: object
+      required: [entry_id, kind, product_name, due_date, basis, status]
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product_name:
+          type: string
+        due_date:
+          type: string
+          format: date
+        basis:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, overdue, satisfied, cancelled]
+    Card:
+      type: object
+      required: [pet_id, species, entries, next_due]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        species:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardEntry"
+        next_due:
+          type: array
+          items:
+            $ref: "#/components/schemas/NextDueItem"
+    RecordCardEntryRequest:
+      type: object
+      required: [kind, product, administered_at]
+      properties:
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          maxLength: 40
+        manufacturer:
+          type: string
+          maxLength: 60
+        expiry_date:
+          type: string
+          format: date
+        route:
+          type: string
+          maxLength: 60
+        site:
+          type: string
+          maxLength: 60
+        dose_label:
+          type: string
+          maxLength: 40
+        weight_kg:
+          type: number
+        encounter_id:
+          type: string
+          format: uuid
+        next_due_date:
+          type: string
+          format: date
+    DeclareCardEntryRequest:
+      type: object
+      required: [kind, product, administered_at]
+      properties:
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          maxLength: 40
+        dose_label:
+          type: string
+          maxLength: 40
+        evidence_object_key:
+          type: string
+          maxLength: 300
+    CardNoteRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 300
+    VoidCardEntryRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    AdjustNextDueRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+    NextDueProposal:
+      type: object
+      required: [explanation]
+      properties:
+        date:
+          type: string
+          format: date
+          nullable: true
+        basis:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+    Vaccine:
+      type: object
+      required: [id, name, species, diseases, type, routes, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: array
+          items:
+            type: string
+        diseases:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum: [core, non_core]
+        routes:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+    VaccineList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vaccine"
+    VaccineWriteRequest:
+      type: object
+      required: [name, species, diseases, type, routes, reason]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        species:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        diseases:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum: [core, non_core]
+        routes:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    CatalogReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    SeriesDose:
+      type: object
+      properties:
+        min_age_weeks:
+          type: integer
+          minimum: 0
+        min_interval_days:
+          type: integer
+          minimum: 0
+    Protocol:
+      type: object
+      required: [id, country, species, vaccine_id, initial_series, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        species:
+          type: string
+        vaccine_id:
+          type: string
+          format: uuid
+        initial_series:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeriesDose"
+        booster_interval_months:
+          type: integer
+          nullable: true
+        legal_validity_months:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+        active:
+          type: boolean
+    ProtocolList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Protocol"
+    ProtocolWriteRequest:
+      type: object
+      required: [country, species, vaccine_id, initial_series, reason]
+      properties:
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        species:
+          type: string
+        vaccine_id:
+          type: string
+          format: uuid
+        initial_series:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeriesDose"
+        booster_interval_months:
+          type: integer
+          minimum: 1
+        legal_validity_months:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          maxLength: 300
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    CreateShareRequest:
+      type: object
+      required: [scope, expires_in_days]
+      properties:
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        expires_in_days:
+          type: integer
+          minimum: 1
+          maximum: 90
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    CreatedShare:
+      type: object
+      required: [id, url, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    Share:
+      type: object
+      required: [id, scope, has_pin, expires_at, created_at, access_count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        has_pin:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        access_count:
+          type: integer
+        last_access_at:
+          type: string
+          format: date-time
+          nullable: true
+    ShareList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Share"
+    UnlockShareRequest:
+      type: object
+      required: [pin]
+      properties:
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    UnlockedShare:
+      type: object
+      required: [token, expires_at]
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    SharedPet:
+      type: object
+      required: [name, species, sex]
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+        breed:
+          type: string
+          nullable: true
+        sex:
+          type: string
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        microchip_masked:
+          type: string
+          nullable: true
+    SharedRecord:
+      type: object
+      required: [scope, pet, card, verified_at]
+      properties:
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        pet:
+          $ref: "#/components/schemas/SharedPet"
+        card:
+          $ref: "#/components/schemas/Card"
+        verified_at:
+          type: string
+          format: date-time
+    CardVerification:
+      type: object
+      required: [valid, entries]
+      properties:
+        valid:
+          type: boolean
+        entries:
+          type: integer
+        verified_at:
+          type: string
+          format: date-time
   responses:
     EncounterOK:
       description: Consulta actualizada

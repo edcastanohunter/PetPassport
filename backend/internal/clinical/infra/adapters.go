@@ -63,8 +63,8 @@ func (a *PetAccessAdapter) GuardianOf(ctx context.Context, petID uuid.UUID) (uui
 func (a *PetAccessAdapter) PetSummary(ctx context.Context, petID uuid.UUID) (app.PetSummary, error) {
 	var s app.PetSummary
 	err := a.pool.QueryRow(ctx, `
-		SELECT id, name, species, status = 'deceased' FROM read_petregistry.pets WHERE id = $1`, petID).
-		Scan(&s.PetID, &s.Name, &s.Species, &s.Deceased)
+		SELECT id, name, species, status = 'deceased', to_char(birth_date, 'YYYY-MM-DD') FROM read_petregistry.pets WHERE id = $1`, petID).
+		Scan(&s.PetID, &s.Name, &s.Species, &s.Deceased, &s.BirthDate)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.PetSummary{}, &kernel.NotFoundError{Resource: "pet"}
 	}

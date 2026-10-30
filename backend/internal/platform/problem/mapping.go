@@ -86,6 +86,21 @@ var titles = map[Code]string{
 	Code("ATTACHMENT_LIMIT"):     "Límite de adjuntos",
 	Code("ADDENDA_LIMIT"):        "Límite de adendas",
 	Unavailable:                  "No disponible",
+
+	Code("VOID_WINDOW_EXPIRED"):   "Ventana de anulación vencida",
+	Code("VOID_NOT_ALLOWED"):      "Anulación no permitida",
+	Code("GUARDIAN_REQUIRED"):     "Solo el tutor",
+	Code("CARD_ENTRY_DUPLICATE"):  "Entrada duplicada",
+	Code("CARD_ENTRIES_LIMIT"):    "Límite de entradas",
+	Code("ENTRY_NOT_DECLARED"):    "Entrada no declarada",
+	Code("ENTRY_NOT_ACTIVE"):      "Entrada anulada",
+	Code("SHARE_LIMIT"):           "Límite de enlaces",
+	Code("SHARE_ALREADY_CREATED"): "Enlace ya creado",
+	Code("CATALOG_DUPLICATE"):     "Registro duplicado",
+	Code("SHARE_EXPIRED"):         "Enlace caducado",
+	Code("PIN_REQUIRED"):          "PIN requerido",
+	Code("PIN_INVALID"):           "PIN incorrecto",
+	Code("SHARE_LOCKED"):          "Enlace bloqueado",
 }
 
 func titleFor(c Code) string {
