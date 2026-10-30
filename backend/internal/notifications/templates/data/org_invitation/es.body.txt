@@ -1,0 +1,7 @@
+¡Hola!
+
+Te invitaron a unirte a {{.V.org_name}} como {{.V.role}}.
+
+Aceptar invitación: {{.V.link}}
+
+Si no esperabas este correo, puedes ignorarlo.

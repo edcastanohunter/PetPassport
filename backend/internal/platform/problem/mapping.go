@@ -109,6 +109,8 @@ var titles = map[Code]string{
 	Code("PROPOSAL_EXPIRED"):     "Propuesta caducada",
 	Code("CHECKIN_WINDOW"):       "Fuera de la ventana de check-in",
 	Code("INVALID_PROFESSIONAL"): "Profesional no válido",
+
+	Code("WEBHOOK_SIGNATURE_INVALID"): "Firma del webhook inválida",
 }
 
 func titleFor(c Code) string {

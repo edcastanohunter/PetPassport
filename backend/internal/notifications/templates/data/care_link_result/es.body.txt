@@ -1,0 +1,3 @@
+El tutor de {{.V.pet_name}} {{if eq .V.result "approved"}}aprobó{{else}}rechazó{{end}} la solicitud de vínculo de {{.V.org_name}}.
+
+Ir a PetPassport: {{.V.link}}

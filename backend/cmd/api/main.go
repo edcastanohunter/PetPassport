@@ -20,6 +20,9 @@ import (
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/infra/keycloakadmin"
+	notificationsapp "github.com/edcastanohunter/petpassport/backend/internal/notifications/app"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
+	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
@@ -34,7 +37,6 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
@@ -128,15 +130,9 @@ func run() error {
 	runner := projection.NewRunner().Instrument(tel.Registry)
 	commands := bus.New().Instrument(tel.Registry)
 	idemStore := idempotency.NewStore(pool, 0).Instrument(tel.Registry)
-	var mailer *mail.SMTP
-	if cfg.SMTP.Host != "" {
-		mailer = mail.NewSMTP(mail.Options{
-			Host: cfg.SMTP.Host, Port: cfg.SMTP.Port, From: cfg.SMTP.From,
-			User: cfg.SMTP.User, Password: cfg.SMTP.Password,
-		})
-	} else {
-		logger.Warn("PP_SMTP_HOST vacío: emails transaccionales deshabilitados")
-	}
+	// Notifications (ARQ-014): los módulos encolan los correos con token; el
+	// SMTP es solo del worker.
+	notifier := notificationsinfra.NewEnqueuer(pool.Pool)
 
 	// Partner Network: membresías del Principal con caché LRU 60 s (IAM-008),
 	// invalidada por los comandos que cambian membresías (DOM-011).
@@ -153,11 +149,8 @@ func run() error {
 		Users:       userAdapter,
 		Memberships: membershipCache,
 		Auditor:     orginfra.TxAuditor{},
-		BaseURL:     cfg.PublicBaseURL,
+		Notifier:    notifier,
 		Logger:      logger,
-	}
-	if mailer != nil {
-		orgOpts.Mailer = mailer
 	}
 	orgSvc := orgapp.NewService(orgOpts)
 	orgSvc.RegisterCommands(commands)
@@ -176,11 +169,8 @@ func run() error {
 		Orgs:     orgAdapter,
 		Queries:  petQueries,
 		Events:   store,
-		BaseURL:  cfg.PublicBaseURL,
+		Notifier: notifier,
 		Logger:   logger,
-	}
-	if mailer != nil {
-		petOpts.Mailer = mailer
 	}
 	petSvc := petapp.NewService(petOpts)
 	petSvc.RegisterCommands(commands)
@@ -298,6 +288,13 @@ func run() error {
 	health := httpserver.NewHealth()
 	health.Register("db", pool.Ping)
 	identityHandlers := identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt)
+	webhookSecrets := map[string][]byte{}
+	if cfg.Notifications.EmailWebhookSecret != "" {
+		webhookSecrets["generic"] = []byte(cfg.Notifications.EmailWebhookSecret)
+	}
+	notificationHandlers := notificationshttp.NewNotificationHandlers(
+		notificationsapp.NewPreferences(notificationsinfra.NewPrefStore(pool.Pool), []byte(cfg.Notifications.UnsubscribeSecret), nil),
+		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger)
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
@@ -307,8 +304,9 @@ func run() error {
 			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
-			ClinicalHandlers:   clinicalHandlers,
-			SchedulingHandlers: schedulingHandlers,
+			ClinicalHandlers:     clinicalHandlers,
+			SchedulingHandlers:   schedulingHandlers,
+			NotificationHandlers: notificationHandlers,
 		},
 		Guard:       guard.Middleware,
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,

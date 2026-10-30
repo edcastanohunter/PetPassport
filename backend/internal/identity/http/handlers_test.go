@@ -16,6 +16,7 @@ import (
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
@@ -34,6 +35,7 @@ type handlers struct {
 	*orghttp.OrgHandlers
 	*clinicalhttp.ClinicalHandlers
 	*schedulinghttp.SchedulingHandlers
+	*notificationshttp.NotificationHandlers
 }
 
 type env struct {

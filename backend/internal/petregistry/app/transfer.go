@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"net/url"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -49,10 +50,7 @@ func (s *Service) handleInitiateTransfer(ctx context.Context, cmd bus.Command) (
 	if err != nil {
 		return bus.Result{}, err
 	}
-	s.sendMail(ctx, c.ToEmail, mail.TemplateTransferInitiated, map[string]string{
-		"from_name": s.guardian.DisplayName(ctx, guardianID), "pet_name": petName,
-		"token": url.PathEscape(token), "expires_at": c.ExpiresAt.Format("2006-01-02"),
-	})
+	s.enqueueTransferInvite(ctx, c, guardianID, petName, token)
 	return bus.Result{AggregateID: c.PetID, Version: versionOf(stored)}, nil
 }
 
@@ -64,28 +62,19 @@ func (s *Service) handleCancelTransfer(ctx context.Context, cmd bus.Command) (bu
 	return s.simple(ctx, c.PetID, c)
 }
 
-// handleAcceptTransfer cambia el tutor y avisa por email a ambos (DOM-011).
+// handleAcceptTransfer cambia el tutor; el aviso a ambos (transfer_done) lo
+// emite el PM de Notifications desde PetGuardianshipTransferred (ARQ-014).
 func (s *Service) handleAcceptTransfer(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.AcceptGuardianshipTransfer)
 	if c.Now.IsZero() {
 		c.Now = s.clock.Now()
 	}
-	var from uuid.UUID
-	var petName string
 	stored, err := s.execute(ctx, c.PetID, func(pet *domain.Pet) ([]any, error) {
-		from = pet.GuardianID()
-		petName = pet.Name()
 		return pet.HandleCommand(c)
 	})
 	if err != nil {
 		return bus.Result{}, err
 	}
-	toName := s.guardian.DisplayName(ctx, c.ActorUserID)
-	data := map[string]string{"pet_name": petName, "to_name": toName}
-	if email, ok := s.guardian.EmailOf(ctx, from); ok {
-		s.sendMail(ctx, email, mail.TemplateTransferCompleted, data)
-	}
-	s.sendMail(ctx, c.ActorEmail, mail.TemplateTransferCompleted, data)
 	return bus.Result{AggregateID: c.PetID, Version: versionOf(stored)}, nil
 }
 
@@ -107,14 +96,25 @@ func (s *Service) AcceptTransferToken(ctx context.Context, token string) (bus.Re
 	return res, err
 }
 
-// sendMail envía best-effort (DOM-011): el error se registra sin PII y no
-// revierte el comando ya confirmado.
-func (s *Service) sendMail(ctx context.Context, to, template string, data map[string]string) {
-	if s.mailer == nil || strings.TrimSpace(to) == "" {
+// enqueueTransferInvite encola el correo de la transferencia (regla
+// transfer_invite). El token en claro no viaja en el evento (solo su hash);
+// se purga de la fila al salir el correo (ADR-026, propuesta). El fallo se
+// registra sin PII y no revierte el comando.
+func (s *Service) enqueueTransferInvite(ctx context.Context, c domain.InitiateGuardianshipTransfer, guardianID uuid.UUID, petName, token string) {
+	if s.notifier == nil || strings.TrimSpace(c.ToEmail) == "" {
 		return
 	}
-	subject, body := mail.Render(template, "es", data, s.baseURL)
-	if err := s.mailer.Send(context.WithoutCancel(ctx), mail.Message{To: to, Subject: subject, Body: body}); err != nil {
-		s.logger.WarnContext(ctx, "mail best-effort falló", "template", template, "error", err.Error())
+	err := s.notifier.Enqueue(context.WithoutCancel(ctx), notify.Notification{
+		Rule: "transfer_invite", Template: "transfer_invite", Category: "account",
+		To: c.ToEmail, Locale: "es", SubjectID: c.PetID,
+		Occurrence: hex.EncodeToString(kernel.HashToken(token)[:8]),
+		Payload: map[string]string{
+			"from_name": s.guardian.DisplayName(ctx, guardianID), "pet_name": petName,
+			"expires_at": c.ExpiresAt.Format("2006-01-02"), "link_path": "/app/transfers/" + url.PathEscape(token),
+		},
+		Secret: []string{"link_path"},
+	})
+	if err != nil {
+		s.logger.WarnContext(ctx, "no se pudo encolar la transferencia", "pet_id", c.PetID.String(), "error", err.Error())
 	}
 }

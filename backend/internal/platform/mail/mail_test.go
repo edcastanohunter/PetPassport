@@ -1,42 +1,97 @@
 package mail
 
 import (
-	"context"
+	"io"
+	"mime"
+	stdmail "net/mail"
 	"strings"
 	"testing"
+	"time"
 )
 
-func TestRender_LinksUsePublicBaseURL(t *testing.T) {
-	cases := []struct {
-		template string
-		data     map[string]string
-		want     string
-	}{
-		{TemplateMemberInvited, map[string]string{"org_name": "Clínica Sur", "role": "veterinarian", "token": "abc"}, "https://app.example/invitations/abc"},
-		{TemplateTransferInitiated, map[string]string{"pet_name": "Luna", "from_name": "Ana", "token": "xyz", "expires_at": "2026-11-01"}, "https://app.example/app/transfers/xyz"},
-		{TemplateTransferCompleted, map[string]string{"pet_name": "Luna", "to_name": "Beto"}, "https://app.example/app"},
-		{TemplateOrgVerified, map[string]string{"org_name": "Clínica Sur"}, "Clínica Sur"},
-		{TemplateOrgRejected, map[string]string{"org_name": "Clínica Sur", "reason": "sin RUT"}, "sin RUT"},
+func newTestSMTP() *SMTP {
+	return &SMTP{host: "h", from: "PetPassport <no-reply@notify.example>", now: func() time.Time { return time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC) }}
+}
+
+func TestBuildMultipartWithUnsubscribeHeaders(t *testing.T) {
+	raw, err := newTestSMTP().build(Message{
+		To: "tutor@example.com", Subject: "Cita confirmada: Luna", Text: "hola ñandú", HTML: "<p>hola ñandú</p>",
+		MessageID: "<abc@notify.example>", UnsubscribeURL: "https://app.example/api/v1/unsubscribe/tok",
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, c := range cases {
-		for _, locale := range []string{"es", "en", "fr"} {
-			subject, body := Render(c.template, locale, c.data, "https://app.example")
-			if subject == "" || !strings.Contains(body, c.want) {
-				t.Errorf("%s/%s: subject=%q body=%q", c.template, locale, subject, body)
-			}
-		}
+	m, err := stdmail.ReadMessage(strings.NewReader(string(raw)))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if s, _ := Render("desconocida", "es", nil, ""); s != "PetPassport" {
-		t.Errorf("plantilla desconocida: %q", s)
+	if got := m.Header.Get("Message-ID"); got != "<abc@notify.example>" {
+		t.Fatalf("message-id: %q", got)
+	}
+	if got := m.Header.Get("List-Unsubscribe"); got != "<https://app.example/api/v1/unsubscribe/tok>" {
+		t.Fatalf("list-unsubscribe: %q", got)
+	}
+	if got := m.Header.Get("List-Unsubscribe-Post"); got != "List-Unsubscribe=One-Click" {
+		t.Fatalf("list-unsubscribe-post: %q", got)
+	}
+	if !strings.HasPrefix(m.Header.Get("Content-Type"), "multipart/alternative") {
+		t.Fatalf("content-type: %q", m.Header.Get("Content-Type"))
+	}
+	dec := new(mime.WordDecoder)
+	if subj, _ := dec.DecodeHeader(m.Header.Get("Subject")); subj != "Cita confirmada: Luna" {
+		t.Fatalf("subject: %q", subj)
+	}
+	body, _ := io.ReadAll(m.Body)
+	if !strings.Contains(string(body), "text/plain") || !strings.Contains(string(body), "text/html") {
+		t.Fatalf("faltan partes: %s", body)
 	}
 }
 
-func TestSMTP_RejectsHeaderInjectionAndMissingHost(t *testing.T) {
-	if err := NewSMTP(Options{}).Send(context.Background(), Message{To: "a@b.co"}); err == nil {
-		t.Fatal("sin host debe fallar")
+func TestBuildPlainTextAndGeneratedID(t *testing.T) {
+	raw, err := newTestSMTP().build(Message{To: "a@b.co", Subject: "x", Text: "hola"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	s := NewSMTP(Options{Host: "127.0.0.1", Port: 1, From: "no-reply@x"})
-	if err := s.Send(context.Background(), Message{To: "a@b.co\r\nBcc: x@y.z", Subject: "s"}); err == nil || !strings.Contains(err.Error(), "cabecera") {
-		t.Fatalf("inyección no rechazada: %v", err)
+	m, _ := stdmail.ReadMessage(strings.NewReader(string(raw)))
+	if !strings.HasPrefix(m.Header.Get("Content-Type"), "text/plain") {
+		t.Fatalf("content-type: %q", m.Header.Get("Content-Type"))
+	}
+	if id := m.Header.Get("Message-ID"); !strings.HasSuffix(id, "@notify.example>") {
+		t.Fatalf("message-id generado: %q", id)
+	}
+	if m.Header.Get("List-Unsubscribe") != "" {
+		t.Fatal("sin URL no hay List-Unsubscribe")
+	}
+}
+
+func TestBuildRejectsHeaderInjection(t *testing.T) {
+	s := newTestSMTP()
+	for _, m := range []Message{
+		{To: "a@b.co\r\nBcc: x@y.z", Subject: "x", Text: "t"},
+		{To: "a@b.co", Subject: "x\nBcc: x@y.z", Text: "t"},
+		{To: "a@b.co", Subject: "x", Text: "t", MessageID: "<a>\r\nX: y"},
+		{To: "a@b.co", Subject: "x", Text: "t", UnsubscribeURL: "https://x\r\nBcc: z"},
+	} {
+		if _, err := s.build(m); err == nil {
+			t.Errorf("debía rechazar %+v", m)
+		}
+	}
+}
+
+func TestSendWithoutHostFails(t *testing.T) {
+	if err := NewSMTP(Options{}).Send(t.Context(), Message{To: "a@b.co", Text: "t"}); err == nil {
+		t.Fatal("sin SMTP configurado debe fallar")
+	}
+}
+
+func TestEnvelopeAndDomain(t *testing.T) {
+	if got := envelopeAddress("PetPassport <no-reply@notify.example>"); got != "no-reply@notify.example" {
+		t.Fatalf("envelope: %q", got)
+	}
+	if got := domainOf("no-reply@notify.example"); got != "notify.example" {
+		t.Fatalf("domain: %q", got)
+	}
+	if got := domainOf("sin-arroba"); got != "localhost" {
+		t.Fatalf("domain: %q", got)
 	}
 }

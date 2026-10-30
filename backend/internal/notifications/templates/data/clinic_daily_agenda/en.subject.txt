@@ -1,0 +1,1 @@
+Today's schedule at {{.V.org_name}}: {{.V.count}} appointments

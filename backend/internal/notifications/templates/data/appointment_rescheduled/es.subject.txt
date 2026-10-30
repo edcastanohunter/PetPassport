@@ -1,0 +1,1 @@
+Cita reprogramada: {{.V.pet_name}}, {{.V.when}}

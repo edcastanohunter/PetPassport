@@ -1,0 +1,8 @@
+PetPassport
+
+{{template "body" .}}
+--
+{{.Reason}}
+Manage preferences: {{.PreferencesURL}}
+{{if .UnsubscribeURL}}Stop receiving these emails: {{.UnsubscribeURL}}
+{{end}}{{.Address}}

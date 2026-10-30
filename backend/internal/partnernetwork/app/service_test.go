@@ -13,7 +13,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -80,15 +80,16 @@ func (c *fakeCodes) Reserve(_ context.Context, code string, _ uuid.UUID) error {
 	return nil
 }
 
+// fakeMailer captura lo que el servicio encola (ARQ-014).
 type fakeMailer struct {
-	sent []mail.Message
+	sent []notify.Notification
 	fail bool
 }
 
-func (m *fakeMailer) Send(_ context.Context, msg mail.Message) error {
-	m.sent = append(m.sent, msg)
+func (m *fakeMailer) Enqueue(_ context.Context, n notify.Notification) error {
+	m.sent = append(m.sent, n)
 	if m.fail {
-		return errors.New("smtp caído")
+		return errors.New("cola caída")
 	}
 	return nil
 }
@@ -157,8 +158,8 @@ func newEnv(t *testing.T, q Queries) *env {
 	}
 	e.svc = NewService(Options{
 		Repo: e.repo, UoW: directUoW{}, Projects: e.proj, Codes: e.codes, Tokens: fakeTokens{},
-		Queries: q, Users: fakeUsers{"miembro@sur.co": vetUser}, Memberships: e.inv, Mailer: e.mail,
-		BaseURL: "https://app.example/", TokenGen: fixedTokens{}, Clock: fixedClock{},
+		Queries: q, Users: fakeUsers{"miembro@sur.co": vetUser}, Memberships: e.inv, Notifier: e.mail,
+		TokenGen: fixedTokens{}, Clock: fixedClock{},
 	})
 	e.svc.RegisterCommands(bus.New())
 	return e
@@ -220,9 +221,10 @@ func TestService_Invite_TokenHashToProjectorAndEmail(t *testing.T) {
 	if string(hash) != string(kernel.HashToken("token-fijo-de-prueba-123456")) {
 		t.Fatal("el proyector no recibió el hash del token de la invitación")
 	}
-	if len(e.mail.sent) != 1 || e.mail.sent[0].To != "nuevo@sur.co" ||
-		!strings.Contains(e.mail.sent[0].Body, "https://app.example/invitations/token-fijo-de-prueba-123456") {
-		t.Fatalf("email: %+v", e.mail.sent)
+	if len(e.mail.sent) != 1 || e.mail.sent[0].To != "nuevo@sur.co" || e.mail.sent[0].Template != "org_invitation" ||
+		e.mail.sent[0].Payload["link_path"] != "/invitations/token-fijo-de-prueba-123456" ||
+		len(e.mail.sent[0].Secret) != 1 || e.mail.sent[0].Secret[0] != "link_path" {
+		t.Fatalf("notificación: %+v", e.mail.sent)
 	}
 }
 
@@ -263,10 +265,10 @@ func TestService_StatusChangeInvalidatesAllMembersAndMails(t *testing.T) {
 	if len(e.inv.ids) != 2 {
 		t.Fatalf("debe invalidar a todos los miembros: %v", e.inv.ids)
 	}
-	if len(e.mail.sent) != 1 || e.mail.sent[0].To != "contacto@clinicasur.co" {
-		t.Fatalf("email de verificación: %+v", e.mail.sent)
+	if len(e.mail.sent) != 0 {
+		t.Fatalf("verificar no encola desde el comando (lo hace el PM): %+v", e.mail.sent)
 	}
-	e.mail.fail = true // best-effort: un fallo SMTP no revierte el comando
+	e.mail.fail = true // un fallo al encolar no revierte el comando
 	if _, err := e.svc.Dispatch(context.Background(), domain.SuspendOrganization{OrganizationID: org, Reason: "motivo suficientemente largo"}); err != nil {
 		t.Fatal(err)
 	}
@@ -279,14 +281,14 @@ func TestService_StatusChangeInvalidatesAllMembersAndMails(t *testing.T) {
 	}
 }
 
-func TestService_RejectMailsReason(t *testing.T) {
+func TestService_RejectDoesNotMail(t *testing.T) {
 	e := newEnv(t, nil)
 	org := e.register(t)
 	if _, err := e.svc.Dispatch(context.Background(), domain.RejectOrganization{OrganizationID: org, Reason: "no adjuntó el RUT vigente"}); err != nil {
 		t.Fatal(err)
 	}
-	if len(e.mail.sent) != 1 || !strings.Contains(e.mail.sent[0].Body, "no adjuntó el RUT vigente") {
-		t.Fatalf("email: %+v", e.mail.sent)
+	if len(e.mail.sent) != 0 {
+		t.Fatalf("rechazar no encola desde el comando (lo hace el PM): %+v", e.mail.sent)
 	}
 }
 
@@ -340,7 +342,7 @@ func TestService_ResendInvitation(t *testing.T) {
 	if err := e.svc.ResendInvitation(context.Background(), org, uuid.New()); err != nil {
 		t.Fatal(err)
 	}
-	if len(e.mail.sent) != 1 || e.mail.sent[0].To != "vet@sur.co" {
+	if len(e.mail.sent) != 1 || e.mail.sent[0].To != "vet@sur.co" || e.mail.sent[0].Template != "org_invitation" {
 		t.Fatalf("reenvío: %+v", e.mail.sent)
 	}
 	e.svc.tokens = fakeTokens{err: ErrResendLimit}

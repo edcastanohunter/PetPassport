@@ -1,0 +1,3 @@
+{{if eq .V.by "guardian"}}El tutor canceló{{else}}{{.V.org_name}} canceló{{end}} la cita de {{.V.pet_name}}{{if .V.when}} del {{.V.when}}{{end}}.
+
+Ver detalle: {{.V.link}}

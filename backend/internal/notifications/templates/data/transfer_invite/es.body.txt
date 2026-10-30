@@ -1,0 +1,7 @@
+¡Hola!
+
+{{.V.from_name}} quiere transferirte la tutela de {{.V.pet_name}}. Si aún no tienes cuenta, regístrate primero con este correo.
+
+Revisar y aceptar: {{.V.link}}
+
+El enlace caduca el {{.V.expires_at}}.

@@ -7,6 +7,7 @@ import (
 	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
 	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
@@ -78,6 +79,8 @@ func registerProcessManagers(consumer *process.Consumer, allowed *scheduler.Allo
 		process.Guard(schedulinginfra.NewCompleteOnSign(nil, nil), sched), kernel.RealClock{}))
 	consumer.Register(schedulinginfra.NewAppointmentTimers(
 		process.Guard(schedulinginfra.NewAppointmentTimers(nil), sched)))
+	// Notifications escribe solo en notifications.* (no emite comandos).
+	consumer.Register(notificationsinfra.NewRules(kernel.RealClock{}))
 }
 
 // registerCommands registra en el bus del worker los comandos que ejecuta el

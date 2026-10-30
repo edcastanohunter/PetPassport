@@ -111,6 +111,9 @@ var defaultStatus = map[Code]int{
 	Code("OUTSIDE_LEAD_TIME"):    http.StatusUnprocessableEntity,
 	Code("INVALID_PROFESSIONAL"): http.StatusUnprocessableEntity,
 	Code("PROPOSAL_EXPIRED"):     http.StatusGone,
+
+	// Notifications (M2.4): webhooks del proveedor de email.
+	Code("WEBHOOK_SIGNATURE_INVALID"): http.StatusUnauthorized,
 }
 
 // FieldError describe un error de validación por campo.

@@ -192,7 +192,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	err = sup.Run(ctx, append(runners, clinical...)...)
+	notif, err := notificationsRunners(a, logger)
+	if err != nil {
+		return err
+	}
+	runners = append(runners, clinical...)
+	err = sup.Run(ctx, append(runners, notif...)...)
 	health.SetReady(false)
 	logger.Info("worker stopped")
 	return err

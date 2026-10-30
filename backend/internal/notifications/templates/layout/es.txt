@@ -1,0 +1,8 @@
+PetPassport
+
+{{template "body" .}}
+--
+{{.Reason}}
+Gestionar preferencias: {{.PreferencesURL}}
+{{if .UnsubscribeURL}}Dejar de recibir estos avisos: {{.UnsubscribeURL}}
+{{end}}{{.Address}}

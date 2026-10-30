@@ -1,0 +1,3 @@
+There is a new appointment request ({{.V.type}}) for {{.V.pet_name}}.
+
+View request: {{.V.link}}

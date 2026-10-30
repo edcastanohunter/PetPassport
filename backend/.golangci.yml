@@ -47,6 +47,17 @@ linters:
             - pkg: "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
             - pkg: "github.com/jackc/pgx"
               desc: "app define puertos, no adaptadores (ADR-001 §2)"
+        # ARQ-014 (PP-F2-ARQ-014): solo el worker abre SMTP. Los módulos y el api
+        # encolan con platform/notify; nadie más importa platform/mail.
+        smtp-only-in-worker:
+          files:
+            - "**/internal/**"
+            - "**/cmd/api/**"
+            - "!**/internal/platform/mail/**"
+            - "!**/internal/notifications/infra/**"
+          deny:
+            - pkg: "github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+              desc: "solo el worker envía correo (ARQ-014): encola con platform/notify"
         no-cross-context-domain:
           files: ["**/internal/identity/**"]
           deny:

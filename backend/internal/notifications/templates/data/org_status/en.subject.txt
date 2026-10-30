@@ -1,0 +1,1 @@
+{{if eq .V.status "verified"}}Your organization is verified{{else if eq .V.status "rejected"}}We could not verify your organization{{else}}Your organization was suspended{{end}}

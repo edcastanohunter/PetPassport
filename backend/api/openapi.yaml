@@ -39,6 +39,8 @@ tags:
     description: Enlaces compartidos de solo lectura (F2 M2.2)
   - name: records
     description: Historial, resumen y peso de la mascota (docs/phase-2/04-api.md §3)
+  - name: notifications
+    description: Preferencias, baja por enlace y webhooks de email (F2 M2.4, ADR-012)
   - name: appointments
     description: Citas, solicitudes y propuestas (F2 M2.3, ADR-011)
   - name: agendas
@@ -216,6 +218,125 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      summary: Preferencias de notificación
+      description: |
+        Categorías de email y resúmenes opcionales del actor (PP-F2-API-010, NOT-004). Sin fila guardada
+        devuelve los valores por defecto (todas las categorías activas, ningún resumen).
+      tags: [notifications]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Preferencias vigentes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: putNotificationPreferences
+      summary: Guardar preferencias de notificación
+      description: |
+        Reemplaza las preferencias. `security` siempre queda activa: se ignora el valor enviado. Las
+        preferencias se consultan al enviar, no al programar.
+      tags: [notifications]
+      x-pp-action: me:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+      responses:
+        "200":
+          description: Preferencias guardadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /unsubscribe/{token}:
+    parameters:
+      - $ref: "#/components/parameters/UnsubscribeToken"
+    post:
+      operationId: unsubscribeNotifications
+      summary: Darse de baja de una categoría por enlace (público)
+      description: |
+        Sin sesión (NOT-004). El token HMAC de los correos identifica usuario y categoría; también sirve
+        de destino de `List-Unsubscribe-Post` (un clic). Idempotente. Token inválido o caducado → 404.
+      tags: [notifications]
+      security: []
+      x-pp-action: public
+      responses:
+        "200":
+          description: Categoría dada de baja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnsubscribeResult"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /webhooks/email/{provider}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        description: Proveedor de email transaccional (`generic` mientras no se elija proveedor, NOT-007).
+        schema:
+          type: string
+          pattern: "^[a-z0-9-]{1,32}$"
+    post:
+      operationId: emailProviderWebhook
+      summary: Webhook de rebotes y quejas del proveedor de email (público, firmado)
+      description: |
+        Verifica `X-PP-Signature: sha256=<hex>` (HMAC-SHA256 del cuerpo con el secreto del proveedor) y
+        añade las direcciones a `notifications.suppressions`. Firma inválida → 401; proveedor sin
+        configurar → 404.
+      tags: [notifications]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: X-PP-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailWebhookPayload"
+      responses:
+        "204":
+          description: Eventos registrados
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
@@ -3768,6 +3889,15 @@ components:
         minLength: 20
         maxLength: 64
         pattern: "^[A-Za-z0-9_-]+$"
+    UnsubscribeToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 20
+        maxLength: 300
+        pattern: "^[A-Za-z0-9_.-]+$"
     AppointmentId:
       name: appointmentId
       in: path
@@ -4255,6 +4385,49 @@ components:
           $ref: "#/components/schemas/ConsentVersion"
         accept_privacy_version:
           $ref: "#/components/schemas/ConsentVersion"
+    NotificationPreferences:
+      type: object
+      required: [email, digest]
+      properties:
+        email:
+          type: object
+          description: Una clave por categoría; `security` siempre es true.
+          required: [appointments, preventive_care, clinical, account, security]
+          properties:
+            appointments: { type: boolean }
+            preventive_care: { type: boolean }
+            clinical: { type: boolean }
+            account: { type: boolean }
+            security: { type: boolean }
+        digest:
+          type: object
+          required: [clinic_daily_agenda]
+          properties:
+            clinic_daily_agenda: { type: boolean }
+    UnsubscribeResult:
+      type: object
+      required: [category]
+      properties:
+        category:
+          type: string
+          description: Categoría dada de baja (appointments|preventive_care|clinical|account).
+    EmailWebhookPayload:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required: [type, address]
+            properties:
+              type:
+                type: string
+                description: bounce | complaint
+              address:
+                type: string
+                maxLength: 320
     UpdateMeRequest:
       type: object
       additionalProperties: false

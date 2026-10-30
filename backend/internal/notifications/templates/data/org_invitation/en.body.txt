@@ -1,0 +1,7 @@
+Hi!
+
+You were invited to join {{.V.org_name}} as {{.V.role}}.
+
+Accept invitation: {{.V.link}}
+
+If you were not expecting this email, you can ignore it.

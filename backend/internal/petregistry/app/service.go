@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -63,8 +63,7 @@ type Service struct {
 	orgs     OrganizationLookup
 	queries  PetQueries
 	events   *eventstore.Store
-	mailer   Mailer
-	baseURL  string
+	notifier notify.Enqueuer
 	ids      kernel.IDGenerator
 	tokens   kernel.TokenGenerator
 	clock    kernel.Clock
@@ -72,7 +71,7 @@ type Service struct {
 	bus      *bus.Bus
 }
 
-// Options construye el servicio. Mailer es opcional (DOM-011, best-effort).
+// Options construye el servicio. Notifier es opcional (nil en pruebas de dominio).
 type Options struct {
 	Repo     Repository
 	UoW      TxRunner
@@ -82,8 +81,7 @@ type Options struct {
 	Orgs     OrganizationLookup
 	Queries  PetQueries
 	Events   *eventstore.Store
-	Mailer   Mailer
-	BaseURL  string
+	Notifier notify.Enqueuer // encola el correo con token de la transferencia (ARQ-014)
 	IDs      kernel.IDGenerator
 	Tokens   kernel.TokenGenerator
 	Clock    kernel.Clock
@@ -107,8 +105,8 @@ func NewService(opts Options) *Service {
 	s := &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects, reserve: opts.Reserve,
 		guardian: opts.Guardian, orgs: opts.Orgs, queries: opts.Queries, events: opts.Events,
-		mailer: opts.Mailer, baseURL: strings.TrimRight(opts.BaseURL, "/"),
-		ids: opts.IDs, tokens: opts.Tokens, clock: opts.Clock, logger: opts.Logger,
+		notifier: opts.Notifier,
+		ids:      opts.IDs, tokens: opts.Tokens, clock: opts.Clock, logger: opts.Logger,
 	}
 	return s
 }

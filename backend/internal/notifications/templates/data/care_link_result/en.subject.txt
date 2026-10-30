@@ -1,0 +1,1 @@
+Care link request {{if eq .V.result "approved"}}approved{{else}}declined{{end}}

@@ -40,6 +40,8 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identitydomain "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	notificationsdomain "github.com/edcastanohunter/petpassport/backend/internal/notifications/domain"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orgdomain "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
@@ -231,13 +233,29 @@ func newSuiteHandlers() apiHandlers {
 	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, Logger: logger})
 	orgSvc := orgapp.NewService(orgapp.Options{Queries: fakeOrgQueries{}, Tokens: failingTokens{}, Logger: logger})
 	return apiHandlers{
-		Handlers:           identityHandlers,
-		AdminHandlers:      identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-		PetHandlers:        pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
-		OrgHandlers:        orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
-		ClinicalHandlers:   newSuiteClinicalHandlers(idem, logger),
-		SchedulingHandlers: newSuiteSchedulingHandlers(idem, logger),
+		Handlers:             identityHandlers,
+		AdminHandlers:        identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+		PetHandlers:          pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
+		OrgHandlers:          orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		ClinicalHandlers:     newSuiteClinicalHandlers(idem, logger),
+		SchedulingHandlers:   newSuiteSchedulingHandlers(idem, logger),
+		NotificationHandlers: notificationshttp.NewNotificationHandlers(fakePreferences{}, nil, nil, logger),
 	}
+}
+
+// fakePreferences evita tocar la base de datos en la suite de rutas.
+type fakePreferences struct{}
+
+func (fakePreferences) Get(context.Context, uuid.UUID) (notificationsdomain.Preferences, error) {
+	return notificationsdomain.Preferences{}, nil
+}
+
+func (fakePreferences) Put(_ context.Context, _ uuid.UUID, p notificationsdomain.Preferences) (notificationsdomain.Preferences, error) {
+	return p, nil
+}
+
+func (fakePreferences) Unsubscribe(context.Context, string) (notificationsdomain.Category, error) {
+	return notificationsdomain.Appointments, nil
 }
 
 // ---------------------------------------------------------- invocación
@@ -433,7 +451,10 @@ var matrix = map[string][9]int{
 
 // Operaciones de cuenta propia: su autorización (authenticatedOnly) se prueba
 // por decisión en platform/authz; aquí solo se exige la cobertura de ruta.
-var accountOps = map[string]bool{"getMe": true, "updateMe": true, "completeOnboarding": true, "acceptConsent": true}
+var accountOps = map[string]bool{
+	"getMe": true, "updateMe": true, "completeOnboarding": true, "acceptConsent": true,
+	"getNotificationPreferences": true, "putNotificationPreferences": true,
+}
 
 func TestRoutes_AuthzMatrix(t *testing.T) {
 	h := newSuiteHandlers()

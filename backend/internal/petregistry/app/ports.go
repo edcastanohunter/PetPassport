@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -64,11 +63,6 @@ type OrganizationLookup interface {
 
 // ErrOrganizationNotEligible lo devuelve OrganizationLookup (I5).
 var ErrOrganizationNotEligible = errors.New("organization not eligible")
-
-// Mailer es el puerto de email (DOM-011): best-effort tras el commit.
-type Mailer interface {
-	Send(ctx context.Context, msg mail.Message) error
-}
 
 // OrgSummary es lo que Pet Registry sabe de una organización.
 type OrgSummary struct {

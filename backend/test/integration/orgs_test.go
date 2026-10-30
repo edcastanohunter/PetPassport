@@ -35,22 +35,23 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 )
 
-// mailbox captura los emails best-effort (DOM-011) para extraer tokens.
+// mailbox captura las notificaciones que los servicios encolan (ARQ-014) para
+// extraer los tokens de los enlaces.
 type mailbox struct {
 	mu   sync.Mutex
-	sent []mail.Message
+	sent []notify.Notification
 }
 
-func (m *mailbox) Send(_ context.Context, msg mail.Message) error {
+func (m *mailbox) Enqueue(_ context.Context, n notify.Notification) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.sent = append(m.sent, msg)
+	m.sent = append(m.sent, n)
 	return nil
 }
 
@@ -62,7 +63,7 @@ func (m *mailbox) lastToken(t *testing.T, to string) string {
 	defer m.mu.Unlock()
 	for i := len(m.sent) - 1; i >= 0; i-- {
 		if strings.EqualFold(m.sent[i].To, to) {
-			if g := tokenRe.FindStringSubmatch(m.sent[i].Body); g != nil {
+			if g := tokenRe.FindStringSubmatch(m.sent[i].Payload["link_path"]); g != nil {
 				return g[1]
 			}
 		}
@@ -118,7 +119,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 	orgSvc := orgapp.NewService(orgapp.Options{
 		Repo: orginfra.NewRepository(store, registry, nil, nil), UoW: unit, Projects: orginfra.NewSyncProjector(runner),
 		Codes: orginfra.PublicCodes{}, Tokens: orginfra.NewInvitationTokens(pool.Pool), Queries: orgQ,
-		Users: users, Memberships: cache, Mailer: box, Auditor: orginfra.TxAuditor{}, BaseURL: "https://app.test", Logger: logger,
+		Users: users, Memberships: cache, Notifier: box, Auditor: orginfra.TxAuditor{}, Logger: logger,
 	})
 	orgSvc.RegisterCommands(commands)
 	orginfra.RegisterSyncProjectors(runner, registry)
@@ -129,7 +130,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 	petSvc := petapp.NewService(petapp.Options{
 		Repo: petinfra.NewRepository(store, registry, nil, nil), UoW: unit, Projects: petinfra.NewSyncProjector(runner),
 		Reserve: petinfra.NewReservations(pool), Guardian: guardian, Orgs: orgAdapter, Queries: petQ, Events: store,
-		Mailer: box, BaseURL: "https://app.test", Logger: logger,
+		Notifier: box, Logger: logger,
 	})
 	petSvc.RegisterCommands(commands)
 	petinfra.RegisterSyncProjectors(runner, registry, guardian, orgAdapter)

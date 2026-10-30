@@ -1,0 +1,3 @@
+Hoy, {{.V.date}}, tienes {{.V.count}} citas confirmadas en {{.V.org_name}}.
+
+Abrir la agenda: {{.V.link}}

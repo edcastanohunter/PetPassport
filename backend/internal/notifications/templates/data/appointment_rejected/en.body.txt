@@ -1,0 +1,3 @@
+{{.V.org_name}} could not accept your appointment request for {{.V.pet_name}}. You can request another one.
+
+Request another appointment: {{.V.link}}

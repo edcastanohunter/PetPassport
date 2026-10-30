@@ -1,0 +1,1 @@
+Cita cancelada: {{.V.pet_name}}

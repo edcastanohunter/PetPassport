@@ -1,0 +1,3 @@
+The guardianship of {{.V.pet_name}} was transferred to {{.V.to_name}}. Care links and history travel with the pet.
+
+Go to PetPassport: {{.V.link}}

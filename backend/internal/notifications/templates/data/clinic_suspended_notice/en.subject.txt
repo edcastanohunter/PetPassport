@@ -1,0 +1,1 @@
+{{.V.org_name}} was suspended: check your appointments

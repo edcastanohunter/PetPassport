@@ -1,0 +1,3 @@
+Your appointment for {{.V.pet_name}} at {{.V.org_name}} is confirmed for {{.V.when}}.
+
+View appointment: {{.V.link}}
