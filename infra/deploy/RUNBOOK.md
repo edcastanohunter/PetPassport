@@ -205,6 +205,43 @@ ADR-009 §3 (pasar a lectura tolerante a huecos en F3). Revisar en *Worker & Pro
 throughput de appends y en *API overview* qué comandos alargan su transacción (el lock se retiene
 hasta el commit). Abrir issue con los datos; no es una caída.
 
+### 7.10 ProjectionLagHigh
+Una proyección asíncrona va más de 60 s por detrás del event store durante 5 min. Revisar en
+*Worker & Projections* el lote y su duración (¿ráfaga o lote lento?) y `projection_status`. Una
+ráfaga puntual se recupera sola; si no, `worker status` y `rebuild`/`resume` según §7.7, y revisar
+las consultas del proyector.
+
+### 7.11 OutboxStuck
+El evento más antiguo del outbox lleva más de 5 min sin procesarse: los process managers
+(notificaciones, citas, completar al firmar) están parados o atascados. Comprobar §7.8 (¿hay worker
+con lock?) y los logs `{service="worker"} | json | level="ERROR"`. Un PM que falla reintenta con
+backoff; el evento problemático aparece en `es.outbox` con `attempts` altos.
+
+### 7.12 OutboxDeadLetter
+Un evento agotó los reintentos de un process manager. Inspeccionar
+`SELECT * FROM es.outbox WHERE dead_letter ORDER BY id DESC LIMIT 20;`, corregir la causa (datos o
+código) y reencolar con `UPDATE es.outbox SET dead_letter = false, attempts = 0 WHERE id = <id>;`.
+Nunca se edita `es.events`.
+
+### 7.13 ReminderDelay
+Los recordatorios se despachan con más de 60 s de retraso (p95). Revisar el runner
+`notifications-dispatch` en los logs del worker y el dashboard *Notifications*. Pendientes vencidos:
+`SELECT count(*), min(due_at) FROM notifications.scheduled WHERE status = 'pending' AND due_at < now();`.
+Suele ser un worker sin lock (§7.8) o la base saturada.
+
+### 7.14 NotificationDeadLetter
+Más de 10 notificaciones agotaron los 5 reintentos (backoff 30 s, 2 min, 10 min, 30 min, 2 h). La
+causa, sin PII, está en `last_error`:
+`SELECT template, last_error, count(*) FROM notifications.deliveries WHERE dead_letter AND created_at > now() - interval '1 hour' GROUP BY 1, 2;`.
+Causas habituales: proveedor SMTP caído o credenciales rotadas (rotación de secretos: actualizar
+`PP_SMTP_PASSWORD` y reiniciar el worker), remitente sin SPF/DKIM rechazado, plantilla con variable
+ausente. Tras corregir, reencolar:
+`UPDATE notifications.deliveries SET dead_letter = false, status = 'queued', attempts = 0, next_attempt_at = now() WHERE dead_letter AND id = ANY(<ids>);`.
+
+### 7.15 DocumentRenderFailures
+Más de 5 PDF fallidos en 1 h. `SELECT kind, last_error, count(*) FROM read_clinical.document_jobs WHERE status = 'failed' GROUP BY 1, 2;`.
+Comprobar que el binario `typst` y las fuentes están presentes y el storage accesible.
+
 ## 8. Observabilidad
 
 Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con un túnel:
@@ -317,13 +354,14 @@ Tras una restauración real, antes de abrir tráfico, se reaplican las supresion
 
 ## 13. Correo transaccional (IAM-012)
 
-Keycloak (verificación, recuperación) y la API (invitaciones, transferencias) envían como
+Keycloak (verificación, recuperación) y el worker (notificaciones: invitaciones, transferencias,
+citas, recordatorios; el api solo las encola, ARQ-014) envían como
 `no-reply@${PP_DOMAIN}` por el proveedor SMTP (STARTTLS, puerto 587). Tema de correo y de login:
 `infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
 
 1. **Proveedor**: verificar el dominio `${PP_DOMAIN}` y crear una credencial SMTP solo de envío.
    `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2). `deploy.sh` las copia a los `EnvironmentFile`
-   de `pp-api` y `pp-keycloak-config`, y este último las escribe en el realm.
+   de `pp-worker` y `pp-keycloak-config`, y este último las escribe en el realm.
 2. **DNS como código**: copiar los valores del proveedor en `staging.tfvars`
    (`mail_spf_includes`, `mail_dkim_records`, `mail_dmarc_policy`, `mail_dmarc_rua`) y aplicar
    `infra/waf/cloudflare` (§6). Comprobar:

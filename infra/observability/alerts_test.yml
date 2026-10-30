@@ -145,3 +145,24 @@ tests:
             exp_annotations:
               summary: "p95 de espera del lock de orden total > 20 ms (10 min): 97.5ms"
               runbook: "infra/deploy/RUNBOOK.md#79-appendlockcontention"
+
+  # Retraso de recordatorios: todas las observaciones entre 60 y 300 s → p95 > 60 s.
+  - interval: 1m
+    input_series:
+      - series: 'reminder_dispatch_delay_seconds_bucket{le="60"}'
+        values: "0+0x20"
+      - series: 'reminder_dispatch_delay_seconds_bucket{le="300"}'
+        values: "0+30x20"
+      - series: 'reminder_dispatch_delay_seconds_bucket{le="+Inf"}'
+        values: "0+30x20"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ReminderDelay
+        exp_alerts: []
+      - eval_time: 18m
+        alertname: ReminderDelay
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "p95 del retraso de despacho de recordatorios > 60 s: 4m 48s"
+              runbook: "infra/deploy/RUNBOOK.md#713-reminderdelay"

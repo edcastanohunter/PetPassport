@@ -22,7 +22,9 @@ Environment=PP_DB_URL=postgres://petpassport_api:api@postgres:5432/petpassport?s
 # PDF de consultas (F2 INF-004): mismo bucket que el api; typst en la imagen.
 Environment=PP_STORAGE_ENDPOINT=minio:9000 PP_STORAGE_BUCKET=petpassport-media
 Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
-Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost
+Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost PP_API_PUBLIC_URL=https://api.pp.localhost/api/v1
+# Notificaciones (F2 M2.4): el worker es el único que envía; Mailpit en dev.
+Environment=PP_SMTP_HOST=mailpit PP_SMTP_PORT=1025
 HealthCmd=["/worker","healthcheck"]
 HealthInterval=10s
 HealthRetries=6

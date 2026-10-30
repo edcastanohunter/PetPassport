@@ -11,7 +11,7 @@
 | PP-F2-PRD-004 | PRD | Adjuntos en consulta | SHOULD | M2.1 | IMPLEMENTADO | | | ≤ 10 en borrador, ≤ 5 por adenda (preparados en attachment_uploads). |
 | PP-F2-PRD-005 | PRD | Firma de consulta: inmutabilidad, hash, PDF | MUST | M2.1 | IMPLEMENTADO | | | Hash RFC 8785 + PDF Typst con QR; verificación pública. |
 | PP-F2-PRD-006 | PRD | Adendas post-firma | MUST | M2.1 | IMPLEMENTADO | | | Solo el responsable; PDF v(seq+1). |
-| PP-F2-PRD-007 | PRD | Control recomendado con recordatorio | SHOULD | M2.4 | PENDIENTE | | | |
+| PP-F2-PRD-007 | PRD | Control recomendado con recordatorio | SHOULD | M2.4 | IMPLEMENTADO | | | Controles recomendados: recordatorios T-3d/T-0 desde `EncounterSigned.follow_up` (se cancelan si cambia o se anula). |
 | PP-F2-PRD-008 | PRD | Tutor: historial cronológico y detalle de consulta | MUST | M2.1 | IMPLEMENTADO | | | Tarjetas + timeline; solo firmadas y adjuntos visibles. |
 | PP-F2-PRD-009 | PRD | Clínica: ficha completa del paciente con custodia | MUST | M2.1 | IMPLEMENTADO | | | Custodia ADR-010 probada (integración). Alertas del perfil: fuente DOM-013 (M2.5); hoy lista vacía. |
 | PP-F2-PRD-010 | PRD | Registrar vacuna con lote y próxima dosis | MUST | M2.2 | IMPLEMENTADO | | | Registro con lote y próxima dosis propuesta (editable). |
@@ -27,8 +27,8 @@
 | PP-F2-PRD-020 | PRD | Solicitud de vínculo por la clínica con aprobación del tutor | MUST | M2.5 | PENDIENTE | | | |
 | PP-F2-PRD-021 | PRD | Co-tutor con permisos limitados | COULD | M2.5 | PENDIENTE | | | |
 | PP-F2-PRD-022 | PRD | Importación CSV para clínicas piloto | COULD | M2.5 | PENDIENTE | | | |
-| PP-F2-PRD-023 | PRD | Preferencias de notificación por categoría | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-PRD-024 | PRD | Recordatorios de citas, vacunas y controles | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-PRD-023 | PRD | Preferencias de notificación por categoría | MUST | M2.4 | IMPLEMENTADO | | | Preferencias por categoría (`security` siempre activa) consultadas al enviar; resumen diario opcional para clinic_admin. |
+| PP-F2-PRD-024 | PRD | Recordatorios de citas, vacunas y controles | MUST | M2.4 | IMPLEMENTADO | | | Citas T-24h/T-2h; vacunas y antiparasitarios T-14d/T-0 a las 09:00 locales; controles T-3d/T-0. Re-validación al despachar. |
 | PP-F2-PRD-025 | PRD | Historial de peso con gráfico y alerta | SHOULD | M2.1 | IMPLEMENTADO | | | Gráfico (skill dataviz), tendencia y alerta > 10 %/90 d calculadas en servidor. |
 | PP-F2-PRD-026 | PRD | Estadísticas básicas de clínica | SHOULD | M2.5 | PENDIENTE | | | |
 | PP-F2-DOM-001 | DOM | Glosario F2 aplicado en código | MUST | M2.0 | IMPLEMENTADO | | | Nombres de código de M2.0 según el glosario (`TimelineProjector`, `PetAccess`, `AccessLevel`, `Membership`…); los términos de cada agregado se aplican en su hito (Encounter M2.1, Vaccination M2.2, Appointment M2.3). |
@@ -45,7 +45,7 @@
 | PP-F2-DOM-012 | DOM | Eventos Scheduling v1 | MUST | M2.3 | IMPLEMENTADO | | | 18 eventos con schema_version y goldens. |
 | PP-F2-DOM-013 | DOM | Pet: solicitudes de vínculo, alertas, búsqueda | MUST | M2.5 | PENDIENTE | | | |
 | PP-F2-DOM-014 | DOM | Puertos F2 (PetAccess, Membership, Catalog, SlotReservations, DocumentRenderer) | MUST | M2.0 | IMPLEMENTADO | | | `PetAccess` (none/linked/custody) y `Membership` en `clinical/app/ports.go`; implementación de PetAccess con custodia en M2.1; Catalog (M2.2), SlotReservations (M2.3, DAT-004) y DocumentRenderer (M2.1, ARQ-010) se definen con su consumidor. |
-| PP-F2-DOM-015 | DOM | Políticas y process managers F2 | MUST | M2.0 | EN_PROGRESO | | | Framework listo en ARQ-009; process managers `scheduling.complete-on-sign` y `scheduling.appointment-timers` (M2.3). Faltan las políticas de Notifications (M2.4) y de CareLink (M2.5). |
+| PP-F2-DOM-015 | DOM | Políticas y process managers F2 | MUST | M2.0 | EN_PROGRESO | | | Framework listo en ARQ-009; process managers `scheduling.complete-on-sign`, `scheduling.appointment-timers` (M2.3) y `notifications.rules` (M2.4). Falta CareLink (M2.5). |
 | PP-F2-DOM-016 | DOM | RecordShare (enlace compartido) | SHOULD | M2.2 | IMPLEMENTADO | | | Enlaces: token 256 bit (hash SHA-256), caducidad, revocación, bloqueo por PIN. |
 | PP-F2-ARQ-001 | ARQ | Proceso worker: runners, lock de instancia, apagado | MUST | M2.0 | IMPLEMENTADO | | | `cmd/worker` (run/rebuild/pause/resume/status/snapshots/healthcheck), lock de instancia, readyz, métricas, apagado ordenado. |
 | PP-F2-ARQ-002 | ARQ | Suscripciones catch-up con checkpoints atómicos | MUST | M2.0 | IMPLEMENTADO | | | `platform/projection/async.go`: checkpoint `FOR UPDATE` + lote en la misma tx. |
@@ -60,7 +60,7 @@
 | PP-F2-ARQ-011 | ARQ | Pipeline de adjuntos (PDF e imágenes clínicas) | SHOULD | M2.1 | IMPLEMENTADO | | | pdfcpu + escaneo de tokens; imágenes re-codificadas sin EXIF. |
 | PP-F2-ARQ-012 | ARQ | Read models derivados: timeline, due, peso, custodia | MUST | M2.1 | IMPLEMENTADO | | | timeline/peso/custodia; rebuild --sync. |
 | PP-F2-ARQ-013 | ARQ | Infraestructura de enlaces compartidos | SHOULD | M2.2 | IMPLEMENTADO | | | ShareService + ShareStore (límite 10 activos, advisory lock). |
-| PP-F2-ARQ-014 | ARQ | Migración de reacciones síncronas de F1 al process manager | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-ARQ-014 | ARQ | Migración de reacciones síncronas de F1 al process manager | MUST | M2.4 | IMPLEMENTADO | | | Org y transferencia dejan de enviar desde el comando: avisos por PM; los correos con token se encolan tras el commit (ADR-026 Propuesta). Test de arquitectura + regla depguard. |
 | PP-F2-API-001 | API | Endpoints de encuentros | MUST | M2.1 | IMPLEMENTADO | | | |
 | PP-F2-API-002 | API | Endpoints de adjuntos | SHOULD | M2.1 | IMPLEMENTADO | | | `Accept: application/json` → 200 DownloadLink (aditivo al 302). |
 | PP-F2-API-003 | API | Endpoints de historial, resumen, peso, alertas | MUST | M2.1 | IMPLEMENTADO | | | EncounterSummary con nombres, diagnósticos y nº de adendas (aditivo). |
@@ -70,7 +70,7 @@
 | PP-F2-API-007 | API | Endpoints de citas (tutor y clínica) | MUST | M2.3 | IMPLEMENTADO | | | Endpoints de citas de tutor y clínica con authz.Can, 404 a no visibles e Idempotency-Key. |
 | PP-F2-API-008 | API | Endpoints de agenda y disponibilidad | MUST | M2.3 | IMPLEMENTADO | | | Agendas, excepciones y disponibilidad. |
 | PP-F2-API-009 | API | Endpoints de solicitud de vínculo, búsqueda y bandeja | MUST | M2.5 | PENDIENTE | | | |
-| PP-F2-API-010 | API | Endpoints de preferencias de notificación y baja | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-API-010 | API | Endpoints de preferencias de notificación y baja | MUST | M2.4 | IMPLEMENTADO | | | GET/PUT /me/notification-preferences, POST /unsubscribe/{token} (404 si inválido) y webhook firmado /webhooks/email/{provider}. |
 | PP-F2-API-011 | API | Endpoint de estadísticas de clínica | SHOULD | M2.5 | PENDIENTE | | | |
 | PP-F2-API-012 | API | Catálogo de errores F2 | MUST | M2.1 | IMPLEMENTADO | | | |
 | PP-F2-API-013 | API | Jobs de documentos, verificación y cabecera de frescura | MUST | M2.1 | IMPLEMENTADO | | | Sin rate limit específico en /verify (ver PR). |
@@ -78,7 +78,7 @@
 | PP-F2-DAT-002 | DAT | DDL read_clinical encuentros, custodia, timeline, peso, documentos | MUST | M2.1 | IMPLEMENTADO | | | Migraciones 0009/0010. |
 | PP-F2-DAT-003 | DAT | DDL carnet, vaccination_due, catálogos, enlaces | MUST | M2.2 | IMPLEMENTADO | | | Migración 20261029000011. |
 | PP-F2-DAT-004 | DAT | DDL scheduling con restricción de exclusión | MUST | M2.3 | IMPLEMENTADO | | | read_scheduling con EXCLUDE gist en slot_reservations. Migración e integración no ejecutadas en local (sin Postgres): validar en CI. |
-| PP-F2-DAT-005 | DAT | DDL notifications | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-DAT-005 | DAT | DDL notifications | MUST | M2.4 | IMPLEMENTADO | | | Esquema `notifications` (preferences, scheduled, deliveries, suppressions). Migración e integración no ejecutadas en local (sin Postgres): validar en CI. |
 | PP-F2-DAT-006 | DAT | DDL scheduler de comandos y worker_instances | MUST | M2.0 | IMPLEMENTADO | | | `scheduler.command_jobs` y `platform.worker_instances` en la misma migración. |
 | PP-F2-DAT-007 | DAT | DDL Pet Registry ampliado, bandeja, org_stats | MUST | M2.5 | PENDIENTE | | | |
 | PP-F2-DAT-008 | DAT | Retención, volumen y particionado de audit_log | SHOULD | M2.5 | PENDIENTE | | | |
@@ -94,16 +94,16 @@
 | PP-F2-FE-009 | FE | Tutor: historial y detalle de consulta | MUST | M2.1 | IMPLEMENTADO | | | |
 | PP-F2-FE-010 | FE | Tutor: carnet, declarar, compartir, PDF | MUST | M2.2 | IMPLEMENTADO | | | Carnet del tutor: declarar, anular propio, compartir, PDF. |
 | PP-F2-FE-011 | FE | Tutor: citas | MUST | M2.3 | IMPLEMENTADO | | | Solicitud, aceptación de propuesta con cuenta atrás y cancelación con aviso de tardía. |
-| PP-F2-FE-012 | FE | Tutor: bandeja y preferencias | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-FE-012 | FE | Tutor: bandeja y preferencias | MUST | M2.4 | IMPLEMENTADO | | | Bandeja (propuestas de cita; solicitudes de vínculo llegan en M2.5), preferencias y página pública de baja. |
 | PP-F2-FE-013 | FE | Páginas públicas de enlace compartido y verificación | SHOULD | M2.2 | IMPLEMENTADO | | | /share/:token (PIN) y /verify/cards/:petId. |
 | PP-F2-FE-014 | FE | Indicador de frescura en vistas derivadas | MUST | M2.0 | IMPLEMENTADO | | | `FreshnessIndicator.vue`, `useDerivedView`, cabecera `X-PP-Freshness` en el cliente API (+CORS expose). |
-| PP-F2-NOT-001 | NOT | Process manager y catálogo de reglas reactivas | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-002 | NOT | Recordatorios programados y despacho | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-003 | NOT | Plantillas es/en versionadas sin contenido clínico | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-004 | NOT | Preferencias, categorías y baja por enlace | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-005 | NOT | Entrega, reintentos, dead-letter y métricas | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-006 | NOT | Idempotencia de envíos | MUST | M2.4 | PENDIENTE | | | |
-| PP-F2-NOT-007 | NOT | Proveedor de email, bounces, SPF/DKIM/DMARC | SHOULD | M2.4 | PENDIENTE | | | |
+| PP-F2-NOT-001 | NOT | Process manager y catálogo de reglas reactivas | MUST | M2.4 | IMPLEMENTADO | | | PM `notifications.rules` con reglas para organización, citas, consultas, carnet, mascota y transferencia; CareLink llega en M2.5 (plantillas ya existen). |
+| PP-F2-NOT-002 | NOT | Recordatorios programados y despacho | MUST | M2.4 | IMPLEMENTADO | | | Runner `notifications-dispatch` (5 s): recordatorios vencidos → entregas tras re-validar el sujeto; reprogramar y cancelar por upsert. |
+| PP-F2-NOT-003 | NOT | Plantillas es/en versionadas sin contenido clínico | MUST | M2.4 | IMPLEMENTADO | | | 20 plantillas es/en versionadas (asunto, texto, HTML) sin contenido clínico; HTML escrito a mano (sin compilar MJML). |
+| PP-F2-NOT-004 | NOT | Preferencias, categorías y baja por enlace | MUST | M2.4 | IMPLEMENTADO | | | Categorías, token HMAC de baja (180 d) con List-Unsubscribe(+Post) y pie con motivo, preferencias y dirección. |
+| PP-F2-NOT-005 | NOT | Entrega, reintentos, dead-letter y métricas | MUST | M2.4 | IMPLEMENTADO | | | Runner `notifications-sender`: backoff 30 s/2 min/10 min/30 min/2 h, dead-letter a los 5 intentos y métricas. |
+| PP-F2-NOT-006 | NOT | Idempotencia de envíos | MUST | M2.4 | IMPLEMENTADO | | | `dedup_key` único en scheduled y deliveries; encolar o reentregar el mismo evento 3 veces deja 1 fila (test de integración escrito, pendiente de CI). |
+| PP-F2-NOT-007 | NOT | Proveedor de email, bounces, SPF/DKIM/DMARC | SHOULD | M2.4 | EN_PROGRESO | | | Webhook HMAC genérico y supresiones implementados. Pendiente (humano): elegir proveedor transaccional, SPF/DKIM/DMARC y adaptar su formato de webhook. |
 | PP-F2-SEC-001 | SEC | Autorización clínica ampliada y custodia | MUST | M2.1 | IMPLEMENTADO | | | Suites de política y de handlers (sondeo x-pp-action). |
 | PP-F2-SEC-002 | SEC | Enlaces compartidos y páginas públicas | SHOULD | M2.2 | IMPLEMENTADO | | | noindex, Referrer-Policy no-referrer, bloqueo por PIN, sin contacto del tutor. |
 | PP-F2-SEC-003 | SEC | Adjuntos seguros | MUST | M2.1 | IMPLEMENTADO | | | |
@@ -113,13 +113,13 @@
 | PP-F2-SEC-007 | SEC | Threat model F2 | MUST | M2.0 | IMPLEMENTADO | | | `docs/phase-2/security/threat-model.md`; pendiente la revisión de dos personas (§6). |
 | PP-F2-INF-001 | INF | Worker en compose y despliegue; imagen con Typst | MUST | M2.0 | IMPLEMENTADO | | | Worker en Quadlet dev/deploy (1 vCPU, 1 GB, healthcheck, Notify=healthy) y `deploy.sh` (marcadores `-- rebuild:`, worker antes que api); ventana de la migración medida (RUNBOOK §15.2). Typst o Chromium en la imagen con el spike de M2.1 (ARQ-010). |
 | PP-F2-INF-002 | INF | Observabilidad del worker | MUST | M2.0 | IMPLEMENTADO | | | Métricas de proyección/outbox/scheduler/lock/instancia, span por lote, logs con projection/global_position/event_type/stream_id, dashboard Worker & Projections. `scheduled_pending`/`reminder_dispatch_delay_seconds` (M2.4) y `document_render_duration_seconds` (M2.1) se registran con su componente. |
-| PP-F2-INF-003 | INF | Alertas F2 | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-INF-003 | INF | Alertas F2 | MUST | M2.4 | IMPLEMENTADO | | | Alertas ProjectionLagHigh, OutboxStuck, OutboxDeadLetter, ReminderDelay, NotificationDeadLetter y DocumentRenderFailures; dashboard Notifications; runbook §7.10–7.15. `promtool` no ejecutado en local. |
 | PP-F2-INF-004 | INF | Renderizado PDF: concurrencia, timeout, caché | SHOULD | M2.1 | IMPLEMENTADO | | | Concurrencia 2, timeout 30 s, caché por versión; render real sin probar en local (typst ausente). |
 | PP-F2-INF-005 | INF | Runbook F2 | MUST | M2.5 | PENDIENTE | | | |
 | PP-F2-QA-001 | QA | Tests de orden total y reservas concurrentes | MUST | M2.0 | IMPLEMENTADO | | | Orden total 50×100 sin huecos como gate CI (`event-store-gates`). Pruebas de `slot_reservations` (M2.3, "QA-001 parte de reservas") y `card_entries_dup_uq` (M2.2) con sus tablas. Reservas concurrentes (M2.3) en `test/integration/scheduling_test.go`: escritas, pendientes de ejecutar en CI. |
 | PP-F2-QA-002 | QA | Test de rebuild con comparación de dumps | MUST | M2.0 | IMPLEMENTADO | | | 5.000 eventos sintéticos, rebuild con el worker en marcha y `--to-position`; el generador se amplía con cada agregado. Staging antes de M2.5. |
 | PP-F2-QA-003 | QA | Harness de process managers y scheduler | MUST | M2.0 | IMPLEMENTADO | | | `process/testkit` (reloj simulado, entrega ×3) + tests de outbox/scheduler con `SimClock`. |
 | PP-F2-QA-004 | QA | E2E Playwright F2 | MUST | M2.5 | PENDIENTE | | | |
-| PP-F2-QA-005 | QA | Snapshots de plantillas y PDFs | MUST | M2.4 | PENDIENTE | | | |
+| PP-F2-QA-005 | QA | Snapshots de plantillas y PDFs | MUST | M2.4 | EN_PROGRESO | | | Snapshots de las 20 plantillas es/en (`.html` y `.txt`) hechos. Faltan los de PDF (encuentro y carnet): requieren el binario typst. |
 | PP-F2-QA-006 | QA | Validación clínica con veterinarios del piloto | MUST | M2.2 | EN_PROGRESO | | | Checklist en docs/phase-2/validation/QA-006-validacion-clinica.md; ejecución pendiente. |
 | PP-F2-QA-007 | QA | Gates F2 | MUST | M2.0 | IMPLEMENTADO | | | CI: job `event-store-gates`, cobertura domain/ ≥ 90 % (`scripts/domain-coverage.sh`), promtool; suite de authz exige filas para toda acción/operación (`TestSuite_EveryActionHasRows`, `TestRoutes_AuthzMatrix`); oasdiff y specs-status existentes; k6 `tests/load/k6/f2-mix.js` (100 VUs 70/30, p95 API < 300 ms, lag < 2 s). Primera ejecución de k6 en staging pendiente (como QA-006 F1, requiere INF-006 F1). |
