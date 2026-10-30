@@ -1,0 +1,10 @@
+# Protocolos de vacunación para Colombia (PP-F2-DAT-009). Pendiente de aprobación veterinaria.
+approved: false
+country: CO
+protocols:
+  - {vaccine: Polivalente (DHPPi), species: dog, initial_series: [{min_age_weeks: 6}, {min_interval_days: 21}, {min_interval_days: 21}], booster_interval_months: 12}
+  - {vaccine: Polivalente + Leptospira (DHPPi-L), species: dog, initial_series: [{min_age_weeks: 6}, {min_interval_days: 21}, {min_interval_days: 21}], booster_interval_months: 12}
+  - {vaccine: Rabia, species: dog, initial_series: [{min_age_weeks: 12}], booster_interval_months: 12, legal_validity_months: 12}
+  - {vaccine: Triple felina (FVRCP), species: cat, initial_series: [{min_age_weeks: 8}, {min_interval_days: 21}, {min_interval_days: 21}], booster_interval_months: 12}
+  - {vaccine: Rabia, species: cat, initial_series: [{min_age_weeks: 12}], booster_interval_months: 12, legal_validity_months: 12}
+  - {vaccine: Leucemia felina (FeLV), species: cat, initial_series: [{min_age_weeks: 8}, {min_interval_days: 21}], booster_interval_months: 12}

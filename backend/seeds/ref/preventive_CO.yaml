@@ -1,0 +1,10 @@
+# Preventivos para Colombia (PP-F2-DAT-009). Pendiente de aprobación veterinaria.
+approved: false
+country: CO
+protocols:
+  - {species: dog, kind: deworming, interval_days: 15, notes: "Cachorros hasta los 3 meses"}
+  - {species: dog, kind: deworming, interval_days: 90, notes: "Desde los 3 meses; adultos cada 3–6 meses"}
+  - {species: cat, kind: deworming, interval_days: 15, notes: "Gatitos hasta los 3 meses"}
+  - {species: cat, kind: deworming, interval_days: 90, notes: "Desde los 3 meses; adultos cada 3–6 meses"}
+  - {species: dog, kind: ectoparasite, interval_days: 30}
+  - {species: cat, kind: ectoparasite, interval_days: 30}
