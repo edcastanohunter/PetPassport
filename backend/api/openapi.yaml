@@ -1239,6 +1239,259 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/pet-lookup:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: lookupPetForRequest
+      summary: Buscar una mascota para solicitar el vínculo
+      description: Por microchip exacto o por email del tutor. Devuelve como máximo 5 resultados mínimos (nombre, especie, tutor enmascarado); sin resultados devuelve lista vacía con el mismo tiempo de respuesta. 20 búsquedas por hora y usuario (PRD-020).
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - name: microchip
+          in: query
+          schema:
+            type: string
+            maxLength: 20
+        - name: guardian_email
+          in: query
+          schema:
+            type: string
+            maxLength: 254
+      responses:
+        "200":
+          description: Resultados mínimos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetLookupList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/care-link-requests:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: requestCareLink
+      summary: Solicitar el vínculo con una mascota
+      description: La solicitud queda pendiente 14 días para que la decida el tutor (PRD-020). Con vínculo activo → 409 CARE_LINK_ALREADY_ACTIVE; con otra solicitud pendiente de la clínica → 409 REQUEST_PENDING.
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestCareLinkBody"
+      responses:
+        "201":
+          description: Solicitud creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareLinkRequestItem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listCareLinkRequests
+      summary: Solicitudes de vínculo de la clínica
+      description: Las más recientes primero; filtro opcional por estado.
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, declined, expired]
+      responses:
+        "200":
+          description: Solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareLinkRequestList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/stats:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgStats
+      summary: Estadísticas mensuales de la clínica
+      description: Mes pedido (por defecto el actual, UTC) y el anterior. Vista derivada asíncrona con cabecera X-PP-Freshness (PRD-026).
+      tags: [organizations]
+      x-pp-action: org:stats:read
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "200":
+          description: Estadísticas
+          headers:
+            X-PP-Freshness:
+              $ref: "#/components/headers/X-PP-Freshness"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgStats"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/inbox:
+    get:
+      operationId: getInbox
+      summary: Bandeja del tutor
+      description: Solicitudes de vínculo pendientes, propuestas de cita y controles pendientes, lo más reciente primero (FE-012).
+      tags: [me]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Bandeja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboxList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-link-requests/{requestId}/approve:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/RequestId"
+    post:
+      operationId: approveCareLinkRequest
+      summary: Aprobar una solicitud de vínculo
+      description: Solo el tutor. Crea el vínculo con la clínica solicitante (máximo 20 activos). Solicitud ya resuelta o vencida → 409 CARE_LINK_REQUEST_NOT_PENDING.
+      tags: [care-links]
+      x-pp-action: pet:carelink:grant
+      responses:
+        "200":
+          description: Vínculo creado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-link-requests/{requestId}/decline:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/RequestId"
+    post:
+      operationId: declineCareLinkRequest
+      summary: Rechazar una solicitud de vínculo
+      tags: [care-links]
+      x-pp-action: pet:carelink:grant
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineCareLinkBody"
+      responses:
+        "200":
+          description: Solicitud rechazada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/alerts:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    put:
+      operationId: putPetAlerts
+      summary: Reemplazar las alertas del perfil
+      description: Tutor o clínica con vínculo activo. Hasta 20 alertas de 200 caracteres (DOM-013).
+      tags: [pets]
+      x-pp-action: pet:alerts
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutPetAlertsRequest"
+      responses:
+        "200":
+          description: Mascota con las alertas actualizadas
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /organizations/{orgId}/patients:
     parameters:
       - $ref: "#/components/parameters/OrgId"
@@ -3818,6 +4071,13 @@ components:
       schema:
         type: string
         format: uuid
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     OrganizationId:
       name: organizationId
       in: path
@@ -4213,12 +4473,205 @@ components:
           oneOf:
             - $ref: "#/components/schemas/GuardianContact"
             - type: "null"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetAlert"
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    PetAlert:
+      type: object
+      additionalProperties: false
+      required: [kind, text]
+      properties:
+        kind:
+          type: string
+          enum: [allergy, chronic_condition, behavior, other]
+        text:
+          type: string
+          minLength: 1
+          maxLength: 200
+    PutPetAlertsRequest:
+      type: object
+      additionalProperties: false
+      required: [alerts]
+      properties:
+        alerts:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/PetAlert"
+    PetLookupResult:
+      type: object
+      additionalProperties: false
+      required: [pet_id, name, species, guardian_masked]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        guardian_masked:
+          type: string
+          description: Nombre del tutor enmascarado (inicial y asteriscos).
+    PetLookupList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/PetLookupResult"
+    RequestCareLinkBody:
+      type: object
+      additionalProperties: false
+      required: [pet_id]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          maxLength: 300
+    DeclineCareLinkBody:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    CareLinkRequestItem:
+      type: object
+      additionalProperties: false
+      required: [id, pet_id, pet_name, organization_id, status, expires_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        pet_id:
+          type: string
+          format: uuid
+        pet_name:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        message:
+          type: [string, "null"]
+        status:
+          type: string
+          enum: [pending, approved, declined, expired]
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: [string, "null"]
+          format: date-time
+    CareLinkRequestList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareLinkRequestItem"
+    InboxItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, ref_id, title, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [care_link_request, appointment_proposal, follow_up]
+        ref_id:
+          type: string
+          format: uuid
+          description: Id de la solicitud, la cita o la consulta de origen.
+        pet_id:
+          type: [string, "null"]
+          format: uuid
+        pet_name:
+          type: [string, "null"]
+        organization_id:
+          type: [string, "null"]
+          format: uuid
+        title:
+          type: string
+        body:
+          type: [string, "null"]
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+    InboxList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboxItem"
+    MonthStats:
+      type: object
+      additionalProperties: false
+      required: [month, encounters_signed, appointments, new_patients, vaccinations]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        encounters_signed:
+          type: integer
+        appointments:
+          type: object
+          additionalProperties: false
+          required: [confirmed, completed, cancelled, no_show]
+          properties:
+            confirmed:
+              type: integer
+            completed:
+              type: integer
+            cancelled:
+              type: integer
+            no_show:
+              type: integer
+        new_patients:
+          type: integer
+        vaccinations:
+          type: integer
+    OrgStats:
+      type: object
+      additionalProperties: false
+      required: [current, previous, open_follow_ups, freshness]
+      properties:
+        current:
+          $ref: "#/components/schemas/MonthStats"
+        previous:
+          $ref: "#/components/schemas/MonthStats"
+        open_follow_ups:
+          type: integer
+          description: Controles pendientes hoy (no depende del mes).
+        freshness:
+          $ref: "#/components/schemas/Freshness"
     CareLink:
       type: object
       additionalProperties: false

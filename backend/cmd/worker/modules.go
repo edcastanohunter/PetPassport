@@ -9,6 +9,8 @@ import (
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
+	petdomain "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
@@ -64,6 +66,7 @@ func registerAsyncProjections(subs *projection.Subscriptions) {
 	subs.Register(clinicalinfra.NewWeightProjector())
 	subs.Register(clinicalinfra.NewCustodyProjector())
 	subs.Register(clinicalinfra.NewVaccinationDueProjector())
+	subs.Register(orginfra.NewStatsProjector())
 }
 
 // registerProcessManagers registra los PM del outbox y los comandos que el
@@ -74,11 +77,14 @@ func registerProcessManagers(consumer *process.Consumer, allowed *scheduler.Allo
 	allowed.Allow(func() bus.Command { return schedulingapp.ExpireProposal{} })
 	allowed.Allow(func() bus.Command { return schedulingapp.AutoNoShow{} })
 	allowed.Allow(func() bus.Command { return schedulingapp.CompleteOnSign{} })
+	allowed.Allow(func() bus.Command { return petdomain.ExpireCareLinkRequest{} })
 	// Cada PM recibe los Jobs limitados a lo que declara en Emits (Guard).
 	consumer.Register(schedulinginfra.NewCompleteOnSign(
 		process.Guard(schedulinginfra.NewCompleteOnSign(nil, nil), sched), kernel.RealClock{}))
 	consumer.Register(schedulinginfra.NewAppointmentTimers(
 		process.Guard(schedulinginfra.NewAppointmentTimers(nil), sched)))
+	consumer.Register(petinfra.NewCareLinkRequestTimers(
+		process.Guard(petinfra.NewCareLinkRequestTimers(nil), sched)))
 	// Notifications escribe solo en notifications.* (no emite comandos).
 	consumer.Register(notificationsinfra.NewRules(kernel.RealClock{}))
 }
@@ -102,5 +108,23 @@ func registerCommands(commands *bus.Bus, pool *db.Pool, store *eventstore.Store,
 		Pets:         schedulinginfra.NewPetAccess(pool.Pool),
 		Membership:   schedulinginfra.NewMembership(pool.Pool),
 		Logger:       logger,
+	}).RegisterCommands(commands)
+
+	// Pet Registry: solo ExpireCareLinkRequest lo ejecuta el scheduler (M2.5).
+	// Su proyección síncrona usa las mismas dependencias que el api.
+	identitySvc := identityapp.NewService(identityinfra.NewPostgresRepository(pool), logger)
+	orgQueries := orginfra.NewQueries(pool.Pool, orginfra.NewUserAdapter(identitySvc))
+	guardian := petinfra.NewGuardianAdapter(identitySvc)
+	orgs := petinfra.NewOrganizationAdapter(orgQueries)
+	petRunner := projection.NewRunner()
+	petinfra.RegisterSyncProjectors(petRunner, reg, guardian, orgs)
+	petapp.NewService(petapp.Options{
+		Repo:     petinfra.NewRepository(store, reg, nil, nil),
+		UoW:      db.NewUnitOfWork(pool),
+		Projects: petinfra.NewSyncProjector(petRunner),
+		Guardian: guardian,
+		Orgs:     orgs,
+		Events:   store,
+		Logger:   logger,
 	}).RegisterCommands(commands)
 }

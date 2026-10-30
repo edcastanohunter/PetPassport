@@ -171,6 +171,13 @@ func run() error {
 		Events:   store,
 		Notifier: notifier,
 		Logger:   logger,
+		// Solicitud de vínculo y bandeja del tutor (M2.5): la bandeja compone
+		// las propuestas de cita y los controles de otros contextos.
+		RequestQueries: petinfra.NewRequestQueries(pool.Pool),
+		LookupLimiter:  petinfra.NewLookupLimiter(pool.Pool),
+		InboxSources: []petapp.InboxSource{
+			petinfra.NewProposalInbox(pool.Pool), petinfra.NewFollowUpInbox(pool.Pool),
+		},
 	}
 	petSvc := petapp.NewService(petOpts)
 	petSvc.RegisterCommands(commands)
@@ -304,6 +311,7 @@ func run() error {
 			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
+			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
 			ClinicalHandlers:     clinicalHandlers,
 			SchedulingHandlers:   schedulingHandlers,
 			NotificationHandlers: notificationHandlers,

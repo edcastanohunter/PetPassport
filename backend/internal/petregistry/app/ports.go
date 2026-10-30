@@ -39,6 +39,9 @@ type ProjectionRunner interface {
 // Registry necesita saber de un tutor.
 type GuardianLookup interface {
 	Exists(ctx context.Context, id uuid.UUID) bool
+	// FindByEmail resuelve el tutor por email (búsqueda de PRD-020; el email
+	// nunca sale en la respuesta).
+	FindByEmail(ctx context.Context, email string) (uuid.UUID, bool)
 	EmailOf(ctx context.Context, id uuid.UUID) (string, bool)
 	DisplayName(ctx context.Context, id uuid.UUID) string
 	// Contact devuelve los datos de contacto del tutor (RN-05: solo para G, L

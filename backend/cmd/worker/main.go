@@ -66,8 +66,10 @@ func dispatch(cmd string, args []string) error {
 		return run()
 	case "rebuild", "pause", "resume", "status", "snapshots", "maintenance":
 		return oneShot(cmd, args)
+	case "export":
+		return exportUser(args)
 	default:
-		return fmt.Errorf("subcomando desconocido %q (run|rebuild|pause|resume|status|snapshots|maintenance|healthcheck)", cmd)
+		return fmt.Errorf("subcomando desconocido %q (run|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
 }
 

@@ -26,6 +26,7 @@ import (
 // tras evaluar authz con el recurso cargado.
 type Queries struct {
 	q        *petqueries.Queries
+	raw      rawQuerier            // columnas que sqlc aún no genera (alerts, M2.5)
 	guardian petapp.GuardianLookup // teléfono del tutor en la lista de pacientes (nil = vacío)
 }
 
@@ -33,7 +34,7 @@ var _ petapp.PetQueries = (*Queries)(nil)
 
 // NewQueries construye las consultas sobre el pool.
 func NewQueries(pool *pgxpool.Pool) *Queries {
-	return &Queries{q: petqueries.New(pool)}
+	return &Queries{q: petqueries.New(pool), raw: pool}
 }
 
 // WithGuardian inyecta el puerto de Identity para enriquecer pacientes.
@@ -49,7 +50,7 @@ func (r *Queries) WithTx(ctx context.Context) (*Queries, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Queries{q: r.q.WithTx(tx), guardian: r.guardian}, nil
+	return &Queries{q: r.q.WithTx(tx), raw: tx, guardian: r.guardian}, nil
 }
 
 // ErrPetNotFound lo devuelven GetPet y petView cuando el id no existe.
@@ -135,6 +136,15 @@ func (r *Queries) GetPet(ctx context.Context, petID uuid.UUID) (petapp.PetView, 
 			return petapp.PetView{}, err
 		}
 		view.PendingTransfer = &pt
+	}
+	if r.raw != nil {
+		var alerts []byte
+		if err := r.raw.QueryRow(ctx, `SELECT alerts FROM read_petregistry.pets WHERE id = $1`, petID).Scan(&alerts); err != nil {
+			return petapp.PetView{}, err
+		}
+		if err := json.Unmarshal(alerts, &view.Alerts); err != nil {
+			return petapp.PetView{}, err
+		}
 	}
 	for _, l := range links {
 		link := petapp.CareLinkView{
@@ -222,6 +232,15 @@ func (a *GuardianAdapter) EmailOf(ctx context.Context, id uuid.UUID) (string, bo
 		return "", false
 	}
 	return string(info.Email), true
+}
+
+// FindByEmail implementa el puerto: cuenta activa por email.
+func (a *GuardianAdapter) FindByEmail(ctx context.Context, email string) (uuid.UUID, bool) {
+	info, err := a.svc.AccountInfoByEmail(ctx, email)
+	if err != nil || info.Suspended {
+		return uuid.Nil, false
+	}
+	return info.ID, true
 }
 
 // DisplayName implementa el puerto.

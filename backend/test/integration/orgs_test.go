@@ -131,6 +131,7 @@ func newOrgEnv(t *testing.T) *orgEnv {
 		Repo: petinfra.NewRepository(store, registry, nil, nil), UoW: unit, Projects: petinfra.NewSyncProjector(runner),
 		Reserve: petinfra.NewReservations(pool), Guardian: guardian, Orgs: orgAdapter, Queries: petQ, Events: store,
 		Notifier: box, Logger: logger,
+		RequestQueries: petinfra.NewRequestQueries(pool.Pool), LookupLimiter: petinfra.NewLookupLimiter(pool.Pool),
 	})
 	petSvc.RegisterCommands(commands)
 	petinfra.RegisterSyncProjectors(runner, registry, guardian, orgAdapter)

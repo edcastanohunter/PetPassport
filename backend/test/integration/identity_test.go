@@ -42,6 +42,7 @@ type handlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
 	*schedulinghttp.SchedulingHandlers
 	*notificationshttp.NotificationHandlers

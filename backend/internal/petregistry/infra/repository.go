@@ -53,6 +53,11 @@ func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.GuardianshipTransferInitiated{} })
 	reg.Register(func() eventstore.Event { return domain.GuardianshipTransferCancelled{} })
 	reg.Register(func() eventstore.Event { return domain.PetGuardianshipTransferred{} })
+	reg.Register(func() eventstore.Event { return domain.CareLinkRequested{} })
+	reg.Register(func() eventstore.Event { return domain.CareLinkRequestApproved{} })
+	reg.Register(func() eventstore.Event { return domain.CareLinkRequestDeclined{} })
+	reg.Register(func() eventstore.Event { return domain.CareLinkRequestExpired{} })
+	reg.Register(func() eventstore.Event { return domain.PetAlertsUpdated{} })
 }
 
 // Load rehidrata por replay. Stream inexistente → agregado vacío (versión 0).

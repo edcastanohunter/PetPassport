@@ -50,6 +50,8 @@ func (p *PetsProjector) Handles() []string {
 		"PetRegistered", "PetProfileUpdated", "PetMicrochipAssigned", "PetPhotoChanged",
 		"PetMarkedDeceased", "PetDeceasedUndone", "CareLinkGranted", "CareLinkRevoked",
 		"GuardianshipTransferInitiated", "GuardianshipTransferCancelled", "PetGuardianshipTransferred",
+		"CareLinkRequested", "CareLinkRequestApproved", "CareLinkRequestDeclined", "CareLinkRequestExpired",
+		"PetAlertsUpdated",
 	}
 }
 
@@ -65,6 +67,14 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		if p.guardian != nil {
 			name = p.guardian.DisplayName(ctx, ev.GuardianID)
 		}
+		alerts := ev.Alerts
+		if alerts == nil {
+			alerts = []domain.PetAlert{}
+		}
+		alertsJSON, err := json.Marshal(alerts)
+		if err != nil {
+			return err
+		}
 		var birthDate, markings, breed any
 		approx := false
 		if ev.BirthDate != nil {
@@ -77,21 +87,21 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		if ev.Markings != "" {
 			markings = ev.Markings
 		}
-		_, err := tx.Exec(ctx, `
+		_, err = tx.Exec(ctx, `
 			INSERT INTO read_petregistry.pets
 			  (id, version, guardian_id, guardian_display_name, name, species, species_other, breed,
-			   sex, neutered, birth_date, birth_date_approximate, markings, status, created_at, updated_at)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'active',$14,$14)
+			   sex, neutered, birth_date, birth_date_approximate, markings, status, created_at, updated_at, alerts)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'active',$14,$14,$15)
 			ON CONFLICT (id) DO UPDATE SET
 			  version = EXCLUDED.version, guardian_id = EXCLUDED.guardian_id,
 			  guardian_display_name = EXCLUDED.guardian_display_name, name = EXCLUDED.name,
 			  species = EXCLUDED.species, species_other = EXCLUDED.species_other, breed = EXCLUDED.breed,
 			  sex = EXCLUDED.sex, neutered = EXCLUDED.neutered, birth_date = EXCLUDED.birth_date,
 			  birth_date_approximate = EXCLUDED.birth_date_approximate, markings = EXCLUDED.markings,
-			  status = 'active', updated_at = EXCLUDED.updated_at
+			  alerts = EXCLUDED.alerts, status = 'active', updated_at = EXCLUDED.updated_at
 			WHERE read_petregistry.pets.version < EXCLUDED.version`,
 			ev.PetID, e.StreamVersion, ev.GuardianID, name, ev.Name, string(ev.Species), ev.SpeciesOther,
-			breed, string(ev.Sex), string(ev.Neutered), birthDate, approx, markings, e.OccurredAt)
+			breed, string(ev.Sex), string(ev.Neutered), birthDate, approx, markings, e.OccurredAt, alertsJSON)
 		return err
 
 	case domain.PetProfileUpdated:
@@ -208,6 +218,32 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		}
 		return p.recountLinks(ctx, tx, ev.PetID, e)
 
+	case domain.PetAlertsUpdated:
+		alerts := ev.Alerts
+		if alerts == nil {
+			alerts = []domain.PetAlert{}
+		}
+		raw, err := json.Marshal(alerts)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx, `
+			UPDATE read_petregistry.pets SET version = $2, updated_at = $3, alerts = $4
+			WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, raw)
+		return err
+
+	case domain.CareLinkRequested:
+		return p.projectRequested(ctx, tx, e, ev)
+
+	case domain.CareLinkRequestApproved:
+		return p.resolveRequest(ctx, tx, e, ev.PetID, ev.RequestID, "approved")
+
+	case domain.CareLinkRequestDeclined:
+		return p.resolveRequest(ctx, tx, e, ev.PetID, ev.RequestID, "declined")
+
+	case domain.CareLinkRequestExpired:
+		return p.resolveRequest(ctx, tx, e, ev.PetID, ev.RequestID, "expired")
+
 	case domain.GuardianshipTransferInitiated:
 		masked := ""
 		if ev.PII != nil {
@@ -270,9 +306,72 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 			UPDATE read_petregistry.pets SET version = $2, updated_at = $3,
 			  guardian_id = $4, guardian_display_name = $5, pending_transfer = NULL
 			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, ev.ToGuardianID, name)
+		if err != nil {
+			return err
+		}
+		// Las solicitudes pendientes pasan a decidirlas el nuevo tutor.
+		_, err = tx.Exec(ctx, `
+			UPDATE read_petregistry.guardian_inbox SET guardian_id = $2
+			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID, ev.ToGuardianID)
 		return err
 	}
 	return fmt.Errorf("petregistry projector: evento no manejado %s", e.Type)
+}
+
+// projectRequested proyecta la solicitud y su entrada en la bandeja del tutor.
+// Idempotente: el id de la solicitud es la clave.
+func (p *PetsProjector) projectRequested(ctx context.Context, tx pgx.Tx, e eventstore.StoredEvent, ev domain.CareLinkRequested) error {
+	orgName := ""
+	if p.orgs != nil {
+		if org, err := p.orgs.ActiveClinic(ctx, ev.OrganizationID); err == nil {
+			orgName = org.DisplayName
+		}
+	}
+	var message any
+	if ev.Message != "" {
+		message = ev.Message
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO read_petregistry.care_link_requests
+		  (id, pet_id, organization_id, org_display_name, requested_by, message, status, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8)
+		ON CONFLICT (id) DO NOTHING`,
+		ev.RequestID, ev.PetID, ev.OrganizationID, orgName, ev.RequestedBy, message, ev.ExpiresAt, e.OccurredAt); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO read_petregistry.guardian_inbox
+		  (id, guardian_id, kind, ref_id, pet_id, organization_id, title, body, status, created_at, expires_at)
+		SELECT $1, guardian_id, 'care_link_request', $1, $2, $3, $4, $5, 'pending', $6, $7
+		  FROM read_petregistry.pets WHERE id = $2
+		ON CONFLICT (kind, ref_id) DO NOTHING`,
+		ev.RequestID, ev.PetID, ev.OrganizationID, orgName, message, e.OccurredAt, ev.ExpiresAt); err != nil {
+		return err
+	}
+	return p.touch(ctx, tx, ev.PetID, e)
+}
+
+// resolveRequest cierra la solicitud y su entrada de bandeja.
+func (p *PetsProjector) resolveRequest(ctx context.Context, tx pgx.Tx, e eventstore.StoredEvent, petID, requestID uuid.UUID, status string) error {
+	if _, err := tx.Exec(ctx, `
+		UPDATE read_petregistry.care_link_requests SET status = $2, resolved_at = $3
+		 WHERE id = $1 AND status = 'pending'`, requestID, status, e.OccurredAt); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE read_petregistry.guardian_inbox SET status = $2, resolved_at = $3
+		 WHERE kind = 'care_link_request' AND ref_id = $1 AND status = 'pending'`, requestID, status, e.OccurredAt); err != nil {
+		return err
+	}
+	return p.touch(ctx, tx, petID, e)
+}
+
+// touch avanza la versión proyectada de la mascota.
+func (p *PetsProjector) touch(ctx context.Context, tx pgx.Tx, petID uuid.UUID, e eventstore.StoredEvent) error {
+	_, err := tx.Exec(ctx, `
+		UPDATE read_petregistry.pets SET version = $2, updated_at = $3 WHERE id = $1`,
+		petID, e.StreamVersion, e.OccurredAt)
+	return err
 }
 
 func (p *PetsProjector) recountLinks(ctx context.Context, tx pgx.Tx, petID uuid.UUID, e eventstore.StoredEvent) error {

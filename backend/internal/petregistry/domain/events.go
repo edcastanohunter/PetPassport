@@ -40,8 +40,8 @@ type PetRegistered struct {
 }
 
 // PetAlert es una alerta clínica del perfil (DOM-013: allergy |
-// chronic_condition | behavior | other, texto ≤ 200). Los comandos que las
-// editan llegan en M2.5; hasta entonces el registro emite siempre `[]`.
+// chronic_condition | behavior | other, texto ≤ 200). Se editan con
+// UpdatePetAlerts (PetAlertsUpdated); el registro emite siempre `[]`.
 type PetAlert struct {
 	Kind string `json:"kind"`
 	Text string `json:"text"`
@@ -132,6 +132,10 @@ type CareLinkGranted struct {
 	PetID          uuid.UUID `json:"pet_id"`
 	OrganizationID uuid.UUID `json:"organization_id"`
 	GrantedBy      uuid.UUID `json:"granted_by"`
+	// RequestedBy: usuario de la clínica que pidió el vínculo (PRD-020); solo
+	// cuando el tutor aprobó una solicitud. Campo opcional aditivo: sin
+	// cambio de schema_version (ARQ-007).
+	RequestedBy *uuid.UUID `json:"requested_by,omitempty"`
 }
 
 // EventName implementa eventstore.Event.

@@ -61,6 +61,14 @@ func (g guardians) EmailOf(_ context.Context, id uuid.UUID) (string, bool) {
 	c, ok := g[id]
 	return c.Email, ok
 }
+func (g guardians) FindByEmail(_ context.Context, email string) (uuid.UUID, bool) {
+	for id, c := range g {
+		if c.Email == email {
+			return id, true
+		}
+	}
+	return uuid.Nil, false
+}
 func (g guardians) DisplayName(_ context.Context, id uuid.UUID) string { return g[id].DisplayName }
 func (g guardians) Contact(_ context.Context, id uuid.UUID) (GuardianContact, bool) {
 	c, ok := g[id]

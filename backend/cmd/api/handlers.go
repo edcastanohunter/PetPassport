@@ -20,6 +20,7 @@ type apiHandlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
 	*schedulinghttp.SchedulingHandlers
 	*notificationshttp.NotificationHandlers

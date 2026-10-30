@@ -57,7 +57,7 @@ func (p *PetsProjector) ResetForRebuild(ctx context.Context, tx pgx.Tx) (func(co
 		return nil, err
 	}
 	// Orden por claves foráneas: pet_care_links referencia pets.
-	for _, table := range []string{"pet_transfers", "microchip_reservations", "pet_care_links", "pets"} {
+	for _, table := range []string{"guardian_inbox", "care_link_requests", "pet_transfers", "microchip_reservations", "pet_care_links", "pets"} {
 		if _, err := tx.Exec(ctx, `DELETE FROM read_petregistry.`+table); err != nil {
 			return nil, err
 		}

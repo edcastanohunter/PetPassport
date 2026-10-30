@@ -62,6 +62,8 @@ type Pet struct {
 	deceasedAt   *kernel.CivilDate
 	careLinks    map[uuid.UUID]CareLink
 	activeLinks  int
+	requests     map[uuid.UUID]CareLinkRequest
+	alerts       []PetAlert
 	pending      *GuardianshipTransfer
 	uncommitted  []any
 }
@@ -91,6 +93,9 @@ func (p *Pet) ActiveCareLinkOrgIDs() []uuid.UUID {
 	}
 	return out
 }
+
+// Alerts devuelve las alertas del perfil (copia).
+func (p *Pet) Alerts() []PetAlert { return append([]PetAlert(nil), p.alerts...) }
 
 // UncommittedEvents devuelve los eventos pendientes de persistir.
 func (p *Pet) UncommittedEvents() []any { return p.uncommitted }
@@ -138,6 +143,7 @@ func (p *Pet) ApplyEvent(evt any) error {
 		}
 		p.status = PetActive
 		p.careLinks = map[uuid.UUID]CareLink{}
+		p.alerts = append([]PetAlert(nil), e.Alerts...)
 	case PetProfileUpdated:
 		p.applyChanges(e.Changes)
 	case PetMicrochipAssigned:
@@ -175,6 +181,22 @@ func (p *Pet) ApplyEvent(evt any) error {
 			cur.Status = LinkRevoked
 			p.careLinks[e.OrganizationID] = cur
 		}
+	case CareLinkRequested:
+		if p.requests == nil {
+			p.requests = map[uuid.UUID]CareLinkRequest{}
+		}
+		p.requests[e.RequestID] = CareLinkRequest{
+			ID: e.RequestID, OrgID: e.OrganizationID, RequestedBy: e.RequestedBy,
+			Message: e.Message, ExpiresAt: e.ExpiresAt, Status: RequestPending,
+		}
+	case CareLinkRequestApproved:
+		p.resolveRequest(e.RequestID, RequestApproved)
+	case CareLinkRequestDeclined:
+		p.resolveRequest(e.RequestID, RequestDeclined)
+	case CareLinkRequestExpired:
+		p.resolveRequest(e.RequestID, RequestExpired)
+	case PetAlertsUpdated:
+		p.alerts = append([]PetAlert(nil), e.Alerts...)
 	case GuardianshipTransferInitiated:
 		if e.PII == nil {
 			return &kernel.DomainError{Code: "UNKNOWN_EVENT", Message: "transferencia sin destinatario"}
@@ -239,6 +261,13 @@ func (p *Pet) applyChanges(c Changes) {
 	}
 }
 
+func (p *Pet) resolveRequest(id uuid.UUID, st CareLinkRequestStatus) {
+	if r, ok := p.requests[id]; ok {
+		r.Status = st
+		p.requests[id] = r
+	}
+}
+
 // record aplica el evento y lo deja como no confirmado.
 func (p *Pet) record(evt any) {
 	if err := p.ApplyEvent(evt); err != nil {
@@ -270,6 +299,16 @@ func (p *Pet) HandleCommand(cmd any) ([]any, error) {
 		return p.handleGrantCareLink(c)
 	case RevokeCareLink:
 		return p.handleRevokeCareLink(c)
+	case RequestCareLink:
+		return p.handleRequestCareLink(c)
+	case ApproveCareLinkRequest:
+		return p.handleApproveCareLinkRequest(c)
+	case DeclineCareLinkRequest:
+		return p.handleDeclineCareLinkRequest(c)
+	case ExpireCareLinkRequest:
+		return p.handleExpireCareLinkRequest(c)
+	case UpdatePetAlerts:
+		return p.handleUpdatePetAlerts(c)
 	case InitiateGuardianshipTransfer:
 		return p.handleInitiateTransfer(c)
 	case CancelGuardianshipTransfer:

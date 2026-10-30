@@ -40,13 +40,15 @@ const (
 	RuleClinicSuspended       = "clinic_suspended_notice"
 	RuleTransferDone          = "transfer_done"
 	RuleClinicDailyAgenda     = "clinic_daily_agenda"
+	RuleCareLinkRequest       = "care_link_request"
+	RuleCareLinkResult        = "care_link_result"
 )
 
 // HandledEvents son los eventos a los que suscribe el PM notifications.rules.
 // MemberInvited y GuardianshipTransferInitiated NO están: su correo lleva un
 // token de un solo uso que no viaja en el evento (solo su hash); esos envíos
 // se encolan desde el comando con notify.Enqueuer (ADR-026 propuesta).
-// CareLinkRequested y CareLinkRequest{Approved,Declined} llegan con M2.5.
+// CareLinkRequestExpired no envía correo: la solicitud caduca sin aviso.
 var HandledEvents = []string{
 	"OrganizationVerified", "OrganizationRejected", "OrganizationSuspended",
 	"AppointmentRequested", "AppointmentConfirmed", "AppointmentAlternativeProposed",
@@ -55,6 +57,7 @@ var HandledEvents = []string{
 	"EncounterSigned", "EncounterAddendumAdded",
 	"VaccinationEntryRecorded", "PreventiveEntryRecorded", "NextDueAdjusted", "VaccinationEntryVoided",
 	"PetMarkedDeceased", "PetGuardianshipTransferred",
+	"CareLinkRequested", "CareLinkRequestApproved", "CareLinkRequestDeclined",
 }
 
 // Planner traduce un evento del outbox en acciones. Es puro respecto a la
@@ -121,6 +124,10 @@ func (p *Planner) Plan(ctx context.Context, e eventstore.StoredEvent) ([]Action,
 		return []Action{CancelPet{PetID: ev.PetID}}, nil
 	case "PetGuardianshipTransferred":
 		return p.transferDone(ctx, e)
+	case "CareLinkRequested":
+		return p.careLinkRequested(ctx, e)
+	case "CareLinkRequestApproved", "CareLinkRequestDeclined":
+		return p.careLinkResolved(ctx, e)
 	}
 	return nil, nil
 }
@@ -531,6 +538,60 @@ func (p *Planner) transferDone(ctx context.Context, e eventstore.StoredEvent) ([
 	return out, nil
 }
 
+// careLinkRequested avisa al tutor de que una clínica pide el vínculo (PRD-020).
+func (p *Planner) careLinkRequested(ctx context.Context, e eventstore.StoredEvent) ([]Action, error) {
+	var ev struct {
+		PetID          uuid.UUID `json:"pet_id"`
+		OrganizationID uuid.UUID `json:"organization_id"`
+	}
+	if err := decode(e, &ev); err != nil {
+		return nil, err
+	}
+	pet, org, guardian, ok, err := p.guardianCtx(ctx, apptRef{PetID: ev.PetID, OrganizationID: ev.OrganizationID})
+	if err != nil || !ok {
+		return nil, err
+	}
+	vars := map[string]string{"pet_name": pet.Name, "org_name": org.Name, "link_path": "/app/inbox"}
+	return []Action{send(RuleCareLinkRequest, "care_link_request", domain.Account, guardian, SubjectPet, ev.PetID, e, vars)}, nil
+}
+
+// careLinkResolved avisa a los administradores de la clínica de la decisión del
+// tutor. La expiración no genera correo.
+func (p *Planner) careLinkResolved(ctx context.Context, e eventstore.StoredEvent) ([]Action, error) {
+	var ev struct {
+		PetID          uuid.UUID `json:"pet_id"`
+		OrganizationID uuid.UUID `json:"organization_id"`
+	}
+	if err := decode(e, &ev); err != nil {
+		return nil, err
+	}
+	pet, ok, err := p.dir.Pet(ctx, ev.PetID)
+	if err != nil || !ok {
+		return nil, err
+	}
+	org, ok, err := p.dir.Org(ctx, ev.OrganizationID)
+	if err != nil || !ok {
+		return nil, err
+	}
+	recipients, err := p.members(ctx, ev.OrganizationID, orgAdminRoles)
+	if err != nil {
+		return nil, err
+	}
+	result := "declined"
+	if e.Type == "CareLinkRequestApproved" {
+		result = "approved"
+	}
+	vars := map[string]string{
+		"pet_name": pet.Name, "org_name": org.Name, "result": result,
+		"link_path": "/org/" + ev.OrganizationID.String() + "/patients",
+	}
+	var out []Action
+	for _, r := range recipients {
+		out = append(out, send(RuleCareLinkResult, "care_link_result", domain.Account, r, SubjectPet, ev.PetID, e, vars))
+	}
+	return out, nil
+}
+
 // ---------------------------------------------------------------- utilidades
 
 // Subject types adicionales para entregas inmediatas.
@@ -588,6 +649,7 @@ func Validate() error {
 		"appointment_proposed", "appointment_rescheduled", "appointment_cancelled", "appointment_rejected",
 		"encounter_signed", "encounter_addendum", "follow_up_reminder", "vaccine_recorded", "vaccine_reminder",
 		"clinic_suspended_notice", "transfer_done", "clinic_daily_agenda",
+		"care_link_request", "care_link_result",
 	} {
 		if _, ok := templates.Catalog[t]; !ok {
 			return fmt.Errorf("notifications: la regla usa la plantilla %q, que no está en el manifiesto", t)

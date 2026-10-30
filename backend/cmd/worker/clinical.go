@@ -11,8 +11,9 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/worker"
 )
 
-// Mantenimiento diario de F2: particiones de audit_log (DAT-008) y purga de
-// adjuntos pendientes de adenda huérfanos (> 24 h).
+// Mantenimiento diario de F2: particiones y retención de audit_log, limpieza de
+// entregas/programados (DAT-008) y purga de adjuntos pendientes de adenda
+// huérfanos (> 24 h).
 const (
 	maintenanceEvery = 24 * time.Hour
 	orphanUploadsAge = 24 * time.Hour
@@ -42,6 +43,7 @@ func clinicalRunners(ctx context.Context, a *app, logger *slog.Logger) ([]worker
 			if err := clinicalinfra.EnsureAuditPartitions(ctx, a.pool.Pool, time.Now()); err != nil {
 				logger.ErrorContext(ctx, "audit_log: no se pudieron crear particiones", "error", err)
 			}
+			logRetention(ctx, a.pool.Pool, logger)
 			keys, err := uploads.PurgeOrphans(ctx, orphanUploadsAge)
 			if err != nil {
 				logger.ErrorContext(ctx, "clinical: purga de adjuntos pendientes", "error", err)

@@ -370,6 +370,31 @@ func TestTransferDoneNotifiesBoth(t *testing.T) {
 	}
 }
 
+func TestCareLinkRequestedNotifiesTheGuardian(t *testing.T) {
+	w := newWorld()
+	e := event("CareLinkRequested", map[string]any{"pet_id": w.pet, "request_id": uuid.New(), "organization_id": w.org})
+	sends, _, _ := kinds(plan(t, w, e))
+	if len(sends) != 1 || sends[0].Template != "care_link_request" || sends[0].Recipient.ID != w.guardian ||
+		sends[0].Vars["org_name"] != "Clínica Sur" || sends[0].Vars["link_path"] != "/app/inbox" {
+		t.Fatalf("sends: %+v", sends)
+	}
+}
+
+func TestCareLinkResolvedNotifiesClinicAdminsOnly(t *testing.T) {
+	w := newWorld()
+	for typ, want := range map[string]string{"CareLinkRequestApproved": "approved", "CareLinkRequestDeclined": "declined"} {
+		e := event(typ, map[string]any{"pet_id": w.pet, "request_id": uuid.New(), "organization_id": w.org})
+		sends, _, _ := kinds(plan(t, w, e))
+		if len(sends) != 1 || sends[0].Recipient.ID != w.admin || sends[0].Vars["result"] != want || sends[0].Template != "care_link_result" {
+			t.Fatalf("%s: %+v", typ, sends)
+		}
+	}
+	// La expiración no avisa a nadie.
+	if acts := plan(t, w, event("CareLinkRequestExpired", map[string]any{"pet_id": w.pet, "organization_id": w.org})); len(acts) != 0 {
+		t.Fatalf("expired: %+v", acts)
+	}
+}
+
 func TestUnknownEventAndMissingDataProduceNothing(t *testing.T) {
 	w := newWorld()
 	if acts := plan(t, w, event("SomethingElse", map[string]any{})); len(acts) != 0 {

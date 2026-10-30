@@ -213,6 +213,11 @@ var suite = map[Action][]suiteRow{
 	CardDeclare: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 	ShareManage: {{recordCustodyRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 
+	// Vínculo solicitado por la clínica y estadísticas (M2.5, API-009/011).
+	CareLinkRequest: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
+	PetAlerts:       {{petRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	OrgStatsRead:    {{orgRes, [11]bool{N, Y, Y, N, N, N, N, N, N, N, Y}}},
+
 	// Scheduling (SEC-001, ADR-011): tutor de la cita sTutor, org sLinked.
 	AppointmentRequest: {{apptRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 	AppointmentRead:    {{apptRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, N}}},
