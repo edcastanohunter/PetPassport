@@ -1,0 +1,1 @@
+Solicitud de vínculo {{if eq .V.result "approved"}}aprobada{{else}}rechazada{{end}}

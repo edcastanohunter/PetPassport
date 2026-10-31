@@ -10,7 +10,8 @@
     "profile": "My profile",
     "menu": "Menu",
     "language": "Language",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "inbox": "Inbox"
   },
   "common": {
     "loading": "Loading…",
@@ -33,7 +34,15 @@
     "terms": "Terms of service",
     "privacy": "Privacy policy",
     "version": "Version",
-    "pendingReview": "This text is under legal review. The final version will be published before the pilot opens."
+    "pendingReview": "This text is under legal review. The final version will be published before the pilot opens.",
+    "privacyUpdate": {
+      "title": "What changes in this version",
+      "sharing": "We share your pet's clinical history only with the clinics you link, and you can revoke a link at any time.",
+      "requests": "A clinic can request a link; nothing is shared until you approve it.",
+      "publicLinks": "Public record links carry no contact details and expire.",
+      "reminders": "We email you reminders (appointments, vaccines, follow-ups); you choose which ones to receive.",
+      "rights": "You can ask us for a copy of your data; we deliver it securely."
+    }
   },
   "auth": {
     "signingIn": "Signing in…",
@@ -143,7 +152,32 @@
     "ENCOUNTER_ALREADY_OPENED": "The encounter is already open.",
     "NO_CHANGES": "There are no changes to save.",
     "PAYLOAD_TOO_LARGE": "The file is larger than 10 MB.",
-    "UNSUPPORTED_MEDIA_TYPE": "Unsupported or unsafe file (JPEG, PNG, WebP or PDF without active content)."
+    "UNSUPPORTED_MEDIA_TYPE": "Unsupported or unsafe file (JPEG, PNG, WebP or PDF without active content).",
+    "VOID_WINDOW_EXPIRED": "The window to void this entry has passed.",
+    "VOID_NOT_ALLOWED": "You cannot void this entry.",
+    "GUARDIAN_REQUIRED": "Only the guardian can do this.",
+    "CARD_ENTRY_DUPLICATE": "An identical entry already exists on the card.",
+    "CARD_ENTRIES_LIMIT": "The card reached the maximum number of entries.",
+    "ENTRY_NOT_DECLARED": "Only declared entries can be verified or disputed.",
+    "ENTRY_NOT_ACTIVE": "This entry is already voided.",
+    "SHARE_LIMIT": "You reached the maximum of active links. Revoke one.",
+    "SHARE_ALREADY_CREATED": "This link was already created.",
+    "SHARE_EXPIRED": "This link has expired or was revoked.",
+    "SHARE_LOCKED": "Too many attempts. Try again in an hour.",
+    "PIN_REQUIRED": "This link requires a PIN.",
+    "PIN_INVALID": "Wrong PIN.",
+    "CATALOG_DUPLICATE": "That entry already exists in the catalog.",
+    "SLOT_UNAVAILABLE": "That slot is no longer available. Pick another one.",
+    "INVALID_TRANSITION": "The appointment status does not allow this action.",
+    "OUTSIDE_LEAD_TIME": "The dates are outside the clinic notice window.",
+    "REQUEST_LIMIT": "You already have 3 pending requests at this clinic for this pet.",
+    "PROPOSAL_EXPIRED": "The proposal has expired. Request a new appointment.",
+    "CHECKIN_WINDOW": "Check-in is only allowed on the appointment day, from 2 hours before.",
+    "INVALID_PROFESSIONAL": "The professional must be an active veterinarian of the clinic.",
+    "CARE_LINK_ALREADY_ACTIVE": "This pet is already linked to your clinic.",
+    "REQUEST_PENDING": "Your clinic already has a pending request for this pet.",
+    "CARE_LINK_REQUEST_NOT_FOUND": "We could not find that request.",
+    "CARE_LINK_REQUEST_NOT_PENDING": "The request was already answered or has expired."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -262,6 +296,20 @@
       "from": "{name} wants to transfer guardianship to you.",
       "accept": "Accept guardianship",
       "invalid": "The link is invalid or has expired."
+    },
+    "alerts": {
+      "title": "Alerts",
+      "none": "No alerts recorded.",
+      "edit": "Edit alerts",
+      "add": "Add alert",
+      "kindLabel": "Alert type",
+      "textLabel": "Description",
+      "kind": {
+        "allergy": "Allergy",
+        "chronic_condition": "Chronic condition",
+        "behavior": "Behavior",
+        "other": "Other"
+      }
     }
   },
   "orgs": {
@@ -404,6 +452,41 @@
       "guardianContact": "Guardian contact",
       "history": "Clinical history",
       "historySoon": "Coming soon."
+    },
+    "requests": {
+      "title": "Request access to a pet",
+      "hint": "Find the pet by microchip or by its guardian's email. The guardian receives the request and decides whether to grant access; it expires after 14 days.",
+      "searchBy": "Search by",
+      "byMicrochip": "Microchip",
+      "byEmail": "Guardian email",
+      "chipPlaceholder": "Microchip number",
+      "emailPlaceholder": "guardian{'@'}example.com",
+      "noResults": "We found no pet matching that.",
+      "guardian": "Guardian",
+      "message": "Message to the guardian",
+      "send": "Request access to {name}",
+      "sent": "Request sent. The guardian will see it in their inbox.",
+      "mine": "Sent requests",
+      "expires": "Expires {date}",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "declined": "Declined",
+        "expired": "Expired"
+      }
+    },
+    "stats": {
+      "title": "Clinic activity",
+      "metric": "Metric",
+      "encounters": "Signed encounters",
+      "confirmed": "Confirmed appointments",
+      "completed": "Completed appointments",
+      "cancelled": "Cancelled appointments",
+      "noShow": "No-show appointments",
+      "newPatients": "New patients",
+      "vaccinations": "Vaccinations given",
+      "openFollowUps": "Pending follow-ups",
+      "lag": "Data is about {seconds} s behind."
     }
   },
   "admin": {
@@ -757,9 +840,7 @@
       "encounters": "Encounters",
       "card": "Card",
       "appointments": "Appointments",
-      "weight": "Weight",
-      "cardSoon": "The vaccination card will be available soon.",
-      "appointmentsSoon": "Appointments will be available soon."
+      "weight": "Weight"
     },
     "summary": {
       "title": "Patient summary",
@@ -842,6 +923,282 @@
       "clinic": "Clinic",
       "signedAt": "Signed on",
       "version": "Signed version"
+    }
+  },
+  "card": {
+    "title": "Vaccination card",
+    "back": "Back to pet",
+    "link": "Vaccination card",
+    "linkHint": "Vaccines, dewormings and sharing links.",
+    "empty": "No vaccines or preventives recorded yet.",
+    "lot": "Lot",
+    "kind": {
+      "vaccine": "Vaccine",
+      "deworming": "Deworming",
+      "ectoparasite": "External parasite treatment"
+    },
+    "badge": {
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "disputed": "Disputed",
+      "voided": "Voided"
+    },
+    "source": {
+      "recorded": "Recorded by a clinic",
+      "declared": "Declared by the guardian",
+      "imported": "Imported"
+    },
+    "nextDue": {
+      "title": "Upcoming doses",
+      "next": "next",
+      "status": {
+        "upcoming": "upcoming",
+        "overdue": "overdue",
+        "satisfied": "done",
+        "cancelled": "cancelled"
+      }
+    },
+    "record": {
+      "title": "Record a vaccine or preventive",
+      "kind": "Type",
+      "catalog": "Catalog product",
+      "other": "Other (free text)",
+      "product": "Product",
+      "date": "Administration date",
+      "dose": "Dose",
+      "nextDue": "Next dose (optional)",
+      "submit": "Record"
+    },
+    "action": {
+      "verify": "Verify",
+      "dispute": "Dispute",
+      "void": "Void"
+    },
+    "void": {
+      "reason": "Reason",
+      "confirm": "Confirm void",
+      "byGuardian": "Voided by the guardian"
+    },
+    "declare": {
+      "title": "Declare a vaccine",
+      "hint": "Anything you declare stays \"unverified\" until a clinic confirms it.",
+      "submit": "Declare"
+    },
+    "share": {
+      "title": "Share the card",
+      "scope": "Content",
+      "expires": "Expires in",
+      "pin": "PIN (4 to 6 digits, optional)",
+      "create": "Create link",
+      "createdHint": "Copy the link now: it will not be shown again.",
+      "scopes": {
+        "vaccination_card": "Vaccination card only",
+        "full_record": "Full record"
+      },
+      "days": "{n} days",
+      "withPin": "PIN protected",
+      "until": "until",
+      "accesses": "{n} views",
+      "revoke": "Revoke"
+    },
+    "shared": {
+      "title": "Shared card",
+      "pinPrompt": "This link is protected. Enter the PIN.",
+      "unlock": "Unlock",
+      "notFound": "This link does not exist or was revoked.",
+      "verifiedAt": "Verified on {when}"
+    },
+    "verify": {
+      "title": "Card verification",
+      "valid": "The card matches the current record.",
+      "invalid": "The card does not match the current record.",
+      "entries": "{n} entries",
+      "notFound": "This card was not found."
+    }
+  },
+  "scheduling": {
+    "nav": {
+      "agenda": "Schedule",
+      "agendas": "Schedules",
+      "myAppointments": "My appointments"
+    },
+    "type": {
+      "consultation": "Consultation",
+      "follow_up": "Follow-up",
+      "vaccination": "Vaccination",
+      "surgery": "Surgery",
+      "procedure": "Procedure",
+      "other": "Other"
+    },
+    "status": {
+      "requested": "Requested",
+      "proposed": "Alternative proposed",
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No-show",
+      "rejected": "Rejected"
+    },
+    "days": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    },
+    "slots": {
+      "none": "No slots available in the coming days.",
+      "pickUpTo": "Pick up to {n} slots"
+    },
+    "action": {
+      "confirm": "Confirm",
+      "propose": "Propose alternative",
+      "reject": "Reject",
+      "reschedule": "Reschedule",
+      "cancel": "Cancel appointment",
+      "checkIn": "Check in",
+      "noShow": "Mark no-show",
+      "complete": "Complete",
+      "openEncounter": "Open encounter"
+    },
+    "detail": {
+      "preferences": "Guardian preferences",
+      "proposalExpires": "The proposal expires {when}.",
+      "late": "late cancellation",
+      "reason": "Reason (optional)",
+      "submit": "Accept",
+      "history": "History",
+      "cancelledBy": {
+        "guardian": "Cancelled by the guardian",
+        "clinic": "Cancelled by the clinic"
+      }
+    },
+    "new": {
+      "title": "New appointment",
+      "patient": "Patient",
+      "type": "Appointment type",
+      "reason": "Reason",
+      "submit": "Create appointment"
+    },
+    "agenda": {
+      "title": "Schedule",
+      "professional": "Professional",
+      "allProfessionals": "All professionals",
+      "view": "View",
+      "day": "Day",
+      "week": "Week",
+      "prev": "Previous",
+      "next": "Next",
+      "today": "Today",
+      "free": "No appointments",
+      "noAgendas": "No schedules are set up yet.",
+      "configure": "Set up schedules"
+    },
+    "inbox": {
+      "title": "Pending requests"
+    },
+    "patient": {
+      "empty": "This pet has no appointments at the clinic.",
+      "noSlot": "No slot"
+    },
+    "settings": {
+      "title": "Schedules",
+      "noVets": "There are no active veterinarians in the organization.",
+      "undefined": "Not set up",
+      "active": "Active",
+      "inactive": "Inactive",
+      "timeZone": "Time zone (IANA)",
+      "timeZoneAuto": "Based on the clinic country",
+      "timeZoneHint": "Set when the schedule is created and cannot change afterwards.",
+      "weekly": "Weekly hours",
+      "closed": "Closed",
+      "from": "From",
+      "to": "To",
+      "durations": "Slot length (minutes)",
+      "policies": "Policies",
+      "leadMin": "Minimum notice (hours)",
+      "leadMax": "Maximum advance (days)",
+      "cancelHours": "Cancel without late flag (hours)",
+      "activeLabel": "Schedule active (accepts appointments)",
+      "saved": "Changes saved",
+      "exceptions": "Day exceptions",
+      "date": "Date",
+      "closedDay": "Closed day",
+      "addException": "Add exception"
+    },
+    "guardian": {
+      "title": "My appointments",
+      "request": "Request appointment",
+      "pet": "Pet",
+      "clinic": "Clinic",
+      "noLinks": "This pet has no linked clinics.",
+      "preferences": "When works for you",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "addRange": "Add date range",
+      "prefHint": "Up to {n} preferences",
+      "send": "Send request",
+      "requested": "Request sent. The clinic will confirm it or propose another slot.",
+      "empty": "You have no appointments yet.",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "proposal": "The clinic proposes another slot. You have {left} left to accept it.",
+      "accept": "Accept",
+      "proposalExpired": "The proposal has expired.",
+      "cancelAsk": "Cancel this appointment?",
+      "cancelYes": "Yes, cancel",
+      "lateWarning": "Less than {hours} h left: it will be recorded as a late cancellation (no penalty)."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "intro": "Choose which emails you want to receive. Security notices are always sent.",
+    "emailLegend": "Emails",
+    "digestLegend": "Digests",
+    "saved": "Preferences saved.",
+    "category": {
+      "appointments": "Appointments",
+      "preventive_care": "Preventive care",
+      "clinical": "Clinical information",
+      "account": "Account and links",
+      "security": "Security"
+    },
+    "categoryHint": {
+      "appointments": "Confirmations, changes and reminders for your appointments.",
+      "preventive_care": "Reminders for vaccines, parasite control and check-ups.",
+      "clinical": "Signed visits, addenda and voided entries on the health card.",
+      "account": "Invitations, guardianship transfers and clinic links.",
+      "security": "Sign-in notices and critical changes. They cannot be turned off."
+    },
+    "digest": {
+      "clinicDailyAgenda": "Clinic daily agenda",
+      "clinicDailyAgendaHint": "Every day at 07:00 (clinic time), only when there are appointments."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "empty": "Nothing is waiting for your reply.",
+      "proposal": "{clinic} proposes another slot for {pet}.",
+      "allAppointments": "See all my appointments",
+      "careLink": "{clinic} asks for access to {pet}'s record.",
+      "approve": "Approve",
+      "decline": "Decline",
+      "approved": "Access approved.",
+      "declined": "Request declined.",
+      "accepted": "Appointment confirmed.",
+      "expires": "Expires {date}",
+      "followUp": "{clinic} recommends a follow-up for {pet}.",
+      "dueOn": "Due {date}",
+      "book": "Book an appointment"
+    },
+    "unsubscribe": {
+      "title": "Unsubscribe",
+      "done": "Done: you will no longer receive {category} emails.",
+      "undo": "You can turn them back on any time in your preferences.",
+      "manage": "Manage my notifications",
+      "invalid": "This link is not valid or has expired. Sign in to manage your notifications."
     }
   }
 }

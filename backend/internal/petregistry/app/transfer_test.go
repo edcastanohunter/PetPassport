@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -62,6 +61,14 @@ func (g guardians) EmailOf(_ context.Context, id uuid.UUID) (string, bool) {
 	c, ok := g[id]
 	return c.Email, ok
 }
+func (g guardians) FindByEmail(_ context.Context, email string) (uuid.UUID, bool) {
+	for id, c := range g {
+		if c.Email == email {
+			return id, true
+		}
+	}
+	return uuid.Nil, false
+}
 func (g guardians) DisplayName(_ context.Context, id uuid.UUID) string { return g[id].DisplayName }
 func (g guardians) Contact(_ context.Context, id uuid.UUID) (GuardianContact, bool) {
 	c, ok := g[id]
@@ -84,11 +91,13 @@ func (t transfers) TransferByTokenHash(context.Context, []byte, time.Time) (Tran
 	return t.view, t.err
 }
 
-type mails struct{ sent []mail.Message }
+// mails captura lo que el servicio encola. Falla siempre para comprobar que
+// un error al encolar no revierte el comando ya confirmado.
+type mails struct{ sent []notify.Notification }
 
-func (m *mails) Send(_ context.Context, msg mail.Message) error {
-	m.sent = append(m.sent, msg)
-	return errors.New("best-effort: este error no debe propagarse")
+func (m *mails) Enqueue(_ context.Context, n notify.Notification) error {
+	m.sent = append(m.sent, n)
+	return errors.New("encolar falló: este error no debe propagarse")
 }
 
 type tok struct{}
@@ -126,13 +135,13 @@ func newPetEnv(q PetQueries, orgErr error) *petEnv {
 			tGuard:   {DisplayName: "Ana", Email: "ana@example.com"},
 			tNewUser: {DisplayName: "Beto", Email: "beto@example.com"},
 		},
-		Mailer: e.mails, BaseURL: "https://app.example", Tokens: tok{}, Clock: clk{},
+		Notifier: e.mails, Tokens: tok{}, Clock: clk{},
 	})
 	e.svc.RegisterCommands(bus.New())
 	return e
 }
 
-func TestTransfer_PRD010_InitiateMailsTokenAndProjectsHash(t *testing.T) {
+func TestTransfer_PRD010_InitiateEnqueuesTokenAndProjectsHash(t *testing.T) {
 	e := newPetEnv(nil, nil)
 	if _, err := e.svc.Dispatch(context.Background(), domain.InitiateGuardianshipTransfer{PetID: tPet, ToEmail: "Beto@Example.com"}); err != nil {
 		t.Fatal(err)
@@ -140,10 +149,17 @@ func TestTransfer_PRD010_InitiateMailsTokenAndProjectsHash(t *testing.T) {
 	if string(e.proj.hashes[tPet]) != string(kernel.HashToken("tok-transfer-abcdefghijk")) {
 		t.Fatal("el proyector de pet_transfers no recibió el hash del token")
 	}
-	if len(e.mails.sent) != 1 || e.mails.sent[0].To != "Beto@Example.com" ||
-		!strings.Contains(e.mails.sent[0].Body, "https://app.example/app/transfers/tok-transfer-abcdefghijk") ||
-		!strings.Contains(e.mails.sent[0].Body, "2026-11-02") {
-		t.Fatalf("email: %+v", e.mails.sent)
+	if len(e.mails.sent) != 1 {
+		t.Fatalf("debe encolar una notificación: %+v", e.mails.sent)
+	}
+	n := e.mails.sent[0]
+	if n.To != "Beto@Example.com" || n.Template != "transfer_invite" || n.Category != "account" || n.SubjectID != tPet ||
+		n.Payload["link_path"] != "/app/transfers/tok-transfer-abcdefghijk" || n.Payload["expires_at"] != "2026-11-02" ||
+		n.Payload["from_name"] != "Ana" || n.Payload["pet_name"] != "Luna" {
+		t.Fatalf("notificación: %+v", n)
+	}
+	if len(n.Secret) != 1 || n.Secret[0] != "link_path" {
+		t.Fatalf("el enlace con el token debe marcarse secreto: %+v", n.Secret)
 	}
 	last := e.repo.streams[tPet][len(e.repo.streams[tPet])-1].(domain.GuardianshipTransferInitiated)
 	if !last.ExpiresAt.Equal(tNow.Add(domain.TransferTTL)) {
@@ -162,7 +178,7 @@ func TestTransfer_SameGuardian_I4(t *testing.T) {
 	}
 }
 
-func TestTransfer_AcceptByTokenMailsBoth(t *testing.T) {
+func TestTransfer_AcceptByTokenDoesNotMail(t *testing.T) {
 	q := transfers{view: TransferView{PetID: tPet}}
 	e := newPetEnv(q, nil)
 	if _, err := e.svc.Dispatch(context.Background(), domain.InitiateGuardianshipTransfer{PetID: tPet, ToEmail: "beto@example.com"}); err != nil {
@@ -177,8 +193,10 @@ func TestTransfer_AcceptByTokenMailsBoth(t *testing.T) {
 	if p.GuardianID() != tNewUser || p.ID() != tPet {
 		t.Fatalf("tutor tras aceptar: %v", p.GuardianID())
 	}
-	if len(e.mails.sent) != 2 || e.mails.sent[0].To != "ana@example.com" || e.mails.sent[1].To != "beto@example.com" {
-		t.Fatalf("emails a ambos tutores: %+v", e.mails.sent)
+	// El aviso a ambos tutores lo emite el PM desde PetGuardianshipTransferred
+	// (ARQ-014): el comando ya no envía nada.
+	if len(e.mails.sent) != 0 {
+		t.Fatalf("aceptar no debe encolar desde el comando: %+v", e.mails.sent)
 	}
 	// Reusar el token: ya no hay pendiente → TRANSFER_TOKEN_INVALID.
 	if _, err := e.svc.AcceptTransferToken(ctx, "tok-transfer-abcdefghijk"); !errors.Is(err, domain.ErrTransferTokenInvalid) {

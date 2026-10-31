@@ -15,7 +15,6 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 )
 
 // Repository persiste y rehidrata el agregado Organization.
@@ -68,13 +67,6 @@ type UserInfo struct {
 // (IAM-008) cuando cambian membresías o el estado de la org (DOM-011).
 type MembershipInvalidator interface {
 	InvalidateUsers(ids []uuid.UUID)
-}
-
-// Mailer es el puerto de email (DOM-011); el adaptador es platform/mail.SMTP.
-// Los envíos son best-effort tras el commit: un fallo se registra y NO
-// revierte el comando. En F2 migran al process manager (ADR-012).
-type Mailer interface {
-	Send(ctx context.Context, msg mail.Message) error
 }
 
 // ErrPublicCodeTaken: el código público lo tiene otra organización (O5).

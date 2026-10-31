@@ -1,6 +1,6 @@
 // Command migrate aplica las migraciones goose embebidas (docs/phase-1/06 §2).
 //
-//	migrate up | down | status | version
+//	migrate up | down | status | version | seed-ref
 //
 // Se ejecuta con el rol pp_migrator (PP_DB_URL), nunca con el de la aplicación.
 package main
@@ -16,6 +16,7 @@ import (
 	"github.com/pressly/goose/v3"
 
 	"github.com/edcastanohunter/petpassport/backend/migrations"
+	refseed "github.com/edcastanohunter/petpassport/backend/seeds/ref"
 )
 
 func main() {
@@ -53,7 +54,12 @@ func run() error {
 	ctx := context.Background()
 	switch cmd {
 	case "up":
-		return goose.UpContext(ctx, sqlDB, ".")
+		if err := goose.UpContext(ctx, sqlDB, "."); err != nil {
+			return err
+		}
+		return seedRef(ctx, sqlDB)
+	case "seed-ref":
+		return seedRef(ctx, sqlDB)
 	case "down":
 		return goose.DownContext(ctx, sqlDB, ".")
 	case "status":
@@ -61,5 +67,24 @@ func run() error {
 	case "version":
 		return goose.VersionContext(ctx, sqlDB, ".")
 	}
-	return fmt.Errorf("comando desconocido: %s (up|down|status|version)", cmd)
+	return fmt.Errorf("comando desconocido: %s (up|down|status|version|seed-ref)", cmd)
+}
+
+// seedRef aplica los catálogos de referencia (DAT-009). Los registros solo se
+// activan si APPROVALS.md los aprueba (approved: true en los YAML); en
+// desarrollo PP_SEED_UNAPPROVED=1 los activa igualmente, nunca en staging/prod.
+func seedRef(ctx context.Context, db *sql.DB) error {
+	unapproved := os.Getenv("PP_SEED_UNAPPROVED") == "1"
+	if env := os.Getenv("PP_ENV"); unapproved && (env == "staging" || env == "prod") {
+		return fmt.Errorf("PP_SEED_UNAPPROVED=1 no está permitido en %s (APPROVALS.md)", env)
+	}
+	n, err := refseed.Apply(ctx, func(ctx context.Context, q string, args ...any) error {
+		_, err := db.ExecContext(ctx, q, args...)
+		return err
+	}, unapproved)
+	if err != nil {
+		return err
+	}
+	slog.Info("catálogos de referencia aplicados", "filas", n, "activar_no_aprobados", unapproved)
+	return nil
 }

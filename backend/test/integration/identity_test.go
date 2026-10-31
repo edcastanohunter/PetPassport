@@ -24,12 +24,14 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 )
@@ -40,7 +42,10 @@ type handlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
+	*schedulinghttp.SchedulingHandlers
+	*notificationshttp.NotificationHandlers
 }
 
 type nopWriter struct{}

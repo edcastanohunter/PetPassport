@@ -90,7 +90,7 @@ func newClinicalEnv(t *testing.T) *clinicalEnv {
 	svc := clinicalapp.NewService(clinicalapp.Options{
 		Repo: clinicalinfra.NewRepository(e.store, e.registry, nil, nil), UoW: e.unit,
 		Projects: clinicalinfra.NewSyncProjector(e.runner), PetAccess: pets,
-		Membership: clinicalinfra.NewMembership(e.pool.Pool), Appointments: clinicalinfra.AppointmentAdapter{},
+		Membership: clinicalinfra.NewMembership(e.pool.Pool), Appointments: clinicalinfra.NewAppointmentAdapter(e.pool.Pool),
 		Queries: queries, Logger: quietLogger(),
 	})
 	svc.RegisterCommands(bus.New())

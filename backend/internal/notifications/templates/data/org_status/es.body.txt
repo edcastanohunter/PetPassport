@@ -1,0 +1,5 @@
+{{if eq .V.status "verified"}}{{.V.org_name}} está verificada. Ya puedes recibir vínculos de mascotas de sus tutores.{{else if eq .V.status "rejected"}}No pudimos verificar {{.V.org_name}}.{{else}}{{.V.org_name}} fue suspendida.{{end}}
+
+{{if .V.reason}}Motivo: {{.V.reason}}{{end}}
+
+Ir a PetPassport: {{.V.link}}

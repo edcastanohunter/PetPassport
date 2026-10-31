@@ -59,12 +59,11 @@ type Config struct {
 		UseSSL    bool
 	}
 
-	SMTP struct {
-		Host     string
-		Port     int
-		User     string
-		Password string
-		From     string
+	// Notifications (M2.4): el api ya no abre SMTP (ARQ-014); solo firma/valida
+	// tokens de baja y verifica webhooks del proveedor de email.
+	Notifications struct {
+		UnsubscribeSecret  string // PP_UNSUBSCRIBE_SECRET (≥ 32 bytes fuera de dev)
+		EmailWebhookSecret string // PP_EMAIL_WEBHOOK_SECRET (proveedor "generic"); vacío = webhooks 404
 	}
 
 	CORSOrigins   []string
@@ -142,15 +141,8 @@ func Load() (*Config, error) {
 	cfg.Storage.SecretKey = os.Getenv("PP_STORAGE_SECRET_KEY")
 	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
 
-	cfg.SMTP.Host = os.Getenv("PP_SMTP_HOST")
-	port, err := getenvInt("PP_SMTP_PORT", 1025)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	cfg.SMTP.Port = port
-	cfg.SMTP.User = os.Getenv("PP_SMTP_USER")
-	cfg.SMTP.Password = os.Getenv("PP_SMTP_PASSWORD")
-	cfg.SMTP.From = getenv("PP_SMTP_FROM", "no-reply@petpassport.local")
+	cfg.Notifications.UnsubscribeSecret = unsubscribeSecret(cfg.Env, &errs)
+	cfg.Notifications.EmailWebhookSecret = os.Getenv("PP_EMAIL_WEBHOOK_SECRET")
 
 	cfg.CORSOrigins = splitCSV(getenv("PP_CORS_ORIGINS", "http://localhost:5173"))
 	cfg.OTLPEndpoint = os.Getenv("PP_OTEL_EXPORTER_OTLP_ENDPOINT")
@@ -254,6 +246,18 @@ type Worker struct {
 	}
 	TypstBin      string
 	PublicBaseURL string
+
+	// Email transaccional (M2.4): solo el worker abre SMTP (ARQ-014).
+	SMTP struct {
+		Host     string
+		Port     int
+		User     string
+		Password string
+		From     string
+	}
+	APIPublicURL      string // base pública de la API (destino de List-Unsubscribe-Post)
+	UnsubscribeSecret string // PP_UNSUBSCRIBE_SECRET, el mismo que el api
+	MailAddress       string // dirección física del pie de los correos
 }
 
 // LoadWorker lee PP_* del worker y valida.
@@ -298,8 +302,43 @@ func LoadWorker() (*Worker, error) {
 	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
 	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
 	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
+
+	cfg.SMTP.Host = os.Getenv("PP_SMTP_HOST")
+	port, err := getenvInt("PP_SMTP_PORT", 1025)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	cfg.SMTP.Port = port
+	cfg.SMTP.User = os.Getenv("PP_SMTP_USER")
+	cfg.SMTP.Password = os.Getenv("PP_SMTP_PASSWORD")
+	cfg.SMTP.From = getenv("PP_SMTP_FROM", "no-reply@petpassport.local")
+	cfg.APIPublicURL = getenv("PP_API_PUBLIC_URL", "http://api.pp.localhost/api/v1")
+	cfg.UnsubscribeSecret = unsubscribeSecret(cfg.Env, &errs)
+	cfg.MailAddress = os.Getenv("PP_MAIL_ADDRESS")
+	if cfg.Env != EnvDev && cfg.MailAddress == "" {
+		errs = append(errs, errors.New("PP_MAIL_ADDRESS (dirección física del pie de los correos) es obligatoria fuera de dev"))
+	}
+	if cfg.MailAddress == "" {
+		cfg.MailAddress = "PetPassport"
+	}
+	if cfg.Env != EnvDev && cfg.SMTP.Host == "" {
+		errs = append(errs, errors.New("PP_SMTP_HOST es obligatoria fuera de dev: sin ella el worker no puede enviar correos"))
+	}
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
 	return &cfg, nil
+}
+
+// unsubscribeSecret lee PP_UNSUBSCRIBE_SECRET: ≥ 32 bytes fuera de dev; en dev
+// hay un valor por defecto no apto para producción.
+func unsubscribeSecret(env Env, errs *[]error) string {
+	v := os.Getenv("PP_UNSUBSCRIBE_SECRET")
+	if env != EnvDev && len(v) < 32 {
+		*errs = append(*errs, errors.New("PP_UNSUBSCRIBE_SECRET debe tener al menos 32 bytes fuera de dev (NOT-004)"))
+	}
+	if v == "" {
+		v = "dev-unsubscribe-secret-not-for-production"
+	}
+	return v
 }

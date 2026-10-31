@@ -1,0 +1,10 @@
+{
+  "pet_id": "0192f3a1-6a10-7f0b-8c3e-0a1b2c3d4e5f",
+  "alerts": [
+    {
+      "kind": "allergy",
+      "text": "Penicilina"
+    }
+  ],
+  "updated_by": "7a8f0000-0000-7000-8000-000000000001"
+}

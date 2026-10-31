@@ -40,6 +40,8 @@ import (
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identitydomain "github.com/edcastanohunter/petpassport/backend/internal/identity/domain"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	notificationsdomain "github.com/edcastanohunter/petpassport/backend/internal/notifications/domain"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orgdomain "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
@@ -228,15 +230,67 @@ func newSuiteHandlers() apiHandlers {
 	adminSvc := identityapp.NewAdminService(identityapp.AdminOptions{
 		Repo: identityRepo, Directory: fakeDirectory{}, Audit: fakeAuditLog{}, Logger: logger,
 	})
-	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, Logger: logger})
+	petSvc := petapp.NewService(petapp.Options{Queries: fakePetQueries{}, RequestQueries: fakeRequestQueries{}, Logger: logger})
 	orgSvc := orgapp.NewService(orgapp.Options{Queries: fakeOrgQueries{}, Tokens: failingTokens{}, Logger: logger})
 	return apiHandlers{
-		Handlers:         identityHandlers,
-		AdminHandlers:    identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-		PetHandlers:      pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
-		OrgHandlers:      orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
-		ClinicalHandlers: newSuiteClinicalHandlers(idem, logger),
+		Handlers:             identityHandlers,
+		AdminHandlers:        identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+		PetHandlers:          pethttp.NewPetHandlers(petSvc, fakePetQueries{}, idem, nil, logger),
+		OrgHandlers:          orghttp.NewOrgHandlers(orgSvc, idem, nil, identityHandlers, logger),
+		StatsHandlers:        orghttp.NewStatsHandlers(fakeStats{}, logger),
+		ClinicalHandlers:     newSuiteClinicalHandlers(idem, logger),
+		SchedulingHandlers:   newSuiteSchedulingHandlers(idem, logger),
+		NotificationHandlers: notificationshttp.NewNotificationHandlers(fakePreferences{}, nil, nil, logger),
 	}
+}
+
+// fakeRequestQueries: sin solicitudes ni mascotas (la suite prueba authz, no datos).
+type fakeRequestQueries struct{}
+
+func (fakeRequestQueries) PetsByMicrochip(context.Context, string, int) ([]petapp.PetLookupResult, error) {
+	return nil, nil
+}
+
+func (fakeRequestQueries) PetsByGuardian(context.Context, uuid.UUID, int) ([]petapp.PetLookupResult, error) {
+	return nil, nil
+}
+
+func (fakeRequestQueries) GetRequest(context.Context, uuid.UUID, uuid.UUID) (petapp.CareLinkRequestView, error) {
+	return petapp.CareLinkRequestView{}, &kernel.NotFoundError{Resource: "care_link_request"}
+}
+
+func (fakeRequestQueries) GetOrgRequest(context.Context, uuid.UUID, uuid.UUID) (petapp.CareLinkRequestView, error) {
+	return petapp.CareLinkRequestView{}, &kernel.NotFoundError{Resource: "care_link_request"}
+}
+
+func (fakeRequestQueries) ListOrgRequests(context.Context, uuid.UUID, string, int) ([]petapp.CareLinkRequestView, error) {
+	return nil, nil
+}
+
+func (fakeRequestQueries) ListInbox(context.Context, uuid.UUID) ([]petapp.InboxItem, error) {
+	return nil, nil
+}
+
+// fakeStats: contadores en cero.
+type fakeStats struct{}
+
+func (fakeStats) OrgStats(context.Context, uuid.UUID, string) (orgapp.OrgStatsView, error) {
+	return orgapp.OrgStatsView{}, nil
+}
+
+// fakePreferences evita tocar la base de datos en la suite de rutas.
+type fakePreferences struct{}
+
+func (fakePreferences) Get(context.Context, uuid.UUID) (notificationsdomain.Preferences, error) {
+	return notificationsdomain.Preferences{}, nil
+}
+
+func (fakePreferences) Put(_ context.Context, _ uuid.UUID, p notificationsdomain.Preferences) (notificationsdomain.Preferences, error) {
+	return p, nil
+}
+
+func (fakePreferences) Unsubscribe(context.Context, string) (notificationsdomain.Category, error) {
+	return notificationsdomain.Appointments, nil
 }
 
 // ---------------------------------------------------------- invocación
@@ -294,6 +348,10 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(uuid.New()).Convert(f.Type))
 		case f.Name == "EncounterId":
 			field.Set(reflect.ValueOf(encID).Convert(f.Type))
+		case f.Name == "AppointmentId":
+			field.Set(reflect.ValueOf(apptID).Convert(f.Type))
+		case f.Name == "ProfessionalId":
+			field.Set(reflect.ValueOf(targetID).Convert(f.Type))
 		case f.Name == "AttachmentId":
 			field.Set(reflect.ValueOf(attID).Convert(f.Type))
 		case f.Name == "JobId":
@@ -397,6 +455,15 @@ var matrix = map[string][9]int{
 	"acceptPetTransfer":   {ok, ok, ok, ok, ok, ok, ok, ok, ok},
 	"grantCareLink":       {ok, 404, 404, 404, 404, 404, 404, 404, ok},
 	"revokeCareLink":      {ok, 404, 404, 404, 404, 404, 404, 404, ok},
+	// Solicitud de vínculo (M2.5): decide el tutor; alertas = lectura de la ficha.
+	"approveCareLinkRequest": {ok, 404, 404, 404, 404, 404, 404, 404, ok},
+	"declineCareLinkRequest": {ok, 404, 404, 404, 404, 404, 404, 404, ok},
+	"putPetAlerts":           {ok, ok, ok, ok, 404, 404, 404, 404, ok},
+	// La clínica pide el vínculo (miembro activo; super_admin no); stats: admin o veterinario.
+	"lookupPetForRequest":  {403, ok, ok, ok, 403, 403, 403, 403, 403},
+	"requestCareLink":      {403, ok, ok, ok, 403, 403, 403, 403, 403},
+	"listCareLinkRequests": {403, ok, ok, ok, 403, 403, 403, 403, 403},
+	"getOrgStats":          {403, ok, ok, 403, 403, 403, 403, 403, ok},
 
 	"lookupOrganization":      {ok, ok, ok, ok, ok, ok, ok, ok, ok},
 	"createOrganization":      {ok, ok, ok, ok, ok, ok, ok, ok, ok},
@@ -428,7 +495,10 @@ var matrix = map[string][9]int{
 
 // Operaciones de cuenta propia: su autorización (authenticatedOnly) se prueba
 // por decisión en platform/authz; aquí solo se exige la cobertura de ruta.
-var accountOps = map[string]bool{"getMe": true, "updateMe": true, "completeOnboarding": true, "acceptConsent": true}
+var accountOps = map[string]bool{
+	"getMe": true, "updateMe": true, "completeOnboarding": true, "acceptConsent": true,
+	"getNotificationPreferences": true, "putNotificationPreferences": true, "getInbox": true,
+}
 
 func TestRoutes_AuthzMatrix(t *testing.T) {
 	h := newSuiteHandlers()

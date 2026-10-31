@@ -86,6 +86,31 @@ var titles = map[Code]string{
 	Code("ATTACHMENT_LIMIT"):     "Límite de adjuntos",
 	Code("ADDENDA_LIMIT"):        "Límite de adendas",
 	Unavailable:                  "No disponible",
+
+	Code("VOID_WINDOW_EXPIRED"):   "Ventana de anulación vencida",
+	Code("VOID_NOT_ALLOWED"):      "Anulación no permitida",
+	Code("GUARDIAN_REQUIRED"):     "Solo el tutor",
+	Code("CARD_ENTRY_DUPLICATE"):  "Entrada duplicada",
+	Code("CARD_ENTRIES_LIMIT"):    "Límite de entradas",
+	Code("ENTRY_NOT_DECLARED"):    "Entrada no declarada",
+	Code("ENTRY_NOT_ACTIVE"):      "Entrada anulada",
+	Code("SHARE_LIMIT"):           "Límite de enlaces",
+	Code("SHARE_ALREADY_CREATED"): "Enlace ya creado",
+	Code("CATALOG_DUPLICATE"):     "Registro duplicado",
+	Code("SHARE_EXPIRED"):         "Enlace caducado",
+	Code("PIN_REQUIRED"):          "PIN requerido",
+	Code("PIN_INVALID"):           "PIN incorrecto",
+	Code("SHARE_LOCKED"):          "Enlace bloqueado",
+
+	Code("SLOT_UNAVAILABLE"):     "Franja no disponible",
+	Code("INVALID_TRANSITION"):   "Estado de la cita no válido",
+	Code("OUTSIDE_LEAD_TIME"):    "Fuera de la antelación permitida",
+	Code("REQUEST_LIMIT"):        "Límite de solicitudes",
+	Code("PROPOSAL_EXPIRED"):     "Propuesta caducada",
+	Code("CHECKIN_WINDOW"):       "Fuera de la ventana de check-in",
+	Code("INVALID_PROFESSIONAL"): "Profesional no válido",
+
+	Code("WEBHOOK_SIGNATURE_INVALID"): "Firma del webhook inválida",
 }
 
 func titleFor(c Code) string {

@@ -63,8 +63,8 @@ func (a *PetAccessAdapter) GuardianOf(ctx context.Context, petID uuid.UUID) (uui
 func (a *PetAccessAdapter) PetSummary(ctx context.Context, petID uuid.UUID) (app.PetSummary, error) {
 	var s app.PetSummary
 	err := a.pool.QueryRow(ctx, `
-		SELECT id, name, species, status = 'deceased' FROM read_petregistry.pets WHERE id = $1`, petID).
-		Scan(&s.PetID, &s.Name, &s.Species, &s.Deceased)
+		SELECT id, name, species, status = 'deceased', to_char(birth_date, 'YYYY-MM-DD') FROM read_petregistry.pets WHERE id = $1`, petID).
+		Scan(&s.PetID, &s.Name, &s.Species, &s.Deceased, &s.BirthDate)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.PetSummary{}, &kernel.NotFoundError{Resource: "pet"}
 	}
@@ -150,13 +150,26 @@ func (a *MembershipAdapter) OrganizationName(ctx context.Context, orgID uuid.UUI
 	return name, err
 }
 
-// AppointmentAdapter implementa app.AppointmentAccess. En M2.1 no existe el
-// agregado Appointment (llega en M2.2): abrir desde una cita responde 409.
-type AppointmentAdapter struct{}
+// AppointmentAdapter implementa app.AppointmentAccess sobre el read model de
+// Scheduling (read_scheduling.appointments, M2.3). Es la única lectura de
+// Clinical hacia Scheduling (ADR-001: vía puerto, sin importar su paquete).
+type AppointmentAdapter struct{ pool *pgxpool.Pool }
 
 var _ app.AppointmentAccess = AppointmentAdapter{}
 
-// CheckedIn devuelve ErrAppointmentNotFound hasta M2.2.
-func (AppointmentAdapter) CheckedIn(context.Context, uuid.UUID, uuid.UUID) (bool, error) {
-	return false, app.ErrAppointmentNotFound{}
+// NewAppointmentAdapter construye el adaptador.
+func NewAppointmentAdapter(pool *pgxpool.Pool) AppointmentAdapter {
+	return AppointmentAdapter{pool: pool}
+}
+
+// CheckedIn indica si la cita de la mascota y la organización está en check-in.
+func (a AppointmentAdapter) CheckedIn(ctx context.Context, appointmentID, petID, orgID uuid.UUID) (bool, error) {
+	var status string
+	err := a.pool.QueryRow(ctx, `
+		SELECT status FROM read_scheduling.appointments
+		 WHERE id = $1 AND pet_id = $2 AND organization_id = $3`, appointmentID, petID, orgID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, app.ErrAppointmentNotFound{}
+	}
+	return status == "checked_in", err
 }

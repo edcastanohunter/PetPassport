@@ -1,0 +1,3 @@
+The appointment for {{.V.pet_name}} at {{.V.org_name}} was rescheduled to {{.V.when}}.
+
+View appointment: {{.V.link}}

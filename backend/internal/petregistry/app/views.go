@@ -35,6 +35,7 @@ type PetView struct {
 	DeceasedMarkedAt    *time.Time
 	ActiveLinks         []CareLinkView
 	PendingTransfer     *PendingTransferView
+	Alerts              []domain.PetAlert
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }

@@ -110,9 +110,6 @@ func TestAdmin_VerificationQueueSuspensionAndAudit(t *testing.T) {
 	if v := vres.(gen.AdminVerifyOrganization200JSONResponse); v.Body.Status != "active" || v.Body.Founder == nil {
 		t.Fatalf("verificada: %+v", v.Body)
 	}
-	if e.mail.lastTo() != "contacto@clinicasur.co" {
-		t.Fatalf("email de verificación: %q", e.mail.lastTo())
-	}
 	// Transición inválida (ya activa) → 409 y sin auditoría adicional.
 	_, err = h.AdminVerifyOrganization(adminCtx, gen.AdminVerifyOrganizationRequestObject{OrgId: org, Body: &gen.AdminOptionalReasonRequest{}})
 	if p := problem.From(err); p.Status != 409 {
@@ -247,13 +244,4 @@ func TestLeastPrivilege_WriterGrants(t *testing.T) {
 	denied(`UPDATE platform.audit_log SET reason = 'x'`)
 	denied(`DELETE FROM platform.audit_log`)
 	denied(`CREATE TABLE es.intrusa (id int)`)
-}
-
-func (m *mailbox) lastTo() string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if len(m.sent) == 0 {
-		return ""
-	}
-	return m.sent[len(m.sent)-1].To
 }

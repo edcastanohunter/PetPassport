@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -63,16 +63,19 @@ type Service struct {
 	orgs     OrganizationLookup
 	queries  PetQueries
 	events   *eventstore.Store
-	mailer   Mailer
-	baseURL  string
-	ids      kernel.IDGenerator
-	tokens   kernel.TokenGenerator
-	clock    kernel.Clock
-	logger   *slog.Logger
-	bus      *bus.Bus
+	notifier notify.Enqueuer
+	// M2.5 (PRD-020): consultas de solicitudes, límite de búsquedas y bandeja.
+	requestQueries CareLinkRequestQueries
+	lookupLimiter  LookupLimiter
+	inboxSources   []InboxSource
+	ids            kernel.IDGenerator
+	tokens         kernel.TokenGenerator
+	clock          kernel.Clock
+	logger         *slog.Logger
+	bus            *bus.Bus
 }
 
-// Options construye el servicio. Mailer es opcional (DOM-011, best-effort).
+// Options construye el servicio. Notifier es opcional (nil en pruebas de dominio).
 type Options struct {
 	Repo     Repository
 	UoW      TxRunner
@@ -82,12 +85,15 @@ type Options struct {
 	Orgs     OrganizationLookup
 	Queries  PetQueries
 	Events   *eventstore.Store
-	Mailer   Mailer
-	BaseURL  string
-	IDs      kernel.IDGenerator
-	Tokens   kernel.TokenGenerator
-	Clock    kernel.Clock
-	Logger   *slog.Logger
+	Notifier notify.Enqueuer // encola el correo con token de la transferencia (ARQ-014)
+	// RequestQueries, LookupLimiter e InboxSources: solicitud de vínculo (M2.5).
+	RequestQueries CareLinkRequestQueries
+	LookupLimiter  LookupLimiter
+	InboxSources   []InboxSource
+	IDs            kernel.IDGenerator
+	Tokens         kernel.TokenGenerator
+	Clock          kernel.Clock
+	Logger         *slog.Logger
 }
 
 // NewService construye el servicio y registra los comandos en el bus.
@@ -107,8 +113,9 @@ func NewService(opts Options) *Service {
 	s := &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects, reserve: opts.Reserve,
 		guardian: opts.Guardian, orgs: opts.Orgs, queries: opts.Queries, events: opts.Events,
-		mailer: opts.Mailer, baseURL: strings.TrimRight(opts.BaseURL, "/"),
-		ids: opts.IDs, tokens: opts.Tokens, clock: opts.Clock, logger: opts.Logger,
+		notifier: opts.Notifier, requestQueries: opts.RequestQueries, lookupLimiter: opts.LookupLimiter,
+		inboxSources: opts.InboxSources,
+		ids:          opts.IDs, tokens: opts.Tokens, clock: opts.Clock, logger: opts.Logger,
 	}
 	return s
 }
@@ -128,6 +135,11 @@ func (s *Service) RegisterCommands(b *bus.Bus) {
 	b.Register(domain.UndoDeceased{}, s.handleUndoDeceased)
 	b.Register(domain.GrantCareLink{}, s.handleGrantCareLink)
 	b.Register(domain.RevokeCareLink{}, s.handleRevokeCareLink)
+	b.Register(domain.RequestCareLink{}, s.handleRequestCareLink)
+	b.Register(domain.ApproveCareLinkRequest{}, s.handleApproveCareLinkRequest)
+	b.Register(domain.DeclineCareLinkRequest{}, s.handleDeclineCareLinkRequest)
+	b.Register(domain.ExpireCareLinkRequest{}, s.handleExpireCareLinkRequest)
+	b.Register(domain.UpdatePetAlerts{}, s.handleUpdatePetAlerts)
 	b.Register(domain.InitiateGuardianshipTransfer{}, s.handleInitiateTransfer)
 	b.Register(domain.CancelGuardianshipTransfer{}, s.handleCancelTransfer)
 	b.Register(domain.AcceptGuardianshipTransfer{}, s.handleAcceptTransfer)

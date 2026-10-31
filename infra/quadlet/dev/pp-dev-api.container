@@ -27,7 +27,6 @@ Environment=PP_IP_HASH_SALT=dev-ip-hash-salt-change-me
 Environment=PP_KC_ADMIN_CLIENT_ID=petpassport-backend PP_KC_ADMIN_CLIENT_SECRET=dev-backend-secret-change-me
 Environment=PP_STORAGE_ENDPOINT=minio:9000 PP_STORAGE_BUCKET=petpassport-media
 Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
-Environment=PP_SMTP_HOST=mailpit PP_SMTP_PORT=1025
 Environment=PP_CORS_ORIGINS=https://app.pp.localhost,http://localhost:5173
 Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost
 Environment=GOFLAGS=-buildvcs=false

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onScopeDispose, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { documentJob, encounterPdf } from './encounterApi'
+import { cardPdf, documentJob, encounterPdf } from './encounterApi'
 import { openUrl } from './openUrl'
 
 // PDF firmado (PP-F2-FE-004, INF-004): si está listo se abre la URL
 // prefirmada; si se está generando muestra "Generando…" y consulta
 // /documents/{job} cada 2 s hasta que esté listo, y entonces ofrece el enlace
 // (el navegador puede bloquear la apertura automática fuera del clic).
-const props = defineProps<{ encounterId: string }>()
+const props = defineProps<{ encounterId?: string; petId?: string }>()
 const { t } = useI18n()
 
 const state = ref<'idle' | 'loading' | 'generating' | 'ready' | 'failed'>('idle')
@@ -51,7 +51,9 @@ async function request() {
   state.value = 'loading'
   url.value = null
   try {
-    const res = await encounterPdf(props.encounterId)
+    const res = props.petId
+      ? await cardPdf(props.petId)
+      : await encounterPdf(props.encounterId ?? '')
     if (res.ready) {
       url.value = res.link.url
       state.value = 'ready'

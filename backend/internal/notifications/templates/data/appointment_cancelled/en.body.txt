@@ -1,0 +1,3 @@
+{{if eq .V.by "guardian"}}The guardian cancelled{{else}}{{.V.org_name}} cancelled{{end}} the appointment of {{.V.pet_name}}{{if .V.when}} on {{.V.when}}{{end}}.
+
+View details: {{.V.link}}

@@ -30,6 +30,7 @@ o afecta a más de un módulo. Formato: contexto → decisión → consecuencias
 | [ADR-023](ADR-023-crypto-shredding-y-derechos-del-titular.md) | Crypto-shredding por sujeto; migración única de eventos históricos; derechos del titular automatizados | Aceptada |
 | [ADR-024](ADR-024-kubernetes-dr-y-continuidad.md) | Kubernetes multi-zona; RPO 5 min / RTO 1 h; backups cross-region; simulacros | Aceptada |
 | [ADR-025](ADR-025-entitlements-y-limites-por-plan.md) | Entitlements por puerto; límites blandos con gracia; medición de uso por eventos | Aceptada |
+| [ADR-026](ADR-026-notificaciones-con-token-de-un-solo-uso.md) | Notificaciones con token de un solo uso se encolan tras el commit; el SMTP solo lo abre el worker | Propuesta |
 
 ## Plantilla
 

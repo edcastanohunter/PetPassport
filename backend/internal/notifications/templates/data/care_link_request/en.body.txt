@@ -1,0 +1,3 @@
+{{.V.org_name}} asks for a care link with {{.V.pet_name}}. You decide whether to approve it.
+
+Review request: {{.V.link}}

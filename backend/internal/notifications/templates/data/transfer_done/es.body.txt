@@ -1,0 +1,3 @@
+La tutela de {{.V.pet_name}} fue transferida a {{.V.to_name}}. Los vínculos con clínicas y la historia viajan con la mascota.
+
+Ir a PetPassport: {{.V.link}}

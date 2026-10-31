@@ -20,6 +20,9 @@ import (
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/infra/keycloakadmin"
+	notificationsapp "github.com/edcastanohunter/petpassport/backend/internal/notifications/app"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
+	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
 	orgapp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/app"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
@@ -34,12 +37,14 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
+	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
+	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
 )
 
 // version se inyecta en build con -ldflags "-X main.version=...".
@@ -108,6 +113,7 @@ func run() error {
 	petinfra.RegisterUpcasters(registry)
 	orginfra.RegisterEvents(registry)
 	clinicalinfra.RegisterEvents(registry)
+	schedulinginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -124,15 +130,9 @@ func run() error {
 	runner := projection.NewRunner().Instrument(tel.Registry)
 	commands := bus.New().Instrument(tel.Registry)
 	idemStore := idempotency.NewStore(pool, 0).Instrument(tel.Registry)
-	var mailer *mail.SMTP
-	if cfg.SMTP.Host != "" {
-		mailer = mail.NewSMTP(mail.Options{
-			Host: cfg.SMTP.Host, Port: cfg.SMTP.Port, From: cfg.SMTP.From,
-			User: cfg.SMTP.User, Password: cfg.SMTP.Password,
-		})
-	} else {
-		logger.Warn("PP_SMTP_HOST vacío: emails transaccionales deshabilitados")
-	}
+	// Notifications (ARQ-014): los módulos encolan los correos con token; el
+	// SMTP es solo del worker.
+	notifier := notificationsinfra.NewEnqueuer(pool.Pool)
 
 	// Partner Network: membresías del Principal con caché LRU 60 s (IAM-008),
 	// invalidada por los comandos que cambian membresías (DOM-011).
@@ -149,11 +149,8 @@ func run() error {
 		Users:       userAdapter,
 		Memberships: membershipCache,
 		Auditor:     orginfra.TxAuditor{},
-		BaseURL:     cfg.PublicBaseURL,
+		Notifier:    notifier,
 		Logger:      logger,
-	}
-	if mailer != nil {
-		orgOpts.Mailer = mailer
 	}
 	orgSvc := orgapp.NewService(orgOpts)
 	orgSvc.RegisterCommands(commands)
@@ -172,11 +169,15 @@ func run() error {
 		Orgs:     orgAdapter,
 		Queries:  petQueries,
 		Events:   store,
-		BaseURL:  cfg.PublicBaseURL,
+		Notifier: notifier,
 		Logger:   logger,
-	}
-	if mailer != nil {
-		petOpts.Mailer = mailer
+		// Solicitud de vínculo y bandeja del tutor (M2.5): la bandeja compone
+		// las propuestas de cita y los controles de otros contextos.
+		RequestQueries: petinfra.NewRequestQueries(pool.Pool),
+		LookupLimiter:  petinfra.NewLookupLimiter(pool.Pool),
+		InboxSources: []petapp.InboxSource{
+			petinfra.NewProposalInbox(pool.Pool), petinfra.NewFollowUpInbox(pool.Pool),
+		},
 	}
 	petSvc := petapp.NewService(petOpts)
 	petSvc.RegisterCommands(commands)
@@ -204,17 +205,58 @@ func run() error {
 		Projects:     clinicalinfra.NewSyncProjector(runner),
 		PetAccess:    clinicalPets,
 		Membership:   clinicalinfra.NewMembership(pool.Pool),
-		Appointments: clinicalinfra.AppointmentAdapter{},
+		Appointments: clinicalinfra.NewAppointmentAdapter(pool.Pool),
 		Queries:      clinicalQueries,
 		Logger:       logger,
 	})
 	clinicalSvc.RegisterCommands(commands)
+	cardQueries := clinicalinfra.NewCardQueries(pool.Pool)
+	cardSvc := clinicalapp.NewCardService(clinicalapp.CardOptions{
+		Repo:       clinicalinfra.NewCardRepository(store, registry, nil, nil),
+		UoW:        unit,
+		Projects:   clinicalinfra.NewSyncProjector(runner),
+		PetAccess:  clinicalPets,
+		Membership: clinicalinfra.NewMembership(pool.Pool),
+		Catalog:    cardQueries,
+		Logger:     logger,
+	})
+	cardSvc.RegisterCommands(commands)
 	clinicalinfra.RegisterSyncProjectors(runner, registry)
 	clinicalHandlers := clinicalhttp.NewClinicalHandlers(clinicalhttp.Deps{
 		Commands: clinicalSvc, Queries: clinicalQueries, Pets: clinicalPets,
 		Documents: clinicalinfra.NewDocuments(pool.Pool), Uploads: clinicalinfra.NewUploads(pool.Pool),
 		Freshness: clinicalinfra.NewFreshness(pool.Pool), Auditor: clinicalinfra.NewReadAuditor(pool.Pool),
 		Idem: idemStore, Objects: objects, Logger: logger,
+		CardDeps: clinicalhttp.CardDeps{
+			Card: cardSvc, CardQueries: cardQueries, Catalog: cardQueries,
+			CatalogAdmin:  clinicalinfra.NewCatalogAdmin(pool.Pool),
+			CardDocs:      clinicalinfra.NewDocuments(pool.Pool),
+			Shares:        clinicalapp.NewShareService(clinicalinfra.NewShareStore(pool.Pool), cardQueries, cardQueries, nil, nil),
+			PublicBaseURL: cfg.PublicBaseURL,
+		},
+	})
+
+	// Scheduling (F2 M2.3, ADR-011).
+	schedulingQueries := schedulinginfra.NewQueries(pool.Pool)
+	schedulingPets := schedulinginfra.NewPetAccess(pool.Pool)
+	schedulingMembers := schedulinginfra.NewMembership(pool.Pool)
+	schedulingSvc := schedulingapp.NewService(schedulingapp.Options{
+		Appointments: schedulinginfra.NewAppointmentRepository(store, registry, nil, nil),
+		Agendas:      schedulinginfra.NewAgendaRepository(store, registry, nil, nil),
+		AgendaReader: schedulingQueries,
+		Queries:      schedulingQueries,
+		Reservations: schedulinginfra.NewReservations(pool.Pool),
+		UoW:          unit,
+		Projects:     schedulinginfra.NewSyncProjector(runner),
+		Pets:         schedulingPets,
+		Membership:   schedulingMembers,
+		Logger:       logger,
+	})
+	schedulingSvc.RegisterCommands(commands)
+	schedulinginfra.RegisterSyncProjectors(runner, registry)
+	schedulingHandlers := schedulinghttp.NewSchedulingHandlers(schedulinghttp.Deps{
+		Service: schedulingSvc, Agendas: schedulingQueries, Pets: schedulingPets,
+		Membership: schedulingMembers, Idem: idemStore, Logger: logger,
 	})
 
 	// Administración (API-008): service account de Keycloak (IAM-011). Sin
@@ -253,6 +295,13 @@ func run() error {
 	health := httpserver.NewHealth()
 	health.Register("db", pool.Ping)
 	identityHandlers := identityhttp.NewHandlers(identitySvc, cfg.IPHashSalt)
+	webhookSecrets := map[string][]byte{}
+	if cfg.Notifications.EmailWebhookSecret != "" {
+		webhookSecrets["generic"] = []byte(cfg.Notifications.EmailWebhookSecret)
+	}
+	notificationHandlers := notificationshttp.NewNotificationHandlers(
+		notificationsapp.NewPreferences(notificationsinfra.NewPrefStore(pool.Pool), []byte(cfg.Notifications.UnsubscribeSecret), nil),
+		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger)
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
@@ -262,7 +311,10 @@ func run() error {
 			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
 			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 				WithIPHashSalt(cfg.IPHashSalt),
-			ClinicalHandlers: clinicalHandlers,
+			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
+			ClinicalHandlers:     clinicalHandlers,
+			SchedulingHandlers:   schedulingHandlers,
+			NotificationHandlers: notificationHandlers,
 		},
 		Guard:       guard.Middleware,
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,

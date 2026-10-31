@@ -56,6 +56,7 @@ func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.EncounterSigned{} })
 	reg.Register(func() eventstore.Event { return domain.EncounterAddendumAdded{} })
 	reg.Register(func() eventstore.Event { return domain.EncounterDiscarded{} })
+	RegisterCardEvents(reg)
 }
 
 // Load rehidrata por replay. Stream inexistente → agregado vacío (versión 0).

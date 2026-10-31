@@ -1,0 +1,3 @@
+{{.V.org_name}} agregó una adenda a una consulta de {{.V.pet_name}}.
+
+Ver consulta: {{.V.link}}

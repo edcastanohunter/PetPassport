@@ -1,0 +1,11 @@
+# Catálogo de vacunas (PP-F2-DAT-009). Punto de partida, NO verdad clínica:
+# requiere revisión veterinaria (QA-006, APPROVALS.md) antes de activarse en staging.
+approved: false
+vaccines:
+  - {name: Rabia, species: [dog, cat], diseases: [rabia], type: core, routes: [subcutánea, intramuscular]}
+  - {name: Polivalente (DHPPi), species: [dog], diseases: [moquillo, hepatitis, parvovirus, parainfluenza], type: core, routes: [subcutánea]}
+  - {name: Polivalente + Leptospira (DHPPi-L), species: [dog], diseases: [moquillo, hepatitis, parvovirus, parainfluenza, leptospirosis], type: core, routes: [subcutánea]}
+  - {name: Bordetella / Tos de las perreras, species: [dog], diseases: [bordetelosis], type: non_core, routes: [intranasal, subcutánea]}
+  - {name: Coronavirus canino, species: [dog], diseases: [coronavirus], type: non_core, routes: [subcutánea]}
+  - {name: Triple felina (FVRCP), species: [cat], diseases: [rinotraqueítis, calicivirus, panleucopenia], type: core, routes: [subcutánea]}
+  - {name: Leucemia felina (FeLV), species: [cat], diseases: [leucemia felina], type: non_core, routes: [subcutánea]}

@@ -1,0 +1,1 @@
+New entry in the health card of {{.V.pet_name}}

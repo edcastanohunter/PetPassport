@@ -1,0 +1,3 @@
+{{.V.org_name}} firmó una consulta de {{.V.pet_name}}. Puedes verla en PetPassport.
+
+Ver consulta: {{.V.link}}

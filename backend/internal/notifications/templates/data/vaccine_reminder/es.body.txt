@@ -1,0 +1,3 @@
+A {{.V.pet_name}} le corresponde una dosis del carnet el {{.V.due_date}}.
+
+Solicitar cita: {{.V.link}}

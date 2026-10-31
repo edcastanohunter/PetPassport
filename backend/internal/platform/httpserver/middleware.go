@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -118,6 +119,11 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Cache-Control", "no-store")
 		h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		// Páginas públicas de enlaces y verificación (SEC-002): sin indexar ni filtrar el token.
+		if isPublicShare(r.URL.Path) {
+			h.Set("X-Robots-Tag", "noindex, nofollow")
+			h.Set("Referrer-Policy", "no-referrer")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -162,4 +168,10 @@ func (m *httpMetrics) middleware(next http.Handler) http.Handler {
 		m.requests.WithLabelValues(route, r.Method, strconv.Itoa(status)).Inc()
 		m.duration.WithLabelValues(route, r.Method).Observe(time.Since(start).Seconds())
 	})
+}
+
+// isPublicShare indica si la ruta es de /share/* o /verify/* (con o sin prefijo de versión).
+func isPublicShare(path string) bool {
+	path = strings.TrimPrefix(path, "/api/v1")
+	return strings.HasPrefix(path, "/share/") || strings.HasPrefix(path, "/verify/")
 }

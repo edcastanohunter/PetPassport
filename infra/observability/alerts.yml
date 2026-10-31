@@ -52,7 +52,7 @@ groups:
           runbook: "infra/deploy/RUNBOOK.md#76-scrapetargetdown"
 
   # F2 M2.0: worker y proyecciones asíncronas (ADR-009; PP-F2-ARQ-001/003/007,
-  # INF-002). El resto de alertas F2 (lag, outbox, recordatorios, PDF) es INF-003, M2.4.
+  # INF-002) y alertas de lag, outbox, recordatorios y PDF (INF-003, M2.4).
   - name: petpassport-worker
     rules:
       - alert: ProjectionFailed
@@ -76,3 +76,42 @@ groups:
         annotations:
           summary: "p95 de espera del lock de orden total > 20 ms (10 min): {{ $value | humanizeDuration }}"
           runbook: "infra/deploy/RUNBOOK.md#79-appendlockcontention"
+      - alert: ProjectionLagHigh
+        expr: max by (name) (projection_lag_seconds) > 60
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Proyección {{ $labels.name }} con retraso > 60 s (5 min): {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#710-projectionlaghigh"
+      - alert: OutboxStuck
+        expr: max(outbox_age_seconds) > 300
+        labels: { severity: page }
+        annotations:
+          summary: "El evento más antiguo del outbox lleva {{ $value | humanizeDuration }} sin procesarse"
+          runbook: "infra/deploy/RUNBOOK.md#711-outboxstuck"
+      - alert: OutboxDeadLetter
+        expr: sum(increase(outbox_dead_letter_total[15m])) > 0
+        labels: { severity: page }
+        annotations:
+          summary: "Eventos del outbox enviados a dead-letter en los últimos 15 min"
+          runbook: "infra/deploy/RUNBOOK.md#712-outboxdeadletter"
+      - alert: ReminderDelay
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(reminder_dispatch_delay_seconds_bucket[10m]))) > 60
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: "p95 del retraso de despacho de recordatorios > 60 s: {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#713-reminderdelay"
+      - alert: NotificationDeadLetter
+        expr: sum(increase(notifications_dead_letter_total[1h])) > 10
+        labels: { severity: ticket }
+        annotations:
+          summary: "Más de 10 notificaciones agotaron reintentos en 1 h: {{ $value | printf \"%.0f\" }}"
+          runbook: "infra/deploy/RUNBOOK.md#714-notificationdeadletter"
+      - alert: DocumentRenderFailures
+        expr: sum(increase(document_render_duration_seconds_count{outcome="failed"}[1h])) > 5
+        labels: { severity: ticket }
+        annotations:
+          summary: "Más de 5 documentos PDF fallaron en 1 h: {{ $value | printf \"%.0f\" }}"
+          runbook: "infra/deploy/RUNBOOK.md#715-documentrenderfailures"

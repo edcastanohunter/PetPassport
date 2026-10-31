@@ -1,0 +1,3 @@
+La cita de {{.V.pet_name}} en {{.V.org_name}} fue reprogramada para el {{.V.when}}.
+
+Ver cita: {{.V.link}}

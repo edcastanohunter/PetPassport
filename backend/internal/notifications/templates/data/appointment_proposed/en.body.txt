@@ -1,0 +1,3 @@
+{{.V.org_name}} proposes {{.V.when}} for the appointment of {{.V.pet_name}}. The proposal expires on {{.V.expires}}.
+
+Accept or decline: {{.V.link}}

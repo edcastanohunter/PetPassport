@@ -38,6 +38,14 @@ const contexts = computed(() => {
         </div>
         <ul class="flex items-center gap-3 text-sm">
           <li>
+            <RouterLink to="/app/appointments" class="hover:underline">{{
+              t('scheduling.nav.myAppointments')
+            }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/app/inbox" class="hover:underline">{{ t('nav.inbox') }}</RouterLink>
+          </li>
+          <li>
             <RouterLink to="/app/profile" class="hover:underline">{{
               t('nav.profile')
             }}</RouterLink>

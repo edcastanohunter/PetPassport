@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
+	clinicaldomain "github.com/edcastanohunter/petpassport/backend/internal/clinical/domain"
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
@@ -127,10 +128,77 @@ type fakeAuditor struct{}
 
 func (fakeAuditor) RecordRead(context.Context, clinicalapp.ReadAudit) error { return nil }
 
+// Carnet (M2.2): los comandos y el catálogo fallan o devuelven vacío tras authz.
+type fakeCardCommands struct{}
+
+func (fakeCardCommands) Dispatch(context.Context, bus.Command) (bus.Result, error) {
+	return bus.Result{}, errSuite
+}
+
+func (fakeCardCommands) Propose(context.Context, uuid.UUID, clinicaldomain.EntryInput) (clinicaldomain.Proposal, error) {
+	return clinicaldomain.Proposal{}, errSuite
+}
+
+type fakeCardQueries struct{}
+
+func (fakeCardQueries) Card(_ context.Context, id uuid.UUID, _ bool) (clinicalapp.CardView, error) {
+	return clinicalapp.CardView{PetID: id, Species: "dog"}, nil
+}
+
+func (fakeCardQueries) Entry(_ context.Context, _, id uuid.UUID) (clinicalapp.CardEntryView, error) {
+	return clinicalapp.CardEntryView{ID: id, Kind: "vaccine", ProductName: "Rabia", AdministeredAt: "2026-10-01",
+		Source: "recorded", Verification: "verified", Status: "active"}, nil
+}
+
+type fakeCatalog struct{}
+
+func (fakeCatalog) Vaccine(context.Context, uuid.UUID) (clinicalapp.VaccineRef, error) {
+	return clinicalapp.VaccineRef{}, errSuite
+}
+
+func (fakeCatalog) Vaccines(context.Context, string, string) ([]clinicalapp.VaccineRef, error) {
+	return nil, nil
+}
+
+func (fakeCatalog) Protocol(context.Context, string, string, uuid.UUID) (*clinicalapp.ProtocolRef, error) {
+	return nil, nil
+}
+
+func (fakeCatalog) Protocols(context.Context, string, string) ([]clinicalapp.ProtocolRef, error) {
+	return nil, nil
+}
+
+type fakeCardDocs struct{}
+
+func (fakeCardDocs) EnsureCardPDF(context.Context, uuid.UUID) (clinicalapp.DocumentJobView, error) {
+	return clinicalapp.DocumentJobView{ID: uuid.New(), Status: "pending"}, nil
+}
+
+type fakeShares struct{}
+
+func (fakeShares) Create(context.Context, clinicalapp.ShareRecord) error { return errSuite }
+func (fakeShares) List(context.Context, uuid.UUID) ([]clinicalapp.ShareView, error) {
+	return nil, nil
+}
+func (fakeShares) Revoke(context.Context, uuid.UUID, uuid.UUID, time.Time) error { return errSuite }
+func (fakeShares) ByTokenHash(context.Context, []byte) (clinicalapp.ShareRecord, error) {
+	return clinicalapp.ShareRecord{}, &kernel.NotFoundError{Resource: "share"}
+}
+func (fakeShares) RecordAccess(context.Context, uuid.UUID, time.Time) error { return nil }
+func (fakeShares) PinFailed(context.Context, uuid.UUID, time.Time, int) (bool, error) {
+	return false, nil
+}
+func (fakeShares) PinOK(context.Context, uuid.UUID) error { return nil }
+
 func newSuiteClinicalHandlers(idem *idempotency.Store, logger *slog.Logger) *clinicalhttp.ClinicalHandlers {
 	return clinicalhttp.NewClinicalHandlers(clinicalhttp.Deps{
 		Commands: fakeClinicalCommands{}, Queries: fakeClinicalQueries{}, Pets: fakeClinicalPets{},
 		Documents: fakeDocuments{}, Auditor: fakeAuditor{}, Idem: idem, Logger: logger,
+		CardDeps: clinicalhttp.CardDeps{
+			Card: fakeCardCommands{}, CardQueries: fakeCardQueries{}, Catalog: fakeCatalog{},
+			Shares:   clinicalapp.NewShareService(fakeShares{}, fakeCardQueries{}, nil, nil, nil),
+			CardDocs: fakeCardDocs{},
+		},
 	})
 }
 
@@ -165,6 +233,33 @@ var clinicalMatrix = map[string][9]int{
 	"listPetEncounters":   {ok, ok, ok, ok, 404, 404, 404, 404, ok},
 	"getPetWeightHistory": {ok, ok, ok, ok, 404, 404, 404, 404, ok},
 	"getPetSummary":       {ok, ok, ok, ok, 404, 404, 404, 404, ok},
+	// Carnet (M2.2). card:record / card:verify — clínica vinculada; el tutor
+	// y super_admin ven pero no escriben; card:void también admite al tutor
+	// (el dominio decide, V5) y a super_admin; card:declare y share:manage —
+	// solo el tutor.
+	"getPetCard":             {ok, ok, ok, ok, 404, 404, 404, 404, ok},
+	"getPetCardPdf":          {ok, ok, ok, ok, 404, 404, 404, 404, ok},
+	"recordCardEntry":        {403, ok, ok, ok, 404, 404, 404, 404, 403},
+	"adjustCardNextDue":      {403, ok, ok, ok, 404, 404, 404, 404, 403},
+	"getCardNextDueProposal": {403, ok, ok, ok, 404, 404, 404, 404, 403},
+	"verifyCardEntry":        {403, ok, ok, ok, 404, 404, 404, 404, 403},
+	"disputeCardEntry":       {403, ok, ok, ok, 404, 404, 404, 404, 403},
+	"voidCardEntry":          {ok, ok, ok, ok, 404, 404, 404, 404, ok},
+	"declareCardEntry":       {ok, 403, 403, 403, 404, 404, 404, 404, 403},
+	"listPetShares":          {ok, 403, 403, 403, 404, 404, 404, 404, 403},
+	"createPetShare":         {ok, 403, 403, 403, 404, 404, 404, 404, 403},
+	"revokePetShare":         {ok, 403, 403, 403, 404, 404, 404, 404, 403},
+	// Atajo desde la consulta: encounter:edit sobre el borrador del fixture.
+	"recordEncounterVaccination": {404, ok, ok, ok, 404, 404, 404, 404, 403},
+	// Catálogos: lectura para cualquier autenticado; escritura solo super_admin.
+	"listVaccineCatalog":            {ok, ok, ok, ok, ok, ok, ok, ok, ok},
+	"listVaccinationProtocols":      {ok, ok, ok, ok, ok, ok, ok, ok, ok},
+	"createVaccine":                 {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"updateVaccine":                 {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"deactivateVaccine":             {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"createVaccinationProtocol":     {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"updateVaccinationProtocol":     {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"deactivateVaccinationProtocol": {403, 403, 403, 403, 403, 403, 403, 403, ok},
 }
 
 func init() {

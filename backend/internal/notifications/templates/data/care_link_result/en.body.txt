@@ -1,0 +1,3 @@
+The guardian of {{.V.pet_name}} {{if eq .V.result "approved"}}approved{{else}}declined{{end}} the care link request from {{.V.org_name}}.
+
+Go to PetPassport: {{.V.link}}

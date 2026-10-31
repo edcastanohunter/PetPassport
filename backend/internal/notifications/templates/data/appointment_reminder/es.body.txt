@@ -1,0 +1,3 @@
+Te recordamos la cita de {{.V.pet_name}} en {{.V.org_name}} el {{.V.when}}.
+
+Ver cita: {{.V.link}}

@@ -68,6 +68,11 @@ func toPet(v app.PetView, p presigner) gen.Pet {
 		pet.Microchip = &v.Microchip
 	}
 	pet.MicrochipCorrections = &v.Corrections
+	alerts := make([]gen.PetAlert, 0, len(v.Alerts))
+	for _, al := range v.Alerts {
+		alerts = append(alerts, gen.PetAlert{Kind: gen.PetAlertKind(al.Kind), Text: al.Text})
+	}
+	pet.Alerts = &alerts
 	if v.PendingTransfer != nil {
 		pet.PendingTransfer = &gen.PendingTransfer{ToEmailMasked: v.PendingTransfer.ToEmailMasked, ExpiresAt: v.PendingTransfer.ExpiresAt}
 	}

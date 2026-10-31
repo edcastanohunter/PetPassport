@@ -1,0 +1,3 @@
+{{.V.org_name}} no pudo aceptar tu solicitud de cita para {{.V.pet_name}}. Puedes solicitar otra.
+
+Solicitar otra cita: {{.V.link}}

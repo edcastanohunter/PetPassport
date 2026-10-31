@@ -1,0 +1,3 @@
+Today, {{.V.date}}, there are {{.V.count}} confirmed appointments at {{.V.org_name}}.
+
+Open the schedule: {{.V.link}}

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { api, ApiError, type Pet } from '@/shared/api/client'
 import { microchipSchema } from '@/shared/validation/schemas'
 import CareLinksPanel from './CareLinksPanel.vue'
+import PetAlertsPanel from './PetAlertsPanel.vue'
 import TransferPanel from './TransferPanel.vue'
 
 // Ficha de mascota (FE-006/FE-008, PRD-006..010, PRD-015): datos, foto,
@@ -406,6 +407,19 @@ function undoDeceased() {
         </span>
       </RouterLink>
 
+      <RouterLink
+        :to="{ name: 'pet-card', params: { petId } }"
+        class="card flex items-center gap-3"
+        data-testid="card-link"
+      >
+        <span class="pi pi-shield" aria-hidden="true" />
+        <span>
+          <span class="block font-semibold">{{ t('card.link') }}</span>
+          <span class="block text-sm text-surface-500">{{ t('card.linkHint') }}</span>
+        </span>
+      </RouterLink>
+
+      <PetAlertsPanel class="card" :pet="pet" :editable="pet.status === 'active'" @changed="load" />
       <CareLinksPanel :pet="pet" @changed="load" />
       <TransferPanel :pet="pet" @changed="load" />
     </template>

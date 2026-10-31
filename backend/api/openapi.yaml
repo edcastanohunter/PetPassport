@@ -31,8 +31,20 @@ tags:
     description: Administración de plataforma, solo super_admin (docs/phase-1/05-api.md §3.6)
   - name: encounters
     description: Consultas clínicas (docs/phase-2/04-api.md §1–2)
+  - name: card
+    description: Carnet de vacunación y preventivos (F2 M2.2)
+  - name: catalogs
+    description: Catálogos de referencia de vacunas y protocolos (F2 M2.2)
+  - name: shares
+    description: Enlaces compartidos de solo lectura (F2 M2.2)
   - name: records
     description: Historial, resumen y peso de la mascota (docs/phase-2/04-api.md §3)
+  - name: notifications
+    description: Preferencias, baja por enlace y webhooks de email (F2 M2.4, ADR-012)
+  - name: appointments
+    description: Citas, solicitudes y propuestas (F2 M2.3, ADR-011)
+  - name: agendas
+    description: Agendas por profesional y disponibilidad (F2 M2.3, ADR-011)
   - name: documents
     description: Documentos generados y verificación pública (docs/phase-2/04-api.md §13)
 security:
@@ -206,6 +218,125 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      summary: Preferencias de notificación
+      description: |
+        Categorías de email y resúmenes opcionales del actor (PP-F2-API-010, NOT-004). Sin fila guardada
+        devuelve los valores por defecto (todas las categorías activas, ningún resumen).
+      tags: [notifications]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Preferencias vigentes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: putNotificationPreferences
+      summary: Guardar preferencias de notificación
+      description: |
+        Reemplaza las preferencias. `security` siempre queda activa: se ignora el valor enviado. Las
+        preferencias se consultan al enviar, no al programar.
+      tags: [notifications]
+      x-pp-action: me:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+      responses:
+        "200":
+          description: Preferencias guardadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /unsubscribe/{token}:
+    parameters:
+      - $ref: "#/components/parameters/UnsubscribeToken"
+    post:
+      operationId: unsubscribeNotifications
+      summary: Darse de baja de una categoría por enlace (público)
+      description: |
+        Sin sesión (NOT-004). El token HMAC de los correos identifica usuario y categoría; también sirve
+        de destino de `List-Unsubscribe-Post` (un clic). Idempotente. Token inválido o caducado → 404.
+      tags: [notifications]
+      security: []
+      x-pp-action: public
+      responses:
+        "200":
+          description: Categoría dada de baja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnsubscribeResult"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /webhooks/email/{provider}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        description: Proveedor de email transaccional (`generic` mientras no se elija proveedor, NOT-007).
+        schema:
+          type: string
+          pattern: "^[a-z0-9-]{1,32}$"
+    post:
+      operationId: emailProviderWebhook
+      summary: Webhook de rebotes y quejas del proveedor de email (público, firmado)
+      description: |
+        Verifica `X-PP-Signature: sha256=<hex>` (HMAC-SHA256 del cuerpo con el secreto del proveedor) y
+        añade las direcciones a `notifications.suppressions`. Firma inválida → 401; proveedor sin
+        configurar → 404.
+      tags: [notifications]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: X-PP-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailWebhookPayload"
+      responses:
+        "204":
+          description: Eventos registrados
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
@@ -1108,6 +1239,260 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/pet-lookup:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: lookupPetForRequest
+      summary: Buscar una mascota para solicitar el vínculo
+      description: Por microchip exacto o por email del tutor. Devuelve como máximo 5 resultados mínimos (nombre, especie, tutor enmascarado); sin resultados devuelve lista vacía con el mismo tiempo de respuesta. 20 búsquedas por hora y usuario (PRD-020).
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - name: microchip
+          in: query
+          schema:
+            type: string
+            maxLength: 20
+        - name: guardian_email
+          in: query
+          schema:
+            type: string
+            maxLength: 254
+      responses:
+        "200":
+          description: Resultados mínimos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetLookupList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/care-link-requests:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: requestCareLink
+      summary: Solicitar el vínculo con una mascota
+      description: La solicitud queda pendiente 14 días para que la decida el tutor (PRD-020). Con vínculo activo → 409 CARE_LINK_ALREADY_ACTIVE; con otra solicitud pendiente de la clínica → 409 REQUEST_PENDING.
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestCareLinkBody"
+      responses:
+        "201":
+          description: Solicitud creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareLinkRequestItem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listCareLinkRequests
+      summary: Solicitudes de vínculo de la clínica
+      description: Las más recientes primero; filtro opcional por estado.
+      tags: [care-links]
+      x-pp-action: carelink:request
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, declined, expired]
+      responses:
+        "200":
+          description: Solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareLinkRequestList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/stats:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgStats
+      summary: Estadísticas mensuales de la clínica
+      description: Mes pedido (por defecto el actual, UTC) y el anterior. Vista derivada asíncrona con cabecera X-PP-Freshness (PRD-026).
+      tags: [organizations]
+      x-pp-action: org:stats:read
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "200":
+          description: Estadísticas
+          headers:
+            X-PP-Freshness:
+              $ref: "#/components/headers/X-PP-Freshness"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgStats"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /me/inbox:
+    get:
+      operationId: getInbox
+      summary: Bandeja del tutor
+      description: Solicitudes de vínculo pendientes, propuestas de cita y controles pendientes, lo más reciente primero (FE-012).
+      tags: [me]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Bandeja
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboxList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-link-requests/{requestId}/approve:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/RequestId"
+    post:
+      operationId: approveCareLinkRequest
+      summary: Aprobar una solicitud de vínculo
+      description: Solo el tutor. Crea el vínculo con la clínica solicitante (máximo 20 activos). Solicitud ya resuelta o vencida → 409 CARE_LINK_REQUEST_NOT_PENDING.
+      tags: [care-links]
+      x-pp-action: pet:carelink:grant
+      responses:
+        "200":
+          description: Vínculo creado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/care-link-requests/{requestId}/decline:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/RequestId"
+    post:
+      operationId: declineCareLinkRequest
+      summary: Rechazar una solicitud de vínculo
+      description: El tutor rechaza la solicitud de vínculo de una clínica. La clínica no recibe el motivo si no se indica.
+      tags: [care-links]
+      x-pp-action: pet:carelink:grant
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineCareLinkBody"
+      responses:
+        "200":
+          description: Solicitud rechazada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/alerts:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    put:
+      operationId: putPetAlerts
+      summary: Reemplazar las alertas del perfil
+      description: Tutor o clínica con vínculo activo. Hasta 20 alertas de 200 caracteres (DOM-013).
+      tags: [pets]
+      x-pp-action: pet:alerts
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutPetAlertsRequest"
+      responses:
+        "200":
+          description: Mascota con las alertas actualizadas
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /organizations/{orgId}/patients:
     parameters:
       - $ref: "#/components/parameters/OrgId"
@@ -1817,6 +2202,7 @@ paths:
     delete:
       operationId: deleteEncounterFollowUp
       summary: Retirar el control recomendado
+      description: Elimina el control recomendado de una consulta firmada y cancela sus recordatorios.
       tags: [encounters]
       x-pp-action: encounter:clinical_edit
       parameters:
@@ -2270,6 +2656,1361 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /pets/{petId}/card:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetCard
+      summary: Carnet de vacunación
+      description: Entradas (anuladas incluidas con `status voided`) y próximas dosis (PRD-010..014). Vista síncrona sobre `card_entries`.
+      tags: [card]
+      x-pp-action: record:read
+      responses:
+        "200":
+          description: Carnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/pdf:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getPetCardPdf
+      summary: PDF del carnet con QR de verificación
+      description: 302 a URL prefirmada (15 min) del PDF de la versión vigente del carnet o 202 con el job si aún se genera (ARQ-010). El QR apunta a `/verify/cards/{petId}?h=`.
+      tags: [card]
+      x-pp-action: record:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada del PDF (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "202":
+          description: PDF en generación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJob"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: recordCardEntry
+      summary: Registrar vacuna o preventivo
+      description: Miembro clínico con vínculo activo (V1). Fecha ≤ hoy y ≥ nacimiento (V2), sin duplicado activo (V3 → 409 CARD_ENTRY_DUPLICATE), ≤ 500 entradas (V6), próxima dosis posterior (V7). Sin `next_due` se propone desde el protocolo del catálogo (basis protocol).
+      tags: [card]
+      x-pp-action: card:record
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/declarations:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: declareCardEntry
+      summary: Declarar una vacuna de un carnet anterior
+      description: Solo el tutor (PRD-013). Queda `declared` / `unverified` hasta que una clínica vinculada la verifique.
+      tags: [card]
+      x-pp-action: card:declare
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclareCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada declarada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/verify:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: verifyCardEntry
+      summary: Verificar una entrada declarada
+      description: Clínica vinculada tras ver el carnet físico. Una entrada no declarada → 409 ENTRY_NOT_DECLARED.
+      tags: [card]
+      x-pp-action: card:verify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardNoteRequest"
+      responses:
+        "200":
+          description: Entrada verificada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/dispute:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: disputeCardEntry
+      summary: Disputar una entrada declarada
+      description: La clínica disputa una vacuna declarada por el tutor y deja constancia del motivo.
+      tags: [card]
+      x-pp-action: card:verify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardNoteRequest"
+      responses:
+        "200":
+          description: Entrada disputada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/void:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      operationId: voidCardEntry
+      summary: Anular una entrada
+      description: La organización que la registró dentro de 30 días, super_admin, o el tutor si es una declaración sin verificar (V5). Fuera de ventana → 403 VOID_WINDOW_EXPIRED.
+      tags: [card]
+      x-pp-action: card:void
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidCardEntryRequest"
+      responses:
+        "200":
+          description: Entrada anulada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/entries/{entryId}/next-due:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - $ref: "#/components/parameters/EntryId"
+    put:
+      operationId: adjustCardNextDue
+      summary: Ajustar la próxima dosis
+      description: Clínica vinculada; queda con basis `clinic` ("ajustado por la clínica"). Fecha posterior a la aplicación (V7).
+      tags: [card]
+      x-pp-action: card:record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustNextDueRequest"
+      responses:
+        "200":
+          description: Entrada con la nueva próxima dosis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/card/next-due/proposal:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: getCardNextDueProposal
+      summary: Previsualizar la próxima dosis propuesta
+      description: Calcula la próxima dosis propuesta según el protocolo y la fecha de aplicación; el valor es editable.
+      tags: [card]
+      x-pp-action: card:record
+      parameters:
+        - name: kind
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/CardEntryKind"
+        - name: product_catalog_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: administered_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Propuesta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextDueProposal"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /encounters/{encounterId}/vaccinations:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    post:
+      operationId: recordEncounterVaccination
+      summary: Atajo - registrar una vacuna desde la consulta
+      description: Igual que POST /pets/{petId}/card/entries pero enlaza la entrada al encuentro (PRD-010). Solo en borrador y por un miembro clínico de la organización del encuentro.
+      tags: [card]
+      x-pp-action: encounter:edit
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCardEntryRequest"
+      responses:
+        "201":
+          description: Entrada registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardEntry"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /catalogs/vaccines:
+    get:
+      operationId: listVaccineCatalog
+      summary: Catálogo de vacunas activas
+      description: Lista las vacunas del catálogo aprobadas para la especie indicada.
+      tags: [catalogs]
+      x-pp-action: me:read
+      parameters:
+        - name: species
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: Vacunas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaccineList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /catalogs/protocols:
+    get:
+      operationId: listVaccinationProtocols
+      summary: Protocolos de vacunación activos
+      description: Lista los protocolos de vacunación del catálogo aprobados para la especie indicada.
+      tags: [catalogs]
+      x-pp-action: me:read
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        - name: species
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Protocolos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtocolList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/vaccines:
+    post:
+      operationId: createVaccine
+      summary: Crear vacuna del catálogo
+      description: Solo super_admin, con motivo; auditado (API-005).
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccineWriteRequest"
+      responses:
+        "201":
+          description: Vacuna creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccine"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/vaccines/{vaccineId}:
+    parameters:
+      - name: vaccineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: updateVaccine
+      summary: Actualizar vacuna del catálogo
+      description: Actualiza una vacuna del catálogo. Solo SuperAdmin; la acción queda auditada.
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaccineWriteRequest"
+      responses:
+        "200":
+          description: Vacuna actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vaccine"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deactivateVaccine
+      summary: Desactivar vacuna del catálogo
+      description: "Baja lógica (`active = false`): las entradas ya registradas conservan su referencia."
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogReasonRequest"
+      responses:
+        "204":
+          description: Desactivada
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/protocols:
+    post:
+      operationId: createVaccinationProtocol
+      summary: Crear protocolo de vacunación
+      description: Crea un protocolo de vacunación en el catálogo. Solo SuperAdmin; la acción queda auditada.
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtocolWriteRequest"
+      responses:
+        "201":
+          description: Protocolo creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Protocol"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/catalogs/protocols/{protocolId}:
+    parameters:
+      - name: protocolId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: updateVaccinationProtocol
+      summary: Actualizar protocolo de vacunación
+      description: Actualiza un protocolo de vacunación. Solo SuperAdmin; la acción queda auditada.
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtocolWriteRequest"
+      responses:
+        "200":
+          description: Protocolo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Protocol"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deactivateVaccinationProtocol
+      summary: Desactivar protocolo
+      description: Retira un protocolo del catálogo. Solo SuperAdmin; la acción queda auditada.
+      tags: [catalogs]
+      x-pp-action: admin:catalog:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogReasonRequest"
+      responses:
+        "204":
+          description: Desactivado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/shares:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: listPetShares
+      summary: Enlaces compartidos activos
+      description: Sin token. Incluye el contador de accesos (SEC-002).
+      tags: [shares]
+      x-pp-action: share:manage
+      responses:
+        "200":
+          description: Enlaces
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createPetShare
+      summary: Crear enlace compartido
+      description: Solo el tutor. Caducidad 1–90 días, PIN opcional de 4–6 dígitos, ≤ 10 activos (409 SHARE_LIMIT). El token solo se devuelve aquí.
+      tags: [shares]
+      x-pp-action: share:manage
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShareRequest"
+      responses:
+        "201":
+          description: Enlace creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedShare"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pets/{petId}/shares/{shareId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+      - name: shareId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: revokePetShare
+      summary: Revocar enlace compartido
+      description: Revoca un enlace compartido del carnet; deja de funcionar de inmediato.
+      tags: [shares]
+      x-pp-action: share:manage
+      responses:
+        "204":
+          description: Revocado
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /share/{token}:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+    get:
+      operationId: getSharedRecord
+      summary: Carnet compartido (público)
+      description: Sin autenticación. Sin datos de contacto; microchip enmascarado. Con PIN exige el token de `POST /share/{token}/unlock` (401 PIN_REQUIRED). Caducado o revocado → 410 SHARE_EXPIRED. `X-Robots-Tag noindex`.
+      tags: [shares]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: X-PP-Share-Unlock
+          in: header
+          description: Token devuelto por `POST /share/{token}/unlock` (solo enlaces con PIN).
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        "200":
+          description: Contenido compartido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /share/{token}/unlock:
+    parameters:
+      - $ref: "#/components/parameters/ShareToken"
+    post:
+      operationId: unlockSharedRecord
+      summary: Introducir el PIN de un enlace (público)
+      description: 5 fallos bloquean el enlace 1 h (429 SHARE_LOCKED). Éxito → token corto de sesión de enlace (cabecera `X-PP-Share-Unlock`).
+      tags: [shares]
+      security: []
+      x-pp-action: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockShareRequest"
+      responses:
+        "200":
+          description: Desbloqueado; el token se envía en `X-PP-Share-Unlock` (vigencia 15 min)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnlockedShare"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /verify/cards/{petId}:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    get:
+      operationId: verifyCard
+      summary: Verificación pública del carnet
+      description: Sin autenticación ni PII. Compara el hash de las entradas activas con `h` (el que lleva el QR del PDF).
+      tags: [documents]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: h
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{64}$"
+      responses:
+        "200":
+          description: Resultado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardVerification"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments:
+    post:
+      operationId: requestAppointment
+      summary: Solicitar cita
+      description: El tutor solicita una cita a una clínica con vínculo activo a la mascota, con hasta 3 preferencias de franja (PRD-016). No bloquea la agenda (RN-11). Máximo 3 solicitudes pendientes por mascota y clínica → 409 REQUEST_LIMIT; sin vínculo → 403 PET_NOT_ACCESSIBLE.
+      tags: [appointments]
+      x-pp-action: appointment:request
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestAppointmentRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/AppointmentCreated"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listMyAppointments
+      summary: Mis citas
+      description: Citas de las mascotas del tutor autenticado, más recientes primero.
+      tags: [appointments]
+      x-pp-action: appointment:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+        - name: pet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Página de citas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    get:
+      operationId: getAppointment
+      summary: Detalle de la cita
+      description: Tutor de la mascota o miembro clínico de la organización de la cita. No visible → 404.
+      tags: [appointments]
+      x-pp-action: appointment:read
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}/accept-proposal:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: acceptAppointmentProposal
+      summary: Aceptar la alternativa propuesta
+      description: Solo el tutor, dentro de las 48 h de vigencia (PRD-016). Vencida → 410 PROPOSAL_EXPIRED; franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:request
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "410":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: cancelAppointment
+      summary: Cancelar la cita (tutor)
+      description: Libera la franja. Si se cancela dentro de la ventana de política de la clínica queda marcada `late` (PRD-018, sin penalización).
+      tags: [appointments]
+      x-pp-action: appointment:cancel
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: createOrgAppointment
+      summary: Crear cita desde la clínica
+      description: Miembro clínico crea una cita directamente confirmada para una mascota con vínculo activo (PRD-017). Franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/AppointmentCreated"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listOrgAppointments
+      summary: Citas de la organización
+      description: Con `from`/`to` devuelve la agenda (franjas ascendentes, hasta 500, sin cursor); sin ellos, la bandeja (más recientes primero, con cursor). Miembros clínicos.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+        - name: professional_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: pet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Citas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentPage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: confirmAppointment
+      summary: Confirmar solicitud
+      description: Asigna profesional y franja y reserva la agenda (PRD-016). Franja ocupada → 409 SLOT_UNAVAILABLE; fuera del margen mínimo → 422 OUTSIDE_LEAD_TIME.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/propose:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: proposeAppointmentAlternative
+      summary: Proponer alternativa
+      description: Propone otra franja; la reserva es provisional y vence a las 48 h (PRD-016).
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: rejectAppointment
+      summary: Rechazar solicitud o propuesta
+      description: La clínica rechaza una solicitud de cita con un motivo y libera el horario.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/reschedule:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: rescheduleAppointment
+      summary: Reprogramar cita confirmada
+      description: Mueve la cita a otra franja (atómico con la reserva). Versión distinta → 409 CONFLICT_VERSION; franja ocupada → 409 SLOT_UNAVAILABLE.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentSlotRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: cancelOrgAppointment
+      summary: Cancelar la cita (clínica)
+      description: La clínica cancela una cita confirmada con un motivo y libera el horario.
+      tags: [appointments]
+      x-pp-action: appointment:cancel
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentReasonRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/check-in:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: checkInAppointment
+      summary: Registrar llegada
+      description: Solo el día local de la cita y desde 2 h antes del inicio (A6) → si no, 409 CHECKIN_WINDOW.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/no-show:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: markAppointmentNoShow
+      summary: Marcar ausencia
+      description: Marca una cita como inasistencia. También ocurre de forma automática a las 24 horas.
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/appointments/{appointmentId}/complete:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/AppointmentId"
+    post:
+      operationId: completeAppointment
+      summary: Completar la cita manualmente
+      description: Normalmente la completa el proceso `scheduling.complete-on-sign` al firmar la consulta enlazada (DOM-015).
+      tags: [appointments]
+      x-pp-action: appointment:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AppointmentOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listOrgAgendas
+      summary: Agendas de la organización
+      description: Miembros clínicos. Incluye una entrada (sin definir) por cada veterinario activo sin agenda.
+      tags: [agendas]
+      x-pp-action: agenda:read
+      responses:
+        "200":
+          description: Agendas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgendaList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+    put:
+      operationId: putOrgAgenda
+      summary: Definir o actualizar la agenda de un profesional
+      description: Solo clinic_admin. Crea la agenda (con `time_zone`, por defecto la del país de la organización, inmutable después) o actualiza lo que cambió. Actualizar exige `If-Match` con la versión conocida.
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      parameters:
+        - name: If-Match
+          in: header
+          required: false
+          description: Versión conocida de la agenda; obligatoria al actualizar una agenda existente.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutAgendaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}/exceptions:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+    post:
+      operationId: addAgendaException
+      summary: Añadir excepción de un día
+      description: Cierra un día o fija un horario especial; reemplaza la excepción previa de esa fecha.
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAgendaExceptionRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/agendas/{professionalId}/exceptions/{date}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/ProfessionalId"
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    delete:
+      operationId: removeAgendaException
+      summary: Quitar la excepción de un día
+      description: Elimina una excepción de la agenda de un profesional para la fecha indicada.
+      tags: [agendas]
+      x-pp-action: agenda:manage
+      responses:
+        "200":
+          $ref: "#/components/responses/AgendaOK"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/availability:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgAvailability
+      summary: Disponibilidad publicada
+      description: "Franjas libres (plantilla − excepciones − reservas vigentes, respetando el margen mínimo y máximo). Miembros clínicos y tutores con una mascota vinculada. Informativa: la autoridad es la reserva al confirmar. Ventana máxima de 62 días."
+      tags: [agendas]
+      x-pp-action: availability:read
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/AppointmentType"
+        - name: professional_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Franjas libres
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /healthz:
     get:
       operationId: getHealthz
@@ -2345,6 +4086,13 @@ components:
       schema:
         type: string
         format: uuid
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     OrganizationId:
       name: organizationId
       in: path
@@ -2400,6 +4148,45 @@ components:
         type: integer
         format: int64
         minimum: 1
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ShareToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 20
+        maxLength: 64
+        pattern: "^[A-Za-z0-9_-]+$"
+    UnsubscribeToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 20
+        maxLength: 300
+        pattern: "^[A-Za-z0-9_.-]+$"
+    AppointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProfessionalId:
+      name: professionalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     X-PP-Freshness:
       description: Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013).
@@ -2530,7 +4317,7 @@ components:
       type: string
       enum: [dog, cat, bird, rabbit, reptile, rodent, equine, ferret, fish, other]
       x-enum-varnames: [Dog, Cat, Bird, Rabbit, Reptile, Rodent, Equine, Ferret, Fish, Other]
-    SpeciesOther:
+    SpeciesOtherText:
       type: string
       description: Obligatoria si species = other; 1–40.
       minLength: 1
@@ -2581,7 +4368,7 @@ components:
         species:
           $ref: "#/components/schemas/Species"
         species_other:
-          $ref: "#/components/schemas/SpeciesOther"
+          $ref: "#/components/schemas/SpeciesOtherText"
         breed:
           $ref: "#/components/schemas/Breed"
         sex:
@@ -2602,7 +4389,7 @@ components:
         species:
           $ref: "#/components/schemas/Species"
         species_other:
-          $ref: "#/components/schemas/SpeciesOther"
+          $ref: "#/components/schemas/SpeciesOtherText"
         breed:
           description: Cadena vacía vacía el campo.
           type: string
@@ -2701,12 +4488,205 @@ components:
           oneOf:
             - $ref: "#/components/schemas/GuardianContact"
             - type: "null"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetAlert"
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    PetAlert:
+      type: object
+      additionalProperties: false
+      required: [kind, text]
+      properties:
+        kind:
+          type: string
+          enum: [allergy, chronic_condition, behavior, other]
+        text:
+          type: string
+          minLength: 1
+          maxLength: 200
+    PutPetAlertsRequest:
+      type: object
+      additionalProperties: false
+      required: [alerts]
+      properties:
+        alerts:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/PetAlert"
+    PetLookupResult:
+      type: object
+      additionalProperties: false
+      required: [pet_id, name, species, guardian_masked]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          $ref: "#/components/schemas/Species"
+        guardian_masked:
+          type: string
+          description: Nombre del tutor enmascarado (inicial y asteriscos).
+    PetLookupList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/PetLookupResult"
+    RequestCareLinkBody:
+      type: object
+      additionalProperties: false
+      required: [pet_id]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          maxLength: 300
+    DeclineCareLinkBody:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    CareLinkRequestItem:
+      type: object
+      additionalProperties: false
+      required: [id, pet_id, pet_name, organization_id, status, expires_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        pet_id:
+          type: string
+          format: uuid
+        pet_name:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        message:
+          type: [string, "null"]
+        status:
+          type: string
+          enum: [pending, approved, declined, expired]
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: [string, "null"]
+          format: date-time
+    CareLinkRequestList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CareLinkRequestItem"
+    InboxItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, ref_id, title, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [care_link_request, appointment_proposal, follow_up]
+        ref_id:
+          type: string
+          format: uuid
+          description: Id de la solicitud, la cita o la consulta de origen.
+        pet_id:
+          type: [string, "null"]
+          format: uuid
+        pet_name:
+          type: [string, "null"]
+        organization_id:
+          type: [string, "null"]
+          format: uuid
+        title:
+          type: string
+        body:
+          type: [string, "null"]
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+    InboxList:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboxItem"
+    MonthStats:
+      type: object
+      additionalProperties: false
+      required: [month, encounters_signed, appointments, new_patients, vaccinations]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        encounters_signed:
+          type: integer
+        appointments:
+          type: object
+          additionalProperties: false
+          required: [confirmed, completed, cancelled, no_show]
+          properties:
+            confirmed:
+              type: integer
+            completed:
+              type: integer
+            cancelled:
+              type: integer
+            no_show:
+              type: integer
+        new_patients:
+          type: integer
+        vaccinations:
+          type: integer
+    OrgStats:
+      type: object
+      additionalProperties: false
+      required: [current, previous, open_follow_ups, freshness]
+      properties:
+        current:
+          $ref: "#/components/schemas/MonthStats"
+        previous:
+          $ref: "#/components/schemas/MonthStats"
+        open_follow_ups:
+          type: integer
+          description: Controles pendientes hoy (no depende del mes).
+        freshness:
+          $ref: "#/components/schemas/Freshness"
     CareLink:
       type: object
       additionalProperties: false
@@ -2873,6 +4853,49 @@ components:
           $ref: "#/components/schemas/ConsentVersion"
         accept_privacy_version:
           $ref: "#/components/schemas/ConsentVersion"
+    NotificationPreferences:
+      type: object
+      required: [email, digest]
+      properties:
+        email:
+          type: object
+          description: Una clave por categoría; `security` siempre es true.
+          required: [appointments, preventive_care, clinical, account, security]
+          properties:
+            appointments: { type: boolean }
+            preventive_care: { type: boolean }
+            clinical: { type: boolean }
+            account: { type: boolean }
+            security: { type: boolean }
+        digest:
+          type: object
+          required: [clinic_daily_agenda]
+          properties:
+            clinic_daily_agenda: { type: boolean }
+    UnsubscribeResult:
+      type: object
+      required: [category]
+      properties:
+        category:
+          type: string
+          description: Categoría dada de baja (appointments|preventive_care|clinical|account).
+    EmailWebhookPayload:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required: [type, address]
+            properties:
+              type:
+                type: string
+                description: bounce | complaint
+              address:
+                type: string
+                maxLength: 320
     UpdateMeRequest:
       type: object
       additionalProperties: false
@@ -4101,6 +6124,806 @@ components:
           description: Solo se devuelve si la verificación es válida.
         organization_name:
           type: string
+    CardEntryKind:
+      type: string
+      enum: [vaccine, deworming, ectoparasite]
+    CardProduct:
+      type: object
+      required: [name]
+      properties:
+        catalog_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+    CardNextDue:
+      type: object
+      required: [date, basis]
+      properties:
+        date:
+          type: string
+          format: date
+        basis:
+          type: string
+          enum: [protocol, clinic, guardian]
+    CardEntry:
+      type: object
+      required: [id, kind, product, administered_at, source, verification, status, has_evidence]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          nullable: true
+        manufacturer:
+          type: string
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          nullable: true
+        route:
+          type: string
+          nullable: true
+        site:
+          type: string
+          nullable: true
+        dose_label:
+          type: string
+          nullable: true
+        weight_kg:
+          type: number
+          nullable: true
+        source:
+          type: string
+          enum: [recorded, declared, imported]
+        verification:
+          type: string
+          enum: [verified, unverified, disputed]
+        status:
+          type: string
+          enum: [active, voided]
+        void_reason:
+          type: string
+          nullable: true
+        recorded_by_organization_id:
+          type: string
+          format: uuid
+          nullable: true
+        encounter_id:
+          type: string
+          format: uuid
+          nullable: true
+        next_due:
+          allOf:
+            - $ref: "#/components/schemas/CardNextDue"
+          nullable: true
+        has_evidence:
+          type: boolean
+    NextDueItem:
+      type: object
+      required: [entry_id, kind, product_name, due_date, basis, status]
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product_name:
+          type: string
+        due_date:
+          type: string
+          format: date
+        basis:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, overdue, satisfied, cancelled]
+    Card:
+      type: object
+      required: [pet_id, species, entries, next_due]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        species:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardEntry"
+        next_due:
+          type: array
+          items:
+            $ref: "#/components/schemas/NextDueItem"
+    RecordCardEntryRequest:
+      type: object
+      required: [kind, product, administered_at]
+      properties:
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          maxLength: 40
+        manufacturer:
+          type: string
+          maxLength: 60
+        expiry_date:
+          type: string
+          format: date
+        route:
+          type: string
+          maxLength: 60
+        site:
+          type: string
+          maxLength: 60
+        dose_label:
+          type: string
+          maxLength: 40
+        weight_kg:
+          type: number
+        encounter_id:
+          type: string
+          format: uuid
+        next_due_date:
+          type: string
+          format: date
+    DeclareCardEntryRequest:
+      type: object
+      required: [kind, product, administered_at]
+      properties:
+        kind:
+          $ref: "#/components/schemas/CardEntryKind"
+        product:
+          $ref: "#/components/schemas/CardProduct"
+        administered_at:
+          type: string
+          format: date
+        lot:
+          type: string
+          maxLength: 40
+        dose_label:
+          type: string
+          maxLength: 40
+        evidence_object_key:
+          type: string
+          maxLength: 300
+    CardNoteRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 300
+    VoidCardEntryRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    AdjustNextDueRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+    NextDueProposal:
+      type: object
+      required: [explanation]
+      properties:
+        date:
+          type: string
+          format: date
+          nullable: true
+        basis:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+    Vaccine:
+      type: object
+      required: [id, name, species, diseases, type, routes, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: array
+          items:
+            type: string
+        diseases:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum: [core, non_core]
+        routes:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+    VaccineList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vaccine"
+    VaccineWriteRequest:
+      type: object
+      required: [name, species, diseases, type, routes, reason]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        species:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        diseases:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum: [core, non_core]
+        routes:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    CatalogReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    SeriesDose:
+      type: object
+      properties:
+        min_age_weeks:
+          type: integer
+          minimum: 0
+        min_interval_days:
+          type: integer
+          minimum: 0
+    Protocol:
+      type: object
+      required: [id, country, species, vaccine_id, initial_series, active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        species:
+          type: string
+        vaccine_id:
+          type: string
+          format: uuid
+        initial_series:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeriesDose"
+        booster_interval_months:
+          type: integer
+          nullable: true
+        legal_validity_months:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+        active:
+          type: boolean
+    ProtocolList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Protocol"
+    ProtocolWriteRequest:
+      type: object
+      required: [country, species, vaccine_id, initial_series, reason]
+      properties:
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        species:
+          type: string
+        vaccine_id:
+          type: string
+          format: uuid
+        initial_series:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeriesDose"
+        booster_interval_months:
+          type: integer
+          minimum: 1
+        legal_validity_months:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          maxLength: 300
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+    CreateShareRequest:
+      type: object
+      required: [scope, expires_in_days]
+      properties:
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        expires_in_days:
+          type: integer
+          minimum: 1
+          maximum: 90
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    CreatedShare:
+      type: object
+      required: [id, url, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    Share:
+      type: object
+      required: [id, scope, has_pin, expires_at, created_at, access_count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        has_pin:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        access_count:
+          type: integer
+        last_access_at:
+          type: string
+          format: date-time
+          nullable: true
+    ShareList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Share"
+    UnlockShareRequest:
+      type: object
+      required: [pin]
+      properties:
+        pin:
+          type: string
+          pattern: "^[0-9]{4,6}$"
+    UnlockedShare:
+      type: object
+      required: [token, expires_at]
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    SharedPet:
+      type: object
+      required: [name, species, sex]
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+        breed:
+          type: string
+          nullable: true
+        sex:
+          type: string
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        microchip_masked:
+          type: string
+          nullable: true
+    SharedRecord:
+      type: object
+      required: [scope, pet, card, verified_at]
+      properties:
+        scope:
+          type: string
+          enum: [vaccination_card, full_record]
+        pet:
+          $ref: "#/components/schemas/SharedPet"
+        card:
+          $ref: "#/components/schemas/Card"
+        verified_at:
+          type: string
+          format: date-time
+    CardVerification:
+      type: object
+      required: [valid, entries]
+      properties:
+        valid:
+          type: boolean
+        entries:
+          type: integer
+        verified_at:
+          type: string
+          format: date-time
+    AppointmentType:
+      type: string
+      enum: [consultation, follow_up, vaccination, surgery, procedure, other]
+    AppointmentStatus:
+      type: string
+      enum: [requested, proposed, confirmed, checked_in, completed, cancelled, no_show, rejected]
+    SlotPreference:
+      type: object
+      description: Franja exacta (`start`+`end`) o rango de fechas locales (`date_from`+`date_to`).
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        date_from:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        date_to:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    AppointmentTransition:
+      type: object
+      required: [status, at]
+      properties:
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        at:
+          type: string
+          format: date-time
+        by:
+          type: string
+        note:
+          type: string
+    AppointmentCancellation:
+      type: object
+      required: [by, late]
+      properties:
+        by:
+          type: string
+          enum: [guardian, clinic]
+        reason:
+          type: string
+        late:
+          type: boolean
+    Appointment:
+      type: object
+      required: [id, version, pet_id, organization_id, type, origin, status, preferences, history, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          format: int64
+        pet_id:
+          type: string
+          format: uuid
+        pet_name:
+          type: string
+        pet_species:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+        professional_id:
+          type: [string, "null"]
+          format: uuid
+        professional_name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        origin:
+          type: string
+          enum: [guardian, clinic]
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        reason:
+          type: string
+        preferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlotPreference"
+        start:
+          type: [string, "null"]
+          format: date-time
+        end:
+          type: [string, "null"]
+          format: date-time
+        time_zone:
+          type: string
+        proposal_expires_at:
+          type: [string, "null"]
+          format: date-time
+        encounter_id:
+          type: [string, "null"]
+          format: uuid
+        cancellation:
+          oneOf:
+            - $ref: "#/components/schemas/AppointmentCancellation"
+            - type: "null"
+        cancellation_policy_hours:
+          type: integer
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentTransition"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AppointmentPage:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
+        next_cursor:
+          type: string
+    RequestAppointmentRequest:
+      type: object
+      required: [pet_id, organization_id, type]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        reason:
+          type: string
+          maxLength: 300
+        preferences:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/SlotPreference"
+    CreateAppointmentRequest:
+      type: object
+      required: [pet_id, professional_id, type, start, end]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/AppointmentType"
+        reason:
+          type: string
+          maxLength: 300
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AppointmentSlotRequest:
+      type: object
+      required: [start, end]
+      properties:
+        professional_id:
+          type: string
+          format: uuid
+          description: Obligatorio al confirmar y proponer; al reprogramar, si se omite se mantiene el profesional.
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AppointmentReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+    AgendaTimeRange:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+        end:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+    AgendaDayException:
+      type: object
+      required: [closed]
+      properties:
+        closed:
+          type: boolean
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgendaTimeRange"
+    Agenda:
+      type: object
+      required: [organization_id, professional_id, defined, active, version]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        professional_id:
+          type: string
+          format: uuid
+        professional_name:
+          type: string
+        defined:
+          type: boolean
+          description: "`false` para un veterinario activo sin agenda todavía."
+        active:
+          type: boolean
+        version:
+          type: integer
+          format: int64
+        time_zone:
+          type: string
+        weekly_template:
+          type: object
+          description: "Claves `mon`…`sun`."
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/AgendaTimeRange"
+        slot_minutes:
+          type: object
+          description: Duración de franja por tipo de cita (5–480).
+          additionalProperties:
+            type: integer
+        lead_time_min_hours:
+          type: integer
+        lead_time_max_days:
+          type: integer
+        cancellation_policy_hours:
+          type: integer
+        exceptions:
+          type: object
+          description: Excepciones por fecha local `YYYY-MM-DD`.
+          additionalProperties:
+            $ref: "#/components/schemas/AgendaDayException"
+    AgendaList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agenda"
+    PutAgendaRequest:
+      type: object
+      required: [weekly_template, slot_minutes, lead_time_min_hours, lead_time_max_days, cancellation_policy_hours]
+      properties:
+        time_zone:
+          type: string
+          description: IANA. Solo se usa al crear la agenda.
+        weekly_template:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/AgendaTimeRange"
+        slot_minutes:
+          type: object
+          additionalProperties:
+            type: integer
+        lead_time_min_hours:
+          type: integer
+          minimum: 0
+        lead_time_max_days:
+          type: integer
+          minimum: 1
+        cancellation_policy_hours:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+          default: true
+    AddAgendaExceptionRequest:
+      type: object
+      required: [date, closed]
+      properties:
+        date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        closed:
+          type: boolean
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgendaTimeRange"
+    AvailabilitySlot:
+      type: object
+      required: [professional_id, start, end]
+      properties:
+        professional_id:
+          type: string
+          format: uuid
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+    AvailabilityList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailabilitySlot"
   responses:
     EncounterOK:
       description: Consulta actualizada
@@ -4126,3 +6949,33 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+    AppointmentOK:
+      description: Cita
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Appointment"
+    AppointmentCreated:
+      description: Cita creada
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+        Location:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Appointment"
+    AgendaOK:
+      description: Agenda
+      headers:
+        ETag:
+          $ref: "#/components/headers/ETag"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Agenda"

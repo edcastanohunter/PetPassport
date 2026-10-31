@@ -1,39 +1,43 @@
-// Package mail es el puerto de email transaccional (DOM-011): en F1 los
-// envíos son síncronos y best-effort (un fallo se registra pero NO revierte
-// el comando); en F2 migran al process manager del outbox (ADR-012).
-// Los enlaces se construyen solo con PP_PUBLIC_BASE_URL, nunca desde
-// cabeceras Host (SEC-004).
+// Package mail es el adaptador SMTP del email transaccional. Desde F2 (ADR-012,
+// PP-F2-ARQ-014) solo lo usa el worker de Notifications: ningún comando ni
+// reacción abre SMTP. Los correos llegan ya renderizados (plantillas en
+// notifications/templates); los enlaces se construyen solo con
+// PP_PUBLIC_BASE_URL, nunca desde cabeceras Host (SEC-004).
 package mail
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"mime"
+	"mime/multipart"
+	"mime/quotedprintable"
 	"net/smtp"
+	"net/textproto"
 	"strings"
+	"time"
 )
 
 // Mailer es el puerto de envío.
 type Mailer interface {
-	// Send envía un email ya renderizado. El que llama registra el error y
-	// sigue (best-effort).
 	Send(ctx context.Context, msg Message) error
 }
 
-// Message es un email a enviar.
+// Message es un email ya renderizado.
 type Message struct {
 	To      string
 	Subject string
-	Body    string
-}
+	Text    string // text/plain (obligatorio)
+	HTML    string // text/html opcional: con él el mensaje es multipart/alternative
 
-// TemplateIDs de F1 (DOM-011).
-const (
-	TemplateMemberInvited     = "member_invited"
-	TemplateTransferInitiated = "transfer_initiated"
-	TemplateTransferCompleted = "transfer_completed"
-	TemplateOrgVerified       = "org_verified"
-	TemplateOrgRejected       = "org_rejected"
-)
+	// MessageID propio (con <>), estable por entrega: el proveedor puede
+	// deduplicar reenvíos. Vacío = se genera uno.
+	MessageID string
+	// UnsubscribeURL añade List-Unsubscribe y List-Unsubscribe-Post (un clic).
+	UnsubscribeURL string
+}
 
 // SMTP adapta net/smtp (Mailpit en dev; proveedor gestionado en staging/prod).
 type SMTP struct {
@@ -41,6 +45,7 @@ type SMTP struct {
 	addr string
 	from string
 	auth smtp.Auth // nil sin credenciales (Mailpit)
+	now  func() time.Time
 }
 
 // Options configura el adaptador.
@@ -54,76 +59,102 @@ type Options struct {
 
 // NewSMTP construye el adaptador.
 func NewSMTP(o Options) *SMTP {
-	s := &SMTP{host: o.Host, addr: fmt.Sprintf("%s:%d", o.Host, o.Port), from: o.From}
+	s := &SMTP{host: o.Host, addr: fmt.Sprintf("%s:%d", o.Host, o.Port), from: o.From, now: time.Now}
 	if o.User != "" {
 		s.auth = smtp.PlainAuth("", o.User, o.Password, o.Host)
 	}
 	return s
 }
 
-// Send implementa Mailer (best-effort: el error se devuelve; el que llama
-// decide registrar y seguir).
+// Send implementa Mailer. El error de net/smtp se devuelve tal cual
+// (*textproto.Error con el código SMTP) para que el llamador lo clasifique.
 func (s *SMTP) Send(_ context.Context, msg Message) error {
 	if s.host == "" {
 		return fmt.Errorf("mail: SMTP no configurado")
 	}
-	if strings.ContainsAny(msg.To, "\r\n") || strings.ContainsAny(msg.Subject, "\r\n") {
-		return fmt.Errorf("mail: cabecera inválida") // inyección de cabeceras
+	raw, err := s.build(msg)
+	if err != nil {
+		return err
 	}
-	body := strings.Join([]string{
-		"From: " + s.from,
-		"To: " + msg.To,
-		"Subject: " + msg.Subject,
-		"MIME-Version: 1.0",
-		"Content-Type: text/plain; charset=utf-8",
-		"",
-		msg.Body,
-	}, "\r\n")
-	return smtp.SendMail(s.addr, s.auth, s.from, []string{msg.To}, []byte(body))
+	return smtp.SendMail(s.addr, s.auth, envelopeAddress(s.from), []string{msg.To}, raw)
 }
 
-// Render rellena una plantilla por locale. Texto plano; los enlaces siempre
-// contra PublicBaseURL (SEC-004).
-func Render(template, locale string, data map[string]string, base string) (subject, body string) {
-	if locale != "en" {
-		locale = "es"
+// build arma el mensaje RFC 5322. Rechaza saltos de línea en las cabeceras
+// (inyección de cabeceras).
+func (s *SMTP) build(msg Message) ([]byte, error) {
+	for _, h := range []string{msg.To, msg.Subject, msg.MessageID, msg.UnsubscribeURL} {
+		if strings.ContainsAny(h, "\r\n") {
+			return nil, fmt.Errorf("mail: cabecera inválida")
+		}
 	}
-	switch template {
-	case TemplateMemberInvited:
-		if locale == "en" {
-			return "You've been invited to join an organization on PetPassport",
-				fmt.Sprintf("Hi!\n\nYou've been invited to join %s as %s.\nAccept your invitation at:\n%s/invitations/%s\n\nIf you weren't expecting this email, ignore it.", data["org_name"], data["role"], base, data["token"])
-		}
-		return "Te invitaron a una organización en PetPassport",
-			fmt.Sprintf("¡Hola!\n\nTe invitaron a unirte a %s como %s.\nAcepta tu invitación en:\n%s/invitations/%s\n\nSi no esperabas este correo, ignóralo.", data["org_name"], data["role"], base, data["token"])
-	case TemplateTransferInitiated:
-		if locale == "en" {
-			return "A pet guardianship transfer is waiting for you",
-				fmt.Sprintf("Hi!\n\n%s wants to transfer guardianship of %s to you.\nIf you don't have an account yet, sign up with this email first.\nReview and accept at:\n%s/app/transfers/%s\n\nThe link expires on %s.", data["from_name"], data["pet_name"], base, data["token"], data["expires_at"])
-		}
-		return "Tienes pendiente una transferencia de tutela",
-			fmt.Sprintf("¡Hola!\n\n%s quiere transferirte la tutela de %s.\nSi aún no tienes cuenta, regístrate primero con este email.\nRevisa y acepta en:\n%s/app/transfers/%s\n\nEl enlace caduca el %s.", data["from_name"], data["pet_name"], base, data["token"], data["expires_at"])
-	case TemplateTransferCompleted:
-		if locale == "en" {
-			return "Guardianship transferred",
-				fmt.Sprintf("The guardianship of %s was transferred to %s. Care links and history travel with the pet.\n%s/app", data["pet_name"], data["to_name"], base)
-		}
-		return "Transferencia de tutela completada",
-			fmt.Sprintf("La tutela de %s fue transferida a %s. Los vínculos con clínicas y la historia viajan con la mascota.\n%s/app", data["pet_name"], data["to_name"], base)
-	case TemplateOrgRejected:
-		if locale == "en" {
-			return "Your organization could not be verified",
-				fmt.Sprintf("We could not verify %s.\nReason: %s\n%s/app", data["org_name"], data["reason"], base)
-		}
-		return "No pudimos verificar tu organización",
-			fmt.Sprintf("No pudimos verificar %s.\nMotivo: %s\n%s/app", data["org_name"], data["reason"], base)
-	case TemplateOrgVerified:
-		if locale == "en" {
-			return "Your organization is verified on PetPassport",
-				fmt.Sprintf("%s is now verified. You can receive care links from pet owners.\n%s/app", data["org_name"], base)
-		}
-		return "Tu organización está verificada en PetPassport",
-			fmt.Sprintf("%s está verificada. Ya puedes recibir vínculos de mascotas de sus tutores.\n%s/app", data["org_name"], base)
+	id := msg.MessageID
+	if id == "" {
+		var b [12]byte
+		_, _ = rand.Read(b[:])
+		id = "<" + hex.EncodeToString(b[:]) + "@" + domainOf(s.from) + ">"
 	}
-	return "PetPassport", "Notification from PetPassport."
+	var buf bytes.Buffer
+	h := func(k, v string) { buf.WriteString(k + ": " + v + "\r\n") }
+	h("From", s.from)
+	h("To", msg.To)
+	h("Subject", mime.QEncoding.Encode("utf-8", msg.Subject))
+	h("Date", s.now().UTC().Format(time.RFC1123Z))
+	h("Message-ID", id)
+	h("MIME-Version", "1.0")
+	if msg.UnsubscribeURL != "" {
+		h("List-Unsubscribe", "<"+msg.UnsubscribeURL+">")
+		h("List-Unsubscribe-Post", "List-Unsubscribe=One-Click")
+	}
+	if msg.HTML == "" {
+		h("Content-Type", "text/plain; charset=utf-8")
+		h("Content-Transfer-Encoding", "quoted-printable")
+		buf.WriteString("\r\n")
+		if err := writeQP(&buf, msg.Text); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	}
+	mw := multipart.NewWriter(&buf)
+	h("Content-Type", "multipart/alternative; boundary="+mw.Boundary())
+	buf.WriteString("\r\n")
+	for _, part := range []struct{ ct, body string }{{"text/plain", msg.Text}, {"text/html", msg.HTML}} {
+		pw, err := mw.CreatePart(textproto.MIMEHeader{
+			"Content-Type":              {part.ct + "; charset=utf-8"},
+			"Content-Transfer-Encoding": {"quoted-printable"},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if err := writeQP(pw, part.body); err != nil {
+			return nil, err
+		}
+	}
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func writeQP(w interface{ Write([]byte) (int, error) }, s string) error {
+	qp := quotedprintable.NewWriter(w)
+	if _, err := qp.Write([]byte(s)); err != nil {
+		return err
+	}
+	return qp.Close()
+}
+
+// envelopeAddress extrae la dirección de un "Nombre <a@b>".
+func envelopeAddress(from string) string {
+	if i := strings.LastIndex(from, "<"); i >= 0 {
+		return strings.TrimSuffix(from[i+1:], ">")
+	}
+	return from
+}
+
+func domainOf(from string) string {
+	a := envelopeAddress(from)
+	if i := strings.LastIndex(a, "@"); i >= 0 {
+		return a[i+1:]
+	}
+	return "localhost"
 }

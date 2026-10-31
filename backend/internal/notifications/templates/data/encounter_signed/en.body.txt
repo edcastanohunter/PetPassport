@@ -1,0 +1,3 @@
+{{.V.org_name}} signed a visit for {{.V.pet_name}}. You can see it in PetPassport.
+
+View visit: {{.V.link}}

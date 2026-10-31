@@ -115,6 +115,7 @@ func (w *PDFWorker) loop(ctx context.Context) error {
 // pdfJob es un trabajo reclamado.
 type pdfJob struct {
 	id       uuid.UUID
+	kind     string
 	ref      uuid.UUID
 	version  int
 	attempts int
@@ -127,10 +128,11 @@ func (w *PDFWorker) ProcessOne(ctx context.Context) (bool, error) {
 		UPDATE read_clinical.document_jobs SET status = 'rendering', attempts = attempts + 1, updated_at = now()
 		WHERE id = (
 			SELECT id FROM read_clinical.document_jobs
-			WHERE kind = $1 AND (status = 'pending' OR (status = 'rendering' AND updated_at < now() - make_interval(secs => $2)))
+			WHERE kind = ANY($1) AND (status = 'pending' OR (status = 'rendering' AND updated_at < now() - make_interval(secs => $2)))
 			ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1)
-		RETURNING id, ref_id, version, attempts`,
-		app.DocumentJobKindEncounterPDF, pdfStaleAfter.Seconds()).Scan(&j.id, &j.ref, &j.version, &j.attempts)
+		RETURNING id, kind, ref_id, version, attempts`,
+		[]string{app.DocumentJobKindEncounterPDF, app.DocumentJobKindCardPDF}, pdfStaleAfter.Seconds()).
+		Scan(&j.id, &j.kind, &j.ref, &j.version, &j.attempts)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -143,7 +145,7 @@ func (w *PDFWorker) ProcessOne(ctx context.Context) (bool, error) {
 	if err != nil {
 		outcome = "failed"
 		// Sin PII en el error persistido ni en logs (solo ids y causa técnica).
-		w.logger.WarnContext(ctx, "pdf: render fallido", "job_id", j.id, "encounter_id", j.ref, "attempt", j.attempts, "error", err)
+		w.logger.WarnContext(ctx, "pdf: render fallido", "job_id", j.id, "kind", j.kind, "ref_id", j.ref, "attempt", j.attempts, "error", err)
 		status := "pending"
 		if j.attempts >= pdfMaxAttempts {
 			status = "failed"
@@ -154,12 +156,12 @@ func (w *PDFWorker) ProcessOne(ctx context.Context) (bool, error) {
 		}
 		_, uerr := w.pool.Exec(ctx, `UPDATE read_clinical.document_jobs
 			SET status = $2, last_error = $3, updated_at = now() WHERE id = $1`, j.id, status, msg)
-		w.duration.WithLabelValues(app.DocumentJobKindEncounterPDF, outcome).Observe(time.Since(start).Seconds())
+		w.duration.WithLabelValues(j.kind, outcome).Observe(time.Since(start).Seconds())
 		return true, uerr
 	}
 	_, err = w.pool.Exec(ctx, `UPDATE read_clinical.document_jobs
 		SET status = 'ready', object_key = $2, last_error = NULL, updated_at = now() WHERE id = $1`, j.id, key)
-	w.duration.WithLabelValues(app.DocumentJobKindEncounterPDF, outcome).Observe(time.Since(start).Seconds())
+	w.duration.WithLabelValues(j.kind, outcome).Observe(time.Since(start).Seconds())
 	return true, err
 }
 
@@ -169,6 +171,9 @@ func PDFKey(pet, enc uuid.UUID, version int) string {
 }
 
 func (w *PDFWorker) render(ctx context.Context, j pdfJob) (string, error) {
+	if j.kind == app.DocumentJobKindCardPDF {
+		return w.renderCard(ctx, j)
+	}
 	v, err := w.queries.Get(ctx, j.ref)
 	if err != nil {
 		return "", err

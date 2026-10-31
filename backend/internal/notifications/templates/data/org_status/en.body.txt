@@ -1,0 +1,5 @@
+{{if eq .V.status "verified"}}{{.V.org_name}} is now verified. You can receive care links from pet guardians.{{else if eq .V.status "rejected"}}We could not verify {{.V.org_name}}.{{else}}{{.V.org_name}} was suspended.{{end}}
+
+{{if .V.reason}}Reason: {{.V.reason}}{{end}}
+
+Go to PetPassport: {{.V.link}}

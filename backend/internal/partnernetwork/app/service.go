@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/url"
@@ -13,7 +14,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/notify"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -66,9 +67,8 @@ type Service struct {
 	queries     Queries
 	users       UserLookup
 	memberships MembershipInvalidator
-	mailer      Mailer
+	notifier    notify.Enqueuer
 	auditor     Auditor
-	baseURL     string
 	ids         kernel.IDGenerator
 	tokenGen    kernel.TokenGenerator
 	clock       kernel.Clock
@@ -76,7 +76,7 @@ type Service struct {
 	bus         *bus.Bus
 }
 
-// Options construye el servicio. Users, Memberships y Mailer son opcionales
+// Options construye el servicio. Users, Memberships y Notifier son opcionales
 // (nil en pruebas de dominio/app).
 type Options struct {
 	Repo        Repository
@@ -87,9 +87,8 @@ type Options struct {
 	Queries     Queries
 	Users       UserLookup
 	Memberships MembershipInvalidator
-	Mailer      Mailer
-	Auditor     Auditor // obligatorio para los comandos admin (WithAdminAudit)
-	BaseURL     string
+	Notifier    notify.Enqueuer // encola los correos con token (ARQ-014); el SMTP es del worker
+	Auditor     Auditor         // obligatorio para los comandos admin (WithAdminAudit)
 	IDs         kernel.IDGenerator
 	TokenGen    kernel.TokenGenerator
 	Clock       kernel.Clock
@@ -112,8 +111,8 @@ func NewService(opts Options) *Service {
 	}
 	return &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects, codes: opts.Codes, tokens: opts.Tokens,
-		queries: opts.Queries, users: opts.Users, memberships: opts.Memberships, mailer: opts.Mailer, auditor: opts.Auditor,
-		baseURL: strings.TrimRight(opts.BaseURL, "/"), ids: opts.IDs, tokenGen: opts.TokenGen,
+		queries: opts.Queries, users: opts.Users, memberships: opts.Memberships, notifier: opts.Notifier, auditor: opts.Auditor,
+		ids: opts.IDs, tokenGen: opts.TokenGen,
 		clock: opts.Clock, logger: opts.Logger,
 	}
 }
@@ -308,31 +307,20 @@ func (s *Service) handleUpdateProfile(ctx context.Context, cmd bus.Command) (bus
 	return out.result, err
 }
 
-// handleVerify: email de verificación best-effort al contacto (DOM-011).
+// handleVerify: el aviso a la organización lo emite el PM de Notifications a
+// partir de OrganizationVerified (ARQ-014): el comando no envía nada.
 func (s *Service) handleVerify(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.VerifyOrganization)
 	out, err := s.execute(ctx, c.OrganizationID, func(o *domain.Organization) ([]any, error) { return o.HandleCommand(c) })
-	if err != nil {
-		return bus.Result{}, err
-	}
-	if len(out.events) > 0 {
-		s.sendMail(ctx, out.org.ContactEmail(), mail.TemplateOrgVerified, map[string]string{"org_name": out.org.DisplayName()})
-	}
-	return out.result, nil
+	return out.result, err
 }
 
-// handleReject: email con el motivo al contacto (DOM-011).
+// handleReject: el aviso con el motivo lo emite el PM de Notifications a
+// partir de OrganizationRejected (ARQ-014).
 func (s *Service) handleReject(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.RejectOrganization)
 	out, err := s.execute(ctx, c.OrganizationID, func(o *domain.Organization) ([]any, error) { return o.HandleCommand(c) })
-	if err != nil {
-		return bus.Result{}, err
-	}
-	if len(out.events) > 0 {
-		s.sendMail(ctx, out.org.ContactEmail(), mail.TemplateOrgRejected,
-			map[string]string{"org_name": out.org.DisplayName(), "reason": strings.TrimSpace(c.Reason)})
-	}
-	return out.result, nil
+	return out.result, err
 }
 
 // handleInvite genera InvitationID y token (32 bytes); el hash viaja por el
@@ -357,7 +345,7 @@ func (s *Service) handleInvite(ctx context.Context, cmd bus.Command) (bus.Result
 	if err != nil {
 		return bus.Result{}, err
 	}
-	s.sendInvitation(ctx, out.org.DisplayName(), c.Email, c.Role, token)
+	s.sendInvitation(ctx, c.InvitationID, out.org.DisplayName(), c.Email, c.Role, token)
 	return bus.Result{AggregateID: c.InvitationID, Version: out.result.Version}, nil
 }
 
@@ -429,24 +417,30 @@ func (s *Service) ResendInvitation(ctx context.Context, orgID, invitationID uuid
 	if err != nil {
 		return err
 	}
-	s.sendInvitation(ctx, org.DisplayName, email, role, token)
+	s.sendInvitation(ctx, invitationID, org.DisplayName, email, role, token)
 	return nil
 }
 
-func (s *Service) sendInvitation(ctx context.Context, orgName, email, role, token string) {
-	s.sendMail(ctx, email, mail.TemplateMemberInvited, map[string]string{
-		"org_name": orgName, "role": role, "token": url.PathEscape(token),
-	})
-}
-
-// sendMail envía best-effort (DOM-011): el error se registra sin PII y no
-// revierte el comando ya confirmado.
-func (s *Service) sendMail(ctx context.Context, to, template string, data map[string]string) {
-	if s.mailer == nil || strings.TrimSpace(to) == "" {
+// sendInvitation encola el correo de invitación (regla member_invited). El
+// token en claro solo existe aquí: no viaja en el evento (solo su hash), así
+// que no puede resolverlo el PM; se encola con la clave de la rotación y se
+// purga de la fila en cuanto el correo sale (ADR-026, propuesta). El fallo se
+// registra sin PII y no revierte el comando ya confirmado: el administrador
+// puede reenviar (reenvío rota el token).
+func (s *Service) sendInvitation(ctx context.Context, invitationID uuid.UUID, orgName, email, role, token string) {
+	if s.notifier == nil || strings.TrimSpace(email) == "" {
 		return
 	}
-	subject, body := mail.Render(template, "es", data, s.baseURL)
-	if err := s.mailer.Send(context.WithoutCancel(ctx), mail.Message{To: to, Subject: subject, Body: body}); err != nil {
-		s.logger.WarnContext(ctx, "mail best-effort falló", "template", template, "error", err.Error())
+	err := s.notifier.Enqueue(context.WithoutCancel(ctx), notify.Notification{
+		Rule: "member_invited", Template: "org_invitation", Category: "account",
+		To: email, Locale: "es", SubjectID: invitationID,
+		Occurrence: hex.EncodeToString(kernel.HashToken(token)[:8]),
+		Payload: map[string]string{
+			"org_name": orgName, "role": role, "link_path": "/invitations/" + url.PathEscape(token),
+		},
+		Secret: []string{"link_path"},
+	})
+	if err != nil {
+		s.logger.WarnContext(ctx, "no se pudo encolar la invitación", "invitation_id", invitationID.String(), "error", err.Error())
 	}
 }

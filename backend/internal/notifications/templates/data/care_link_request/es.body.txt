@@ -1,0 +1,3 @@
+{{.V.org_name}} solicita un vínculo de atención con {{.V.pet_name}}. Tú decides si lo apruebas.
+
+Revisar solicitud: {{.V.link}}

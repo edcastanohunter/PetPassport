@@ -35,6 +35,13 @@ func TestEvents_Golden(t *testing.T) {
 			ExpiresAt: time.Date(2026, 10, 27, 14, 3, 11, 0, time.UTC),
 			PII:       &TransferPII{ToEmail: "nueva@example.com"},
 		},
+		CareLinkRequested{PetID: petID, RequestID: uuid.MustParse("0192f3a1-3333-7000-8000-000000000010"), OrganizationID: orgID,
+			RequestedBy: uuid.MustParse("0192f3a1-4444-7000-8000-000000000020"), Message: "Atendemos a Luna",
+			ExpiresAt: time.Date(2026, 11, 16, 9, 0, 0, 0, time.UTC)},
+		CareLinkRequestApproved{PetID: petID, RequestID: uuid.MustParse("0192f3a1-3333-7000-8000-000000000010"), OrganizationID: orgID, ApprovedBy: guardianID},
+		CareLinkRequestDeclined{PetID: petID, RequestID: uuid.MustParse("0192f3a1-3333-7000-8000-000000000010"), OrganizationID: orgID, DeclinedBy: guardianID, Reason: "no la conozco"},
+		CareLinkRequestExpired{PetID: petID, RequestID: uuid.MustParse("0192f3a1-3333-7000-8000-000000000010"), OrganizationID: orgID},
+		PetAlertsUpdated{PetID: petID, Alerts: []PetAlert{{Kind: "allergy", Text: "Penicilina"}}, UpdatedBy: guardianID},
 		GuardianshipTransferCancelled{PetID: petID},
 		PetGuardianshipTransferred{PetID: petID, FromGuardianID: guardianID, ToGuardianID: uuid.MustParse("0192f3a1-2222-7000-8000-000000000003")},
 	}

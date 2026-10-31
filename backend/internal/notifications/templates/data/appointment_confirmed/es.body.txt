@@ -1,0 +1,3 @@
+Tu cita para {{.V.pet_name}} en {{.V.org_name}} quedó confirmada para el {{.V.when}}.
+
+Ver cita: {{.V.link}}

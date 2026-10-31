@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/mail"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -40,6 +39,9 @@ type ProjectionRunner interface {
 // Registry necesita saber de un tutor.
 type GuardianLookup interface {
 	Exists(ctx context.Context, id uuid.UUID) bool
+	// FindByEmail resuelve el tutor por email (búsqueda de PRD-020; el email
+	// nunca sale en la respuesta).
+	FindByEmail(ctx context.Context, email string) (uuid.UUID, bool)
 	EmailOf(ctx context.Context, id uuid.UUID) (string, bool)
 	DisplayName(ctx context.Context, id uuid.UUID) string
 	// Contact devuelve los datos de contacto del tutor (RN-05: solo para G, L
@@ -64,11 +66,6 @@ type OrganizationLookup interface {
 
 // ErrOrganizationNotEligible lo devuelve OrganizationLookup (I5).
 var ErrOrganizationNotEligible = errors.New("organization not eligible")
-
-// Mailer es el puerto de email (DOM-011): best-effort tras el commit.
-type Mailer interface {
-	Send(ctx context.Context, msg mail.Message) error
-}
 
 // OrgSummary es lo que Pet Registry sabe de una organización.
 type OrgSummary struct {

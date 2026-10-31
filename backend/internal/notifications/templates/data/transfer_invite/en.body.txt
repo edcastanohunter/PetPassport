@@ -1,0 +1,7 @@
+Hi!
+
+{{.V.from_name}} wants to transfer guardianship of {{.V.pet_name}} to you. If you do not have an account yet, sign up first with this email.
+
+Review and accept: {{.V.link}}
+
+The link expires on {{.V.expires_at}}.

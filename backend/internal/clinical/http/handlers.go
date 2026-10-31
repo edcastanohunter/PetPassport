@@ -55,6 +55,8 @@ type Deps struct {
 	Idem      *idempotency.Store
 	Objects   storage.ObjectStorage // nil = adjuntos y PDF deshabilitados
 	Logger    *slog.Logger
+
+	CardDeps
 }
 
 // ClinicalHandlers implementa las operaciones de Clinical del contrato.
@@ -682,7 +684,18 @@ func (r replayed) VisitOpenEncounterResponse(w http.ResponseWriter) error { retu
 
 func (r replayed) VisitAddEncounterAddendumResponse(w http.ResponseWriter) error { return r.write(w) }
 
+func (r replayed) VisitRecordCardEntryResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r replayed) VisitDeclareCardEntryResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r replayed) VisitRecordEncounterVaccinationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 var (
-	_ gen.OpenEncounterResponseObject        = replayed{}
-	_ gen.AddEncounterAddendumResponseObject = replayed{}
+	_ gen.OpenEncounterResponseObject              = replayed{}
+	_ gen.AddEncounterAddendumResponseObject       = replayed{}
+	_ gen.RecordCardEntryResponseObject            = replayed{}
+	_ gen.DeclareCardEntryResponseObject           = replayed{}
+	_ gen.RecordEncounterVaccinationResponseObject = replayed{}
 )

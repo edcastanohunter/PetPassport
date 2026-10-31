@@ -4,9 +4,11 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
+	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 )
 
 // apiHandlers compone el contrato completo a partir de los handlers de cada
@@ -18,7 +20,10 @@ type apiHandlers struct {
 	*identityhttp.AdminHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
+	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
+	*schedulinghttp.SchedulingHandlers
+	*notificationshttp.NotificationHandlers
 }
 
 var _ gen.StrictServerInterface = apiHandlers{}

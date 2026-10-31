@@ -1,0 +1,3 @@
+Hay una nueva solicitud de cita ({{.V.type}}) para {{.V.pet_name}}.
+
+Ver solicitud: {{.V.link}}

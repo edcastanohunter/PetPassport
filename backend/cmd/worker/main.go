@@ -66,8 +66,10 @@ func dispatch(cmd string, args []string) error {
 		return run()
 	case "rebuild", "pause", "resume", "status", "snapshots", "maintenance":
 		return oneShot(cmd, args)
+	case "export":
+		return exportUser(args)
 	default:
-		return fmt.Errorf("subcomando desconocido %q (run|rebuild|pause|resume|status|snapshots|maintenance|healthcheck)", cmd)
+		return fmt.Errorf("subcomando desconocido %q (run|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
 }
 
@@ -140,6 +142,7 @@ func run() error {
 	sched := scheduler.New(allowed, nil)
 	consumer := process.NewConsumer(a.pool, a.store, reg, process.ConsumerOptions{Logger: logger})
 	registerProcessManagers(consumer, allowed, sched)
+	registerCommands(commands, a.pool, a.store, logger)
 	if err := process.ValidateEmits(consumer.ProcessManagers(), allowed); err != nil {
 		return err
 	}
@@ -191,7 +194,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	err = sup.Run(ctx, append(runners, clinical...)...)
+	notif, err := notificationsRunners(a, logger)
+	if err != nil {
+		return err
+	}
+	runners = append(runners, clinical...)
+	err = sup.Run(ctx, append(runners, notif...)...)
 	health.SetReady(false)
 	logger.Info("worker stopped")
 	return err
