@@ -21,41 +21,41 @@ const pinError = ref(false)
 
 async function load() {
   state.value = 'loading'
-  const { data, error } = await api().GET('/share/{token}', {
-    params: {
-      path: { token: token.value },
-      header: unlock.value ? { 'X-PP-Share-Unlock': unlock.value } : {},
-    },
-  })
-  if (!error) {
+  try {
+    const { data } = await api().GET('/share/{token}', {
+      params: {
+        path: { token: token.value },
+        header: unlock.value ? { 'X-PP-Share-Unlock': unlock.value } : {},
+      },
+    })
     record.value = data ?? null
     state.value = 'ready'
-    return
+  } catch (error) {
+    const code = isApiError(error) ? error.code : ''
+    const status = isApiError(error) ? error.status : 0
+    if (code === 'PIN_REQUIRED') state.value = 'pin'
+    else if (code === 'SHARE_EXPIRED' || status === 410) state.value = 'expired'
+    else if (code === 'SHARE_LOCKED') state.value = 'locked'
+    else if (status === 404) state.value = 'notFound'
+    else state.value = 'error'
   }
-  const code = isApiError(error) ? error.code : ''
-  const status = isApiError(error) ? error.status : 0
-  if (code === 'PIN_REQUIRED') state.value = 'pin'
-  else if (code === 'SHARE_EXPIRED' || status === 410) state.value = 'expired'
-  else if (code === 'SHARE_LOCKED') state.value = 'locked'
-  else if (status === 404) state.value = 'notFound'
-  else state.value = 'error'
 }
 
 async function submitPin() {
   pinError.value = false
-  const { data, error } = await api().POST('/share/{token}/unlock', {
-    params: { path: { token: token.value } },
-    body: { pin: pin.value },
-  })
-  if (error) {
+  try {
+    const { data } = await api().POST('/share/{token}/unlock', {
+      params: { path: { token: token.value } },
+      body: { pin: pin.value },
+    })
+    unlock.value = data?.token
+    pin.value = ''
+    await load()
+  } catch (error) {
     const code = isApiError(error) ? error.code : ''
     if (code === 'SHARE_LOCKED') state.value = 'locked'
     else pinError.value = true
-    return
   }
-  unlock.value = data?.token
-  pin.value = ''
-  await load()
 }
 onMounted(load)
 </script>
