@@ -104,7 +104,10 @@ func VerifyPIN(pin, stored string) bool {
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	got := argon2.IDKey([]byte(pin), salt, argonTime, argonMemKiB, argonThreads, uint32(len(want)))
+	if len(want) != int(argonKeyLen) {
+		return false
+	}
+	got := argon2.IDKey([]byte(pin), salt, argonTime, argonMemKiB, argonThreads, argonKeyLen)
 	return subtle.ConstantTimeCompare(got, want) == 1
 }
 

@@ -1429,6 +1429,7 @@ paths:
     post:
       operationId: declineCareLinkRequest
       summary: Rechazar una solicitud de vínculo
+      description: El tutor rechaza la solicitud de vínculo de una clínica. La clínica no recibe el motivo si no se indica.
       tags: [care-links]
       x-pp-action: pet:carelink:grant
       requestBody:
@@ -2201,6 +2202,7 @@ paths:
     delete:
       operationId: deleteEncounterFollowUp
       summary: Retirar el control recomendado
+      description: Elimina el control recomendado de una consulta firmada y cancela sus recordatorios.
       tags: [encounters]
       x-pp-action: encounter:clinical_edit
       parameters:
@@ -2823,6 +2825,7 @@ paths:
     post:
       operationId: disputeCardEntry
       summary: Disputar una entrada declarada
+      description: La clínica disputa una vacuna declarada por el tutor y deja constancia del motivo.
       tags: [card]
       x-pp-action: card:verify
       requestBody:
@@ -2923,6 +2926,7 @@ paths:
     get:
       operationId: getCardNextDueProposal
       summary: Previsualizar la próxima dosis propuesta
+      description: Calcula la próxima dosis propuesta según el protocolo y la fecha de aplicación; el valor es editable.
       tags: [card]
       x-pp-action: card:record
       parameters:
@@ -2999,6 +3003,7 @@ paths:
     get:
       operationId: listVaccineCatalog
       summary: Catálogo de vacunas activas
+      description: Lista las vacunas del catálogo aprobadas para la especie indicada.
       tags: [catalogs]
       x-pp-action: me:read
       parameters:
@@ -3026,6 +3031,7 @@ paths:
     get:
       operationId: listVaccinationProtocols
       summary: Protocolos de vacunación activos
+      description: Lista los protocolos de vacunación del catálogo aprobados para la especie indicada.
       tags: [catalogs]
       x-pp-action: me:read
       parameters:
@@ -3090,6 +3096,7 @@ paths:
     put:
       operationId: updateVaccine
       summary: Actualizar vacuna del catálogo
+      description: Actualiza una vacuna del catálogo. Solo SuperAdmin; la acción queda auditada.
       tags: [catalogs]
       x-pp-action: admin:catalog:write
       requestBody:
@@ -3142,6 +3149,7 @@ paths:
     post:
       operationId: createVaccinationProtocol
       summary: Crear protocolo de vacunación
+      description: Crea un protocolo de vacunación en el catálogo. Solo SuperAdmin; la acción queda auditada.
       tags: [catalogs]
       x-pp-action: admin:catalog:write
       requestBody:
@@ -3178,6 +3186,7 @@ paths:
     put:
       operationId: updateVaccinationProtocol
       summary: Actualizar protocolo de vacunación
+      description: Actualiza un protocolo de vacunación. Solo SuperAdmin; la acción queda auditada.
       tags: [catalogs]
       x-pp-action: admin:catalog:write
       requestBody:
@@ -3206,6 +3215,7 @@ paths:
     delete:
       operationId: deactivateVaccinationProtocol
       summary: Desactivar protocolo
+      description: Retira un protocolo del catálogo. Solo SuperAdmin; la acción queda auditada.
       tags: [catalogs]
       x-pp-action: admin:catalog:write
       requestBody:
@@ -3290,6 +3300,7 @@ paths:
     delete:
       operationId: revokePetShare
       summary: Revocar enlace compartido
+      description: Revoca un enlace compartido del carnet; deja de funcionar de inmediato.
       tags: [shares]
       x-pp-action: share:manage
       responses:
@@ -3678,6 +3689,7 @@ paths:
     post:
       operationId: rejectAppointment
       summary: Rechazar solicitud o propuesta
+      description: La clínica rechaza una solicitud de cita con un motivo y libera el horario.
       tags: [appointments]
       x-pp-action: appointment:manage
       requestBody:
@@ -3739,6 +3751,7 @@ paths:
     post:
       operationId: cancelOrgAppointment
       summary: Cancelar la cita (clínica)
+      description: La clínica cancela una cita confirmada con un motivo y libera el horario.
       tags: [appointments]
       x-pp-action: appointment:cancel
       requestBody:
@@ -3790,6 +3803,7 @@ paths:
     post:
       operationId: markAppointmentNoShow
       summary: Marcar ausencia
+      description: Marca una cita como inasistencia. También ocurre de forma automática a las 24 horas.
       tags: [appointments]
       x-pp-action: appointment:manage
       responses:
@@ -3932,6 +3946,7 @@ paths:
     delete:
       operationId: removeAgendaException
       summary: Quitar la excepción de un día
+      description: Elimina una excepción de la agenda de un profesional para la fecha indicada.
       tags: [agendas]
       x-pp-action: agenda:manage
       responses:

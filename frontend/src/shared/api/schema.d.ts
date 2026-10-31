@@ -783,7 +783,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rechazar una solicitud de vínculo */
+        /**
+         * Rechazar una solicitud de vínculo
+         * @description El tutor rechaza la solicitud de vínculo de una clínica. La clínica no recibe el motivo si no se indica.
+         */
         post: operations["declineCareLinkRequest"];
         delete?: never;
         options?: never;
@@ -1184,7 +1187,10 @@ export interface paths {
          */
         put: operations["putEncounterFollowUp"];
         post?: never;
-        /** Retirar el control recomendado */
+        /**
+         * Retirar el control recomendado
+         * @description Elimina el control recomendado de una consulta firmada y cancela sus recordatorios.
+         */
         delete: operations["deleteEncounterFollowUp"];
         options?: never;
         head?: never;
@@ -1587,7 +1593,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disputar una entrada declarada */
+        /**
+         * Disputar una entrada declarada
+         * @description La clínica disputa una vacuna declarada por el tutor y deja constancia del motivo.
+         */
         post: operations["disputeCardEntry"];
         delete?: never;
         options?: never;
@@ -1650,7 +1659,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Previsualizar la próxima dosis propuesta */
+        /**
+         * Previsualizar la próxima dosis propuesta
+         * @description Calcula la próxima dosis propuesta según el protocolo y la fecha de aplicación; el valor es editable.
+         */
         get: operations["getCardNextDueProposal"];
         put?: never;
         post?: never;
@@ -1689,7 +1701,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Catálogo de vacunas activas */
+        /**
+         * Catálogo de vacunas activas
+         * @description Lista las vacunas del catálogo aprobadas para la especie indicada.
+         */
         get: operations["listVaccineCatalog"];
         put?: never;
         post?: never;
@@ -1706,7 +1721,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Protocolos de vacunación activos */
+        /**
+         * Protocolos de vacunación activos
+         * @description Lista los protocolos de vacunación del catálogo aprobados para la especie indicada.
+         */
         get: operations["listVaccinationProtocols"];
         put?: never;
         post?: never;
@@ -1746,7 +1764,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Actualizar vacuna del catálogo */
+        /**
+         * Actualizar vacuna del catálogo
+         * @description Actualiza una vacuna del catálogo. Solo SuperAdmin; la acción queda auditada.
+         */
         put: operations["updateVaccine"];
         post?: never;
         /**
@@ -1768,7 +1789,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Crear protocolo de vacunación */
+        /**
+         * Crear protocolo de vacunación
+         * @description Crea un protocolo de vacunación en el catálogo. Solo SuperAdmin; la acción queda auditada.
+         */
         post: operations["createVaccinationProtocol"];
         delete?: never;
         options?: never;
@@ -1786,10 +1810,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Actualizar protocolo de vacunación */
+        /**
+         * Actualizar protocolo de vacunación
+         * @description Actualiza un protocolo de vacunación. Solo SuperAdmin; la acción queda auditada.
+         */
         put: operations["updateVaccinationProtocol"];
         post?: never;
-        /** Desactivar protocolo */
+        /**
+         * Desactivar protocolo
+         * @description Retira un protocolo del catálogo. Solo SuperAdmin; la acción queda auditada.
+         */
         delete: operations["deactivateVaccinationProtocol"];
         options?: never;
         head?: never;
@@ -1835,7 +1865,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revocar enlace compartido */
+        /**
+         * Revocar enlace compartido
+         * @description Revoca un enlace compartido del carnet; deja de funcionar de inmediato.
+         */
         delete: operations["revokePetShare"];
         options?: never;
         head?: never;
@@ -2082,7 +2115,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rechazar solicitud o propuesta */
+        /**
+         * Rechazar solicitud o propuesta
+         * @description La clínica rechaza una solicitud de cita con un motivo y libera el horario.
+         */
         post: operations["rejectAppointment"];
         delete?: never;
         options?: never;
@@ -2125,7 +2161,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancelar la cita (clínica) */
+        /**
+         * Cancelar la cita (clínica)
+         * @description La clínica cancela una cita confirmada con un motivo y libera el horario.
+         */
         post: operations["cancelOrgAppointment"];
         delete?: never;
         options?: never;
@@ -2168,7 +2207,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marcar ausencia */
+        /**
+         * Marcar ausencia
+         * @description Marca una cita como inasistencia. También ocurre de forma automática a las 24 horas.
+         */
         post: operations["markAppointmentNoShow"];
         delete?: never;
         options?: never;
@@ -2281,7 +2323,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Quitar la excepción de un día */
+        /**
+         * Quitar la excepción de un día
+         * @description Elimina una excepción de la agenda de un profesional para la fecha indicada.
+         */
         delete: operations["removeAgendaException"];
         options?: never;
         head?: never;

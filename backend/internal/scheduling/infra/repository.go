@@ -25,6 +25,9 @@ func AgendaStreamID(orgID, professionalID uuid.UUID) uuid.UUID {
 	return uuid.NewSHA1(agendaNamespace, []byte("agenda-"+orgID.String()+"-"+professionalID.String()))
 }
 
+// El agregado de agenda implementa el contrato de snapshots (ARQ-004).
+var _ eventstore.Snapshotter = (*domain.ProfessionalAgenda)(nil)
+
 // RegisterEvents registra los eventos Scheduling v1 en el registro (arranque).
 func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.AppointmentRequested{} })

@@ -39,13 +39,6 @@ func (*CardEntriesProjector) Name() string { return "clinical.card_entries" }
 // Handles implementa Projector.
 func (*CardEntriesProjector) Handles() []string { return cardEventTypes }
 
-func nullDate(d *string) any {
-	if d == nil {
-		return nil
-	}
-	return *d
-}
-
 // Project implementa Projector.
 func (p *CardEntriesProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.StoredEvent) error {
 	decoded, err := p.reg.Decode(e)

@@ -13,9 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	orgdomain "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	petdomain "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
-	"github.com/google/uuid"
 )
 
 func TestCareLinkRequests_RequestApproveRevokeAndExpire(t *testing.T) {

@@ -32,7 +32,8 @@ func TestApply_ActiveFollowsApproval(t *testing.T) {
 }
 
 func TestVaccineID_Deterministic(t *testing.T) {
-	if VaccineID("Rabia") != VaccineID("Rabia") || VaccineID("Rabia") == VaccineID("Triple felina (FVRCP)") {
+	first, second := VaccineID("Rabia"), VaccineID("Rabia")
+	if first != second || first == VaccineID("Triple felina (FVRCP)") {
 		t.Fatal("ids no deterministas o colisionan")
 	}
 }

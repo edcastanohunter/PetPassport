@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -148,8 +147,6 @@ type agendaSnapshot struct {
 	Config     AgendaConfig            `json:"config"`
 	Exceptions map[string]DayException `json:"exceptions"`
 }
-
-var _ eventstore.Snapshotter = (*ProfessionalAgenda)(nil)
 
 // SnapshotState implementa eventstore.Snapshotter.
 func (a *ProfessionalAgenda) SnapshotState() (any, int) {
