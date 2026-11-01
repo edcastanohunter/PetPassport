@@ -1,7 +1,19 @@
-# Tracking — Fase 3: Search & Performance
+﻿# Tracking — Fase 3: Search & Performance
 
 > Fuente de verdad del estado. Editar el estado **solo aquí**. Validar con `scripts/specs-status.sh --check`.
 > Estados: `PENDIENTE` `EN_DISENO` `EN_PROGRESO` `IMPLEMENTADO` `VERIFICADO` `BLOQUEADO` `DESCARTADO`.
+
+## Pendientes arrastrados de Fase 2 (Carry-Over)
+
+| Ítem F2 | Área | Estado / Acción en F3 |
+|---|---|---|
+| F2 DAT-009 / QA-006 | Clínico | Aprobación veterinaria de protocolos CO (APPROVALS.md) y validación clínica piloto pendientes de sesión con veterinarios. |
+| F2 SEC-006 | Legal | Texto definitivo del aviso de privacidad 2026-11-draft pendiente de validación legal. |
+| F2 QA-005 | QA | Snapshots de PDFs Typst (encuentros/carnet) pendientes del binario typst en el agente de build. |
+| F2 PRD-021 | Producto | Co-tutor con permisos limitados (COULD, pospuesto a evaluar en M3.4 si hay capacidad). |
+| F2 PRD-022 | Producto | Importación CSV para clínicas piloto (incorporado en F3 como PP-F3-PRD-013, M3.4, COULD). |
+
+## Matriz de Requisitos F3
 
 | ID | Área | Requisito | Prio | Hito | Estado | Issue | PR | Notas |
 |---|---|---|---|---|---|---|---|---|
