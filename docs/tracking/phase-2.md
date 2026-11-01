@@ -103,7 +103,7 @@
 | PP-F2-NOT-004 | NOT | Preferencias, categorías y baja por enlace | MUST | M2.4 | IMPLEMENTADO | | | Categorías, token HMAC de baja (180 d) con List-Unsubscribe(+Post) y pie con motivo, preferencias y dirección. |
 | PP-F2-NOT-005 | NOT | Entrega, reintentos, dead-letter y métricas | MUST | M2.4 | IMPLEMENTADO | | | Runner `notifications-sender`: backoff 30 s/2 min/10 min/30 min/2 h, dead-letter a los 5 intentos y métricas. |
 | PP-F2-NOT-006 | NOT | Idempotencia de envíos | MUST | M2.4 | IMPLEMENTADO | | | `dedup_key` único en scheduled y deliveries; encolar o reentregar el mismo evento 3 veces deja 1 fila (test de integración escrito, pendiente de CI). |
-| PP-F2-NOT-007 | NOT | Proveedor de email, bounces, SPF/DKIM/DMARC | SHOULD | M2.4 | EN_PROGRESO | | | Webhook HMAC genérico y supresiones implementados. Pendiente (humano): elegir proveedor transaccional, SPF/DKIM/DMARC y adaptar su formato de webhook. |
+| PP-F2-NOT-007 | NOT | Proveedor de email, bounces, SPF/DKIM/DMARC | SHOULD | M2.4 | IMPLEMENTADO | | | Servidor externo Stalwart Mail Server (edcastdev.com, petpassport@edcastdev.com) con registros SPF/DKIM/DMARC activos. Configuración documentada en RUNBOOK §13 y staging.env.example. |
 | PP-F2-SEC-001 | SEC | Autorización clínica ampliada y custodia | MUST | M2.1 | IMPLEMENTADO | | | Suites de política y de handlers (sondeo x-pp-action). |
 | PP-F2-SEC-002 | SEC | Enlaces compartidos y páginas públicas | SHOULD | M2.2 | IMPLEMENTADO | | | noindex, Referrer-Policy no-referrer, bloqueo por PIN, sin contacto del tutor. |
 | PP-F2-SEC-003 | SEC | Adjuntos seguros | MUST | M2.1 | IMPLEMENTADO | | | |

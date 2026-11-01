@@ -352,31 +352,50 @@ Tras una restauración real, antes de abrir tráfico, se reaplican las supresion
 | Backend (secundario) | _pendiente de asignar (PM)_ | |
 | Seguridad / privacidad | _pendiente de asignar (PM)_ | |
 
-## 13. Correo transaccional (IAM-012)
+## 13. Correo transaccional (IAM-012, NOT-007)
 
-Keycloak (verificación, recuperación) y el worker (notificaciones: invitaciones, transferencias,
-citas, recordatorios; el api solo las encola, ARQ-014) envían como
-`no-reply@${PP_DOMAIN}` por el proveedor SMTP (STARTTLS, puerto 587). Tema de correo y de login:
-`infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
+Keycloak (verificación, recuperación de cuenta) y el worker (notificaciones de citas, carnet,
+recordatorios, transferencias e invitaciones; el api solo las encola, ARQ-014) envían a través
+del servidor de correo externo **Stalwart Mail Server** (`edcastdev.com`) como
+`petpassport@edcastdev.com` por SMTP autenticado (STARTTLS puerto 587 o TLS puerto 465).
+Tema de correo y de login: `infra/keycloak/themes/petpassport` (es/en; el idioma sigue al `ui_locales` de la SPA).
 
-1. **Proveedor**: verificar el dominio `${PP_DOMAIN}` y crear una credencial SMTP solo de envío.
-   `PP_SMTP_HOST/PORT/USER/PASSWORD` van al env file (§2). `deploy.sh` las copia a los `EnvironmentFile`
-   de `pp-worker` y `pp-keycloak-config`, y este último las escribe en el realm.
-2. **DNS como código**: copiar los valores del proveedor en `staging.tfvars`
-   (`mail_spf_includes`, `mail_dkim_records`, `mail_dmarc_policy`, `mail_dmarc_rua`) y aplicar
-   `infra/waf/cloudflare` (§6). Comprobar:
-   ```bash
-   dig +short TXT ${PP_DOMAIN}                 # "v=spf1 include:<proveedor> -all"
-   dig +short TXT _dmarc.${PP_DOMAIN}          # "v=DMARC1; p=quarantine; adkim=s; aspf=s; ..."
-   dig +short CNAME <selector>._domainkey.${PP_DOMAIN}
-   ```
-3. **Prueba de envío** (antes de abrir el piloto): registrar una cuenta de prueba en
-   `https://app.${PP_DOMAIN}` con la SPA en español y otra en inglés hacia buzones de Gmail y
-   Outlook. Debe llegar a la bandeja de entrada (no spam) con el tema PetPassport en el idioma
-   elegido, y en "Mostrar original" verse `spf=pass`, `dkim=pass` y `dmarc=pass`. Anotar el
-   resultado en el PR de M1.5.
-4. **DMARC**: `quarantine` desde el inicio; pasar a `reject` tras 4 semanas de informes sin
-   fuentes legítimas fallando.
+### 13.1 Parámetros de entorno del servidor SMTP (Stalwart)
+Configurados en el archivo de entorno del despliegue (`/var/lib/petpassport/<env>/env/worker.env` y `keycloak.env`):
+```ini
+PP_SMTP_HOST=mail.edcastdev.com             # FQDN o IP del servidor Stalwart
+PP_SMTP_PORT=587                            # 587 (STARTTLS) o 465 (TLS implícito)
+PP_SMTP_USER=petpassport@edcastdev.com      # Cuenta o credencial SMTP de Stalwart
+PP_SMTP_PASSWORD=<contraseña-secreta>       # Secreto de la cuenta en Stalwart
+PP_SMTP_FROM=petpassport@edcastdev.com      # Remitente de Keycloak y del worker
+PP_MAIL_ADDRESS="PetPassport, Bogotá, Colombia" # Dirección postal exigida fuera de dev (CAN-SPAM/GDPR)
+PP_UNSUBSCRIBE_SECRET=<secreto-32+>         # Token HMAC para desuscripción en 1 clic
+PP_EMAIL_WEBHOOK_SECRET=<secreto-32+>       # HMAC SHA256 para eventos/rebotes en /webhooks/email/stalwart
+```
+
+### 13.2 Estado de DNS y autenticación (edcastdev.com)
+Los registros DNS del dominio `edcastdev.com` se encuentran configurados y activos:
+- **SPF:** Registro TXT en `edcastdev.com` autorizando la IP/host del servidor Stalwart.
+- **DKIM:** Clave pública DKIM publicada en el selector correspondiente (`<selector>._domainkey.edcastdev.com`).
+- **DMARC:** Registro TXT en `_dmarc.edcastdev.com` (política `p=quarantine` o `p=reject`).
+
+Comprobación rápida desde la VM o consola:
+```bash
+dig +short TXT edcastdev.com
+dig +short TXT _dmarc.edcastdev.com
+```
+
+### 13.3 Rebotes y supresiones (Stalwart → PetPassport)
+Stalwart puede emitir eventos de entrega fallida (hard bounce) o quejas (complaint) al endpoint:
+`POST https://api.${PP_DOMAIN}/api/v1/webhooks/email/stalwart`
+con la cabecera `X-PP-Signature: sha256=<hmac>` generada con `PP_EMAIL_WEBHOOK_SECRET`.
+El backend registra automáticamente la dirección en `notifications.suppressions` para evitar reenvíos.
+
+### 13.4 Prueba de envío
+Antes de abrir el entorno a usuarios del piloto: registrar una cuenta de prueba en
+`https://app.${PP_DOMAIN}` con la SPA en español y otra en inglés hacia buzones externos (Gmail,
+Outlook). Confirmar que el correo llega a la bandeja de entrada (no spam) y que en "Mostrar original"
+se verifique `spf=pass`, `dkim=pass` y `dmarc=pass`.
 
 ## 14. Operación con systemd (ADR-026)
 
