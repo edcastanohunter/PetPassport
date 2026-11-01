@@ -32,6 +32,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/cache"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/config"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
@@ -40,6 +41,8 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/ratelimit"
+	ppredis "github.com/edcastanohunter/petpassport/backend/internal/platform/redis"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
@@ -136,9 +139,36 @@ func run() error {
 
 	// Partner Network: membresías del Principal con caché LRU 60 s (IAM-008),
 	// invalidada por los comandos que cambian membresías (DOM-011).
+	// Redis, caché compartida (ARQ-005, ARQ-006) y rate limiting distribuido (ARQ-007).
+	var redisClient *ppredis.Client
+	var distCache *cache.Cache
+	if cfg.Redis.Addr != "" {
+		rc, err := ppredis.NewClient(ppredis.Config{
+			Addr:         cfg.Redis.Addr,
+			Password:     cfg.Redis.Password,
+			DB:           0,
+			UseTLS:       cfg.Redis.UseTLS,
+			DialTimeout:  200 * time.Millisecond,
+			ReadTimeout:  100 * time.Millisecond,
+			WriteTimeout: 200 * time.Millisecond,
+			ClientName:   "api",
+		})
+		if err != nil {
+			logger.Warn("redis connection failed (failing open)", "error", err)
+		} else {
+			redisClient = rc
+			defer rc.Close()
+			distCache = cache.New(rc)
+		}
+	}
+	limiter := ratelimit.NewLimiter(redisClient)
+	rlConfig := ratelimit.DefaultConfig()
+	rlConfig.Allowlist = cfg.RateLimit.Allowlist
+	rateLimitMW := ratelimit.Middleware(limiter, rlConfig)
+
 	userAdapter := orginfra.NewUserAdapter(identitySvc)
 	orgQueries := orginfra.NewQueries(pool.Pool, userAdapter)
-	membershipCache := auth.NewMembershipCache(orginfra.NewMembershipProvider(orgQueries), 60*time.Second, 0)
+	membershipCache := auth.NewMembershipCache(orginfra.NewMembershipProvider(orgQueries), 300*time.Second, 0).WithCache(distCache)
 	orgOpts := orgapp.Options{
 		Repo:        orginfra.NewRepository(store, registry, nil, nil),
 		UoW:         unit,
@@ -198,7 +228,7 @@ func run() error {
 
 	// Clinical Records (F2 M2.1).
 	clinicalQueries := clinicalinfra.NewQueries(pool.Pool)
-	clinicalPets := clinicalinfra.NewPetAccess(pool.Pool)
+	clinicalPets := clinicalinfra.NewCachedPetAccessAdapter(clinicalinfra.NewPetAccess(pool.Pool), distCache)
 	clinicalSvc := clinicalapp.NewService(clinicalapp.Options{
 		Repo:         clinicalinfra.NewRepository(store, registry, nil, nil),
 		UoW:          unit,
@@ -318,6 +348,7 @@ func run() error {
 		},
 		Guard:       guard.Middleware,
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
+		RateLimit:   rateLimitMW,
 	})
 	errs := servers.Start()
 	health.SetReady(true)

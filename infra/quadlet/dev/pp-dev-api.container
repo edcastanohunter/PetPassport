@@ -6,8 +6,8 @@
 Description=PetPassport dev: api (air)
 Requires=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
 After=pp-dev-migrate.service pp-dev-keycloak-config.service pp-dev-minio-init.service
-Wants=pp-dev-mailpit.service pp-dev-worker.service
-After=pp-dev-mailpit.service
+Wants=pp-dev-mailpit.service pp-dev-worker.service pp-dev-redis.service
+After=pp-dev-mailpit.service pp-dev-redis.service
 
 [Container]
 Image=ghcr.io/air-verse/air:latest
@@ -27,6 +27,7 @@ Environment=PP_IP_HASH_SALT=dev-ip-hash-salt-change-me
 Environment=PP_KC_ADMIN_CLIENT_ID=petpassport-backend PP_KC_ADMIN_CLIENT_SECRET=dev-backend-secret-change-me
 Environment=PP_STORAGE_ENDPOINT=minio:9000 PP_STORAGE_BUCKET=petpassport-media
 Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
+Environment=PP_REDIS_ADDR=redis:6379
 Environment=PP_CORS_ORIGINS=https://app.pp.localhost,http://localhost:5173
 Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost
 Environment=GOFLAGS=-buildvcs=false

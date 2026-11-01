@@ -1,0 +1,17 @@
+# Valores compartidos para producción (PP-F3-ARQ-013)
+global:
+  env: prod
+  domain: petpassport.app
+
+api:
+  replicaCount: 3
+
+worker:
+  replicaCount: 2
+
+frontend:
+  replicaCount: 3
+
+redis:
+  addr: "redis-managed.internal:6379"
+  useTLS: true

@@ -1,0 +1,23 @@
+# Redis de desarrollo (ARQ-005, INF-001, DAT-004):
+# DB 0: caché (allkeys-lru)
+# DB 1: colas asynq (AOF everysec, noeviction)
+[Unit]
+Description=PetPassport dev: redis
+
+[Container]
+Image=docker.io/library/redis:7-alpine
+ContainerName=pp-dev-redis
+Network=pp-dev.network
+NetworkAlias=redis
+PublishPort=6379:6379
+Exec=redis-server --appendonly yes --appendfsync everysec --maxmemory 512mb
+Volume=pp-dev-redisdata.volume:/data
+HealthCmd=redis-cli ping | grep -q PONG
+HealthInterval=5s
+HealthTimeout=3s
+HealthRetries=20
+Notify=healthy
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=60

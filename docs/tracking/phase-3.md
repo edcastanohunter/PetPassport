@@ -1,4 +1,4 @@
-﻿# Tracking — Fase 3: Search & Performance
+# Tracking — Fase 3: Search & Performance
 
 > Fuente de verdad del estado. Editar el estado **solo aquí**. Validar con `scripts/specs-status.sh --check`.
 > Estados: `PENDIENTE` `EN_DISENO` `EN_PROGRESO` `IMPLEMENTADO` `VERIFICADO` `BLOQUEADO` `DESCARTADO`.
@@ -30,9 +30,9 @@
 | PP-F3-PRD-011 | PRD | Notificaciones push web opt-in | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-PRD-012 | PRD | Paciente provisional y reclamación | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-PRD-013 | PRD | Importación CSV con pacientes provisionales | COULD | M3.4 | PENDIENTE | | | |
-| PP-F3-PRD-014 | PRD | Mensajes claros de límites de uso | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-DOM-001 | DOM | Glosario F3 | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-DOM-002 | DOM | Context map F3 | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-PRD-014 | PRD | Mensajes claros de límites de uso | MUST | M3.0 | IMPLEMENTADO | | | Cabeceras IETF y Problem JSON 429 |
+| PP-F3-DOM-001 | DOM | Glosario F3 | MUST | M3.0 | IMPLEMENTADO | | | docs/phase-3/00 y 02 |
+| PP-F3-DOM-002 | DOM | Context map F3 | MUST | M3.0 | IMPLEMENTADO | | | docs/phase-3/02 |
 | PP-F3-DOM-003 | DOM | Modelo de documentos de búsqueda | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-DOM-004 | DOM | Proyección de access por mascota | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-DOM-005 | DOM | Modelo del catálogo de medicamentos y sugerencias | MUST | M3.2 | PENDIENTE | | | |
@@ -46,15 +46,15 @@
 | PP-F3-ARQ-002 | ARQ | Servicio de consulta con accessFilter y post-filtro | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-ARQ-003 | ARQ | Reindex sin downtime por alias | MUST | M3.4 | PENDIENTE | | | |
 | PP-F3-ARQ-004 | ARQ | Degradación a PostgreSQL con circuit breaker | MUST | M3.1 | PENDIENTE | | | |
-| PP-F3-ARQ-005 | ARQ | Cliente Redis, bases, timeouts, fail-open | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-ARQ-006 | ARQ | Caché compartida e invalidación por eventos | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-ARQ-007 | ARQ | Rate limiting distribuido | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-ARQ-008 | ARQ | asynq: colas, dedup, DLQ, migración de jobs F2 | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-ARQ-009 | ARQ | Leases de worker por runner | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-ARQ-005 | ARQ | Cliente Redis, bases, timeouts, fail-open | MUST | M3.0 | IMPLEMENTADO | | | DB 0 y DB 1, breaker fail-open |
+| PP-F3-ARQ-006 | ARQ | Caché compartida e invalidación por eventos | MUST | M3.0 | IMPLEMENTADO | | | L1 en memoria + L2 Redis, singleflight, pub/sub |
+| PP-F3-ARQ-007 | ARQ | Rate limiting distribuido | MUST | M3.0 | IMPLEMENTADO | | | Sliding window Lua, fail-open, cabeceras IETF |
+| PP-F3-ARQ-008 | ARQ | asynq: colas, dedup, DLQ, migración de jobs F2 | MUST | M3.0 | IMPLEMENTADO | | | Colas critical/default/low, dedup TaskID, worker pool |
+| PP-F3-ARQ-009 | ARQ | Leases de worker por runner | MUST | M3.0 | IMPLEMENTADO | | | platform.worker_leases con renovación y failover |
 | PP-F3-ARQ-010 | ARQ | Particionado intra-proyección | COULD | M3.3 | PENDIENTE | | | |
 | PP-F3-ARQ-011 | ARQ | Lectura tolerante a huecos (condicional a PRF-009) | SHOULD | M3.3 | PENDIENTE | | | |
-| PP-F3-ARQ-012 | ARQ | api con N réplicas y rolling deploy | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-ARQ-013 | ARQ | Helm chart y valores compartidos con compose | SHOULD | M3.0 | PENDIENTE | | | |
+| PP-F3-ARQ-012 | ARQ | api con N réplicas y rolling deploy | MUST | M3.0 | IMPLEMENTADO | | | HPA, PDB, probes y réplicas en Helm |
+| PP-F3-ARQ-013 | ARQ | Helm chart y valores compartidos con compose | SHOULD | M3.0 | IMPLEMENTADO | | | infra/helm/petpassport con staging y prod |
 | PP-F3-ARQ-014 | ARQ | ClamAV en adjuntos | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-ARQ-015 | ARQ | Canal Web Push | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-ARQ-016 | ARQ | CDN para estáticos y media | MUST | M3.3 | PENDIENTE | | | |
@@ -67,17 +67,17 @@
 | PP-F3-API-007 | API | Endpoints de pacientes provisionales | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-API-008 | API | Endpoints de push | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-API-009 | API | Administración de búsqueda, caché y workers | MUST | M3.1 | PENDIENTE | | | |
-| PP-F3-API-010 | API | Límites y degradación en respuestas | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-API-010 | API | Límites y degradación en respuestas | MUST | M3.0 | IMPLEMENTADO | | | Cabeceras RateLimit-* y Problem JSON RATE_LIMITED |
 | PP-F3-API-011 | API | Catálogo de errores F3 | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-DAT-001 | DAT | Índices, mappings, analizadores y sinónimos OpenSearch | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-DAT-002 | DAT | DDL del catálogo de medicamentos | MUST | M3.2 | PENDIENTE | | | |
-| PP-F3-DAT-003 | DAT | DDL leases, index_queue, reindex_jobs | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-DAT-004 | DAT | Esquema de claves Redis | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-DAT-003 | DAT | DDL leases, index_queue, reindex_jobs | MUST | M3.0 | IMPLEMENTADO | | | Migración 20261101000016_platform_worker_leases.sql |
+| PP-F3-DAT-004 | DAT | Esquema de claves Redis | MUST | M3.0 | IMPLEMENTADO | | | DB 0 (cache, ratelimit), DB 1 (asynq) con prefijos |
 | PP-F3-DAT-005 | DAT | DDL pacientes provisionales, claims, aliases | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-DAT-006 | DAT | DDL push subscriptions y preferencias por canal | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-DAT-007 | DAT | Revisión de es.events, particionado e índices | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-DAT-008 | DAT | Vistas materializadas de plataforma | SHOULD | M3.4 | PENDIENTE | | | |
-| PP-F3-DAT-009 | DAT | Snapshots OpenSearch y persistencia Redis | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-DAT-009 | DAT | Snapshots OpenSearch y persistencia Redis | MUST | M3.0 | IMPLEMENTADO | | | Redis AOF everysec + maxmemory LRU |
 | PP-F3-FE-001 | FE | Búsqueda global clínica | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-FE-002 | FE | Búsqueda del tutor | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-FE-003 | FE | Medication picker en el editor | MUST | M3.2 | PENDIENTE | | | |
@@ -89,8 +89,8 @@
 | PP-F3-FE-009 | FE | Pacientes provisionales y reclamación | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-FE-010 | FE | Rendimiento del cliente: presupuesto, splitting, RUM | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-FE-011 | FE | Degradación y frescura en búsqueda | MUST | M3.1 | PENDIENTE | | | |
-| PP-F3-PRF-001 | PRF | SLOs y error budgets | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-PRF-002 | PRF | Generador de datos sintéticos a escala | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-PRF-001 | PRF | SLOs y error budgets | MUST | M3.0 | IMPLEMENTADO | | | docs/phase-3/07-rendimiento.md |
+| PP-F3-PRF-002 | PRF | Generador de datos sintéticos a escala | MUST | M3.0 | IMPLEMENTADO | | | cmd/worker synth con perfiles pilot y scale |
 | PP-F3-PRF-003 | PRF | Escenarios k6 y ejecución nightly | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-PRF-004 | PRF | Optimización PostgreSQL | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-PRF-005 | PRF | pgbouncer | COULD | M3.3 | PENDIENTE | | | |
@@ -99,24 +99,24 @@
 | PP-F3-PRF-008 | PRF | Plan de capacidad y reglas de escalado | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-PRF-009 | PRF | Medición de contención del Event Store y decisión | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-SEC-001 | SEC | Test de fuga de autorización en búsqueda | MUST | M3.1 | PENDIENTE | | | |
-| PP-F3-SEC-002 | SEC | Seguridad OpenSearch | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-SEC-003 | SEC | Seguridad Redis | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-SEC-002 | SEC | Seguridad OpenSearch | MUST | M3.0 | IMPLEMENTADO | | | OpenSearch red interna y security disable dev |
+| PP-F3-SEC-003 | SEC | Seguridad Redis | MUST | M3.0 | IMPLEMENTADO | | | Contraseña requerida en prod, red privada, AUTH |
 | PP-F3-SEC-004 | SEC | Abuso, scraping y límites | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-SEC-005 | SEC | Antivirus y cuarentena | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-SEC-006 | SEC | Detección de accesos anómalos | MUST | M3.4 | PENDIENTE | | | |
 | PP-F3-SEC-007 | SEC | Seguridad de push | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-SEC-008 | SEC | Directorio público: datos mínimos | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-SEC-009 | SEC | Threat model F3 | MUST | M3.4 | PENDIENTE | | | |
-| PP-F3-INF-001 | INF | Compose con Redis, OpenSearch, ClamAV, asynqmon | MUST | M3.0 | PENDIENTE | | | |
-| PP-F3-INF-002 | INF | Redis y OpenSearch gestionados; red privada | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-INF-001 | INF | Compose con Redis, OpenSearch, ClamAV, asynqmon | MUST | M3.0 | IMPLEMENTADO | | | Quadlet dev con Redis 7 y OpenSearch 2.18 |
+| PP-F3-INF-002 | INF | Redis y OpenSearch gestionados; red privada | MUST | M3.0 | IMPLEMENTADO | | | Aislamiento de red interna y env vars |
 | PP-F3-INF-003 | INF | Dashboards Search, Redis, Jobs, Workers, SLOs, RUM | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-INF-004 | INF | Alertas F3 | MUST | M3.3 | PENDIENTE | | | |
-| PP-F3-INF-005 | INF | Rolling deploy multi-réplica; Helm en CI | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-INF-005 | INF | Rolling deploy multi-réplica; Helm en CI | MUST | M3.0 | IMPLEMENTADO | | | Helm chart petpassport con replicas api/worker |
 | PP-F3-INF-006 | INF | Runbook F3 | MUST | M3.5 | PENDIENTE | | | |
 | PP-F3-INF-007 | INF | Configuración de CDN | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-QA-001 | QA | Pruebas de indexación y access | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-QA-002 | QA | Pruebas de relevancia (golden queries) | MUST | M3.1 | PENDIENTE | | | |
 | PP-F3-QA-003 | QA | Game day y scripts de caos | MUST | M3.5 | PENDIENTE | | | |
-| PP-F3-QA-004 | QA | Pruebas de leases y failover | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-QA-004 | QA | Pruebas de leases y failover | MUST | M3.0 | IMPLEMENTADO | | | TestWorkerLease_Failover integration test |
 | PP-F3-QA-005 | QA | E2E F3 | MUST | M3.5 | PENDIENTE | | | |
-| PP-F3-QA-006 | QA | Gates F3 | MUST | M3.0 | PENDIENTE | | | |
+| PP-F3-QA-006 | QA | Gates F3 | MUST | M3.0 | IMPLEMENTADO | | | CI gates y TestRedisCacheFlushall integration test |

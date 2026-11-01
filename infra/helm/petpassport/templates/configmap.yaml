@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "petpassport.fullname" . }}-config
+  labels:
+    {{- include "petpassport.labels" . | nindent 4 }}
+data:
+  PP_ENV: {{ .Values.global.env | quote }}
+  PP_LOG_LEVEL: "info"
+  PP_HTTP_ADDR: ":{{ .Values.api.port }}"
+  PP_INTERNAL_ADDR: ":{{ .Values.api.internalPort }}"
+  PP_DB_MAX_CONNS: {{ .Values.database.maxConns | quote }}
+  PP_REDIS_ADDR: {{ .Values.redis.addr | quote }}
+  PP_REDIS_USE_TLS: {{ .Values.redis.useTLS | quote }}
+  PP_OIDC_ISSUER: {{ .Values.oidc.issuer | quote }}
+  PP_OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
+  PP_OIDC_ALLOWED_AZP: {{ .Values.oidc.allowedAZP | quote }}

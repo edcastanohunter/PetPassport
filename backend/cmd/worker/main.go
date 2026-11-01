@@ -1,8 +1,9 @@
-// Command worker es el proceso de proyecciones asíncronas, outbox y comandos
-// programados (PP-F2-ARQ-001, ADR-009, docs/phase-2/03 §2). Mismo binario de
-// la imagen backend; una réplica por grupo (lock de instancia).
+// Command worker es el proceso de proyecciones asíncronas, outbox, comandos
+// programados y colas asynq (PP-F3-ARQ-008, PP-F3-ARQ-009, ADR-009, ADR-014, ADR-015).
+// Mismo binario de la imagen backend; réplicas horizontales coordinadas por leases.
 //
-//	worker [run]                                   runners de larga duración
+//	worker [run]                                   runners de larga duración con leases
+//	worker leases [--release <name>]               inspección y liberación de leases
 //	worker rebuild --projection <name> [--to-position N]
 //	worker rebuild --all [--to-position N]          one-shot (ARQ-006)
 //	worker rebuild --sync                           primarias F1, con la API en mantenimiento
@@ -15,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -26,6 +28,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -34,10 +37,12 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/lease"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/process"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/queue"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/scheduler"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/worker"
@@ -64,12 +69,16 @@ func dispatch(cmd string, args []string) error {
 	switch cmd {
 	case "run":
 		return run()
+	case "leases":
+		return leasesCommand(args)
+	case "synth":
+		return synthCommand(args)
 	case "rebuild", "pause", "resume", "status", "snapshots", "maintenance":
 		return oneShot(cmd, args)
 	case "export":
 		return exportUser(args)
 	default:
-		return fmt.Errorf("subcomando desconocido %q (run|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
+		return fmt.Errorf("subcomando desconocido %q (run|leases|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
 }
 
@@ -114,8 +123,7 @@ func (a *app) close() {
 	_ = a.tel.Shutdown(context.Background())
 }
 
-// run: config → telemetry → db → registry (+ verificación de la cadena
-// contra es.events) → lock de instancia → runners (03 §2).
+// run: config -> telemetry -> db -> registry -> leases por runner -> asynq -> runners (ARQ-008, ARQ-009).
 func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -149,17 +157,13 @@ func run() error {
 	cmdRunner := scheduler.NewRunner(a.pool, allowed, commands, reg, scheduler.RunnerOptions{Logger: logger})
 	reg.MustRegister(outbox.PendingGauge(a.pool), outbox.AgeGauge(a.pool))
 
-	// /healthz y /readyz desde el arranque (readyz falla hasta tener el lock).
-	lock := worker.NewInstanceLock(a.pool.Pool, a.cfg.Group, reg, logger)
+	// PP-F3-ARQ-009: Leases de worker por runner en vez de lock global de instancia.
+	lm := lease.NewManager(a.pool.Pool, a.cfg.WorkerID, logger)
+	defer func() { _ = lm.ReleaseAll(context.Background()) }()
+
 	sup := worker.NewSupervisor(logger)
 	health := httpserver.NewHealth()
 	health.Register("db", a.pool.Ping)
-	health.Register("instance_lock", func(context.Context) error {
-		if !lock.Held() {
-			return errors.New("sin lock de instancia")
-		}
-		return nil
-	})
 	health.Register("runners", sup.Check)
 	srv := internalServer(a.cfg.InternalAddr, health, a.tel)
 	go func() {
@@ -174,35 +178,154 @@ func run() error {
 		_ = srv.Shutdown(shCtx)
 	}()
 
-	if err := lock.Acquire(ctx, 5*time.Second); err != nil {
-		if errors.Is(err, context.Canceled) {
-			return nil
-		}
-		return err
-	}
-	defer lock.Release()
 	health.SetReady(true)
-	logger.Info("worker ready", "group", a.cfg.Group, "projections", a.subs.Names())
+	logger.Info("worker ready with leases", "worker_id", a.cfg.WorkerID, "projections", a.subs.Names())
+
+	makeLeased := func(name string, fn func(context.Context) error) worker.Runner {
+		return worker.Runner{
+			Name: name,
+			Run: func(ctx context.Context) error {
+				return runLeaseUnit(ctx, lm, name, fn, logger)
+			},
+		}
+	}
 
 	runners := []worker.Runner{
-		{Name: "instance-heartbeat", Run: func(ctx context.Context) error { return lock.Heartbeat(ctx, 10*time.Second) }},
-		{Name: "projections", Run: a.subs.Run},
-		{Name: "outbox", Run: consumer.Run},
-		{Name: "command-scheduler", Run: cmdRunner.Run},
+		makeLeased("projections", a.subs.Run),
+		makeLeased("outbox", consumer.Run),
+		makeLeased("command-scheduler", cmdRunner.Run),
 	}
 	clinical, err := clinicalRunners(ctx, a, logger)
 	if err != nil {
 		return err
 	}
+	for _, cr := range clinical {
+		runners = append(runners, makeLeased(cr.Name, cr.Run))
+	}
 	notif, err := notificationsRunners(a, logger)
 	if err != nil {
 		return err
 	}
-	runners = append(runners, clinical...)
-	err = sup.Run(ctx, append(runners, notif...)...)
+	for _, nr := range notif {
+		runners = append(runners, makeLeased(nr.Name, nr.Run))
+	}
+
+	// Pool de workers asynq (PP-F3-ARQ-008) si Redis está configurado
+	if a.cfg.Redis.Addr != "" {
+		asynqSrv := queue.NewServer(queue.ServerConfig{
+			RedisAddr:     a.cfg.Redis.Addr,
+			RedisPassword: a.cfg.Redis.Password,
+			Concurrency:   a.cfg.AsynqConcurrency,
+			Logger:        logger,
+		})
+		asynqSrv.HandleFunc(queue.TypeNotifyEmail, func(ctx context.Context, t *asynq.Task) error {
+			var p queue.NotifyEmailPayload
+			if err := json.Unmarshal(t.Payload(), &p); err != nil {
+				return err
+			}
+			logger.InfoContext(ctx, "asynq notify:email received", "delivery_id", p.DeliveryID)
+			return nil
+		})
+		asynqSrv.HandleFunc(queue.TypeDocRender, func(ctx context.Context, t *asynq.Task) error {
+			var p queue.DocRenderPayload
+			if err := json.Unmarshal(t.Payload(), &p); err != nil {
+				return err
+			}
+			logger.InfoContext(ctx, "asynq doc:render received", "kind", p.Kind, "ref", p.Ref, "version", p.Version)
+			return nil
+		})
+		runners = append(runners, worker.Runner{
+			Name: "asynq-worker-pool",
+			Run:  asynqSrv.Run,
+		})
+	}
+
+	err = sup.Run(ctx, runners...)
 	health.SetReady(false)
 	logger.Info("worker stopped")
 	return err
+}
+
+func runLeaseUnit(ctx context.Context, lm *lease.Manager, name string, fn func(context.Context) error, logger *slog.Logger) error {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		ok, leaseCtx, err := lm.Acquire(ctx, name)
+		if err != nil {
+			if logger != nil {
+				logger.ErrorContext(ctx, "lease acquire error", "runner", name, "error", err)
+			}
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				continue
+			}
+		}
+		if !ok {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				continue
+			}
+		}
+
+		if logger != nil {
+			logger.InfoContext(ctx, "running runner with lease", "runner", name, "holder", lm.Holder())
+		}
+		_ = fn(leaseCtx)
+		_ = lm.Release(context.Background(), name)
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
+}
+
+func leasesCommand(args []string) error {
+	fs := flag.NewFlagSet("leases", flag.ContinueOnError)
+	releaseName := fs.String("release", "", "fuerza la liberación de un lease")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	a, err := open(ctx, "petpassport-worker-cli")
+	if err != nil {
+		return err
+	}
+	defer a.close()
+
+	lm := lease.NewManager(a.pool.Pool, "cli", a.tel.Logger)
+	if *releaseName != "" {
+		if err := lm.ForceRelease(ctx, *releaseName); err != nil {
+			return fmt.Errorf("force release: %w", err)
+		}
+		fmt.Printf("lease %q liberado con éxito\n", *releaseName)
+		return nil
+	}
+
+	list, err := lm.List(ctx)
+	if err != nil {
+		return fmt.Errorf("list leases: %w", err)
+	}
+	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	_, _ = fmt.Fprintln(w, "NAME\tHOLDER\tACQUIRED_AT\tEXPIRES_AT\tACTIVE")
+	for _, l := range list {
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%v\n",
+			l.Name, l.Holder, l.AcquiredAt.Format(time.RFC3339), l.ExpiresAt.Format(time.RFC3339), l.Active)
+	}
+	return w.Flush()
 }
 
 func internalServer(addr string, health *httpserver.Health, tel *telemetry.Telemetry) *http.Server {

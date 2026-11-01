@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/cache"
 )
 
 type countingLoader struct {
@@ -133,5 +135,44 @@ func TestMembershipCache_ConcurrentAccess(t *testing.T) {
 	wg.Wait()
 	if len(c.byUID) > 50 {
 		t.Fatalf("cota superada: %d", len(c.byUID))
+	}
+}
+
+func TestMembershipCache_WithDistributedCache(t *testing.T) {
+	l := &countingLoader{calls: map[uuid.UUID]int{}}
+	dc := cache.NewCache(nil)
+	c := NewMembershipCache(l, 0, 0).WithCache(dc)
+
+	ctx := context.Background()
+	u := uuid.New()
+
+	// 1st call loads and populates L1
+	ms1, err := c.Memberships(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms1) != 1 || l.count(u) != 1 {
+		t.Fatalf("expected 1 call, got %d", l.count(u))
+	}
+
+	// 2nd call hits cache without calling loader again
+	ms2, err := c.Memberships(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms2) != 1 || l.count(u) != 1 {
+		t.Fatalf("expected still 1 call after cache hit, got %d", l.count(u))
+	}
+
+	// Invalidate clears cache
+	c.InvalidateUsers([]uuid.UUID{u})
+
+	// 3rd call reloads
+	_, err = c.Memberships(ctx, u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.count(u) != 2 {
+		t.Fatalf("expected 2 calls after invalidation, got %d", l.count(u))
 	}
 }

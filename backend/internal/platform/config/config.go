@@ -71,6 +71,15 @@ type Config struct {
 	LogLevel      slog.Level
 	PublicBaseURL string
 
+	Redis struct {
+		Addr     string
+		Password string
+		UseTLS   bool
+	}
+	RateLimit struct {
+		Allowlist []string
+	}
+
 	ShutdownDrain   time.Duration
 	ShutdownTimeout time.Duration
 }
@@ -157,6 +166,13 @@ func Load() (*Config, error) {
 	}
 
 	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
+
+	cfg.Redis.Addr = os.Getenv("PP_REDIS_ADDR")
+	cfg.Redis.Password = os.Getenv("PP_REDIS_PASSWORD")
+	cfg.Redis.UseTLS = os.Getenv("PP_REDIS_USE_TLS") == "true"
+	if al := os.Getenv("PP_RATELIMIT_ALLOWLIST"); al != "" {
+		cfg.RateLimit.Allowlist = splitCSV(al)
+	}
 
 	cfg.ShutdownDrain = 5 * time.Second
 	cfg.ShutdownTimeout = 30 * time.Second
@@ -258,6 +274,13 @@ type Worker struct {
 	APIPublicURL      string // base pública de la API (destino de List-Unsubscribe-Post)
 	UnsubscribeSecret string // PP_UNSUBSCRIBE_SECRET, el mismo que el api
 	MailAddress       string // dirección física del pie de los correos
+	WorkerID          string // PP_WORKER_ID (identificador único para leases ARQ-009)
+	Redis             struct {
+		Addr     string
+		Password string
+		UseTLS   bool
+	}
+	AsynqConcurrency  int // PP_ASYNQ_CONCURRENCY (defecto 10)
 }
 
 // LoadWorker lee PP_* del worker y valida.
@@ -324,6 +347,18 @@ func LoadWorker() (*Worker, error) {
 	if cfg.Env != EnvDev && cfg.SMTP.Host == "" {
 		errs = append(errs, errors.New("PP_SMTP_HOST es obligatoria fuera de dev: sin ella el worker no puede enviar correos"))
 	}
+
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		hostname = "worker"
+	}
+	cfg.WorkerID = getenv("PP_WORKER_ID", fmt.Sprintf("%s-%d", hostname, os.Getpid()))
+	cfg.Redis.Addr = os.Getenv("PP_REDIS_ADDR")
+	cfg.Redis.Password = os.Getenv("PP_REDIS_PASSWORD")
+	cfg.Redis.UseTLS = os.Getenv("PP_REDIS_USE_TLS") == "true"
+	asynqConc, _ := getenvInt("PP_ASYNQ_CONCURRENCY", 10)
+	cfg.AsynqConcurrency = asynqConc
+
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
