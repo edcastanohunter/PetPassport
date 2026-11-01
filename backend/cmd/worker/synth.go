@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"flag"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"os/signal"
 	"syscall"
 	"time"
@@ -98,9 +99,6 @@ func synthCommand(args []string) error {
 	logger.InfoContext(ctx, "iniciando generación de datos sintéticos vía command bus (PP-F3-PRF-002)",
 		"profile", *profileName, "seed", *seed, "pets_target", cfg.Pets)
 
-	// #nosec G404 -- semilla determinista para generación de datos sintéticos de prueba
-	rng := rand.New(rand.NewSource(*seed))
-
 	// Inicializar dependencias y command bus
 	reg := a.store.Registry()
 	commands := bus.New()
@@ -126,6 +124,17 @@ func synthCommand(args []string) error {
 	start := time.Now()
 	var createdPets int
 
+	randInt := func(max int) int {
+		if max <= 0 {
+			return 0
+		}
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+		if err != nil {
+			return 0
+		}
+		return int(n.Int64())
+	}
+
 	for i := 0; i < cfg.Pets; i++ {
 		select {
 		case <-ctx.Done():
@@ -136,14 +145,14 @@ func synthCommand(args []string) error {
 
 		petID := uuid.New()
 		guardianID := uuid.New()
-		name := petNames[rng.Intn(len(petNames))]
-		breed := petBreeds[rng.Intn(len(petBreeds))]
+		name := petNames[randInt(len(petNames))]
+		breed := petBreeds[randInt(len(petBreeds))]
 		species := petdomain.SpeciesDog
-		if rng.Float32() < 0.3 {
+		if randInt(100) < 30 {
 			species = petdomain.SpeciesCat
 		}
 		sex := petdomain.SexFemale
-		if rng.Float32() < 0.5 {
+		if randInt(100) < 50 {
 			sex = petdomain.SexMale
 		}
 

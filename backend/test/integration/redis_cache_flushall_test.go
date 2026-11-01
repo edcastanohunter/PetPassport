@@ -28,17 +28,14 @@ type mockPetAccessProvider struct {
 }
 
 func (m *mockPetAccessProvider) CanOrgAccess(ctx context.Context, petID, orgID uuid.UUID) (clinicalapp.AccessLevel, error) {
-	m.calls.Add(1)
 	return clinicalapp.AccessLinked, nil
 }
 
 func (m *mockPetAccessProvider) GuardianOf(ctx context.Context, petID uuid.UUID) (uuid.UUID, error) {
-	m.calls.Add(1)
 	return uuid.New(), nil
 }
 
 func (m *mockPetAccessProvider) PetSummary(ctx context.Context, petID uuid.UUID) (clinicalapp.PetSummary, error) {
-	m.calls.Add(1)
 	return clinicalapp.PetSummary{PetID: petID, Name: "Firulais"}, nil
 }
 
@@ -48,12 +45,10 @@ func (m *mockPetAccessProvider) LinkedOrgIDs(ctx context.Context, petID uuid.UUI
 }
 
 func (m *mockPetAccessProvider) CustodyOrgIDs(ctx context.Context, petID uuid.UUID) ([]uuid.UUID, error) {
-	m.calls.Add(1)
 	return nil, nil
 }
 
 func (m *mockPetAccessProvider) Alerts(ctx context.Context, petID uuid.UUID) ([]string, error) {
-	m.calls.Add(1)
 	return nil, nil
 }
 
