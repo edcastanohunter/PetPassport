@@ -81,7 +81,7 @@ func TestClient_Do_CircuitBreaker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient error: %v", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	customErr := errors.New("connection failed")
 

@@ -17,7 +17,7 @@ func TestDetermineChecks(t *testing.T) {
 	principal := auth.Principal{UserID: uID}
 
 	t.Run("public share route unauthenticated", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/share/tok123", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/share/tok123", nil)
 		checks := determineChecks(req, "192.168.1.1", auth.Principal{}, false, cfg)
 
 		if len(checks) != 2 {
@@ -32,7 +32,7 @@ func TestDetermineChecks(t *testing.T) {
 	})
 
 	t.Run("commands authenticated", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodPost, "/api/v1/pets", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/pets", nil)
 		checks := determineChecks(req, "192.168.1.1", principal, true, cfg)
 
 		if len(checks) != 1 {
@@ -44,7 +44,7 @@ func TestDetermineChecks(t *testing.T) {
 	})
 
 	t.Run("search authenticated with org", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
 		orgUUID := uuid.New()
 		req.Header.Set("X-PP-Organization", orgUUID.String())
 		pWithOrg := auth.Principal{
@@ -67,7 +67,7 @@ func TestDetermineChecks(t *testing.T) {
 	})
 
 	t.Run("search authenticated with spoofed org (not member)", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
 		orgUUID := uuid.New()
 		req.Header.Set("X-PP-Organization", orgUUID.String())
 		// Usuario no tiene membresía en esa org:
@@ -83,7 +83,7 @@ func TestDetermineChecks(t *testing.T) {
 	})
 
 	t.Run("lookup authenticated", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/pets/pet-lookup", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/pets/pet-lookup", nil)
 		checks := determineChecks(req, "192.168.1.1", principal, true, cfg)
 
 		if len(checks) != 1 || checks[0].RouteGroup != "lookup" || checks[0].Limit != 20 {
@@ -92,7 +92,7 @@ func TestDetermineChecks(t *testing.T) {
 	})
 
 	t.Run("export authenticated", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/cohorts/123/export", nil)
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/cohorts/123/export", nil)
 		checks := determineChecks(req, "192.168.1.1", principal, true, cfg)
 
 		if len(checks) != 1 || checks[0].RouteGroup != "export" || checks[0].Limit != 5 {
@@ -112,7 +112,7 @@ func TestMiddleware_FailOpenOnNilClient(t *testing.T) {
 		_, _ = w.Write([]byte("ok"))
 	}))
 
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/pets", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/pets", nil)
 	uID := uuid.New()
 	ctx := auth.WithPrincipal(req.Context(), auth.Principal{UserID: uID})
 	req = req.WithContext(ctx)
@@ -147,7 +147,7 @@ func TestMiddleware_Allowlist(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/directory", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/directory", nil)
 	req.RemoteAddr = "192.168.1.50:54321"
 
 	rec := httptest.NewRecorder()
@@ -165,7 +165,7 @@ func TestMiddleware_Allowlist(t *testing.T) {
 func TestMiddleware_429ResponseStructure(t *testing.T) {
 	// Probar que cuando un limiter retorna !Allowed, se escribe 429 con Problem JSON y Retry-After
 	rec := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/pets", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/pets", nil)
 
 	w := rec
 	w.Header().Set("RateLimit-Limit", "60")

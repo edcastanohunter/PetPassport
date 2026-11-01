@@ -57,18 +57,17 @@ end
 
 // Result representa el resultado de la comprobación de rate limit.
 type Result struct {
-	Allowed            bool
-	Limit              int64
-	Remaining          int64
-	ResetSeconds       int64
-	RetryAfterSeconds  int64
-	RouteGroup         string
+	Allowed           bool
+	Limit             int64
+	Remaining         int64
+	ResetSeconds      int64
+	RetryAfterSeconds int64
+	RouteGroup        string
 }
 
 // Limiter ejecuta la comprobación de rate limit con fail-open.
 type Limiter struct {
-	client  *ppredis.Client
-	luaHash string
+	client *ppredis.Client
 }
 
 // NewLimiter construye un Limiter con el cliente Redis.

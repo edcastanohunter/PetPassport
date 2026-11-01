@@ -157,7 +157,7 @@ func run() error {
 			logger.Warn("redis connection failed (failing open)", "error", err)
 		} else {
 			redisClient = rc
-			defer rc.Close()
+			defer func() { _ = rc.Close() }()
 			distCache = cache.New(rc)
 			if err := distCache.SubscribeInvalidations(ctx); err != nil {
 				logger.Warn("subscribing to cache invalidations failed", "error", err)

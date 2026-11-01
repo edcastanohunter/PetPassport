@@ -280,7 +280,7 @@ type Worker struct {
 		Password string
 		UseTLS   bool
 	}
-	AsynqConcurrency  int // PP_ASYNQ_CONCURRENCY (defecto 10)
+	AsynqConcurrency int // PP_ASYNQ_CONCURRENCY (defecto 10)
 }
 
 // LoadWorker lee PP_* del worker y valida.

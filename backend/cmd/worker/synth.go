@@ -11,25 +11,25 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
-	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
-	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
-	petdomain "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
-	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	orginfra "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/infra"
+	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
+	petdomain "github.com/edcastanohunter/petpassport/backend/internal/petregistry/domain"
+	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 )
 
 // SynthConfig describe los volúmenes del generador según el perfil (PP-F3-PRF-002).
 type SynthConfig struct {
-	Clinics     int
-	Vets        int
-	Owners      int
-	Pets        int
-	Encounters  int
-	Cards       int
+	Clinics    int
+	Vets       int
+	Owners     int
+	Pets       int
+	Encounters int
+	Cards      int
 }
 
 var (
@@ -98,6 +98,7 @@ func synthCommand(args []string) error {
 	logger.InfoContext(ctx, "iniciando generación de datos sintéticos vía command bus (PP-F3-PRF-002)",
 		"profile", *profileName, "seed", *seed, "pets_target", cfg.Pets)
 
+	// #nosec G404 -- semilla determinista para generación de datos sintéticos de prueba
 	rng := rand.New(rand.NewSource(*seed))
 
 	// Inicializar dependencias y command bus

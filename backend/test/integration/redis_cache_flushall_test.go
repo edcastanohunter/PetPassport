@@ -24,6 +24,7 @@ import (
 
 type mockPetAccessProvider struct {
 	calls atomic.Int64
+	orgID uuid.UUID
 }
 
 func (m *mockPetAccessProvider) CanOrgAccess(ctx context.Context, petID, orgID uuid.UUID) (clinicalapp.AccessLevel, error) {
@@ -43,7 +44,7 @@ func (m *mockPetAccessProvider) PetSummary(ctx context.Context, petID uuid.UUID)
 
 func (m *mockPetAccessProvider) LinkedOrgIDs(ctx context.Context, petID uuid.UUID) ([]uuid.UUID, error) {
 	m.calls.Add(1)
-	return []uuid.UUID{uuid.New()}, nil
+	return []uuid.UUID{m.orgID}, nil
 }
 
 func (m *mockPetAccessProvider) CustodyOrgIDs(ctx context.Context, petID uuid.UUID) ([]uuid.UUID, error) {
@@ -88,17 +89,17 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("conectar a redis: %v", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	distCache := cache.New(client)
-
-	// 1. Probar PetAccess con caché distribuida y FLUSHALL
-	petAccessMock := &mockPetAccessProvider{}
-	cachedAccess := clinicalinfra.NewCachedPetAccessAdapter(petAccessMock, distCache)
 
 	ctx := context.Background()
 	petID := uuid.New()
 	orgID := uuid.New()
+
+	// 1. Probar PetAccess con caché distribuida y FLUSHALL
+	petAccessMock := &mockPetAccessProvider{orgID: orgID}
+	cachedAccess := clinicalinfra.NewCachedPetAccessAdapter(petAccessMock, distCache)
 
 	// Primera llamada: miss -> llamada al proveedor
 	lvl, err := cachedAccess.CanOrgAccess(ctx, petID, orgID)
@@ -114,8 +115,8 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 
 	// Segunda llamada: hit en caché -> no incrementa llamada al proveedor
 	lvl, err = cachedAccess.CanOrgAccess(ctx, petID, orgID)
-	if err != nil {
-		t.Fatalf("segunda llamada: %v", err)
+	if err != nil || lvl != clinicalapp.AccessLinked {
+		t.Fatalf("segunda llamada: %v (lvl=%v)", err, lvl)
 	}
 	if calls := petAccessMock.calls.Load(); calls != 1 {
 		t.Fatalf("esperada 1 llamada (cache hit), obtenidas %d", calls)
@@ -144,8 +145,8 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 
 	// Cuarta llamada: vuelve a ser hit de caché repoblada
 	lvl, err = cachedAccess.CanOrgAccess(ctx, petID, orgID)
-	if err != nil {
-		t.Fatalf("llamada posterior a repoblación: %v", err)
+	if err != nil || lvl != clinicalapp.AccessLinked {
+		t.Fatalf("llamada posterior a repoblación: %v (lvl=%v)", err, lvl)
 	}
 	if calls := petAccessMock.calls.Load(); calls != 2 {
 		t.Fatalf("esperadas 2 llamadas (cache hit repoblado), obtenidas %d", calls)

@@ -20,20 +20,20 @@ type Config struct {
 	Allowlist []string // IPs, UserIDs o tokens exentos de limitación (ej: k6 en staging)
 
 	// Límites configurables por entorno (valores por defecto según ARQ-007)
-	UserSearchLimit   int64         // defecto: 120 / min
-	OrgSearchLimit    int64         // defecto: 1200 / min
-	CommandsLimit     int64         // defecto: 60 / min
-	LookupLimit       int64         // defecto: 20 / hora
-	ExportLimit       int64         // defecto: 5 / hora
-	PublicIPLimit     int64         // defecto: 60 / min
-	ShareTokenLimit   int64         // defecto: 30 / min
+	UserSearchLimit int64 // defecto: 120 / min
+	OrgSearchLimit  int64 // defecto: 1200 / min
+	CommandsLimit   int64 // defecto: 60 / min
+	LookupLimit     int64 // defecto: 20 / hora
+	ExportLimit     int64 // defecto: 5 / hora
+	PublicIPLimit   int64 // defecto: 60 / min
+	ShareTokenLimit int64 // defecto: 30 / min
 
-	SearchWindow      time.Duration // defecto: 1 minuto
-	CommandsWindow    time.Duration // defecto: 1 minuto
-	LookupWindow      time.Duration // defecto: 1 hora
-	ExportWindow      time.Duration // defecto: 1 hora
-	PublicWindow      time.Duration // defecto: 1 minuto
-	ShareTokenWindow  time.Duration // defecto: 1 minuto
+	SearchWindow     time.Duration // defecto: 1 minuto
+	CommandsWindow   time.Duration // defecto: 1 minuto
+	LookupWindow     time.Duration // defecto: 1 hora
+	ExportWindow     time.Duration // defecto: 1 hora
+	PublicWindow     time.Duration // defecto: 1 minuto
+	ShareTokenWindow time.Duration // defecto: 1 minuto
 }
 
 // DefaultConfig devuelve la configuración por defecto de ARQ-007.

@@ -165,7 +165,7 @@ func (m *Manager) renewLoop(ctx context.Context, name string, cancel context.Can
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			renewCtx, rCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			renewCtx, rCancel := context.WithTimeout(ctx, 5*time.Second)
 			ok, err := m.renew(renewCtx, name)
 			rCancel()
 
