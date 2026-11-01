@@ -215,6 +215,7 @@ func run() error {
 		asynqSrv := queue.NewServer(queue.ServerConfig{
 			RedisAddr:     a.cfg.Redis.Addr,
 			RedisPassword: a.cfg.Redis.Password,
+			UseTLS:        a.cfg.Redis.UseTLS,
 			Concurrency:   a.cfg.AsynqConcurrency,
 			Logger:        logger,
 		})
@@ -236,7 +237,27 @@ func run() error {
 		})
 		runners = append(runners, worker.Runner{
 			Name: "asynq-worker-pool",
-			Run:  asynqSrv.Run,
+			Run: func(runCtx context.Context) error {
+				for {
+					select {
+					case <-runCtx.Done():
+						return nil
+					default:
+					}
+
+					// Ejecución resiliente: caídas o reinicios de Redis no deben matar el supervisor completo
+					if err := asynqSrv.Run(runCtx); err != nil && !errors.Is(err, context.Canceled) {
+						logger.ErrorContext(runCtx, "asynq worker pool stopped with error, retrying in 5s", "error", err)
+						select {
+						case <-runCtx.Done():
+							return nil
+						case <-time.After(5 * time.Second):
+						}
+					} else {
+						return nil
+					}
+				}
+			},
 		})
 	}
 
@@ -281,7 +302,11 @@ func runLeaseUnit(ctx context.Context, lm *lease.Manager, name string, fn func(c
 		if logger != nil {
 			logger.InfoContext(ctx, "running runner with lease", "runner", name, "holder", lm.Holder())
 		}
-		_ = fn(leaseCtx)
+		if err := fn(leaseCtx); err != nil && !errors.Is(err, context.Canceled) {
+			if logger != nil {
+				logger.ErrorContext(ctx, "runner execution failed", "runner", name, "error", err)
+			}
+		}
 		_ = lm.Release(context.Background(), name)
 
 		select {

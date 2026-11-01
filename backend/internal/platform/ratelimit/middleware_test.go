@@ -45,9 +45,15 @@ func TestDetermineChecks(t *testing.T) {
 
 	t.Run("search authenticated with org", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
-		orgID := uuid.New().String()
-		req.Header.Set("X-PP-Organization", orgID)
-		checks := determineChecks(req, "192.168.1.1", principal, true, cfg)
+		orgUUID := uuid.New()
+		req.Header.Set("X-PP-Organization", orgUUID.String())
+		pWithOrg := auth.Principal{
+			UserID: uID,
+			Memberships: []auth.Membership{
+				{OrganizationID: orgUUID, OrgStatus: "active"},
+			},
+		}
+		checks := determineChecks(req, "192.168.1.1", pWithOrg, true, cfg)
 
 		if len(checks) != 2 {
 			t.Fatalf("esperadas 2 comprobaciones (user search y org search), obtenidas %d", len(checks))
@@ -57,6 +63,22 @@ func TestDetermineChecks(t *testing.T) {
 		}
 		if checks[1].RouteGroup != "search" || checks[1].Limit != 1200 {
 			t.Errorf("check 1 inesperado: %+v", checks[1])
+		}
+	})
+
+	t.Run("search authenticated with spoofed org (not member)", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/search/patients?q=fifi", nil)
+		orgUUID := uuid.New()
+		req.Header.Set("X-PP-Organization", orgUUID.String())
+		// Usuario no tiene membresía en esa org:
+		checks := determineChecks(req, "192.168.1.1", principal, true, cfg)
+
+		// Solo debe aplicar el límite de usuario, ignorando la org ajena
+		if len(checks) != 1 {
+			t.Fatalf("esperada 1 comprobación (solo user), obtenidas %d", len(checks))
+		}
+		if checks[0].RouteGroup != "search" || checks[0].Limit != 120 {
+			t.Errorf("check 0 inesperado: %+v", checks[0])
 		}
 	})
 

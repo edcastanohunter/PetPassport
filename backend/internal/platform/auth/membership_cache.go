@@ -69,8 +69,7 @@ func (c *MembershipCache) Memberships(ctx context.Context, userID uuid.UUID) ([]
 		if err == nil {
 			return ms, nil
 		}
-		// Fail-open: si la caché falla, consultar loader directamente
-		return c.loader.Memberships(ctx, userID)
+		return nil, err
 	}
 
 	now := c.now()

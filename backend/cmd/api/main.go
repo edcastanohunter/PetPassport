@@ -159,6 +159,9 @@ func run() error {
 			redisClient = rc
 			defer rc.Close()
 			distCache = cache.New(rc)
+			if err := distCache.SubscribeInvalidations(ctx); err != nil {
+				logger.Warn("subscribing to cache invalidations failed", "error", err)
+			}
 		}
 	}
 	limiter := ratelimit.NewLimiter(redisClient)

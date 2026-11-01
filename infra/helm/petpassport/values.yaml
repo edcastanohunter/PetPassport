@@ -4,6 +4,9 @@ global:
   env: staging
   domain: staging.petpassport.app
 
+# Nombre de un Secret preexistente de Kubernetes para inyectar credenciales sensibles (PP_DB_PASSWORD, PP_REDIS_PASSWORD, etc.)
+existingSecret: ""
+
 image:
   repository: localhost/petpassport
   tag: "0.3.0"

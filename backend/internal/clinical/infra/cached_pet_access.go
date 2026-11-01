@@ -56,8 +56,7 @@ func (a *CachedPetAccessAdapter) loadEntry(ctx context.Context, petID uuid.UUID)
 		return a.fetchFromDB(loadCtx, petID)
 	})
 	if err != nil {
-		// Fail-open: si la caché falla, consultar directamente a la base de datos
-		return a.fetchFromDB(ctx, petID)
+		return PetAccessCacheEntry{}, err
 	}
 	return entry, nil
 }

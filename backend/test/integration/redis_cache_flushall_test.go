@@ -31,27 +31,43 @@ func (m *mockPetAccessProvider) CanOrgAccess(ctx context.Context, petID, orgID u
 	return clinicalapp.AccessLinked, nil
 }
 
-func (m *mockPetAccessProvider) GetPetAccess(ctx context.Context, petID uuid.UUID) (guardianID uuid.UUID, linkedOrgs []uuid.UUID, custodyOrgs []uuid.UUID, err error) {
+func (m *mockPetAccessProvider) GuardianOf(ctx context.Context, petID uuid.UUID) (uuid.UUID, error) {
 	m.calls.Add(1)
-	return uuid.New(), []uuid.UUID{uuid.New()}, nil, nil
+	return uuid.New(), nil
 }
 
-func (m *mockPetAccessProvider) RecordCustody(ctx context.Context, petID, orgID uuid.UUID, encounterID uuid.UUID) error {
+func (m *mockPetAccessProvider) PetSummary(ctx context.Context, petID uuid.UUID) (clinicalapp.PetSummary, error) {
 	m.calls.Add(1)
-	return nil
+	return clinicalapp.PetSummary{PetID: petID, Name: "Firulais"}, nil
+}
+
+func (m *mockPetAccessProvider) LinkedOrgIDs(ctx context.Context, petID uuid.UUID) ([]uuid.UUID, error) {
+	m.calls.Add(1)
+	return []uuid.UUID{uuid.New()}, nil
+}
+
+func (m *mockPetAccessProvider) CustodyOrgIDs(ctx context.Context, petID uuid.UUID) ([]uuid.UUID, error) {
+	m.calls.Add(1)
+	return nil, nil
+}
+
+func (m *mockPetAccessProvider) Alerts(ctx context.Context, petID uuid.UUID) ([]string, error) {
+	m.calls.Add(1)
+	return nil, nil
 }
 
 type mockMembershipProvider struct {
 	calls atomic.Int64
 }
 
-func (m *mockMembershipProvider) UserMemberships(ctx context.Context, userID uuid.UUID) ([]auth.Membership, error) {
+func (m *mockMembershipProvider) Memberships(ctx context.Context, userID uuid.UUID) ([]auth.Membership, error) {
 	m.calls.Add(1)
 	return []auth.Membership{
 		{
-			OrgID:   uuid.New(),
-			Role:    auth.RoleVet,
-			OrgName: "Clínica Test",
+			OrganizationID: uuid.New(),
+			Role:           "veterinarian",
+			DisplayName:    "Clínica Test",
+			OrgStatus:      "active",
 		},
 	}, nil
 }
@@ -106,7 +122,7 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 	}
 
 	// 2. EJECUTAR FLUSHALL en Redis a mitad del flujo
-	if err := client.Raw().FlushAll(ctx).Err(); err != nil {
+	if err := client.RDB().FlushAll(ctx).Err(); err != nil {
 		t.Fatalf("flushall: %v", err)
 	}
 
@@ -137,12 +153,12 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 
 	// 3. Probar MembershipCache con WithCache y FLUSHALL
 	memberMock := &mockMembershipProvider{}
-	memberCache := auth.NewMembershipCache(memberMock.UserMemberships, 5*time.Minute, auth.WithCache(distCache))
+	memberCache := auth.NewMembershipCache(memberMock, 5*time.Minute, 0).WithCache(distCache)
 
 	userID := uuid.New()
 
 	// Primera llamada membresías: llamada al proveedor
-	mems, err := memberCache.Get(ctx, userID)
+	mems, err := memberCache.Memberships(ctx, userID)
 	if err != nil {
 		t.Fatalf("membresías primera llamada: %v", err)
 	}
@@ -154,7 +170,7 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 	}
 
 	// Segunda llamada: hit
-	_, err = memberCache.Get(ctx, userID)
+	_, err = memberCache.Memberships(ctx, userID)
 	if err != nil {
 		t.Fatalf("membresías segunda llamada: %v", err)
 	}
@@ -163,13 +179,13 @@ func TestRedisCache_QA006_FlushallDoesNotBreakSystem(t *testing.T) {
 	}
 
 	// FLUSHALL de nuevo
-	if err := client.Raw().FlushAll(ctx).Err(); err != nil {
+	if err := client.RDB().FlushAll(ctx).Err(); err != nil {
 		t.Fatalf("segundo flushall: %v", err)
 	}
 	distCache.L1().Clear()
 
 	// Tercera llamada membresías tras FLUSHALL: debe funcionar correctamente
-	mems, err = memberCache.Get(ctx, userID)
+	mems, err = memberCache.Memberships(ctx, userID)
 	if err != nil {
 		t.Fatalf("membresías tras FLUSHALL falló: %v", err)
 	}

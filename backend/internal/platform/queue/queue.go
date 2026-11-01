@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -62,17 +63,19 @@ type Client struct {
 
 // NewClient crea un cliente productor de asynq contra Redis DB 1.
 func NewClient(redisAddr, redisPassword string, useTLS bool, logger *slog.Logger) *Client {
-	var opt asynq.RedisConnOpt
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
-	opt = asynq.RedisClientOpt{
+	opt := asynq.RedisClientOpt{
 		Addr:         redisAddr,
 		Password:     redisPassword,
 		DB:           1, // DB 1 para trabajos/colas (ARQ-005, DAT-004)
 		DialTimeout:  1 * time.Second,
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
+	}
+	if useTLS {
+		opt.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 
 	return &Client{
@@ -169,6 +172,7 @@ func (c *Client) Enqueue(ctx context.Context, task *asynq.Task, opts ...asynq.Op
 type ServerConfig struct {
 	RedisAddr     string
 	RedisPassword string
+	UseTLS        bool
 	Concurrency   int
 	Logger        *slog.Logger
 }
@@ -196,10 +200,14 @@ func NewServer(cfg ServerConfig) *Server {
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
+	if cfg.UseTLS {
+		opt.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
 
 	srv := asynq.NewServer(opt, asynq.Config{
-		Concurrency: cfg.Concurrency,
-		Queues:      QueuePriorities,
+		Concurrency:     cfg.Concurrency,
+		Queues:          QueuePriorities,
+		ShutdownTimeout: 25 * time.Second,
 		ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
 			if cfg.Logger != nil {
 				cfg.Logger.ErrorContext(ctx, "asynq task failed", "type", task.Type(), "error", err)

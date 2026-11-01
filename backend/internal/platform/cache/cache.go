@@ -50,40 +50,67 @@ type L1Entry struct {
 	expiresAt time.Time
 }
 
-// L1Cache es una caché en memoria pequeña con TTL corto (5 s) para membership y petaccess (ARQ-006).
+// L1Cache es una caché en memoria acotada con TTL corto (5 s) para membership y petaccess (ARQ-006).
 type L1Cache struct {
-	mu      sync.RWMutex
-	entries map[string]L1Entry
-	ttl     time.Duration
+	mu         sync.RWMutex
+	entries    map[string]L1Entry
+	ttl        time.Duration
+	maxEntries int
 }
 
-// NewL1Cache crea una nueva caché L1 en memoria.
+const defaultMaxL1Entries = 10000
+
+// NewL1Cache crea una nueva caché L1 en memoria acotada.
 func NewL1Cache(ttl time.Duration) *L1Cache {
 	if ttl <= 0 {
 		ttl = 5 * time.Second
 	}
 	return &L1Cache{
-		entries: make(map[string]L1Entry),
-		ttl:     ttl,
+		entries:    make(map[string]L1Entry),
+		ttl:        ttl,
+		maxEntries: defaultMaxL1Entries,
 	}
 }
 
 // Get obtiene el valor de L1 si no ha expirado.
 func (l *L1Cache) Get(key string) ([]byte, bool) {
 	l.mu.RLock()
-	defer l.mu.RUnlock()
-
 	entry, ok := l.entries[key]
-	if !ok || time.Now().After(entry.expiresAt) {
+	l.mu.RUnlock()
+
+	if !ok {
+		return nil, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		l.mu.Lock()
+		delete(l.entries, key)
+		l.mu.Unlock()
 		return nil, false
 	}
 	return entry.value, true
 }
 
-// Set guarda un valor en L1.
+// Set guarda un valor en L1 controlando el tamaño máximo para evitar fugas de memoria.
 func (l *L1Cache) Set(key string, val []byte) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	if len(l.entries) >= l.maxEntries {
+		now := time.Now()
+		// Purgar claves expiradas primero
+		for k, v := range l.entries {
+			if now.After(v.expiresAt) {
+				delete(l.entries, k)
+			}
+		}
+		// Si todavía excede el límite, desalojar claves para mantener la capacidad acotada
+		if len(l.entries) >= l.maxEntries {
+			for k := range l.entries {
+				delete(l.entries, k)
+				break
+			}
+		}
+	}
 
 	l.entries[key] = L1Entry{
 		value:     val,
@@ -252,27 +279,53 @@ func (c *Cache) Invalidate(ctx context.Context, keys ...string) error {
 }
 
 // SubscribeInvalidations escucha el canal Pub/Sub para invalidar L1 cuando otra réplica borra una clave.
+// Maneja reconexión automática ante cortes de Redis y vacía L1 al reconectar para evitar stale reads.
 func (c *Cache) SubscribeInvalidations(ctx context.Context) error {
 	if c.redisClient == nil || c.l1 == nil {
 		return nil
 	}
 
-	rdb := c.redisClient.RDB()
-	pubsub := rdb.Subscribe(ctx, ChannelInvalidate)
-
 	go func() {
-		defer pubsub.Close()
-		ch := pubsub.Channel()
+		backoff := 1 * time.Second
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case msg, ok := <-ch:
-				if !ok {
+			default:
+			}
+
+			rdb := c.redisClient.RDB()
+			pubsub := rdb.Subscribe(ctx, ChannelInvalidate)
+			ch := pubsub.Channel()
+
+			// Al (re)conectar, vaciar L1 para no mantener entradas obsoletas perdidas durante la desconexión
+			c.l1.Clear()
+
+			disconnected := false
+			for !disconnected {
+				select {
+				case <-ctx.Done():
+					_ = pubsub.Close()
 					return
+				case msg, ok := <-ch:
+					if !ok {
+						disconnected = true
+						break
+					}
+					if msg != nil && msg.Payload != "" {
+						c.l1.Delete(msg.Payload)
+					}
 				}
-				if msg != nil && msg.Payload != "" {
-					c.l1.Delete(msg.Payload)
+			}
+
+			_ = pubsub.Close()
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(backoff):
+				if backoff < 30*time.Second {
+					backoff *= 2
 				}
 			}
 		}
@@ -292,9 +345,12 @@ func (c *Cache) Fetch(ctx context.Context, key string, ttl time.Duration, dest a
 		return err
 	}
 
-	// Cache miss: singleflight call
+	// Cache miss: singleflight call con contexto desacoplado de cancelaciones individuales de clientes
 	val, err, _ := c.sf.Do(key, func() (any, error) {
-		loaded, loadErr := loadFn(ctx)
+		loadCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+
+		loaded, loadErr := loadFn(loadCtx)
 		if loadErr != nil {
 			return nil, loadErr
 		}

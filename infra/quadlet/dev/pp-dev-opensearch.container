@@ -7,7 +7,7 @@ Image=docker.io/opensearchproject/opensearch:2.18.0
 ContainerName=pp-dev-opensearch
 Network=pp-dev.network
 NetworkAlias=opensearch
-PublishPort=9200:9200
+PublishPort=127.0.0.1:9200:9200
 Environment=discovery.type=single-node
 Environment=DISABLE_SECURITY_PLUGIN=true
 Environment=OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m

@@ -48,6 +48,11 @@ type Info struct {
 	Active     bool      `json:"active"`
 }
 
+type heldLease struct {
+	cancel context.CancelFunc
+	ctx    context.Context
+}
+
 // Manager coordina la adquisición, renovación y liberación de leases (PP-F3-ARQ-009).
 type Manager struct {
 	pool          *pgxpool.Pool
@@ -57,7 +62,7 @@ type Manager struct {
 	logger        *slog.Logger
 
 	mu   sync.Mutex
-	held map[string]context.CancelFunc
+	held map[string]heldLease
 }
 
 // NewManager crea un nuevo gestor de leases para este worker.
@@ -71,7 +76,7 @@ func NewManager(pool *pgxpool.Pool, holder string, logger *slog.Logger) *Manager
 		ttl:           30 * time.Second,
 		renewInterval: 10 * time.Second,
 		logger:        logger,
-		held:          make(map[string]context.CancelFunc),
+		held:          make(map[string]heldLease),
 	}
 }
 
@@ -89,12 +94,12 @@ func (m *Manager) HeldCount() int {
 
 // Acquire intenta adquirir el lease con el nombre dado.
 // Si tiene éxito, devuelve true y un contexto derivado que se cancelará inmediatamente
-// si la renovación falla o se pierde el lease.
+// si la renovación falla definitivamente o se pierde el lease.
 func (m *Manager) Acquire(ctx context.Context, name string) (bool, context.Context, error) {
 	m.mu.Lock()
-	if _, alreadyHeld := m.held[name]; alreadyHeld {
+	if existing, alreadyHeld := m.held[name]; alreadyHeld {
 		m.mu.Unlock()
-		return true, ctx, nil
+		return true, existing.ctx, nil
 	}
 	m.mu.Unlock()
 
@@ -103,11 +108,11 @@ INSERT INTO platform.worker_leases (name, holder, acquired_at, expires_at)
 VALUES ($1, $2, now(), now() + $3::interval)
 ON CONFLICT (name) DO UPDATE
 SET holder = EXCLUDED.holder,
-    acquired_at = EXCLUDED.acquired_at,
+    acquired_at = CASE WHEN platform.worker_leases.holder = EXCLUDED.holder THEN platform.worker_leases.acquired_at ELSE EXCLUDED.acquired_at END,
     expires_at = EXCLUDED.expires_at
 WHERE platform.worker_leases.expires_at < now()
    OR platform.worker_leases.holder = EXCLUDED.holder
-RETURNING (holder = $2), (acquired_at = now());
+RETURNING (holder = $2), (acquired_at >= now() - interval '200 milliseconds');
 `
 	ttlStr := fmt.Sprintf("%d milliseconds", m.ttl.Milliseconds())
 
@@ -132,7 +137,7 @@ RETURNING (holder = $2), (acquired_at = now());
 	leaseCtx, cancel := context.WithCancel(ctx)
 
 	m.mu.Lock()
-	m.held[name] = cancel
+	m.held[name] = heldLease{cancel: cancel, ctx: leaseCtx}
 	count := len(m.held)
 	m.mu.Unlock()
 
@@ -141,16 +146,19 @@ RETURNING (holder = $2), (acquired_at = now());
 		m.logger.InfoContext(ctx, "lease acquired", "name", name, "holder", m.holder)
 	}
 
-	// Iniciar gorutina de renovación periódica
+	// Iniciar gorutina de renovación periódica con reintentos
 	go m.renewLoop(leaseCtx, name, cancel)
 
 	return true, leaseCtx, nil
 }
 
 // renewLoop renueva periódicamente el lease mientras esté activo.
+// Resiliente a hipos transitorios de red: no cancela mientras el TTL en DB siga vigente.
 func (m *Manager) renewLoop(ctx context.Context, name string, cancel context.CancelFunc) {
 	ticker := time.NewTicker(m.renewInterval)
 	defer ticker.Stop()
+
+	expiresAt := time.Now().Add(m.ttl)
 
 	for {
 		select {
@@ -161,9 +169,15 @@ func (m *Manager) renewLoop(ctx context.Context, name string, cancel context.Can
 			ok, err := m.renew(renewCtx, name)
 			rCancel()
 
-			if err != nil || !ok {
+			if err == nil && ok {
+				expiresAt = time.Now().Add(m.ttl)
+				continue
+			}
+
+			// Si el lease fue explícitamente arrebatado por otro poseedor o eliminado
+			if err == nil && !ok {
 				if m.logger != nil {
-					m.logger.Warn("lease renewal failed, stopping runner", "name", name, "error", err)
+					m.logger.Warn("lease no longer held by worker, stopping runner", "name", name)
 				}
 				m.mu.Lock()
 				delete(m.held, name)
@@ -171,9 +185,32 @@ func (m *Manager) renewLoop(ctx context.Context, name string, cancel context.Can
 				m.mu.Unlock()
 
 				metricLeasesHeld.WithLabelValues(m.holder).Set(float64(count))
-				cancel() // Detener inmediatamente el runner
+				cancel()
 				return
 			}
+
+			// Si ocurrió un error transitorio de conexión, evaluar si aún hay tiempo de TTL remanente
+			remaining := time.Until(expiresAt)
+			if remaining > 5*time.Second {
+				if m.logger != nil {
+					m.logger.Warn("transient lease renewal failure; retrying before expiration",
+						"name", name, "error", err, "remaining_ttl", remaining)
+				}
+				continue
+			}
+
+			// Si el TTL se agotó sin renovación exitosa, cancelar
+			if m.logger != nil {
+				m.logger.Error("lease renewal failed and lease expired, stopping runner", "name", name, "error", err)
+			}
+			m.mu.Lock()
+			delete(m.held, name)
+			count := len(m.held)
+			m.mu.Unlock()
+
+			metricLeasesHeld.WithLabelValues(m.holder).Set(float64(count))
+			cancel()
+			return
 		}
 	}
 }
@@ -200,8 +237,8 @@ RETURNING true;
 // Release libera voluntariamente un lease específico.
 func (m *Manager) Release(ctx context.Context, name string) error {
 	m.mu.Lock()
-	if cancel, ok := m.held[name]; ok {
-		cancel()
+	if item, ok := m.held[name]; ok {
+		item.cancel()
 		delete(m.held, name)
 	}
 	count := len(m.held)
@@ -220,10 +257,10 @@ func (m *Manager) Release(ctx context.Context, name string) error {
 // ReleaseAll libera todos los leases que retiene esta réplica.
 func (m *Manager) ReleaseAll(ctx context.Context) error {
 	m.mu.Lock()
-	for _, cancel := range m.held {
-		cancel()
+	for _, item := range m.held {
+		item.cancel()
 	}
-	m.held = make(map[string]context.CancelFunc)
+	m.held = make(map[string]heldLease)
 	m.mu.Unlock()
 
 	metricLeasesHeld.WithLabelValues(m.holder).Set(0)

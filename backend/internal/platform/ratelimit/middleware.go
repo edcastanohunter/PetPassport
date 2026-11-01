@@ -153,15 +153,26 @@ func determineChecks(r *http.Request, clientIP string, principal auth.Principal,
 				Window:     cfg.SearchWindow,
 			})
 
-			// Límite por organización si el request indica una org
-			orgID := r.Header.Get("X-PP-Organization")
-			if orgID != "" {
-				checks = append(checks, checkItem{
-					Key:        fmt.Sprintf("pp:rl:org:%s:search", orgID),
-					RouteGroup: "search",
-					Limit:      cfg.OrgSearchLimit,
-					Window:     cfg.SearchWindow,
-				})
+			// Límite por organización únicamente si el principal es miembro activo de ella (evita DoS cross-tenant)
+			orgHeader := r.Header.Get("X-PP-Organization")
+			if orgHeader != "" {
+				if parsedOrgID, err := uuid.Parse(orgHeader); err == nil {
+					isMember := false
+					for _, m := range principal.Memberships {
+						if m.OrganizationID == parsedOrgID && m.OrgStatus == "active" {
+							isMember = true
+							break
+						}
+					}
+					if isMember {
+						checks = append(checks, checkItem{
+							Key:        fmt.Sprintf("pp:rl:org:%s:search", parsedOrgID),
+							RouteGroup: "search",
+							Limit:      cfg.OrgSearchLimit,
+							Window:     cfg.SearchWindow,
+						})
+					}
+				}
 			}
 		}
 		return checks
@@ -234,35 +245,45 @@ func extractShareToken(path string) string {
 			if slash := strings.Index(token, "/"); slash != -1 {
 				token = token[:slash]
 			}
-			return token
+			// Validar longitud mínima razonable de token para evitar spam de claves en Redis
+			if len(token) >= 4 && len(token) <= 128 {
+				return token
+			}
 		}
 	}
 	return ""
 }
 
 func extractIP(r *http.Request) string {
-	// Verificar Forwarded / X-Forwarded-For
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		ip := strings.TrimSpace(parts[0])
-		if ip != "" {
-			return ip
-		}
-	}
-	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
-		return strings.TrimSpace(xrip)
-	}
-
-	// Del contexto o RemoteAddr
+	// 1. Del contexto o RemoteAddr
 	remote := reqctx.From(r.Context()).RemoteAddr
 	if remote == "" {
 		remote = r.RemoteAddr
 	}
-	host, _, err := net.SplitHostPort(remote)
-	if err == nil {
-		return host
+	if host, _, err := net.SplitHostPort(remote); err == nil && host != "" {
+		if net.ParseIP(host) != nil {
+			return host
+		}
 	}
-	return remote
+
+	// 2. Cabeceras estándar de proxy reverso
+	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		ip := strings.TrimSpace(xrip)
+		if net.ParseIP(ip) != nil {
+			return ip
+		}
+	}
+
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		// El último hop añadido por el proxy de entrada
+		ip := strings.TrimSpace(parts[len(parts)-1])
+		if net.ParseIP(ip) != nil {
+			return ip
+		}
+	}
+
+	return "127.0.0.1"
 }
 
 func isAllowlisted(allowlist []string, ip string, p auth.Principal, hasP bool) bool {
