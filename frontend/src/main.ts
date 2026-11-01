@@ -13,6 +13,8 @@ import { onApiError } from './shared/api/client'
 import { useSessionStore } from './features/auth/sessionStore'
 import './app/styles.css'
 
+const PUBLIC_401_CODES = new Set(['PIN_REQUIRED', 'PIN_INVALID'])
+
 // Arranque: la configuración de runtime se carga antes de montar (docs/phase-1/07 §9).
 async function bootstrap() {
   const config = await loadRuntimeConfig()
@@ -32,7 +34,8 @@ async function bootstrap() {
   session.init(createUserManager(config))
   await session.restore()
   onApiError((error) => {
-    if (error.status === 401) {
+    // PIN_REQUIRED/PIN_INVALID son 401 del enlace compartido público: no son sesión caducada.
+    if (error.status === 401 && !PUBLIC_401_CODES.has(error.code)) {
       void session.login(router.currentRoute.value.fullPath)
     } else if (error.code === 'ONBOARDING_REQUIRED') {
       void router.push({

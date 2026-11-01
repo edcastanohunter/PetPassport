@@ -9,7 +9,12 @@ COPY frontend/ ./
 COPY backend/api/openapi.yaml ../backend/api/openapi.yaml
 RUN npm run gen:api && npm run build
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+# Base estable con Alpine 3.24; el `apk upgrade` recoge parches publicados después del tag
+# (Trivy bloquea CRITICAL/HIGH con fix disponible, images.yml).
+FROM nginxinc/nginx-unprivileged:1.30-alpine3.24
+USER root
+RUN apk upgrade --no-cache
+USER 101
 LABEL org.opencontainers.image.title="petpassport-frontend" \
       org.opencontainers.image.source="https://github.com/edcastanohunter/PetPassport"
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf

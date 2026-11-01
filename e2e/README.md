@@ -9,6 +9,8 @@ Playwright contra el entorno completo de desarrollo (unidades Quadlet rootless):
 | | 3. Invitar veterinario → aceptar (segunda sesión) → aparece como miembro |
 | | 4. Vincular por código → el veterinario ve paciente y teléfono → revocar → deja de verlo |
 | `03-transfer` | 5. Transferencia de tutela entre dos usuarios |
+| `04-f2-care-link-request` | F2 Escenario 4: Búsqueda por microchip → solicitud de vínculo de clínica → tutor aprueba en bandeja → clínica ve ficha → revocación |
+| `05-f2-clinical-flows` | F2 Escenarios 1, 2, 3 y 5: Cita solicitada/propuesta/aceptada → consulta SOAP firmada con adenda → carnet con próxima dosis, declaración, verificación y enlace compartido con PIN → correos transaccionales y baja por token |
 
 Además, `expectAccessible` pasa axe (WCAG 2.1 A/AA) en home, onboarding, formulario y detalle de
 mascota, lista, registro y resumen de organización, miembros, pacientes, ficha de paciente,
