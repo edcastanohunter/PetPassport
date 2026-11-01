@@ -352,8 +352,11 @@ func TestPet_HTTPFlow(t *testing.T) {
 
 	// JIT + onboarding para pasar el guard.
 	call(http.MethodGet, "/api/v1/me", "", nil)
+	legalRec := call(http.MethodGet, "/api/v1/legal/current", "", nil)
+	var legal gen.LegalCurrent
+	_ = json.Unmarshal(legalRec.Body.Bytes(), &legal)
 	call(http.MethodPost, "/api/v1/me/onboarding",
-		`{"display_name":"T","country":"CO","locale":"es","accept_terms_version":"2026-10-draft","accept_privacy_version":"2026-10-draft"}`, nil)
+		fmt.Sprintf(`{"display_name":"T","country":"CO","locale":"es","accept_terms_version":%q,"accept_privacy_version":%q}`, legal.TermsVersion, legal.PrivacyVersion), nil)
 
 	idemKey := uuid.Must(uuid.NewV7()).String()
 	body := `{"name":"Luna","species":"dog","breed":"Beagle","sex":"female","neutered":"yes","birth_date":{"date":"2021-05-10","approximate":false}}`

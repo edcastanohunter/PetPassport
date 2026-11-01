@@ -7,6 +7,8 @@
 Description=PetPassport dev: worker
 Requires=pp-dev-migrate.service
 After=pp-dev-migrate.service
+Wants=pp-dev-redis.service
+After=pp-dev-redis.service
 
 [Container]
 Image=pp-dev-backend.build
@@ -25,6 +27,7 @@ Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
 Environment=PP_PUBLIC_BASE_URL=https://app.pp.localhost PP_API_PUBLIC_URL=https://api.pp.localhost/api/v1
 # Notificaciones (F2 M2.4): el worker es el único que envía; Mailpit en dev.
 Environment=PP_SMTP_HOST=mailpit PP_SMTP_PORT=1025
+Environment=PP_REDIS_ADDR=redis:6379 PP_WORKER_ID=pp-dev-worker-1
 HealthCmd=["/worker","healthcheck"]
 HealthInterval=10s
 HealthRetries=6

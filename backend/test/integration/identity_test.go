@@ -8,6 +8,7 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -159,7 +160,11 @@ func TestIdentity_HTTPFlowAgainstPostgres(t *testing.T) {
 	if !me.OnboardingRequired || me.Email != "ana@example.com" {
 		t.Fatalf("jit: %+v", me)
 	}
-	rec = call(http.MethodPost, "/api/v1/me/onboarding", `{"display_name":"Ana","country":"CO","locale":"es","accept_terms_version":"2026-10-draft","accept_privacy_version":"2026-10-draft"}`)
+	legalRec := call(http.MethodGet, "/api/v1/legal/current", "")
+	var legal gen.LegalCurrent
+	_ = json.Unmarshal(legalRec.Body.Bytes(), &legal)
+	onboardingBody := fmt.Sprintf(`{"display_name":"Ana","country":"CO","locale":"es","accept_terms_version":%q,"accept_privacy_version":%q}`, legal.TermsVersion, legal.PrivacyVersion)
+	rec = call(http.MethodPost, "/api/v1/me/onboarding", onboardingBody)
 	if rec.Code != 200 {
 		t.Fatalf("onboarding: %d %s", rec.Code, rec.Body.String())
 	}

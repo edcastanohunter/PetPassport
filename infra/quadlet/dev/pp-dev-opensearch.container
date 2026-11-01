@@ -1,0 +1,25 @@
+# OpenSearch de desarrollo (ARQ-001, INF-001, SEC-002)
+[Unit]
+Description=PetPassport dev: opensearch
+
+[Container]
+Image=docker.io/opensearchproject/opensearch:2.18.0
+ContainerName=pp-dev-opensearch
+Network=pp-dev.network
+NetworkAlias=opensearch
+PublishPort=127.0.0.1:9200:9200
+Environment=discovery.type=single-node
+Environment=DISABLE_SECURITY_PLUGIN=true
+Environment=OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+Environment=bootstrap.memory_lock=true
+Volume=pp-dev-opensearchdata.volume:/usr/share/opensearch/data
+HealthCmd=curl -fsS http://localhost:9200/_cluster/health | grep -q 'status'
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=30
+HealthStartPeriod=30s
+Notify=healthy
+LogDriver=journald
+
+[Service]
+TimeoutStartSec=180

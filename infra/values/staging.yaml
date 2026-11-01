@@ -1,0 +1,17 @@
+# Valores compartidos para staging (PP-F3-ARQ-013)
+global:
+  env: staging
+  domain: staging.petpassport.app
+
+api:
+  replicaCount: 2
+
+worker:
+  replicaCount: 2
+
+frontend:
+  replicaCount: 2
+
+redis:
+  addr: "127.0.0.1:6379"
+  useTLS: false

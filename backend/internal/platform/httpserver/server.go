@@ -39,6 +39,8 @@ type Options struct {
 	Guard func(http.Handler) http.Handler
 	// Mount registra rutas adicionales fuera del contrato bajo /api/v1 (opcional).
 	Mount func(r chi.Router)
+	// RateLimit aplica limitación de tasa distribuida con fail-open (ARQ-007, PRD-014).
+	RateLimit func(http.Handler) http.Handler
 	// Maintenance responde 503 en /api/v1 durante el modo mantenimiento
 	// (maintenance.Gate.Middleware, PP-F2-ARQ-006). nil = sin modo mantenimiento.
 	Maintenance func(http.Handler) http.Handler
@@ -97,6 +99,9 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 			perOp = append(perOp, o.Guard)
 		} else {
 			perOp = append(perOp, unavailableUnlessPublic)
+		}
+		if o.RateLimit != nil {
+			perOp = append(perOp, o.RateLimit)
 		}
 		if spec, err := gen.GetSpec(); err == nil {
 			perOp = append(perOp, requestValidator(spec))

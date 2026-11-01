@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "petpassport.fullname" . }}-api
+  labels:
+    {{- include "petpassport.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.api.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.api.internalPort }}
+      targetPort: internal
+      protocol: TCP
+      name: internal
+  selector:
+    app.kubernetes.io/name: {{ include "petpassport.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api

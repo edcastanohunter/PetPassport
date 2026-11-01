@@ -1,0 +1,6 @@
+apiVersion: v2
+name: petpassport
+description: Helm chart for PetPassport (API x 2, Worker x 2, Frontend x 2) - PP-F3-ARQ-013
+type: application
+version: 0.3.0
+appVersion: "0.3.0"

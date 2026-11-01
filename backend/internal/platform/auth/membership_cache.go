@@ -2,22 +2,25 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/cache"
 )
 
-// MembershipCache envuelve un MembershipLoader con caché en memoria por
-// UserID (IAM-008): TTL 60 s, cota de entradas con expulsión LRU. En F3 pasa
-// a Redis (ADR-014). La invalidación por eventos (DOM-011) la hace
-// InvalidateUsers: un miembro retirado pierde acceso en el siguiente request
-// (PRD-014).
+// MembershipCache envuelve un MembershipLoader con caché distribuida (Redis + L1)
+// o en memoria por UserID (IAM-008, PP-F3-ARQ-006): TTL 300 s (distribuida) o 60 s (local).
+// La invalidación por eventos (DOM-011) la hace InvalidateUsers: un miembro retirado
+// pierde acceso en el siguiente request (PRD-014).
 type MembershipCache struct {
 	loader MembershipLoader
 	ttl    time.Duration
 	max    int
 	now    func() time.Time
+	dcache *cache.Cache
 
 	mu    sync.Mutex
 	byUID map[uuid.UUID]*entry // índice por usuario
@@ -46,8 +49,29 @@ func NewMembershipCache(loader MembershipLoader, ttl time.Duration, max int) *Me
 	}
 }
 
+// WithCache asocia un gestor de caché distribuida (Redis + L1 + Pub/Sub, ARQ-006).
+func (c *MembershipCache) WithCache(dc *cache.Cache) *MembershipCache {
+	c.dcache = dc
+	if dc != nil {
+		c.ttl = 300 * time.Second // TTL 300 s según ARQ-006
+	}
+	return c
+}
+
 // Memberships implementa MembershipLoader con lectura-through.
 func (c *MembershipCache) Memberships(ctx context.Context, userID uuid.UUID) ([]Membership, error) {
+	if c.dcache != nil {
+		key := fmt.Sprintf("pp:v1:membership:%s", userID)
+		var ms []Membership
+		err := c.dcache.Fetch(ctx, key, c.ttl, &ms, func(loadCtx context.Context) (any, error) {
+			return c.loader.Memberships(loadCtx, userID)
+		})
+		if err == nil {
+			return ms, nil
+		}
+		return nil, err
+	}
+
 	now := c.now()
 	c.mu.Lock()
 	if e, ok := c.byUID[userID]; ok {
@@ -74,6 +98,14 @@ func (c *MembershipCache) Memberships(ctx context.Context, userID uuid.UUID) ([]
 // InvalidateUsers borra las entradas de los usuarios indicados (DOM-011:
 // reacciones a MemberJoined/RoleChanged/Removed y cambios de estado de la org).
 func (c *MembershipCache) InvalidateUsers(ids []uuid.UUID) {
+	if c.dcache != nil && len(ids) > 0 {
+		keys := make([]string, len(ids))
+		for i, id := range ids {
+			keys[i] = fmt.Sprintf("pp:v1:membership:%s", id)
+		}
+		_ = c.dcache.Invalidate(context.Background(), keys...)
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, id := range ids {
