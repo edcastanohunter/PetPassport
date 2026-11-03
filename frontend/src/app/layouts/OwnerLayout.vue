@@ -7,8 +7,8 @@ import AppFooter from '@/shared/ui/AppFooter.vue'
 import SkipLink from '@/shared/ui/SkipLink.vue'
 import ContextSwitcher from '@/shared/ui/ContextSwitcher.vue'
 
-// Layout Owner (FE-004): barra con selector de contexto ("Mis mascotas", una
-// entrada por organización, "Administración" si aplica) y menú de cuenta.
+// Layout Owner (FE-004, FE-002): barra con selector de contexto ("Mis mascotas", una
+// entrada por organización, "Administración" si aplica), enlace a búsqueda y menú de cuenta.
 const { t } = useI18n()
 const session = useSessionStore()
 
@@ -37,6 +37,11 @@ const contexts = computed(() => {
           <ContextSwitcher :items="contexts" />
         </div>
         <ul class="flex items-center gap-3 text-sm">
+          <li>
+            <RouterLink to="/app/search" class="hover:underline">{{
+              t('nav.search')
+            }}</RouterLink>
+          </li>
           <li>
             <RouterLink to="/app/appointments" class="hover:underline">{{
               t('scheduling.nav.myAppointments')

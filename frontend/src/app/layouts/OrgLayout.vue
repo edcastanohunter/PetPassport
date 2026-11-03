@@ -8,10 +8,11 @@ import ConsentDialog from '@/features/onboarding/ConsentDialog.vue'
 import AppFooter from '@/shared/ui/AppFooter.vue'
 import SkipLink from '@/shared/ui/SkipLink.vue'
 import ContextSwitcher from '@/shared/ui/ContextSwitcher.vue'
+import QuickSearchModal from '@/features/search/QuickSearchModal.vue'
 
-// Layout Org (FE-004/FE-007): selector de contexto (Mis mascotas + una
-// entrada por organización + Administración) y navegación de la organización
-// según tipo y rol. La UI no es la autoridad: el backend repite cada decisión.
+// Layout Org (FE-004/FE-007, FE-001): selector de contexto (Mis mascotas + una
+// entrada por organización + Administración), barra global de búsqueda (Ctrl+K)
+// y navegación de la organización según tipo y rol.
 const { t } = useI18n()
 const route = useRoute()
 const session = useSessionStore()
@@ -36,6 +37,7 @@ const sections = computed(() => {
     items.push({ name: 'org-patients', label: t('orgs.nav.patients') })
     items.push({ name: 'org-encounters', label: t('orgs.nav.encounters') })
     items.push({ name: 'org-agenda', label: t('scheduling.nav.agenda') })
+    items.push({ name: 'org-search', label: t('search.navSearch') })
   }
   if (ADMIN_ROLES.includes(m.role)) {
     items.push({ name: 'org-members', label: t('orgs.nav.members') })
@@ -61,6 +63,7 @@ const sections = computed(() => {
         <div class="flex items-center gap-4">
           <RouterLink to="/app" class="text-lg font-semibold">PetPassport</RouterLink>
           <ContextSwitcher :items="contexts" />
+          <QuickSearchModal v-if="membership && membership.type === 'clinic'" :org-id="orgId" />
         </div>
         <ul class="flex items-center gap-3 text-sm">
           <li>

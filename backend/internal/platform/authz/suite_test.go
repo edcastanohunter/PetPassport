@@ -226,6 +226,11 @@ var suite = map[Action][]suiteRow{
 	AgendaManage:       {{apptRes, [11]bool{N, N, Y, N, N, N, N, N, N, N, N}}},
 	AgendaRead:         {{apptRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, N}}},
 	AvailabilityRead:   {{apptRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, N}}},
+
+	// Búsqueda (PP-F3-API-001, PP-F3-API-002, M3.1)
+	SearchPatients: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	SearchClinical: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	AdminSearch:    {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

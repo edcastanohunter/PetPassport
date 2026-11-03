@@ -70,7 +70,7 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 		AllowedOrigins:   o.CORSOrigins,
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID", "X-PP-Share-Unlock"},
-		ExposedHeaders:   []string{"ETag", "X-Correlation-ID", "X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset", "Retry-After", "X-PP-Freshness"},
+		ExposedHeaders:   []string{"ETag", "X-Correlation-ID", "X-Request-ID", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset", "Retry-After", "X-PP-Freshness", "X-PP-Search-Mode"},
 		AllowCredentials: false,
 		MaxAge:           600,
 	}))

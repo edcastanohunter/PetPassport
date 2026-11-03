@@ -89,6 +89,13 @@ const (
 	ShareManage Action = "share:manage"
 )
 
+// Acciones de búsqueda (PP-F3-API-001, PP-F3-API-002, M3.1).
+const (
+	SearchPatients Action = "search:patients"
+	SearchClinical Action = "search:clinical"
+	AdminSearch    Action = "admin:search"
+)
+
 // ReasonOrgSuspended es el motivo de denegación de org:patients:list cuando
 // la organización del miembro está suspendida (→ 403 ORGANIZATION_SUSPENDED).
 const ReasonOrgSuspended = "organization suspended"
@@ -673,6 +680,10 @@ var policies = map[Action]Policy{
 	CardVoid:              cardVoid,
 	CardDeclare:           guardianOnly,
 	ShareManage:           guardianOnly,
+
+	SearchPatients: orgPatientsList,
+	SearchClinical: orgPatientsList,
+	AdminSearch:    superAdminOnly,
 }
 
 // Can evalúa la política de la acción. Acciones sin política → deny.

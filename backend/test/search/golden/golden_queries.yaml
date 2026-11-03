@@ -1,0 +1,66 @@
+# Golden Queries para pruebas de relevancia en búsqueda clínica (QA-002, M3.1)
+# Cada caso contiene la consulta, el índice objetivo y los IDs de documento esperados en el top-3.
+queries:
+  # Typos y acentos en pacientes
+  - q: "Lúna"
+    index: "pets"
+    expected_top: ["pet-luna-01"]
+    description: "Tolerancia a acentos en nombre de mascota"
+  - q: "Luuna"
+    index: "pets"
+    expected_top: ["pet-luna-01"]
+    description: "Tolerancia a duplicación tipográfica en nombre"
+  - q: "Maxx"
+    index: "pets"
+    expected_top: ["pet-max-02"]
+    description: "Typo en nombre Max"
+  - q: "Miki"
+    index: "pets"
+    expected_top: ["pet-mickey-03"]
+    description: "Aproximación fonética en nombre"
+  - q: "9410000123"
+    index: "pets"
+    expected_top: ["pet-luna-01"]
+    description: "Búsqueda por prefijo de microchip"
+  - q: "5678"
+    index: "pets"
+    expected_top: ["pet-luna-01"]
+    description: "Búsqueda por sufijo de microchip"
+
+  # Sinónimos veterinarios en historial clínico
+  - q: "emesis"
+    index: "clinical"
+    expected_top: ["enc-vomito-01"]
+    description: "Sinónimo médico 'emesis' encuentra registro con 'vómito'"
+  - q: "vomito"
+    index: "clinical"
+    expected_top: ["enc-vomito-01"]
+    description: "Término común 'vomito' sin tilde encuentra 'vómito'"
+  - q: "prurito"
+    index: "clinical"
+    expected_top: ["enc-picazon-02"]
+    description: "Sinónimo 'prurito' encuentra registro con 'picazón'"
+  - q: "picazon"
+    index: "clinical"
+    expected_top: ["enc-picazon-02"]
+    description: "Término coloquial 'picazon' encuentra 'picazón intensa'"
+  - q: "antirrabica"
+    index: "clinical"
+    expected_top: ["enc-rabia-03"]
+    description: "Sinónimo 'antirrabica' encuentra vacuna 'rabia'"
+  - q: "rabia"
+    index: "clinical"
+    expected_top: ["enc-rabia-03"]
+    description: "Término 'rabia' encuentra registro de vacunación antirrábica"
+  - q: "otitis"
+    index: "clinical"
+    expected_top: ["enc-otitis-04"]
+    description: "Búsqueda directa de diagnóstico de otitis"
+  - q: "heces blandas"
+    index: "clinical"
+    expected_top: ["enc-diarrea-05"]
+    description: "Sinónimo descriptivo 'heces blandas' encuentra 'diarrea'"
+  - q: "diarrea"
+    index: "clinical"
+    expected_top: ["enc-diarrea-05"]
+    description: "Búsqueda directa de diarrea"

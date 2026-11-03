@@ -11,7 +11,8 @@
     "menu": "Menú",
     "language": "Idioma",
     "skipToContent": "Saltar al contenido",
-    "inbox": "Bandeja"
+    "inbox": "Bandeja",
+    "search": "Buscar"
   },
   "common": {
     "loading": "Cargando…",
@@ -177,7 +178,10 @@
     "CARE_LINK_ALREADY_ACTIVE": "Esta mascota ya está vinculada a tu clínica.",
     "REQUEST_PENDING": "Ya hay una solicitud pendiente de tu clínica para esta mascota.",
     "CARE_LINK_REQUEST_NOT_FOUND": "No encontramos esa solicitud.",
-    "CARE_LINK_REQUEST_NOT_PENDING": "La solicitud ya fue respondida o caducó."
+    "CARE_LINK_REQUEST_NOT_PENDING": "La solicitud ya fue respondida o caducó.",
+    "SEARCH_UNAVAILABLE": "El servicio de búsqueda no está disponible en este momento.",
+    "SEARCH_QUERY_INVALID": "La consulta de búsqueda es inválida.",
+    "ADMIN_REASON_REQUIRED": "Se requiere un motivo justificado para esta operación administrativa."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -1200,5 +1204,61 @@
       "manage": "Gestionar mis notificaciones",
       "invalid": "Este enlace no es válido o ya caducó. Entra en tu cuenta para gestionar tus notificaciones."
     }
+  },
+  "search": {
+    "navSearch": "Búsqueda",
+    "quickSearchPlaceholder": "Buscar pacientes...",
+    "quickSearchInputPlaceholder": "Nombre, especie, tutor, microchip...",
+    "rateLimited": "Límite de solicitudes alcanzado. Espera {seconds} s.",
+    "loading": "Buscando…",
+    "limitedAccessBadge": "Acceso limitado",
+    "guardian": "Tutor",
+    "chipSuffix": "Microchip",
+    "pressEnterToViewAll": "Presiona Enter para buscar '{query}' en todo el historial",
+    "recentSearches": "Búsquedas recientes",
+    "noMatchesFor": "No se encontraron pacientes para '{query}'",
+    "searchFullHistory": "Buscar en el historial clínico completo",
+    "clinicalSearchTitle": "Búsqueda clínica global",
+    "clinicalSearchSubtitle": "Consulta pacientes, consultas firmadas, diagnósticos y tratamientos con relevancia y tolerancia a errores.",
+    "degradedNotice": "Búsqueda limitada temporalmente: solo nombre y microchip.",
+    "degradedRetryIn": "reintentando en {seconds} s",
+    "retryNow": "Reintentar ahora",
+    "freshnessLagNotice": "Los resultados pueden no incluir cambios de los últimos {seconds} s.",
+    "reload": "Recargar",
+    "mainInputPlaceholder": "Buscar en pacientes e historiales (p. ej. 'otitis canina', 'Luna beagle')...",
+    "searchAction": "Buscar",
+    "tabPatients": "Pacientes",
+    "tabClinical": "Historial clínico",
+    "filtersTitle": "Filtros",
+    "clearFilters": "Limpiar filtros",
+    "filterSpecies": "Especie",
+    "allSpecies": "Todas las especies",
+    "filterEncounterType": "Tipo de consulta",
+    "allTypes": "Todos los tipos",
+    "filterScope": "Ámbito",
+    "scopeAll": "Todas las consultas",
+    "scopeMineOnly": "Solo mi clínica",
+    "filterConfirmedOnly": "Solo diagnósticos confirmados",
+    "dateRange": "Rango de fechas",
+    "noPatientsFound": "No se encontraron pacientes",
+    "emptyStateSuggestions": "Prueba a verificar la ortografía, buscar por el sufijo del microchip o cambiar de especie.",
+    "noClinicalFound": "No se encontraron registros clínicos",
+    "emptyStateClinicalSuggestions": "Prueba con términos clínicos, diagnósticos o amplía el rango de fechas.",
+    "viewPatientProfile": "Ver ficha del paciente",
+    "loadMore": "Cargar más resultados",
+    "ownerSearchTitle": "Buscar en mis mascotas",
+    "ownerSearchSubtitle": "Encuentra vacunas, medicamentos, consultas y diagnósticos de tus mascotas.",
+    "ownerInputPlaceholder": "Buscar vacunas, recetas, diagnósticos...",
+    "suggestedQueries": "Consultas frecuentes",
+    "shortcuts": {
+      "rabiesVaccine": "Última vacuna de rabia",
+      "prescriptions": "Medicamentos recetados",
+      "deworming": "Desparasitación",
+      "allergies": "Alergias"
+    },
+    "noOwnerResults": "No encontramos resultados para tu búsqueda",
+    "ownerEmptySuggestions": "Prueba con palabras clave como 'vacuna', 'control' o el nombre del medicamento.",
+    "viewCard": "Ver carnet",
+    "viewHistory": "Ver historial"
   }
 }

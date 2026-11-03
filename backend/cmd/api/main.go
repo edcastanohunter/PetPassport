@@ -48,6 +48,10 @@ import (
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
 	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
+	searchapp "github.com/edcastanohunter/petpassport/backend/internal/search/app"
+	searchhttp "github.com/edcastanohunter/petpassport/backend/internal/search/http"
+	searchinfra "github.com/edcastanohunter/petpassport/backend/internal/search/infra"
+	"github.com/go-chi/chi/v5"
 )
 
 // version se inyecta en build con -ldflags "-X main.version=...".
@@ -335,6 +339,38 @@ func run() error {
 	notificationHandlers := notificationshttp.NewNotificationHandlers(
 		notificationsapp.NewPreferences(notificationsinfra.NewPrefStore(pool.Pool), []byte(cfg.Notifications.UnsubscribeSecret), nil),
 		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger)
+	// Search (F3 M3.1).
+	osClient, err := searchapp.NewClient(searchapp.OpenSearchConfig{
+		Addresses: cfg.Search.Addresses,
+		Username:  cfg.Search.Username,
+		Password:  cfg.Search.Password,
+	})
+	if err != nil {
+		logger.Warn("opensearch client init failed, search will use fallback", "error", err)
+	}
+	freshnessProvider := searchinfra.NewDBFreshnessProvider(pool.Pool)
+	pgFallback := searchinfra.NewPGFallback(pool.Pool)
+	petAccessLoader := searchinfra.NewCachedPetAccess(pool.Pool, distCache)
+	var photoSigner func(key string) string
+	if objects != nil {
+		photoSigner = func(key string) string {
+			u, err := objects.PresignGet(context.Background(), key, 15*time.Minute)
+			if err != nil {
+				return ""
+			}
+			return u
+		}
+	}
+	searchQS := searchapp.NewQueryService(osClient, petAccessLoader, freshnessProvider, photoSigner)
+	searchCB := searchapp.NewCircuitBreaker(5, 30*time.Second, 60*time.Second)
+	resilientSearch := searchapp.NewResilientSearchService(searchQS, pgFallback, searchCB)
+	searchAdmin := searchapp.NewAdminService(osClient, pool.Pool, freshnessProvider, logger)
+	var abuseDetector *searchapp.AbuseDetector
+	if redisClient != nil {
+		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
+	}
+	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache)
+
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
@@ -350,6 +386,9 @@ func run() error {
 			NotificationHandlers: notificationHandlers,
 		},
 		Guard:       guard.Middleware,
+		Mount: func(r chi.Router) {
+			searchHandler.MountRoutes(r)
+		},
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
 		RateLimit:   rateLimitMW,
 	})
