@@ -45,7 +45,9 @@ function loadRecentSearches() {
 function saveRecentSearch(q: string) {
   const trimmed = q.trim()
   if (!trimmed) return
-  const current = recentSearches.value.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())
+  const current = recentSearches.value.filter(
+    (item) => item.toLowerCase() !== trimmed.toLowerCase(),
+  )
   current.unshift(trimmed)
   recentSearches.value = current.slice(0, 5)
   try {
@@ -238,7 +240,9 @@ defineExpose({
         aria-labelledby="quick-search-title"
       >
         <!-- Barra de búsqueda principal -->
-        <div class="flex items-center border-b border-surface-200 px-4 py-3 dark:border-surface-800">
+        <div
+          class="flex items-center border-b border-surface-200 px-4 py-3 dark:border-surface-800"
+        >
           <i class="pi pi-search mr-3 text-surface-400" />
           <input
             ref="inputRef"

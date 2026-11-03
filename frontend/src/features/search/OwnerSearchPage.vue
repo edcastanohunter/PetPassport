@@ -231,7 +231,9 @@ watch(
         data-testid="owner-pet-group"
       >
         <!-- Ficha de la mascota con enlaces a historial y carnet -->
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-100 pb-4 dark:border-surface-800">
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-100 pb-4 dark:border-surface-800"
+        >
           <div class="flex items-center gap-3">
             <div
               class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-700 dark:bg-primary-950 dark:text-primary-300"

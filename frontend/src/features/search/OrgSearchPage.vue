@@ -68,7 +68,9 @@ function loadRecentSearches() {
 function saveRecentSearch(q: string) {
   const trimmed = q.trim()
   if (!trimmed) return
-  const current = recentSearches.value.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())
+  const current = recentSearches.value.filter(
+    (item) => item.toLowerCase() !== trimmed.toLowerCase(),
+  )
   current.unshift(trimmed)
   recentSearches.value = current.slice(0, 5)
   try {
@@ -587,7 +589,9 @@ watch(
               >
                 <div class="flex items-center justify-between text-xs text-surface-500">
                   <div class="flex items-center gap-2">
-                    <span class="font-semibold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+                    <span
+                      class="font-semibold uppercase tracking-wider text-surface-700 dark:text-surface-300"
+                    >
                       {{ encounterTypeLabel(hit.encounter_type) }}
                     </span>
                     <span v-if="hit.organization?.name">· {{ hit.organization.name }}</span>
@@ -596,7 +600,10 @@ watch(
                 </div>
 
                 <!-- Diagnósticos si hay -->
-                <div v-if="hit.diagnoses && hit.diagnoses.length > 0" class="mt-2 flex flex-wrap gap-1.5">
+                <div
+                  v-if="hit.diagnoses && hit.diagnoses.length > 0"
+                  class="mt-2 flex flex-wrap gap-1.5"
+                >
                   <span
                     v-for="(diag, dIdx) in hit.diagnoses"
                     :key="dIdx"

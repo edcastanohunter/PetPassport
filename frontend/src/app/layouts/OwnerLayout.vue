@@ -38,9 +38,7 @@ const contexts = computed(() => {
         </div>
         <ul class="flex items-center gap-3 text-sm">
           <li>
-            <RouterLink to="/app/search" class="hover:underline">{{
-              t('nav.search')
-            }}</RouterLink>
+            <RouterLink to="/app/search" class="hover:underline">{{ t('nav.search') }}</RouterLink>
           </li>
           <li>
             <RouterLink to="/app/appointments" class="hover:underline">{{

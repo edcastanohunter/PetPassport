@@ -1,10 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import {
-  searchPatients,
-  suggestPatients,
-  searchMe,
-  suggestPetsMe,
-} from './searchApi'
+import { searchPatients, suggestPatients, searchMe, suggestPetsMe } from './searchApi'
 import { api } from '@/shared/api/client'
 
 vi.mock('@/shared/api/client', () => {
