@@ -11,7 +11,8 @@
     "menu": "Menu",
     "language": "Language",
     "skipToContent": "Skip to content",
-    "inbox": "Inbox"
+    "inbox": "Inbox",
+    "search": "Search"
   },
   "common": {
     "loading": "Loading…",
@@ -177,7 +178,10 @@
     "CARE_LINK_ALREADY_ACTIVE": "This pet is already linked to your clinic.",
     "REQUEST_PENDING": "Your clinic already has a pending request for this pet.",
     "CARE_LINK_REQUEST_NOT_FOUND": "We could not find that request.",
-    "CARE_LINK_REQUEST_NOT_PENDING": "The request was already answered or has expired."
+    "CARE_LINK_REQUEST_NOT_PENDING": "The request was already answered or has expired.",
+    "SEARCH_UNAVAILABLE": "Search service is currently unavailable.",
+    "SEARCH_QUERY_INVALID": "Search query is invalid.",
+    "ADMIN_REASON_REQUIRED": "A justified reason is required for this administrative operation."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -1200,5 +1204,61 @@
       "manage": "Manage my notifications",
       "invalid": "This link is not valid or has expired. Sign in to manage your notifications."
     }
+  },
+  "search": {
+    "navSearch": "Search",
+    "quickSearchPlaceholder": "Search patients...",
+    "quickSearchInputPlaceholder": "Name, species, owner, microchip...",
+    "rateLimited": "Rate limit reached. Please wait {seconds} s.",
+    "loading": "Searching…",
+    "limitedAccessBadge": "Limited access",
+    "guardian": "Owner",
+    "chipSuffix": "Microchip",
+    "pressEnterToViewAll": "Press Enter to search '{query}' in full history",
+    "recentSearches": "Recent searches",
+    "noMatchesFor": "No patients found for '{query}'",
+    "searchFullHistory": "Search in full clinical history",
+    "clinicalSearchTitle": "Global Clinical Search",
+    "clinicalSearchSubtitle": "Search patients, signed encounters, diagnoses and treatments with relevance and typo tolerance.",
+    "degradedNotice": "Search temporarily degraded: name and microchip only.",
+    "degradedRetryIn": "retrying in {seconds} s",
+    "retryNow": "Retry now",
+    "freshnessLagNotice": "Results may not include changes from the last {seconds} s.",
+    "reload": "Reload",
+    "mainInputPlaceholder": "Search patients and clinical history (e.g. 'canine otitis', 'Luna beagle')...",
+    "searchAction": "Search",
+    "tabPatients": "Patients",
+    "tabClinical": "Clinical history",
+    "filtersTitle": "Filters",
+    "clearFilters": "Clear filters",
+    "filterSpecies": "Species",
+    "allSpecies": "All species",
+    "filterEncounterType": "Encounter type",
+    "allTypes": "All types",
+    "filterScope": "Scope",
+    "scopeAll": "All encounters",
+    "scopeMineOnly": "My clinic only",
+    "filterConfirmedOnly": "Confirmed diagnoses only",
+    "dateRange": "Date range",
+    "noPatientsFound": "No patients found",
+    "emptyStateSuggestions": "Try checking spelling, searching by microchip suffix or changing species.",
+    "noClinicalFound": "No clinical records found",
+    "emptyStateClinicalSuggestions": "Try clinical terms, diagnoses or widening the date range.",
+    "viewPatientProfile": "View patient profile",
+    "loadMore": "Load more results",
+    "ownerSearchTitle": "Search in my pets",
+    "ownerSearchSubtitle": "Find vaccines, medications, visits and diagnoses for your pets.",
+    "ownerInputPlaceholder": "Search vaccines, prescriptions, diagnoses...",
+    "suggestedQueries": "Suggested searches",
+    "shortcuts": {
+      "rabiesVaccine": "Latest rabies vaccine",
+      "prescriptions": "Prescribed medications",
+      "deworming": "Deworming",
+      "allergies": "Allergies"
+    },
+    "noOwnerResults": "No results found for your search",
+    "ownerEmptySuggestions": "Try keywords like 'vaccine', 'checkup' or medication name.",
+    "viewCard": "View card",
+    "viewHistory": "View history"
   }
 }

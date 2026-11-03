@@ -1,0 +1,118 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "refresh_interval": "1s"
+    },
+    "analysis": {
+      "filter": {
+        "es_stop": {
+          "type": "stop",
+          "stopwords": "_spanish_"
+        },
+        "es_stem": {
+          "type": "stemmer",
+          "language": "light_spanish"
+        },
+        "edge": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 15
+        }
+      },
+      "analyzer": {
+        "es_text": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "es_stop", "es_stem"]
+        },
+        "suggest": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "edge"]
+        },
+        "suggest_q": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding"]
+        },
+        "exact": {
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "icu_folding"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "_meta": {
+      "version": 1
+    },
+    "dynamic": "strict",
+    "properties": {
+      "catalog_id": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "es_text",
+        "fields": {
+          "exact": {
+            "type": "text",
+            "analyzer": "exact"
+          },
+          "suggest": {
+            "type": "text",
+            "analyzer": "suggest",
+            "search_analyzer": "suggest_q"
+          }
+        }
+      },
+      "active_ingredients": {
+        "type": "text",
+        "analyzer": "es_text",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "suggest",
+            "search_analyzer": "suggest_q"
+          }
+        }
+      },
+      "synonyms": {
+        "type": "text",
+        "analyzer": "es_text"
+      },
+      "form": {
+        "type": "keyword"
+      },
+      "concentration": {
+        "type": "keyword"
+      },
+      "presentation": {
+        "type": "keyword"
+      },
+      "manufacturer": {
+        "type": "keyword"
+      },
+      "species": {
+        "type": "keyword"
+      },
+      "routes": {
+        "type": "keyword"
+      },
+      "prescription_required": {
+        "type": "boolean"
+      },
+      "controlled": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "atcvet_code": {
+        "type": "keyword"
+      },
+      "usage_count": {
+        "type": "integer"
+      }
+    }
+  }
+}

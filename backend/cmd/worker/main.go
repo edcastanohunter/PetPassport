@@ -46,6 +46,8 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/scheduler"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/worker"
+	searchapp "github.com/edcastanohunter/petpassport/backend/internal/search/app"
+	searchinfra "github.com/edcastanohunter/petpassport/backend/internal/search/infra"
 )
 
 var version = "dev"
@@ -77,6 +79,8 @@ func dispatch(cmd string, args []string) error {
 		return oneShot(cmd, args)
 	case "export":
 		return exportUser(args)
+	case "search":
+		return searchCommand(args)
 	default:
 		return fmt.Errorf("subcomando desconocido %q (run|leases|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
@@ -233,6 +237,51 @@ func run() error {
 				return err
 			}
 			logger.InfoContext(ctx, "asynq doc:render received", "kind", p.Kind, "ref", p.Ref, "version", p.Version)
+			return nil
+		})
+
+		var searchIndexer *searchapp.Indexer
+		var searchAccessProjector *searchapp.AccessProjector
+		if osClient, err := searchapp.NewClient(searchapp.OpenSearchConfig{
+			Addresses: a.cfg.Search.Addresses,
+			Username:  a.cfg.Search.Username,
+			Password:  a.cfg.Search.Password,
+		}); err == nil {
+			cachedPetAccess := searchinfra.NewCachedPetAccess(a.pool.Pool, nil)
+			docLoader := searchinfra.NewDocumentLoader(a.pool.Pool, cachedPetAccess)
+			searchStore := searchinfra.NewPostgresSearchStore(a.pool.Pool)
+			searchIndexer = searchapp.NewIndexer(osClient, docLoader, searchStore, logger)
+			searchAccessProjector = searchapp.NewAccessProjector(osClient, searchIndexer, cachedPetAccess, logger)
+		} else {
+			logger.WarnContext(ctx, "opensearch client init failed in worker", "error", err)
+		}
+
+		asynqSrv.HandleFunc(queue.TypeSearchBulk, func(ctx context.Context, t *asynq.Task) error {
+			var p queue.SearchBulkPayload
+			if err := json.Unmarshal(t.Payload(), &p); err != nil {
+				return err
+			}
+			logger.InfoContext(ctx, "asynq search:bulk received", "index", p.Index, "doc_count", len(p.DocIDs))
+			if searchIndexer != nil {
+				switch p.Index {
+				case "pets":
+					return searchIndexer.ProcessBulkPets(ctx, p.DocIDs)
+				case "clinical":
+					return searchIndexer.ProcessBulkClinical(ctx, p.DocIDs)
+				}
+			}
+			return nil
+		})
+
+		asynqSrv.HandleFunc(queue.TypeSearchAccess, func(ctx context.Context, t *asynq.Task) error {
+			var p queue.SearchAccessPayload
+			if err := json.Unmarshal(t.Payload(), &p); err != nil {
+				return err
+			}
+			logger.InfoContext(ctx, "asynq search:access received", "pet_id", p.PetID)
+			if searchAccessProjector != nil {
+				return searchAccessProjector.UpdatePetAccess(ctx, p.PetID)
+			}
 			return nil
 		})
 		runners = append(runners, worker.Runner{

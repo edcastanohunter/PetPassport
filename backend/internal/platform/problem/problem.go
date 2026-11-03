@@ -52,6 +52,11 @@ const (
 	AttendingVetNotEligible  Code = "ATTENDING_VET_NOT_ELIGIBLE"
 	DiscardNotAllowed        Code = "DISCARD_NOT_ALLOWED"
 	AttachmentNotFound       Code = "ATTACHMENT_NOT_FOUND"
+
+	// Search & Platform (PP-F3-API-011, M3.1).
+	SearchUnavailable   Code = "SEARCH_UNAVAILABLE"
+	SearchQueryInvalid  Code = "SEARCH_QUERY_INVALID"
+	AdminReasonRequired Code = "ADMIN_REASON_REQUIRED"
 )
 
 var defaultStatus = map[Code]int{
@@ -90,6 +95,10 @@ var defaultStatus = map[Code]int{
 	AttendingVetNotEligible:  http.StatusUnprocessableEntity,
 	DiscardNotAllowed:        http.StatusForbidden,
 	AttachmentNotFound:       http.StatusNotFound,
+
+	SearchUnavailable:   http.StatusServiceUnavailable,
+	SearchQueryInvalid:  http.StatusUnprocessableEntity,
+	AdminReasonRequired: http.StatusUnprocessableEntity,
 
 	Code("VOID_WINDOW_EXPIRED"):   http.StatusForbidden,
 	Code("VOID_NOT_ALLOWED"):      http.StatusForbidden,

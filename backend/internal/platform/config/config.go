@@ -76,6 +76,11 @@ type Config struct {
 		Password string
 		UseTLS   bool
 	}
+	Search struct {
+		Addresses []string
+		Username  string
+		Password  string
+	}
 	RateLimit struct {
 		Allowlist []string
 	}
@@ -173,6 +178,10 @@ func Load() (*Config, error) {
 	if al := os.Getenv("PP_RATELIMIT_ALLOWLIST"); al != "" {
 		cfg.RateLimit.Allowlist = splitCSV(al)
 	}
+
+	cfg.Search.Addresses = splitCSV(getenv("PP_OPENSEARCH_URLS", "http://localhost:9200"))
+	cfg.Search.Username = os.Getenv("PP_OPENSEARCH_USERNAME")
+	cfg.Search.Password = os.Getenv("PP_OPENSEARCH_PASSWORD")
 
 	cfg.ShutdownDrain = 5 * time.Second
 	cfg.ShutdownTimeout = 30 * time.Second
@@ -280,6 +289,11 @@ type Worker struct {
 		Password string
 		UseTLS   bool
 	}
+	Search struct {
+		Addresses []string
+		Username  string
+		Password  string
+	}
 	AsynqConcurrency int // PP_ASYNQ_CONCURRENCY (defecto 10)
 }
 
@@ -358,6 +372,10 @@ func LoadWorker() (*Worker, error) {
 	cfg.Redis.UseTLS = os.Getenv("PP_REDIS_USE_TLS") == "true"
 	asynqConc, _ := getenvInt("PP_ASYNQ_CONCURRENCY", 10)
 	cfg.AsynqConcurrency = asynqConc
+
+	cfg.Search.Addresses = splitCSV(getenv("PP_OPENSEARCH_URLS", "http://localhost:9200"))
+	cfg.Search.Username = os.Getenv("PP_OPENSEARCH_USERNAME")
+	cfg.Search.Password = os.Getenv("PP_OPENSEARCH_PASSWORD")
 
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)

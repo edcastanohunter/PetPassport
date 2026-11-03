@@ -1,0 +1,77 @@
+# Diccionario de sinónimos veterinarios en español para PetPassport (DAT-001, M3.1)
+# Formato: término1, término2, término3... (equivalentes) o término => reemplazo
+vómito, vomito, emesis, vómitos, nauseas, regurgitación
+picazón, picazon, prurito, prurito intenso, rascado, escozor
+diarrea, diarreico, heces blandas, deposiciones liquidas, enteritis
+castrado, esterilizado, orquiectomía, ovariohisterectomía, ovh, castración
+garrapata, garrapatas, ixódido, ixodido, rhipicephalus
+rabia, antirrábica, antirrabica, vacuna antirrábica, lyssavirus
+desparasitante, desparasitacion, desparasitación, antiparasitario, vermífugo, vermifugo
+pulga, pulgas, ctenocephalides, sifonáptero
+tos, tos de las perreras, traqueobronquitis, carraspera
+otitis, otitis externa, infección de oído, infeccion de oido
+renguera, cojera, claudicación, claudicacion, renquera
+inapetencia, anorexia, hiporexia, falta de apetito
+letargo, decaimiento, decaído, somnolencia, apatía, adinamia
+dermatitis, pioderma, alergia en piel, eccema, foliculitis
+sarro, cálculo dental, calculo dental, tártaro, tártaro dental, profilaxis dental
+parvovirus, parvo, parvovirosis, enteritis por parvovirus, cpv
+moquillo, distémper, distemper, distemper canino, cdv
+leucemia, leucemia felina, felv, virus de la leucemia felina
+inmunodeficiencia, sida felino, fiv, virus de la inmunodeficiencia felina
+piometra, infección uterina, infeccion uterina, endometritis purulenta
+insuficiencia renal, fallo renal, enfermedad renal, erc, azotemia, uremia
+cálculos, calculos, urolitiasis, litiasis, cálculos urinarios, cristales
+conjuntivitis, infección ocular, infeccion ocular, ojo rojo, blefaritis
+sarna, escabiosis, demodicosis, sarcoptes, demodex
+gripe, gripe felina, coriza, coriza felina, rinotraqueítis, herpesvirus felino
+gastritis, inflamación gástrica, acidez estomacal, dispepsia
+artritis, artrosis, osteoartritis, enfermedad articular degenerativa, oad
+herida, laceración, laceracion, corte, trauma cortante
+fractura, fractura ósea, rotura de hueso, hueso roto
+absceso, absceso purulento, infección localizada, flemón
+alopecia, caída de pelo, perdida de pelo, zonas sin pelo
+gingivitis, inflamación de encías, estomatitis, periodontitis
+alergia, reacción alérgica, anafilaxia, hipersensibilidad
+disnea, dificultad respiratoria, ahogo, jadeo excesivo, polipnea
+fiebre, pirexia, hipertermia, temperatura elevada
+convulsión, convulsiones, ataque epileptico, epilepsia, crisis convulsiva
+anemia, hematocrito bajo, mucosas pálidas, palidez
+ictericia, mucosas amarillas, hiperbilirrubinemia
+hematuria, sangre en orina, orina con sangre
+melena, sangre en heces, heces oscuras, heces con sangre
+linfoma, linfosarcoma, neoplasia de ganglios
+tumor, neoplasia, masa, nodulo, nódulo
+edema, retención de líquidos, hinchazón, hinchazon
+estrenimiento, estreñimiento, constipación, constipacion, dificultad para defecar
+cataratas, opacidad del cristalino, nubosidad ocular
+glaucoma, presión ocular alta, hipertension ocular
+úlcera, ulcera corneal, queratitis ulcerativa
+shock, choque hipovolémico, colapso circulatorio
+deshidratación, deshidratacion, pliegue cutáneo persistente, resequedad
+parásito, parasito, helminto, nematodo, cestodo, giardia, coccidio
+hongo, hongos, tiña, dermatofitosis, microsporum
+bacteriana, infección bacteriana, bacteriosis, sobrecrecimiento bacteriano
+viral, infección viral, virosis, enfermedad viral
+limpieza, profilaxis, higiene, desinfección
+vendaje, curación, curacion, inmovilización, inmovilizacion
+cirugía, cirugia, intervención quirúrgica, operacion, operación
+analgésico, analgesico, analgésicos, control de dolor, aine
+antibiótico, antibiotico, antimicrobiano, antibacteriano
+antiinflamatorio, desinflamatorio, aines, corticosteroide
+sedante, tranquilizante, anestésico, sedación
+fluido, fluidoterapia, suero, rehidratación intravenosa, ringer lactato
+collar, collar isabelino, campana, cono protector
+microchip, chip, transponder, transpondedor, identificación electrónica
+tutor, propietario, dueño, responsable, acudiente
+canino, perro, perra, cachorro, cachorrito, can
+felino, gato, gata, gatito, minino, micifuz
+macho, entero, macho castrado
+hembra, entera, hembra esterilizada
+vacunación, vacunacion, inmunización, vacuna, inoculación
+desparasitación interna, desparasitacion interna, purga, antiparasitario oral
+desparasitación externa, pipeta, pastilla antipulgas, collar antipulgas
+consulta, cita médica, valoración clínica, chequeo general
+urgencia, emergencia, atención prioritaria
+hospitalización, internación, estancia hospitalaria
+eutanasia, sobredosis de barbitúrico, descanso humanitario

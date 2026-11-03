@@ -36,6 +36,8 @@ import UnsubscribePage from '@/features/notifications/UnsubscribePage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
+import OrgSearchPage from '@/features/search/OrgSearchPage.vue'
+import OwnerSearchPage from '@/features/search/OwnerSearchPage.vue'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
 import { authGuard } from './guards'
 
@@ -43,6 +45,7 @@ import { authGuard } from './guards'
 // (FE-006/FE-008), organizaciones y pacientes (FE-007/FE-008, M1.3); admin
 // (M1.4); consultas, ficha clínica e historial del tutor (F2 M2.1,
 // FE-003/004/005/009) y verificación pública de consultas (API-013).
+// Búsqueda clínica y del tutor (F3 M3.1, PP-F3-FE-001, PP-F3-FE-002).
 const orgMeta = {
   layout: 'org',
   requiresAuth: true,
@@ -96,6 +99,12 @@ export function createAppRouter() {
         path: '/app',
         name: 'app',
         component: DashboardPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/search',
+        name: 'owner-search',
+        component: OwnerSearchPage,
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
@@ -183,6 +192,12 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       { path: '/org/:orgId', name: 'org-summary', component: OrgSummaryPage, meta: orgMeta },
+      {
+        path: '/org/:orgId/search',
+        name: 'org-search',
+        component: OrgSearchPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
       {
         path: '/org/:orgId/patients',
         name: 'org-patients',

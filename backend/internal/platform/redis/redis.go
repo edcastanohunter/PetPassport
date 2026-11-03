@@ -234,6 +234,11 @@ func (c *Client) Breaker() *Breaker {
 	return c.breaker
 }
 
+// Raw devuelve el cliente go-redis subyacente.
+func (c *Client) Raw() *goredis.Client {
+	return c.rdb
+}
+
 // Ping verifica la conexión a Redis registrando métricas y afectando al breaker.
 func (c *Client) Ping(ctx context.Context) error {
 	if !c.breaker.Allow() {

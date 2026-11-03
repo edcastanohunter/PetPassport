@@ -20,6 +20,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/scheduler"
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
 	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
+	searchinfra "github.com/edcastanohunter/petpassport/backend/internal/search/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -67,6 +68,8 @@ func registerAsyncProjections(subs *projection.Subscriptions) {
 	subs.Register(clinicalinfra.NewCustodyProjector())
 	subs.Register(clinicalinfra.NewVaccinationDueProjector())
 	subs.Register(orginfra.NewStatsProjector())
+	subs.Register(searchinfra.NewPetsSearchProjector(nil))
+	subs.Register(searchinfra.NewClinicalSearchProjector(nil))
 }
 
 // registerProcessManagers registra los PM del outbox y los comandos que el

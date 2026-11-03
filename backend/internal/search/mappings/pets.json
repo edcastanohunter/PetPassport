@@ -1,0 +1,151 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "refresh_interval": "1s"
+    },
+    "analysis": {
+      "filter": {
+        "es_stop": {
+          "type": "stop",
+          "stopwords": "_spanish_"
+        },
+        "es_stem": {
+          "type": "stemmer",
+          "language": "light_spanish"
+        },
+        "vet_synonyms": {
+          "type": "synonym_graph",
+          "synonyms_path": "analyzers/vet_synonyms_es.txt",
+          "updateable": true
+        },
+        "edge": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 15
+        }
+      },
+      "analyzer": {
+        "es_text": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "es_stop", "es_stem"]
+        },
+        "es_search": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "vet_synonyms", "es_stop", "es_stem"]
+        },
+        "en_text": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "stop", "porter_stem"]
+        },
+        "suggest": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding", "edge"]
+        },
+        "suggest_q": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "icu_folding"]
+        },
+        "exact": {
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "icu_folding"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "_meta": {
+      "version": 1
+    },
+    "dynamic": "strict",
+    "properties": {
+      "pet_id": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "es_text",
+        "fields": {
+          "exact": {
+            "type": "text",
+            "analyzer": "exact"
+          },
+          "suggest": {
+            "type": "text",
+            "analyzer": "suggest",
+            "search_analyzer": "suggest_q"
+          }
+        }
+      },
+      "name_suggest": {
+        "type": "text",
+        "analyzer": "suggest",
+        "search_analyzer": "suggest_q"
+      },
+      "species": {
+        "type": "keyword"
+      },
+      "breed": {
+        "type": "text",
+        "analyzer": "es_text",
+        "fields": {
+          "exact": {
+            "type": "keyword"
+          }
+        }
+      },
+      "sex": {
+        "type": "keyword"
+      },
+      "birth_date": {
+        "type": "date"
+      },
+      "microchip": {
+        "type": "keyword"
+      },
+      "microchip_suffix": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "guardian_display_name": {
+        "type": "text",
+        "analyzer": "es_text",
+        "fields": {
+          "suggest": {
+            "type": "text",
+            "analyzer": "suggest",
+            "search_analyzer": "suggest_q"
+          }
+        }
+      },
+      "provisional": {
+        "type": "boolean"
+      },
+      "access": {
+        "properties": {
+          "guardian_id": {
+            "type": "keyword"
+          },
+          "org_ids_linked": {
+            "type": "keyword"
+          },
+          "org_ids_custody": {
+            "type": "keyword"
+          }
+        }
+      },
+      "last_encounter_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      },
+      "version": {
+        "type": "long"
+      }
+    }
+  }
+}

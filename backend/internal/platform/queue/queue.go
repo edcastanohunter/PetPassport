@@ -110,6 +110,17 @@ type MediaProcessPayload struct {
 	Kind      string `json:"kind"`
 }
 
+// SearchBulkPayload es el payload para indexar documentos en lote en OpenSearch.
+type SearchBulkPayload struct {
+	Index  string   `json:"index"`
+	DocIDs []string `json:"doc_ids"`
+}
+
+// SearchAccessPayload es el payload para actualizar el acceso denormalizado de una mascota.
+type SearchAccessPayload struct {
+	PetID uuid.UUID `json:"pet_id"`
+}
+
 // EnqueueNotifyEmail encola un trabajo de envío de correo en la cola 'critical'
 // con TaskID determinista notify:email:{delivery_id} para deduplicación.
 func (c *Client) EnqueueNotifyEmail(ctx context.Context, deliveryID uuid.UUID) (*asynq.TaskInfo, error) {
@@ -155,6 +166,52 @@ func (c *Client) EnqueueDocRender(ctx context.Context, kind, ref string, version
 		return nil, err
 	}
 	metricTasksEnqueued.WithLabelValues(TypeDocRender, QueueDefault).Inc()
+	return info, nil
+}
+
+// EnqueueSearchBulk encola un trabajo de indexación en lote en la cola 'default' (ARQ-001).
+func (c *Client) EnqueueSearchBulk(ctx context.Context, index string, docIDs []string) (*asynq.TaskInfo, error) {
+	payload, err := json.Marshal(SearchBulkPayload{Index: index, DocIDs: docIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	taskID := fmt.Sprintf("search:bulk:%s:%d", index, time.Now().UnixNano())
+	task := asynq.NewTask(TypeSearchBulk, payload,
+		asynq.TaskID(taskID),
+		asynq.Queue(QueueDefault),
+		asynq.MaxRetry(10),
+		asynq.Retention(24*time.Hour),
+	)
+
+	info, err := c.client.EnqueueContext(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+	metricTasksEnqueued.WithLabelValues(TypeSearchBulk, QueueDefault).Inc()
+	return info, nil
+}
+
+// EnqueueSearchAccess encola un trabajo de actualización de acceso de mascota en la cola 'default' (DOM-004).
+func (c *Client) EnqueueSearchAccess(ctx context.Context, petID uuid.UUID) (*asynq.TaskInfo, error) {
+	payload, err := json.Marshal(SearchAccessPayload{PetID: petID})
+	if err != nil {
+		return nil, err
+	}
+
+	taskID := fmt.Sprintf("search:access:%s:%d", petID, time.Now().UnixNano())
+	task := asynq.NewTask(TypeSearchAccess, payload,
+		asynq.TaskID(taskID),
+		asynq.Queue(QueueDefault),
+		asynq.MaxRetry(10),
+		asynq.Retention(24*time.Hour),
+	)
+
+	info, err := c.client.EnqueueContext(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+	metricTasksEnqueued.WithLabelValues(TypeSearchAccess, QueueDefault).Inc()
 	return info, nil
 }
 
