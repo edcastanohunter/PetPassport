@@ -122,6 +122,7 @@ func NewClient(cfg OpenSearchConfig) (Client, error) {
 			MaxIdleConnsPerHost: 20,
 			IdleConnTimeout:     90 * time.Second,
 			TLSClientConfig: &tls.Config{
+				MinVersion:         tls.VersionTLS13,
 				InsecureSkipVerify: cfg.Insecure, // #nosec G402 -- configurable para desarrollo local
 			},
 		}

@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
@@ -51,7 +53,6 @@ import (
 	searchapp "github.com/edcastanohunter/petpassport/backend/internal/search/app"
 	searchhttp "github.com/edcastanohunter/petpassport/backend/internal/search/http"
 	searchinfra "github.com/edcastanohunter/petpassport/backend/internal/search/infra"
-	"github.com/go-chi/chi/v5"
 )
 
 // version se inyecta en build con -ldflags "-X main.version=...".
