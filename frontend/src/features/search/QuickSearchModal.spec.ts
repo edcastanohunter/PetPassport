@@ -18,7 +18,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => mockRouter,
 }))
 
-function mountModal(props: any) {
+function mountModal(props: Record<string, unknown>) {
   return mount(QuickSearchModal, {
     props,
     global: { plugins: [i18n] },

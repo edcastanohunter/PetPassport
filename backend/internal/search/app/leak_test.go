@@ -23,6 +23,19 @@ func (m *mockPetAccessLoader) GetPetAccess(ctx context.Context, petID uuid.UUID)
 	return nil, nil
 }
 
+func (m *mockPetAccessLoader) GetPetIDsByOrg(ctx context.Context, orgID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	for petID, rec := range m.records {
+		for _, o := range rec.LinkedOrgIDs {
+			if o == orgID {
+				ids = append(ids, petID)
+				break
+			}
+		}
+	}
+	return ids, nil
+}
+
 func TestAuthorizationLeakGate_SEC001(t *testing.T) {
 	mockOS := NewMockClient()
 	_ = mockOS.CreateIndex(context.Background(), domain.IndexPets, nil)

@@ -45,6 +45,20 @@ function parseSearchMode(response: Response | undefined): SearchMode {
   return header === 'degraded' ? 'degraded' : 'full'
 }
 
+type DynamicGet = <T>(
+  path: string,
+  options?: Record<string, unknown>,
+) => Promise<{
+  data?: T
+  error?: Record<string, unknown>
+  response?: Response
+}>
+
+const rawGet: DynamicGet = (path, options) => {
+  const getFn = api().GET as unknown as DynamicGet
+  return getFn(path, options)
+}
+
 /**
  * Busca pacientes en el espacio de una organización (PP-F3-API-001, FE-001).
  */
@@ -61,7 +75,7 @@ export async function searchPatients(
     size: params.size,
   }
 
-  const { data, error, response } = await (api().GET as any)(
+  const { data, error, response } = await rawGet<PatientSearchResponse>(
     `/organizations/${orgId}/search/patients`,
     {
       params: { query },
@@ -103,7 +117,7 @@ export async function searchClinical(
     size: params.size,
   }
 
-  const { data, error, response } = await (api().GET as any)(
+  const { data, error, response } = await rawGet<ClinicalSearchResponse>(
     `/organizations/${orgId}/search/clinical`,
     {
       params: { query },
@@ -132,7 +146,7 @@ export async function suggestPatients(
   q: string,
   signal?: AbortSignal,
 ): Promise<SuggestPatientsResponse> {
-  const { data, error, response } = await (api().GET as any)(
+  const { data, error, response } = await rawGet<SuggestPatientsResponse>(
     `/organizations/${orgId}/suggest/patients`,
     {
       params: { query: { q: q.trim() } },
@@ -166,7 +180,7 @@ export async function searchMe(
     size: params.size,
   }
 
-  const { data, error, response } = await (api().GET as any)('/me/search', {
+  const { data, error, response } = await rawGet<ClinicalSearchResponse>('/me/search', {
     params: { query },
     signal,
   })
@@ -191,7 +205,7 @@ export async function suggestPetsMe(
   q: string,
   signal?: AbortSignal,
 ): Promise<SuggestPetsMeResponse> {
-  const { data, error, response } = await (api().GET as any)('/me/suggest/pets', {
+  const { data, error, response } = await rawGet<SuggestPetsMeResponse>('/me/suggest/pets', {
     params: { query: { q: q.trim() } },
     signal,
   })

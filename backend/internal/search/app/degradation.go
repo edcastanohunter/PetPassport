@@ -62,10 +62,7 @@ func (cb *CircuitBreaker) Allow() bool {
 	}
 
 	now := time.Now()
-	if now.Before(cb.openUntil) {
-		return false
-	}
-	return true
+	return !now.Before(cb.openUntil)
 }
 
 // RecordSuccess registra un éxito y resetea la ventana de fallos si estaba cerrado.

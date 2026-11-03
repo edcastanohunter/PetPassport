@@ -1,12 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   searchPatients,
-  searchClinical,
   suggestPatients,
   searchMe,
   suggestPetsMe,
 } from './searchApi'
-import { api, ApiError } from '@/shared/api/client'
+import { api } from '@/shared/api/client'
 
 vi.mock('@/shared/api/client', () => {
   const mockGet = vi.fn()
@@ -18,10 +17,10 @@ vi.mock('@/shared/api/client', () => {
       status: number
       retryAfter?: number
       code: string
-      constructor(p: any, status: number, retryAfter?: string | null) {
-        super(p.detail || 'error')
+      constructor(p: Record<string, unknown>, status: number, retryAfter?: string | null) {
+        super((p.detail as string) || 'error')
         this.status = status
-        this.code = p.code || 'ERROR'
+        this.code = (p.code as string) || 'ERROR'
         this.retryAfter = retryAfter ? Number(retryAfter) : undefined
       }
     },
@@ -29,7 +28,7 @@ vi.mock('@/shared/api/client', () => {
 })
 
 describe('searchApi.ts (PP-F3-API-001, API-002)', () => {
-  const mockApi = api() as any
+  const mockApi = api() as unknown as { GET: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
     vi.clearAllMocks()

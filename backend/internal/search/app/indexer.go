@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -36,23 +34,29 @@ type DocumentSource interface {
 	LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUID) ([]domain.ClinicalDoc, error)
 }
 
+// IndexQueueRepository define las operaciones con la tabla search.index_queue.
+type IndexQueueRepository interface {
+	DeleteIndexed(ctx context.Context, indexName, docID string, version int64) error
+	EnqueueDoc(ctx context.Context, indexName, docID string, petID *uuid.UUID, version int64) error
+}
+
 // Indexer coordina la indexación idempotente en OpenSearch (ARQ-001).
 type Indexer struct {
 	client Client
 	source DocumentSource
-	pool   *pgxpool.Pool
+	queue  IndexQueueRepository
 	logger *slog.Logger
 }
 
 // NewIndexer crea un nuevo Indexer.
-func NewIndexer(client Client, source DocumentSource, pool *pgxpool.Pool, logger *slog.Logger) *Indexer {
+func NewIndexer(client Client, source DocumentSource, queue IndexQueueRepository, logger *slog.Logger) *Indexer {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &Indexer{
 		client: client,
 		source: source,
-		pool:   pool,
+		queue:  queue,
 		logger: logger,
 	}
 }
@@ -109,12 +113,9 @@ func (idx *Indexer) ProcessBulkPets(ctx context.Context, petIDs []string) error 
 	}
 
 	// Limpiar filas procesadas de search.index_queue
-	if idx.pool != nil {
+	if idx.queue != nil {
 		for docID, ver := range docVersions {
-			_, _ = idx.pool.Exec(ctx, `
-				DELETE FROM search.index_queue
-				WHERE index = 'pets' AND doc_id = $1 AND version <= $2
-			`, docID, ver)
+			_ = idx.queue.DeleteIndexed(ctx, "pets", docID, ver)
 		}
 	}
 
@@ -173,12 +174,9 @@ func (idx *Indexer) ProcessBulkClinical(ctx context.Context, docIDs []string) er
 	}
 
 	// Limpiar filas procesadas
-	if idx.pool != nil {
+	if idx.queue != nil {
 		for docID, ver := range docVersions {
-			_, _ = idx.pool.Exec(ctx, `
-				DELETE FROM search.index_queue
-				WHERE index = 'clinical' AND doc_id = $1 AND version <= $2
-			`, docID, ver)
+			_ = idx.queue.DeleteIndexed(ctx, "clinical", docID, ver)
 		}
 	}
 
@@ -187,16 +185,8 @@ func (idx *Indexer) ProcessBulkClinical(ctx context.Context, docIDs []string) er
 
 // EnqueueIndexDoc añade un documento a search.index_queue (ARQ-001).
 func (idx *Indexer) EnqueueIndexDoc(ctx context.Context, indexName, docID string, petID *uuid.UUID, version int64) error {
-	if idx.pool == nil {
+	if idx.queue == nil {
 		return nil
 	}
-	_, err := idx.pool.Exec(ctx, `
-		INSERT INTO search.index_queue (index, doc_id, pet_id, version, status, updated_at)
-		VALUES ($1, $2, $3, $4, 'pending', $5)
-		ON CONFLICT (index, doc_id) DO UPDATE SET
-			version = GREATEST(search.index_queue.version, EXCLUDED.version),
-			status = 'pending',
-			updated_at = EXCLUDED.updated_at
-	`, indexName, docID, petID, version, time.Now())
-	return err
+	return idx.queue.EnqueueDoc(ctx, indexName, docID, petID, version)
 }

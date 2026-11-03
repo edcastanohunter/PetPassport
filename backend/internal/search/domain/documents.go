@@ -21,29 +21,29 @@ const (
 
 // AccessScope define los permisos denormalizados embebidos en los documentos (DOM-003, ADR-013).
 type AccessScope struct {
-	GuardianID     string   `json:"guardian_id,omitempty"`
-	OrgIDsLinked   []string `json:"org_ids_linked,omitempty"`
-	OrgIDsCustody  []string `json:"org_ids_custody,omitempty"`
+	GuardianID    string   `json:"guardian_id,omitempty"`
+	OrgIDsLinked  []string `json:"org_ids_linked,omitempty"`
+	OrgIDsCustody []string `json:"org_ids_custody,omitempty"`
 }
 
 // PetDoc es la representación desnormalizada de una mascota en OpenSearch (índice pets).
 type PetDoc struct {
-	PetID               string       `json:"pet_id"`
-	Name                string       `json:"name"`
-	NameSuggest         []string     `json:"name_suggest,omitempty"`
-	Species             string       `json:"species"`
-	Breed               string       `json:"breed,omitempty"`
-	Sex                 string       `json:"sex"`
-	BirthDate           *string      `json:"birth_date,omitempty"` // YYYY-MM-DD
-	Microchip           string       `json:"microchip,omitempty"`
-	MicrochipSuffix     string       `json:"microchip_suffix,omitempty"`
-	Status              string       `json:"status"` // active | deceased
-	GuardianDisplayName string       `json:"guardian_display_name,omitempty"`
-	Provisional         bool         `json:"provisional"`
-	Access              AccessScope  `json:"access"`
-	LastEncounterAt     *time.Time   `json:"last_encounter_at,omitempty"`
-	UpdatedAt           time.Time    `json:"updated_at"`
-	Version             int64        `json:"version"`
+	PetID               string      `json:"pet_id"`
+	Name                string      `json:"name"`
+	NameSuggest         []string    `json:"name_suggest,omitempty"`
+	Species             string      `json:"species"`
+	Breed               string      `json:"breed,omitempty"`
+	Sex                 string      `json:"sex"`
+	BirthDate           *string     `json:"birth_date,omitempty"` // YYYY-MM-DD
+	Microchip           string      `json:"microchip,omitempty"`
+	MicrochipSuffix     string      `json:"microchip_suffix,omitempty"`
+	Status              string      `json:"status"` // active | deceased
+	GuardianDisplayName string      `json:"guardian_display_name,omitempty"`
+	Provisional         bool        `json:"provisional"`
+	Access              AccessScope `json:"access"`
+	LastEncounterAt     *time.Time  `json:"last_encounter_at,omitempty"`
+	UpdatedAt           time.Time   `json:"updated_at"`
+	Version             int64       `json:"version"`
 }
 
 // DiagnosisItem representa un diagnóstico estructurado en ClinicalDoc.

@@ -11,10 +11,10 @@ import (
 
 // MockClient es una implementación en memoria de Client para pruebas unitarias y golden queries.
 type MockClient struct {
-	mu      sync.RWMutex
-	indices map[string]map[string]any // indexName -> docID -> raw doc
+	mu       sync.RWMutex
+	indices  map[string]map[string]any // indexName -> docID -> raw doc
 	versions map[string]map[string]int64
-	aliases map[string][]string       // alias -> []indexName
+	aliases  map[string][]string // alias -> []indexName
 }
 
 var _ Client = (*MockClient)(nil)
@@ -208,12 +208,12 @@ func (m *MockClient) Search(ctx context.Context, index string, query map[string]
 	filterGuardianID, filterOrgID, qStr, filterSpecies, filterStatus := parseSearchQuery(query)
 
 	var matchedHits []struct {
-		Index     string          `json:"_index"`
-		ID        string          `json:"_id"`
-		Score     *float64        `json:"_score"`
-		Source    json.RawMessage `json:"_source"`
+		Index     string              `json:"_index"`
+		ID        string              `json:"_id"`
+		Score     *float64            `json:"_score"`
+		Source    json.RawMessage     `json:"_source"`
 		Highlight map[string][]string `json:"highlight,omitempty"`
-		Sort      []any           `json:"sort,omitempty"`
+		Sort      []any               `json:"sort,omitempty"`
 	}
 
 	speciesCounts := make(map[string]int64)
@@ -336,12 +336,12 @@ func (m *MockClient) Search(ctx context.Context, index string, query map[string]
 		sourceBytes, _ := json.Marshal(d)
 		hitScore := score
 		matchedHits = append(matchedHits, struct {
-			Index     string          `json:"_index"`
-			ID        string          `json:"_id"`
-			Score     *float64        `json:"_score"`
-			Source    json.RawMessage `json:"_source"`
+			Index     string              `json:"_index"`
+			ID        string              `json:"_id"`
+			Score     *float64            `json:"_score"`
+			Source    json.RawMessage     `json:"_source"`
 			Highlight map[string][]string `json:"highlight,omitempty"`
-			Sort      []any           `json:"sort,omitempty"`
+			Sort      []any               `json:"sort,omitempty"`
 		}{
 			Index:     targetIndices[0],
 			ID:        item.id,

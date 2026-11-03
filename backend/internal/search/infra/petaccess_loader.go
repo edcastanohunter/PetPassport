@@ -138,3 +138,24 @@ func (c *CachedPetAccess) InvalidatePetAccess(ctx context.Context, petID uuid.UU
 	key := fmt.Sprintf("%s:petaccess:%s", cache.SchemaVersion, petID)
 	return c.cache.Delete(ctx, key)
 }
+
+// GetPetIDsByOrg devuelve los IDs de mascotas vinculadas a una organización.
+func (c *CachedPetAccess) GetPetIDsByOrg(ctx context.Context, orgID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := c.pool.Query(ctx, `
+		SELECT pet_id FROM read_petregistry.pet_care_links
+		WHERE organization_id = $1
+	`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var petIDs []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err == nil {
+			petIDs = append(petIDs, id)
+		}
+	}
+	return petIDs, rows.Err()
+}

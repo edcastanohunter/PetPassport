@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/search/domain"
 )
@@ -16,12 +15,11 @@ type AccessProjector struct {
 	client  Client
 	indexer *Indexer
 	access  PetAccessLoader
-	pool    *pgxpool.Pool
 	logger  *slog.Logger
 }
 
 // NewAccessProjector crea un nuevo AccessProjector.
-func NewAccessProjector(client Client, indexer *Indexer, access PetAccessLoader, pool *pgxpool.Pool, logger *slog.Logger) *AccessProjector {
+func NewAccessProjector(client Client, indexer *Indexer, access PetAccessLoader, logger *slog.Logger) *AccessProjector {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -29,7 +27,6 @@ func NewAccessProjector(client Client, indexer *Indexer, access PetAccessLoader,
 		client:  client,
 		indexer: indexer,
 		access:  access,
-		pool:    pool,
 		logger:  logger,
 	}
 }
@@ -84,21 +81,9 @@ func (p *AccessProjector) UpdatePetAccess(ctx context.Context, petID uuid.UUID) 
 
 // UpdateOrganizationAccess actualiza el acceso para todas las mascotas de una organización suspendida/reactivada.
 func (p *AccessProjector) UpdateOrganizationAccess(ctx context.Context, orgID uuid.UUID) error {
-	rows, err := p.pool.Query(ctx, `
-		SELECT pet_id FROM read_petregistry.pet_care_links
-		WHERE organization_id = $1
-	`, orgID)
+	petIDs, err := p.access.GetPetIDsByOrg(ctx, orgID)
 	if err != nil {
 		return err
-	}
-	defer rows.Close()
-
-	var petIDs []uuid.UUID
-	for rows.Next() {
-		var id uuid.UUID
-		if err := rows.Scan(&id); err == nil {
-			petIDs = append(petIDs, id)
-		}
 	}
 
 	for _, pid := range petIDs {

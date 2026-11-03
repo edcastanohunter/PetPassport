@@ -32,7 +32,7 @@ func searchCommand(args []string) error {
 	}
 
 	freshness := searchinfra.NewDBFreshnessProvider(a.pool.Pool)
-	adminSvc := searchapp.NewAdminService(osClient, a.pool.Pool, freshness, a.tel.Logger)
+	adminSvc := searchapp.NewAdminService(osClient, searchinfra.NewPostgresSearchStore(a.pool.Pool), freshness, a.tel.Logger)
 
 	switch args[0] {
 	case "init":

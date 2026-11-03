@@ -6,7 +6,7 @@ import SearchDegradationBanner from './SearchDegradationBanner.vue'
 
 const i18n = createI18n({ legacy: false, locale: 'es', messages: { es } })
 
-function mountBanner(props: any) {
+function mountBanner(props: Record<string, unknown>) {
   return mount(SearchDegradationBanner, {
     props,
     global: { plugins: [i18n] },

@@ -34,6 +34,7 @@ var (
 // PetAccessLoader define la interfaz para resolver permisos de acceso de una mascota desde PostgreSQL/Caché.
 type PetAccessLoader interface {
 	GetPetAccess(ctx context.Context, petID uuid.UUID) (*domain.PetAccessRecord, error)
+	GetPetIDsByOrg(ctx context.Context, orgID uuid.UUID) ([]uuid.UUID, error)
 }
 
 // FreshnessProvider provee el lag de indexación de búsqueda.
@@ -101,13 +102,13 @@ type ClinicalSearchRequest struct {
 
 // ClinicalHitItem representa una coincidencia clínica individual.
 type ClinicalHitItem struct {
-	DocKind          string                 `json:"doc_kind"`
-	RefID            string                 `json:"ref_id"`
-	OccurredAt       time.Time              `json:"occurred_at"`
-	Organization     map[string]string      `json:"organization"` // {id, name}
-	EncounterType    string                 `json:"encounter_type"`
-	Diagnoses        []domain.DiagnosisItem `json:"diagnoses,omitempty"`
-	Highlight        map[string][]string    `json:"highlight,omitempty"`
+	DocKind       string                 `json:"doc_kind"`
+	RefID         string                 `json:"ref_id"`
+	OccurredAt    time.Time              `json:"occurred_at"`
+	Organization  map[string]string      `json:"organization"` // {id, name}
+	EncounterType string                 `json:"encounter_type"`
+	Diagnoses     []domain.DiagnosisItem `json:"diagnoses,omitempty"`
+	Highlight     map[string][]string    `json:"highlight,omitempty"`
 }
 
 // ClinicalSearchResultItem agrupa coincidencias clínicas por paciente.

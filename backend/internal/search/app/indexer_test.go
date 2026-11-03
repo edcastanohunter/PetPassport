@@ -156,7 +156,7 @@ func TestAccessProjector_UpdateByQuery_QA001(t *testing.T) {
 		},
 	}
 	indexer := NewIndexer(mockOS, source, nil, nil)
-	projector := NewAccessProjector(mockOS, indexer, accessLoader, nil, nil)
+	projector := NewAccessProjector(mockOS, indexer, accessLoader, nil)
 
 	// Ejecutar actualización de acceso
 	err := projector.UpdatePetAccess(context.Background(), petID)

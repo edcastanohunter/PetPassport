@@ -364,7 +364,7 @@ func run() error {
 	searchQS := searchapp.NewQueryService(osClient, petAccessLoader, freshnessProvider, photoSigner)
 	searchCB := searchapp.NewCircuitBreaker(5, 30*time.Second, 60*time.Second)
 	resilientSearch := searchapp.NewResilientSearchService(searchQS, pgFallback, searchCB)
-	searchAdmin := searchapp.NewAdminService(osClient, pool.Pool, freshnessProvider, logger)
+	searchAdmin := searchapp.NewAdminService(osClient, searchinfra.NewPostgresSearchStore(pool.Pool), freshnessProvider, logger)
 	var abuseDetector *searchapp.AbuseDetector
 	if redisClient != nil {
 		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
@@ -385,7 +385,7 @@ func run() error {
 			SchedulingHandlers:   schedulingHandlers,
 			NotificationHandlers: notificationHandlers,
 		},
-		Guard:       guard.Middleware,
+		Guard: guard.Middleware,
 		Mount: func(r chi.Router) {
 			searchHandler.MountRoutes(r)
 		},

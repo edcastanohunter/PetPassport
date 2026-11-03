@@ -85,12 +85,12 @@ type SearchRawResult struct {
 		} `json:"total"`
 		MaxScore *float64 `json:"max_score"`
 		Hits     []struct {
-			Index     string          `json:"_index"`
-			ID        string          `json:"_id"`
-			Score     *float64        `json:"_score"`
-			Source    json.RawMessage `json:"_source"`
+			Index     string              `json:"_index"`
+			ID        string              `json:"_id"`
+			Score     *float64            `json:"_score"`
+			Source    json.RawMessage     `json:"_source"`
 			Highlight map[string][]string `json:"highlight,omitempty"`
-			Sort      []any           `json:"sort,omitempty"`
+			Sort      []any               `json:"sort,omitempty"`
 		} `json:"hits"`
 	} `json:"hits"`
 	Aggregations json.RawMessage `json:"aggregations,omitempty"`
@@ -98,11 +98,11 @@ type SearchRawResult struct {
 
 // IndexStat contiene métricas básicas de un índice físico.
 type IndexStat struct {
-	Index        string `json:"index"`
-	Health       string `json:"health"`
-	Status       string `json:"status"`
-	DocsCount    string `json:"docs.count"`
-	StoreSize    string `json:"store.size"`
+	Index         string `json:"index"`
+	Health        string `json:"health"`
+	Status        string `json:"status"`
+	DocsCount     string `json:"docs.count"`
+	StoreSize     string `json:"store.size"`
 	PrimaryShards string `json:"pri"`
 }
 
@@ -122,7 +122,7 @@ func NewClient(cfg OpenSearchConfig) (Client, error) {
 			MaxIdleConnsPerHost: 20,
 			IdleConnTimeout:     90 * time.Second,
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.Insecure, //nolint:gosec // configurable para dev
+				InsecureSkipVerify: cfg.Insecure, // #nosec G402 -- configurable para desarrollo local
 			},
 		}
 	}
@@ -148,7 +148,7 @@ func (c *osClient) Ping(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		return fmt.Errorf("ping error: status %d", res.StatusCode)
 	}
@@ -163,7 +163,7 @@ func (c *osClient) IndexExists(ctx context.Context, index string) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode == http.StatusOK {
 		return true, nil
 	}
@@ -182,7 +182,7 @@ func (c *osClient) CreateIndex(ctx context.Context, index string, body []byte) e
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("create index %s error: status %d: %s", index, res.StatusCode, string(b))
@@ -198,7 +198,7 @@ func (c *osClient) DeleteIndex(ctx context.Context, index string) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() && res.StatusCode != http.StatusNotFound {
 		b, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("delete index %s error: status %d: %s", index, res.StatusCode, string(b))
@@ -212,7 +212,7 @@ func (c *osClient) GetAliases(ctx context.Context) (map[string][]string, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("get alias error: status %d: %s", res.StatusCode, string(b))
@@ -261,7 +261,7 @@ func (c *osClient) UpdateAliases(ctx context.Context, actions []AliasAction) err
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("update aliases error: status %d: %s", res.StatusCode, string(b))
@@ -316,7 +316,7 @@ func (c *osClient) Bulk(ctx context.Context, items []BulkOperation) (*BulkRespon
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("bulk error: status %d: %s", res.StatusCode, string(b))
@@ -343,7 +343,7 @@ func (c *osClient) Search(ctx context.Context, index string, query map[string]an
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("search error on index %s: status %d: %s", index, res.StatusCode, string(b))
@@ -376,7 +376,7 @@ func (c *osClient) UpdateByQuery(ctx context.Context, index string, query map[st
 	if err != nil {
 		return 0, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return 0, fmt.Errorf("update_by_query error: status %d: %s", res.StatusCode, string(b))
@@ -400,7 +400,7 @@ func (c *osClient) Delete(ctx context.Context, index, id string) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() && res.StatusCode != http.StatusNotFound {
 		b, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("delete doc %s/%s error: status %d: %s", index, id, res.StatusCode, string(b))
@@ -416,7 +416,7 @@ func (c *osClient) CatIndices(ctx context.Context) ([]IndexStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.IsError() {
 		b, _ := io.ReadAll(res.Body)
 		return nil, fmt.Errorf("cat indices error: status %d: %s", res.StatusCode, string(b))

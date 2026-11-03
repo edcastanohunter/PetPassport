@@ -117,16 +117,16 @@ func (l *DocumentLoader) LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUI
 	for _, id := range docIDs {
 		// 1. Intentar cargar como encuentro
 		var (
-			petID, orgID   uuid.UUID
+			petID, orgID    uuid.UUID
 			encType, status string
-			startedAt      time.Time
-			reason         string
-			attendingVetID *uuid.UUID
-			subjective     *string
-			objectiveRaw   []byte
-			diagnosesRaw   []byte
-			planRaw        []byte
-			version        int64
+			startedAt       time.Time
+			reason          string
+			attendingVetID  *uuid.UUID
+			subjective      *string
+			objectiveRaw    []byte
+			diagnosesRaw    []byte
+			planRaw         []byte
+			version         int64
 		)
 
 		err := l.pool.QueryRow(ctx, `
@@ -188,8 +188,8 @@ func (l *DocumentLoader) LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUI
 						Name      string  `json:"name"`
 						CatalogID *string `json:"catalog_id"`
 					} `json:"medications"`
-					Procedures []string `json:"procedures"`
-					Recommendations string `json:"recommendations"`
+					Procedures      []string `json:"procedures"`
+					Recommendations string   `json:"recommendations"`
 				}
 				if err := json.Unmarshal(planRaw, &planObj); err == nil {
 					for _, m := range planObj.Medications {

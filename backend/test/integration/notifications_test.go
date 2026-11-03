@@ -81,7 +81,7 @@ func newNotifEnv(t *testing.T) *notifEnv {
 	}
 	t.Cleanup(pool.Close)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	clock := &simClock{t: time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)}
+	clock := &simClock{t: time.Now().UTC().Add(time.Minute)}
 	secret := []byte("0123456789abcdef0123456789abcdef")
 	metrics := notificationsinfra.NewMetrics(prometheus.NewRegistry())
 	channel := &capture{}

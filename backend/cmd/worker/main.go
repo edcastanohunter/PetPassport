@@ -249,8 +249,9 @@ func run() error {
 		}); err == nil {
 			cachedPetAccess := searchinfra.NewCachedPetAccess(a.pool.Pool, nil)
 			docLoader := searchinfra.NewDocumentLoader(a.pool.Pool, cachedPetAccess)
-			searchIndexer = searchapp.NewIndexer(osClient, docLoader, a.pool.Pool, logger)
-			searchAccessProjector = searchapp.NewAccessProjector(osClient, searchIndexer, cachedPetAccess, a.pool.Pool, logger)
+			searchStore := searchinfra.NewPostgresSearchStore(a.pool.Pool)
+			searchIndexer = searchapp.NewIndexer(osClient, docLoader, searchStore, logger)
+			searchAccessProjector = searchapp.NewAccessProjector(osClient, searchIndexer, cachedPetAccess, logger)
 		} else {
 			logger.WarnContext(ctx, "opensearch client init failed in worker", "error", err)
 		}
@@ -262,9 +263,10 @@ func run() error {
 			}
 			logger.InfoContext(ctx, "asynq search:bulk received", "index", p.Index, "doc_count", len(p.DocIDs))
 			if searchIndexer != nil {
-				if p.Index == "pets" {
+				switch p.Index {
+				case "pets":
 					return searchIndexer.ProcessBulkPets(ctx, p.DocIDs)
-				} else if p.Index == "clinical" {
+				case "clinical":
 					return searchIndexer.ProcessBulkClinical(ctx, p.DocIDs)
 				}
 			}

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/edcastanohunter/petpassport/backend/internal/search/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/search/mappings"
@@ -27,19 +26,26 @@ type IndexSummary struct {
 	LagSeconds         int64  `json:"lag_seconds"`
 }
 
+// AdminRepository define las operaciones de persistencia para administración de búsqueda.
+type AdminRepository interface {
+	CreateReindexJob(ctx context.Context, id uuid.UUID, alias, fromIndex, toIndex string, startedBy *uuid.UUID, reason string, startedAt time.Time) error
+	CompleteReindexJob(ctx context.Context, id uuid.UUID, finishedAt time.Time) error
+	RetryFailedIndexQueue(ctx context.Context) (int64, error)
+}
+
 // AdminService implementa las operaciones administrativas de búsqueda (PP-F3-API-009).
 type AdminService struct {
 	client    Client
-	pool      *pgxpool.Pool
+	repo      AdminRepository
 	freshness FreshnessProvider
 	logger    *slog.Logger
 }
 
 // NewAdminService crea un nuevo AdminService.
-func NewAdminService(client Client, pool *pgxpool.Pool, freshness FreshnessProvider, logger *slog.Logger) *AdminService {
+func NewAdminService(client Client, repo AdminRepository, freshness FreshnessProvider, logger *slog.Logger) *AdminService {
 	return &AdminService{
 		client:    client,
-		pool:      pool,
+		repo:      repo,
 		freshness: freshness,
 		logger:    logger,
 	}
@@ -150,12 +156,10 @@ func (a *AdminService) Reindex(ctx context.Context, alias string, reason string,
 	toIndex := fmt.Sprintf("%s-v2", alias)
 
 	// Registrar en search.reindex_jobs
-	_, err := a.pool.Exec(ctx, `
-		INSERT INTO search.reindex_jobs (id, alias, from_index, to_index, status, started_by, reason, started_at)
-		VALUES ($1, $2, $3, $4, 'running', $5, $6, $7)
-	`, jobID, alias, alias+"-v1", toIndex, startedBy, reason, time.Now())
-	if err != nil {
-		return uuid.Nil, err
+	if a.repo != nil {
+		if err := a.repo.CreateReindexJob(ctx, jobID, alias, alias+"-v1", toIndex, startedBy, reason, time.Now()); err != nil {
+			return uuid.Nil, err
+		}
 	}
 
 	// 1. Crear nuevo índice físico con mapping
@@ -183,24 +187,17 @@ func (a *AdminService) Reindex(ctx context.Context, alias string, reason string,
 		{Type: "add", Index: toIndex, Alias: alias},
 	})
 
-	_, _ = a.pool.Exec(ctx, `
-		UPDATE search.reindex_jobs
-		SET status = 'completed', finished_at = $2
-		WHERE id = $1
-	`, jobID, time.Now())
+	if a.repo != nil {
+		_ = a.repo.CompleteReindexJob(ctx, jobID, time.Now())
+	}
 
 	return jobID, nil
 }
 
 // RetryIndexQueue reintenta documentos fallidos en la cola de indexación.
 func (a *AdminService) RetryIndexQueue(ctx context.Context) (int64, error) {
-	tag, err := a.pool.Exec(ctx, `
-		UPDATE search.index_queue
-		SET status = 'pending', attempts = 0, last_error = NULL, updated_at = now()
-		WHERE status = 'failed'
-	`)
-	if err != nil {
-		return 0, err
+	if a.repo == nil {
+		return 0, nil
 	}
-	return tag.RowsAffected(), nil
+	return a.repo.RetryFailedIndexQueue(ctx)
 }

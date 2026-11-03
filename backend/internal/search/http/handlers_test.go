@@ -69,8 +69,8 @@ func setupTestRouter() (*chi.Mux, uuid.UUID, uuid.UUID, auth.Principal) {
 func TestSearchPatients_HTTP(t *testing.T) {
 	r, orgID, _, principal := setupTestRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/organizations/"+orgID.String()+"/search/patients?q=Toby", nil)
-	req = req.WithContext(auth.WithPrincipal(req.Context(), principal))
+	ctx := auth.WithPrincipal(context.Background(), principal)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/organizations/"+orgID.String()+"/search/patients?q=Toby", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -90,8 +90,8 @@ func TestSearchPatients_ForbiddenOrg(t *testing.T) {
 	r, _, _, principal := setupTestRouter()
 	otherOrg := uuid.New()
 
-	req := httptest.NewRequest(http.MethodGet, "/organizations/"+otherOrg.String()+"/search/patients?q=Toby", nil)
-	req = req.WithContext(auth.WithPrincipal(req.Context(), principal))
+	ctx := auth.WithPrincipal(context.Background(), principal)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/organizations/"+otherOrg.String()+"/search/patients?q=Toby", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -109,8 +109,8 @@ func TestAdminSearch_ReasonRequired(t *testing.T) {
 	}
 
 	// Without reason -> 422 ADMIN_REASON_REQUIRED
-	req := httptest.NewRequest(http.MethodGet, "/admin/search/clinical?q=test", nil)
-	req = req.WithContext(auth.WithPrincipal(req.Context(), adminPrincipal))
+	ctx := auth.WithPrincipal(context.Background(), adminPrincipal)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/admin/search/clinical?q=test", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -123,8 +123,8 @@ func TestAdminSearch_ReasonRequired(t *testing.T) {
 func TestAdminSearch_ForbiddenForNonAdmin(t *testing.T) {
 	r, _, _, principal := setupTestRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/search/clinical?q=test&reason=audit", nil)
-	req = req.WithContext(auth.WithPrincipal(req.Context(), principal))
+	ctx := auth.WithPrincipal(context.Background(), principal)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/admin/search/clinical?q=test&reason=audit", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
