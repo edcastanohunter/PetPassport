@@ -166,3 +166,57 @@ tests:
             exp_annotations:
               summary: "p95 del retraso de despacho de recordatorios > 60 s: 4m 48s"
               runbook: "infra/deploy/RUNBOOK.md#713-reminderdelay"
+
+  # F3: SearchIndexLagHigh (> 30s 5 min)
+  - interval: 1m
+    input_series:
+      - series: 'search_index_lag_seconds{index="clinical"}'
+        values: "0 10 20 35 40 45 50 55 60"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: SearchIndexLagHigh
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: SearchIndexLagHigh
+        exp_alerts:
+          - exp_labels: { severity: ticket, index: clinical }
+            exp_annotations:
+              summary: "Retraso de indexación en clinical > 30 s (5 min): 1m 0s"
+              runbook: "infra/deploy/RUNBOOK.md#716-searchindexlaghigh"
+
+  # F3: RedisMemoryHigh (> 80% 5 min)
+  - interval: 1m
+    input_series:
+      - series: 'redis_memory_used_bytes'
+        values: "450000000+0x10"
+      - series: 'redis_memory_max_bytes'
+        values: "500000000+0x10"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: RedisMemoryHigh
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: RedisMemoryHigh
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Uso de memoria de Redis > 80%: 90%"
+              runbook: "infra/deploy/RUNBOOK.md#719-redismemoryhigh"
+
+  # F3: RateLimitFailOpen (> 0)
+  - interval: 1m
+    input_series:
+      - series: 'ratelimit_bypass_total'
+        values: "0 0 5 10 15"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: RateLimitFailOpen
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: RateLimitFailOpen
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: "Rate limiting operando en fail-open por indisponibilidad de Redis: 10"
+              runbook: "infra/deploy/RUNBOOK.md#721-ratelimitfailopen"
+

@@ -1,0 +1,48 @@
+name: perf-nightly
+
+on:
+  schedule:
+    # 02:00 UTC cada noche
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Escenario a ejecutar (nominal, spike, soak)'
+        required: true
+        default: 'nominal'
+        type: choice
+        options:
+          - nominal
+          - spike
+          - soak
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  k6-nightly:
+    # Solo se ejecuta si es schedule, workflow_dispatch, o si el PR tiene la etiqueta 'perf'
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'perf')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 performance suite against staging
+        env:
+          K6_DOMAIN: ${{ vars.STAGING_DOMAIN || 'staging.edcastdev.com' }}
+          K6_USERS: ${{ secrets.K6_STAGING_USERS }}
+          K6_SCENARIO: ${{ inputs.scenario || 'nominal' }}
+          K6_ALLOWLIST_KEY: ${{ secrets.PERF_ALLOWLIST_KEY || 'load-test-nightly' }}
+          K6_PROMETHEUS: ${{ vars.STAGING_PROMETHEUS_URL }}
+        run: |
+          k6 run \
+            --summary-trend-stats="min,avg,med,p(90),p(95),p(99),max" \
+            backend/test/load/run_suite.js

@@ -17,11 +17,27 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia', 'vue-i18n'],
-          ui: ['primevue', '@primevue/themes'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('primevue') ||
+              id.includes('@primevue/themes') ||
+              id.includes('primeicons')
+            ) {
+              return 'ui'
+            }
+            if (
+              id.includes('vue') ||
+              id.includes('pinia') ||
+              id.includes('vue-router') ||
+              id.includes('vue-i18n')
+            ) {
+              return 'vendor'
+            }
+          }
         },
       },
     },

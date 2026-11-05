@@ -237,3 +237,68 @@ resource "cloudflare_record" "mail_dmarc" {
   ttl     = 3600
   comment = "PetPassport ${var.environment} DMARC (gestionado por Terraform)"
 }
+
+# --- CDN y Reglas de Caché (PP-F3-ARQ-016, PP-F3-INF-007) --------------------
+# Reglas de caché por ruta en la CDN del WAF:
+# - /assets/* estáticos con hash inmutables (1 año)
+# - index.html / config.json sin caché (bypass / no-cache)
+# - /api/* y auth.* bypass absoluto de caché
+# - media firmada con private (firmas 15 min; adjuntos clínicos directos sin CDN)
+resource "cloudflare_ruleset" "cdn_cache" {
+  zone_id = var.zone_id
+  name    = "petpassport-cdn-cache"
+  kind    = "zone"
+  phase   = "http_request_cache_settings"
+
+  rules {
+    description = "CDN: Frontend hashed static assets (1 year immutable)"
+    expression  = "(http.host eq \"app.${var.domain}\" and starts_with(http.request.uri.path, \"/assets/\"))"
+    action      = "set_cache_settings"
+    enabled     = true
+    action_parameters {
+      cache = true
+      edge_ttl {
+        mode    = "override_origin"
+        default = 31536000
+      }
+      browser_ttl {
+        mode    = "override_origin"
+        default = 31536000
+      }
+    }
+  }
+
+  rules {
+    description = "CDN: Frontend index and config (no-cache / revalidate)"
+    expression  = "(http.host eq \"app.${var.domain}\" and (http.request.uri.path eq \"/\" or http.request.uri.path eq \"/index.html\" or http.request.uri.path eq \"/config.json\"))"
+    action      = "set_cache_settings"
+    enabled     = true
+    action_parameters {
+      cache = false
+    }
+  }
+
+  rules {
+    description = "CDN: Bypass cache for API and Auth"
+    expression  = "(http.host in {\"api.${var.domain}\" \"auth.${var.domain}\"} or starts_with(http.request.uri.path, \"/api/\"))"
+    action      = "set_cache_settings"
+    enabled     = true
+    action_parameters {
+      cache = false
+    }
+  }
+
+  rules {
+    description = "CDN: Media thumbnails with signed URLs (respect origin private)"
+    expression  = "(http.host eq \"app.${var.domain}\" and starts_with(http.request.uri.path, \"/media/\"))"
+    action      = "set_cache_settings"
+    enabled     = true
+    action_parameters {
+      cache = true
+      edge_ttl {
+        mode = "respect_origin"
+      }
+    }
+  }
+}
+

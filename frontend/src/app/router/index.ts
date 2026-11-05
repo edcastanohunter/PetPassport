@@ -1,53 +1,53 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomePage from '@/features/legal/HomePage.vue'
-import LegalPage from '@/features/legal/LegalPage.vue'
-import NotFoundPage from '@/features/legal/NotFoundPage.vue'
-import ForbiddenPage from '@/features/legal/ForbiddenPage.vue'
-import CallbackPage from '@/features/auth/CallbackPage.vue'
-import LogoutPage from '@/features/auth/LogoutPage.vue'
-import OnboardingPage from '@/features/onboarding/OnboardingPage.vue'
-import ProfilePage from '@/features/profile/ProfilePage.vue'
-import DashboardPage from '@/features/dashboard/DashboardPage.vue'
-import PetsPage from '@/features/pets/PetsPage.vue'
-import PetFormPage from '@/features/pets/PetFormPage.vue'
-import PetDetailPage from '@/features/pets/PetDetailPage.vue'
-import AcceptTransferPage from '@/features/pets/AcceptTransferPage.vue'
-import OrgRegisterPage from '@/features/orgs/OrgRegisterPage.vue'
-import OrgSummaryPage from '@/features/orgs/OrgSummaryPage.vue'
-import OrgMembersPage from '@/features/orgs/OrgMembersPage.vue'
-import OrgSettingsPage from '@/features/orgs/OrgSettingsPage.vue'
-import AcceptInvitationPage from '@/features/orgs/AcceptInvitationPage.vue'
-import PatientsPage from '@/features/orgs/PatientsPage.vue'
-import PatientDetailPage from '@/features/orgs/PatientDetailPage.vue'
-import EncountersPage from '@/features/encounters/EncountersPage.vue'
-import EncounterEditorPage from '@/features/encounters/EncounterEditorPage.vue'
-import PetHistoryPage from '@/features/records/PetHistoryPage.vue'
-import PetEncounterPage from '@/features/records/PetEncounterPage.vue'
-import VerifyEncounterPage from '@/features/records/VerifyEncounterPage.vue'
-import GuardianCardPage from '@/features/card/GuardianCardPage.vue'
-import SharedRecordPage from '@/features/card/SharedRecordPage.vue'
-import VerifyCardPage from '@/features/card/VerifyCardPage.vue'
-import OrgAgendaPage from '@/features/scheduling/OrgAgendaPage.vue'
-import AgendaSettingsPage from '@/features/scheduling/AgendaSettingsPage.vue'
-import GuardianAppointmentsPage from '@/features/scheduling/GuardianAppointmentsPage.vue'
-import InboxPage from '@/features/notifications/InboxPage.vue'
-import NotificationSettingsPage from '@/features/notifications/NotificationSettingsPage.vue'
-import UnsubscribePage from '@/features/notifications/UnsubscribePage.vue'
-import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
-import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
-import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
-import AdminMedicationsPage from '@/features/admin/AdminMedicationsPage.vue'
-import OrgMedicationSuggestionsPage from '@/features/orgs/OrgMedicationSuggestionsPage.vue'
-import OrgSearchPage from '@/features/search/OrgSearchPage.vue'
-import OwnerSearchPage from '@/features/search/OwnerSearchPage.vue'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
 import { authGuard } from './guards'
 
-// Tabla de rutas de docs/phase-1/07 §4: mascotas con vínculos y transferencia
-// (FE-006/FE-008), organizaciones y pacientes (FE-007/FE-008, M1.3); admin
-// (M1.4); consultas, ficha clínica e historial del tutor (F2 M2.1,
-// FE-003/004/005/009) y verificación pública de consultas (API-013).
-// Búsqueda clínica y del tutor (F3 M3.1, PP-F3-FE-001, PP-F3-FE-002).
+// Code splitting por ruta y feature (PP-F3-FE-010) para cumplir el presupuesto de bundle
+// (JS inicial <= 180 KB gz para /app y <= 250 KB gz para espacio clínico)
+const HomePage = () => import('@/features/legal/HomePage.vue')
+const LegalPage = () => import('@/features/legal/LegalPage.vue')
+const NotFoundPage = () => import('@/features/legal/NotFoundPage.vue')
+const ForbiddenPage = () => import('@/features/legal/ForbiddenPage.vue')
+const CallbackPage = () => import('@/features/auth/CallbackPage.vue')
+const LogoutPage = () => import('@/features/auth/LogoutPage.vue')
+const OnboardingPage = () => import('@/features/onboarding/OnboardingPage.vue')
+const ProfilePage = () => import('@/features/profile/ProfilePage.vue')
+const DashboardPage = () => import('@/features/dashboard/DashboardPage.vue')
+const PetsPage = () => import('@/features/pets/PetsPage.vue')
+const PetFormPage = () => import('@/features/pets/PetFormPage.vue')
+const PetDetailPage = () => import('@/features/pets/PetDetailPage.vue')
+const AcceptTransferPage = () => import('@/features/pets/AcceptTransferPage.vue')
+const OrgRegisterPage = () => import('@/features/orgs/OrgRegisterPage.vue')
+const OrgSummaryPage = () => import('@/features/orgs/OrgSummaryPage.vue')
+const OrgMembersPage = () => import('@/features/orgs/OrgMembersPage.vue')
+const OrgSettingsPage = () => import('@/features/orgs/OrgSettingsPage.vue')
+const AcceptInvitationPage = () => import('@/features/orgs/AcceptInvitationPage.vue')
+const PatientsPage = () => import('@/features/orgs/PatientsPage.vue')
+const PatientDetailPage = () => import('@/features/orgs/PatientDetailPage.vue')
+const EncountersPage = () => import('@/features/encounters/EncountersPage.vue')
+const EncounterEditorPage = () => import('@/features/encounters/EncounterEditorPage.vue')
+const PetHistoryPage = () => import('@/features/records/PetHistoryPage.vue')
+const PetEncounterPage = () => import('@/features/records/PetEncounterPage.vue')
+const VerifyEncounterPage = () => import('@/features/records/VerifyEncounterPage.vue')
+const GuardianCardPage = () => import('@/features/card/GuardianCardPage.vue')
+const SharedRecordPage = () => import('@/features/card/SharedRecordPage.vue')
+const VerifyCardPage = () => import('@/features/card/VerifyCardPage.vue')
+const OrgAgendaPage = () => import('@/features/scheduling/OrgAgendaPage.vue')
+const AgendaSettingsPage = () => import('@/features/scheduling/AgendaSettingsPage.vue')
+const GuardianAppointmentsPage = () => import('@/features/scheduling/GuardianAppointmentsPage.vue')
+const InboxPage = () => import('@/features/notifications/InboxPage.vue')
+const NotificationSettingsPage = () =>
+  import('@/features/notifications/NotificationSettingsPage.vue')
+const UnsubscribePage = () => import('@/features/notifications/UnsubscribePage.vue')
+const AdminOrganizationsPage = () => import('@/features/admin/AdminOrganizationsPage.vue')
+const AdminUsersPage = () => import('@/features/admin/AdminUsersPage.vue')
+const AdminAuditPage = () => import('@/features/admin/AdminAuditPage.vue')
+const AdminMedicationsPage = () => import('@/features/admin/AdminMedicationsPage.vue')
+const OrgMedicationSuggestionsPage = () =>
+  import('@/features/orgs/OrgMedicationSuggestionsPage.vue')
+const OrgSearchPage = () => import('@/features/search/OrgSearchPage.vue')
+const OwnerSearchPage = () => import('@/features/search/OwnerSearchPage.vue')
+
 const orgMeta = {
   layout: 'org',
   requiresAuth: true,

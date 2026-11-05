@@ -115,3 +115,93 @@ groups:
         annotations:
           summary: "Más de 5 documentos PDF fallaron en 1 h: {{ $value | printf \"%.0f\" }}"
           runbook: "infra/deploy/RUNBOOK.md#715-documentrenderfailures"
+
+  # F3 M3.3: Búsqueda OpenSearch, Redis, Asynq, Leases, SLOs y Seguridad (PP-F3-INF-004)
+  - name: petpassport-f3
+    rules:
+      - alert: SearchIndexLagHigh
+        expr: max by (index) (search_index_lag_seconds) > 30
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Retraso de indexación en {{ $labels.index }} > 30 s (5 min): {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#716-searchindexlaghigh"
+      - alert: SearchDegraded
+        expr: |
+          sum(rate(search_degraded_requests_total[5m]))
+            / (sum(rate(http_server_requests_total{route=~"/api/v1/(search|suggest).*"}[5m])) + 0.001) > 0.05
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Búsqueda degradada a PostgreSQL > 5% de peticiones (5 min): {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#717-searchdegraded"
+      - alert: SearchPostfilterDrops
+        expr: sum(rate(search_postfilter_dropped_total[10m])) > 0
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Discrepancias de autorización en post-filtro de búsqueda durante > 10 min: {{ $value }}"
+          runbook: "infra/deploy/RUNBOOK.md#718-searchpostfilterdrops"
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.80
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Uso de memoria de Redis > 80%: {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#719-redismemoryhigh"
+      - alert: RedisDown
+        expr: redis_up == 0 or absent(redis_up)
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: "Instancia Redis no disponible desde hace > 2 min"
+          runbook: "infra/deploy/RUNBOOK.md#720-redisdown"
+      - alert: RateLimitFailOpen
+        expr: sum(increase(ratelimit_bypass_total[5m])) > 0
+        labels: { severity: ticket }
+        annotations:
+          summary: "Rate limiting operando en fail-open por indisponibilidad de Redis: {{ $value }}"
+          runbook: "infra/deploy/RUNBOOK.md#721-ratelimitfailopen"
+      - alert: AsynqQueueBacklog
+        expr: asynq_queue_size{queue="default"} > 5000 or asynq_queue_size{queue="critical"} > 500
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Backlog excesivo en cola Asynq {{ $labels.queue }}: {{ $value }} tareas"
+          runbook: "infra/deploy/RUNBOOK.md#722-asynqqueuebacklog"
+      - alert: AsynqArchived
+        expr: sum(increase(asynq_tasks_archived_total[1h])) > 10
+        labels: { severity: ticket }
+        annotations:
+          summary: "Más de 10 tareas Asynq enviadas a la DLQ (archived) en 1 h: {{ $value }}"
+          runbook: "infra/deploy/RUNBOOK.md#723-asynqarchived"
+      - alert: LeaseTakeoverStorm
+        expr: sum(increase(worker_lease_takeovers_total[5m])) > 5
+        labels: { severity: page }
+        annotations:
+          summary: "Más de 5 cambios de titularidad de leases de worker en 5 min (inestabilidad de workers)"
+          runbook: "infra/deploy/RUNBOOK.md#724-leasetakeoverstorm"
+      - alert: SLOBurnRateHigh
+        expr: |
+          ((sum(rate(http_server_requests_total{status=~"5.."}[1h])) / sum(rate(http_server_requests_total[1h]))) / (1 - 0.999) > 14)
+          or
+          ((sum(rate(http_server_requests_total{status=~"5.."}[6h])) / sum(rate(http_server_requests_total[6h]))) / (1 - 0.999) > 6)
+        labels: { severity: page }
+        annotations:
+          summary: "Consumo acelerado de error budget del SLO de disponibilidad (14x en 1h o 6x en 6h)"
+          runbook: "infra/deploy/RUNBOOK.md#725-sloburnratehigh"
+      - alert: ClamAVDefinitionsStale
+        expr: (time() - clamav_definitions_updated_timestamp_seconds) > 172800
+        for: 1h
+        labels: { severity: ticket }
+        annotations:
+          summary: "Definiciones de firmas de ClamAV desactualizadas desde hace > 48 h"
+          runbook: "infra/deploy/RUNBOOK.md#726-clamavdefinitionsstale"
+      - alert: MappingDrift
+        expr: search_mapping_drift == 1
+        for: 15m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Divergencia detectada entre mappings del repositorio y esquemas activos en OpenSearch"
+          runbook: "infra/deploy/RUNBOOK.md#727-mappingdrift"
+

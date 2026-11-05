@@ -1,0 +1,152 @@
+{
+  "uid": "pp-rum",
+  "title": "PetPassport · RUM (Real User Monitoring)",
+  "tags": ["petpassport", "rum", "frontend", "f3"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timezone": "utc",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "LCP p75 Móvil (SLO < 2.5 s)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"LCP\"}[1h])))",
+          "legendFormat": "LCP p75 (s)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 2.0 },
+              { "color": "red", "value": 2.5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "INP p75 Móvil (SLO < 200 ms)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"INP\"}[1h]))) * 1000",
+          "legendFormat": "INP p75 (ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 150 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "CLS p75 Móvil (Objetivo < 0.1)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"CLS\"}[1h])))",
+          "legendFormat": "CLS p75"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.08 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "TTFB p75 Móvil (Objetivo < 800 ms)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"TTFB\"}[1h]))) * 1000",
+          "legendFormat": "TTFB p75 (ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 600 },
+              { "color": "red", "value": 800 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "LCP (Largest Contentful Paint) p75 por Ruta",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le, route) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"LCP\"}[1h])))",
+          "legendFormat": "LCP {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "INP (Interaction to Next Paint) p75 por Ruta",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.75, sum by (le, route) (rate(rum_web_vitals_duration_seconds_bucket{metric=\"INP\"}[1h]))) * 1000",
+          "legendFormat": "INP {{route}} (ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+        }
+      }
+    }
+  ]
+}

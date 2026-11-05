@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=26.13.0"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -15,6 +15,7 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:budget": "node scripts/check-bundle-budget.mjs",
     "gen:api": "openapi-typescript ../backend/api/openapi.yaml -o src/shared/api/schema.d.ts"
   },
   "dependencies": {
@@ -32,7 +33,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.0.0",
     "@vitejs/plugin-vue": "^5.2.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",

@@ -204,7 +204,14 @@ function undoDeceased() {
         <img
           v-if="pet.photo"
           :src="pet.photo.url"
+          :srcset="
+            pet.photo.thumb_url ? `${pet.photo.thumb_url} 256w, ${pet.photo.url} 512w` : undefined
+          "
           :alt="t('pets.photoAlt', { name: pet.name })"
+          width="80"
+          height="80"
+          loading="lazy"
+          decoding="async"
           class="h-20 w-20 rounded-full object-cover"
         />
         <span
