@@ -217,6 +217,6 @@ tests:
         exp_alerts:
           - exp_labels: { severity: ticket }
             exp_annotations:
-              summary: "Rate limiting operando en fail-open por indisponibilidad de Redis: 5"
+              summary: "Rate limiting operando en fail-open por indisponibilidad de Redis: 10"
               runbook: "infra/deploy/RUNBOOK.md#721-ratelimitfailopen"
 
