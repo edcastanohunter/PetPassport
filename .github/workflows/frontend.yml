@@ -31,8 +31,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - name: Bundle size report
-        run: du -sh dist/assets/*.js
+      - name: Bundle budget check (PP-F3-FE-010)
+        run: npm run check:budget
 
   security:
     runs-on: ubuntu-latest

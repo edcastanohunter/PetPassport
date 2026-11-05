@@ -500,6 +500,10 @@ watch(
                   v-if="item.pet.photo_thumb_url"
                   :src="item.pet.photo_thumb_url"
                   :alt="item.pet.name"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                  decoding="async"
                   class="h-12 w-12 rounded-full object-cover"
                 />
                 <span v-else>{{ item.pet.name.charAt(0) }}</span>

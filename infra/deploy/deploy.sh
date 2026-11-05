@@ -367,6 +367,16 @@ fi
 if [[ -z ${ROLLBACK_REASON:-} ]]; then
   log "5/6 smoke"
   "$REPO_DIR/infra/deploy/smoke.sh" "$PP_DOMAIN" || ROLLBACK_REASON="smoke test fallido"
+
+  # Purga de CDN tras despliegue exitoso (PP-F3-INF-007)
+  if [[ -z ${ROLLBACK_REASON:-} && -n ${CLOUDFLARE_ZONE_ID:-} && -n ${CLOUDFLARE_API_TOKEN:-} && -n ${PP_DOMAIN:-} ]]; then
+    log "purgando index.html y config.json en Cloudflare CDN"
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+      -H "Content-Type: application/json" \
+      --data "{\"files\":[\"https://app.${PP_DOMAIN}/\",\"https://app.${PP_DOMAIN}/index.html\",\"https://app.${PP_DOMAIN}/config.json\"]}" >/dev/null || \
+      log "aviso: la purga de CDN devolvió error"
+  fi
 fi
 
 if [[ -n ${ROLLBACK_REASON:-} ]]; then

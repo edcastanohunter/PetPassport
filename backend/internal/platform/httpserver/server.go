@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -55,6 +56,7 @@ type Servers struct {
 // New construye ambos servidores sin arrancarlos.
 func New(publicAddr, internalAddr string, o Options) *Servers {
 	metrics := newHTTPMetrics(o.Registry)
+	rum := newRUMMetrics(o.Registry)
 
 	r := chi.NewRouter()
 	r.Use(correlation)
@@ -65,6 +67,9 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 	r.Use(metrics.middleware)
 	r.Use(requestLogger(o.Logger))
 	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(searchTimeout)
+	r.Use(middleware.Compress(5))
+	r.Use(etagMiddleware)
 	r.Use(securityHeaders)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   o.CORSOrigins,
@@ -108,11 +113,14 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 		} else {
 			panic("httpserver: contrato embebido inválido: " + err.Error())
 		}
+		api.Post("/client-events", clientEventsHandler(rum))
 		mountGenerated(api, handlers, perOp)
 		if o.Mount != nil {
 			o.Mount(api)
 		}
 	})
+
+	r.Post("/client-events", clientEventsHandler(rum))
 
 	internal := chi.NewRouter()
 	internal.Get("/healthz", o.Health.Liveness)
@@ -178,4 +186,17 @@ func chiRoutePattern(r *http.Request) string {
 		return rctx.RoutePattern()
 	}
 	return ""
+}
+
+// searchTimeout aplica un timeout estricto de 2 s a rutas de búsqueda y suggest (PP-F3-PRF-006).
+func searchTimeout(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if strings.Contains(path, "/search") || strings.Contains(path, "/suggest") {
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+			r = r.WithContext(ctx)
+		}
+		next.ServeHTTP(w, r)
+	})
 }

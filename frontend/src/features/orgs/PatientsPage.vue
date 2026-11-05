@@ -152,6 +152,10 @@ function open(row: PatientRow) {
                 v-if="row.pet.photo"
                 :src="row.pet.photo.thumb_url"
                 :alt="t('pets.photoAlt', { name: row.pet.name })"
+                width="40"
+                height="40"
+                loading="lazy"
+                decoding="async"
                 class="h-10 w-10 rounded-full object-cover"
               />
               <span

@@ -68,7 +68,7 @@ func TestGolden(t *testing.T) {
 				if err != nil {
 					t.Fatalf("falta el golden (go test -update): %v", err)
 				}
-				if strings.ReplaceAll(string(want), "\r\n", "\n") != got {
+				if strings.ReplaceAll(string(want), "\r\n", "\n") != strings.ReplaceAll(got, "\r\n", "\n") {
 					t.Fatalf("snapshot distinto en %s; si el cambio es intencional sube la versión y ejecuta go test -update", path)
 				}
 			})

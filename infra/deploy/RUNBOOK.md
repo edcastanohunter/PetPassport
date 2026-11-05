@@ -242,6 +242,42 @@ ausente. Tras corregir, reencolar:
 Más de 5 PDF fallidos en 1 h. `SELECT kind, last_error, count(*) FROM read_clinical.document_jobs WHERE status = 'failed' GROUP BY 1, 2;`.
 Comprobar que el binario `typst` y las fuentes están presentes y el storage accesible.
 
+### 7.16 SearchIndexLagHigh
+Retraso de indexación OpenSearch > 30 s durante 5 min. Revisar `search.index_queue` (`status = 'failed'` o intentos agotados) y el estado de OpenSearch (`GET /_cluster/health`). Si OpenSearch está saturado, verificar cola `default` en Asynq y lanzar reintento con `/admin/search/index-queue/retry`.
+
+### 7.17 SearchDegraded
+Más del 5% de las búsquedas están degradando al fallback de PostgreSQL. Verificar conectividad con OpenSearch, breaker abierto en logs de `api` y latencia de consultas en OpenSearch.
+
+### 7.18 SearchPostfilterDrops
+El post-filtro de autorización `PetAccess` está descartando documentos devueltos por OpenSearch de forma sostenida (> 10 min). Indica desfase en el índice `access` o desincronización de eventos de permisos (`CareLinkRevoked`). Lanzar tarea `search:access` o reindexación parcial.
+
+### 7.19 RedisMemoryHigh
+Memoria de Redis > 80% de `maxmemory`. Verificar claves con TTL faltante (`redis-cli --bigkeys`) y consumo de las familias `membership`, `petaccess` y `pp:rl:*`. Comprobar política `allkeys-lru`.
+
+### 7.20 RedisDown
+Instancia de Redis no responde. El sistema entra en fail-open para rate limiting y fail-miss para caché. Reiniciar el servicio Redis o verificar red privada con la instancia gestionada.
+
+### 7.21 RateLimitFailOpen
+Rate limiting operando en fail-open porque Redis no está accesible. Toda petición se permite temporalmente para no bloquear tráfico legítimo; priorizar restauración inmediata de Redis.
+
+### 7.22 AsynqQueueBacklog
+Cola `default` > 5.000 o `critical` > 500 tareas por > 5 min. Escalar réplicas de worker o revisar logs en busca de tareas lentas (p. ej. renderizado PDF o escaneo ClamAV).
+
+### 7.23 AsynqArchived
+Más de 10 tareas agotaron reintentos en 1 h. Inspeccionar la DLQ en Asynqmon, corregir la causa raíz (timeout de red, payload inválido) y reencolar desde la interfaz administrativa.
+
+### 7.24 LeaseTakeoverStorm
+Más de 5 cambios de titularidad de leases de worker en 5 min. Señal de inestabilidad, reinicios continuos de réplicas worker o problemas de latencia de red contra PostgreSQL. Revisar `journalctl --user -u pp-worker`.
+
+### 7.25 SLOBurnRateHigh
+Consumo acelerado del presupuesto de error del SLO de disponibilidad (14x en 1h o 6x en 6h). Activar protocolo de incidente: revisar API Overview en Grafana, verificar despliegues recientes y dependencias caídas.
+
+### 7.26 ClamAVDefinitionsStale
+Firmas de antivirus ClamAV desactualizadas (> 48 h). Comprobar el servicio `freshclam` y conectividad con los mirrors de ClamAV.
+
+### 7.27 MappingDrift
+Divergencia entre los esquemas de mapeo versionados en el repositorio (`backend/internal/search/mappings/*.json`) y el índice activo en OpenSearch. Planificar reindexación sin downtime con `cmd/worker search reindex`.
+
 ## 8. Observabilidad
 
 Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con un túnel:

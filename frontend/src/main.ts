@@ -11,6 +11,7 @@ import { loadRuntimeConfig } from './shared/config/runtime'
 import { createUserManager } from './shared/auth/userManager'
 import { onApiError } from './shared/api/client'
 import { useSessionStore } from './features/auth/sessionStore'
+import { initRUM } from './shared/rum/webVitals'
 import './app/styles.css'
 
 const PUBLIC_401_CODES = new Set(['PIN_REQUIRED', 'PIN_INVALID'])
@@ -48,6 +49,7 @@ async function bootstrap() {
   })
 
   app.use(router)
+  initRUM()
   app.mount('#app')
 }
 

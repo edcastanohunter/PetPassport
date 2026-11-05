@@ -1,0 +1,163 @@
+{
+  "uid": "pp-slos",
+  "title": "PetPassport · SLOs y Error Budget",
+  "tags": ["petpassport", "slo", "sli", "f3"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timezone": "utc",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "SLO Disponibilidad API (Objetivo 99.9%)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "(1 - (sum(rate(http_server_requests_total{status=~\"5..\"}[1h])) / sum(rate(http_server_requests_total[1h])))) * 100",
+          "legendFormat": "Disponibilidad 1h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 99.5 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Burn Rate Ventana 1 hora (Alerta > 14x)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_total{status=~\"5..\"}[1h])) / sum(rate(http_server_requests_total[1h]))) / (1 - 0.999)",
+          "legendFormat": "Burn Rate 1h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 6 },
+              { "color": "red", "value": 14 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Burn Rate Ventana 6 horas (Alerta > 6x)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_total{status=~\"5..\"}[6h])) / sum(rate(http_server_requests_total[6h]))) / (1 - 0.999)",
+          "legendFormat": "Burn Rate 6h"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 6 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Burn Rate Ventana 3 días (Alerta > 1x)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_total{status=~\"5..\"}[3d])) / sum(rate(http_server_requests_total[3d]))) / (1 - 0.999)",
+          "legendFormat": "Burn Rate 3d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Multi-window Multi-burn-rate (Ventanas 1h y 6h vs Umbrales)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_total{status=~\"5..\"}[1h])) / sum(rate(http_server_requests_total[1h]))) / (1 - 0.999)",
+          "legendFormat": "Burn Rate 1h (umbral 14)"
+        },
+        {
+          "expr": "(sum(rate(http_server_requests_total{status=~\"5..\"}[6h])) / sum(rate(http_server_requests_total[6h]))) / (1 - 0.999)",
+          "legendFormat": "Burn Rate 6h (umbral 6)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Cumplimiento de Latencia de Lectura y Comandos (p95)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{method=\"GET\",route!~\"/api/v1/search.*\"}[5m]))) * 1000",
+          "legendFormat": "p95 GET (SLO < 250 ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{method=~\"POST|PUT|PATCH|DELETE\"}[5m]))) * 1000",
+          "legendFormat": "p95 Comandos (SLO < 400 ms)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{route=~\"/api/v1/search.*\"}[5m]))) * 1000",
+          "legendFormat": "p95 Búsqueda (SLO < 300 ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+        }
+      }
+    }
+  ]
+}
