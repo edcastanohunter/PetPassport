@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Imagen del frontend (docs/phase-1/09 §4). Contexto de build = raíz del monorepo:
 #   podman build -f frontend/Dockerfile .
-FROM node:22-alpine AS build
+FROM node:26.13.0-alpine AS build
 WORKDIR /src
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund

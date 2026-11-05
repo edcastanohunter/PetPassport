@@ -11,7 +11,7 @@ Keycloak, PostgreSQL, OpenSearch y Redis.
 ## Arrancar en 10 minutos
 
 Requisitos: [Podman](https://podman.io) ≥ 5.4 **rootless**, [mkcert](https://github.com/FiloSottile/mkcert),
-Go 1.26 y Node 22 (solo para ejecutar pruebas fuera de los contenedores). Sin Docker ni Compose: el entorno son
+Go 1.26 y Node 26.13.0 (solo para ejecutar pruebas fuera de los contenedores). Sin Docker ni Compose: el entorno son
 unidades Quadlet (`infra/quadlet/dev`) que gestiona tu systemd de usuario (`systemctl --user`). Motor y
 despliegue: ADR-026.
 

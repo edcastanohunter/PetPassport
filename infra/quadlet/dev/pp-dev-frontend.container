@@ -6,7 +6,7 @@
 Description=PetPassport dev: frontend (vite)
 
 [Container]
-Image=docker.io/library/node:22-alpine
+Image=docker.io/library/node:26.13.0-alpine
 ContainerName=pp-dev-frontend
 Network=pp-dev.network
 NetworkAlias=frontend

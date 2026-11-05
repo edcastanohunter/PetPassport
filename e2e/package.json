@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=26.13.0"
   },
   "scripts": {
     "test": "playwright test",
@@ -14,7 +14,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.50.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.0.0",
     "typescript": "~5.8.0"
   }
 }
