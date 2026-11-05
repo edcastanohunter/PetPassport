@@ -38,6 +38,7 @@ type Client interface {
 	UpdateByQuery(ctx context.Context, index string, query map[string]any, script map[string]any) (int64, error)
 	Delete(ctx context.Context, index, id string) error
 	CatIndices(ctx context.Context) ([]IndexStat, error)
+	GetMapping(ctx context.Context, index string) ([]byte, error)
 }
 
 // AliasAction representa una acción atómica sobre aliases de OpenSearch.
@@ -436,4 +437,20 @@ func (c *osClient) CatIndices(ctx context.Context) ([]IndexStat, error) {
 		}
 	}
 	return userIndices, nil
+}
+
+func (c *osClient) GetMapping(ctx context.Context, index string) ([]byte, error) {
+	req := opensearchapi.IndicesGetMappingRequest{
+		Index: []string{index},
+	}
+	res, err := req.Do(ctx, c.client)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = res.Body.Close() }()
+	if res.IsError() {
+		b, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("get mapping error: status %d: %s", res.StatusCode, string(b))
+	}
+	return io.ReadAll(res.Body)
 }

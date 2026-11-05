@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,14 +16,17 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/cache"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/problem"
 	"github.com/edcastanohunter/petpassport/backend/internal/search/app"
+	"github.com/edcastanohunter/petpassport/backend/internal/search/domain"
 )
 
 // SearchHandler maneja las peticiones HTTP del módulo de búsqueda (PP-F3-API-001, 002, 009).
 type SearchHandler struct {
-	search *app.ResilientSearchService
-	admin  *app.AdminService
-	abuse  *app.AbuseDetector
-	dcache *cache.Cache
+	search  *app.ResilientSearchService
+	admin   *app.AdminService
+	abuse   *app.AbuseDetector
+	dcache  *cache.Cache
+	cohorts *app.CohortService
+	stats   *app.PlatformStatsService
 }
 
 // NewSearchHandler crea una nueva instancia del SearchHandler.
@@ -33,6 +37,16 @@ func NewSearchHandler(search *app.ResilientSearchService, admin *app.AdminServic
 		abuse:  abuse,
 		dcache: dcache,
 	}
+}
+
+func (h *SearchHandler) WithCohorts(c *app.CohortService) *SearchHandler {
+	h.cohorts = c
+	return h
+}
+
+func (h *SearchHandler) WithStats(s *app.PlatformStatsService) *SearchHandler {
+	h.stats = s
+	return h
 }
 
 func principalFromReq(w http.ResponseWriter, r *http.Request) (auth.Principal, bool) {
@@ -413,4 +427,210 @@ func (h *SearchHandler) PurgeCache(w http.ResponseWriter, r *http.Request) {
 
 	// Purga selectiva
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// GetCohorts maneja GET /organizations/{org_id}/cohorts (PP-F3-API-004)
+func (h *SearchHandler) GetCohorts(w http.ResponseWriter, r *http.Request) {
+	if _, ok := principalFromReq(w, r); !ok {
+		return
+	}
+	if h.cohorts == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"data": h.cohorts.Definitions()})
+}
+
+// RunCohort maneja POST /organizations/{org_id}/cohorts/{key}/run (PP-F3-API-004)
+func (h *SearchHandler) RunCohort(w http.ResponseWriter, r *http.Request) {
+	_, ok := principalFromReq(w, r)
+	if !ok {
+		return
+	}
+	orgID, err := uuid.Parse(chi.URLParam(r, "org_id"))
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.ValidationFailed, "OrgID inválido", err.Error()))
+		return
+	}
+	key := chi.URLParam(r, "key")
+
+	var params map[string]any
+	_ = json.NewDecoder(r.Body).Decode(&params)
+	if params == nil {
+		params = make(map[string]any)
+	}
+
+	if h.cohorts == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}, "total": 0, "truncated": false})
+		return
+	}
+
+	rows, total, truncated, err := h.cohorts.Run(r.Context(), orgID, key, params)
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.SearchQueryInvalid, "Error ejecutando cohorte", err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"data":      rows,
+		"total":     total,
+		"truncated": truncated,
+	})
+}
+
+// ExportCohort maneja POST /organizations/{org_id}/cohorts/{key}/export (PP-F3-API-004, RN-20)
+func (h *SearchHandler) ExportCohort(w http.ResponseWriter, r *http.Request) {
+	p, ok := principalFromReq(w, r)
+	if !ok {
+		return
+	}
+	orgID, err := uuid.Parse(chi.URLParam(r, "org_id"))
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.ValidationFailed, "OrgID inválido", err.Error()))
+		return
+	}
+	key := chi.URLParam(r, "key")
+
+	var body struct {
+		Reason string         `json:"reason"`
+		Params map[string]any `json:"params"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	if strings.TrimSpace(body.Reason) == "" {
+		problem.Write(w, r, problem.New(problem.ReasonRequired, "Motivo requerido", "La exportación de cohorte exige motivo de auditoría"))
+		return
+	}
+
+	if h.cohorts == nil {
+		w.Header().Set("Content-Type", "text/csv")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	csvData, err := h.cohorts.Export(r.Context(), orgID, p.UserID, key, body.Params, body.Reason)
+	if err != nil {
+		if err == domain.ErrCohortTooLarge {
+			problem.Write(w, r, problem.New(problem.CohortTooLarge, "Cohorte demasiado amplia", "La exportación supera el límite de 1.000 filas. Refine los parámetros."))
+			return
+		}
+		problem.Write(w, r, problem.New(problem.Internal, "Error exportando cohorte", err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="cohort-%s-%s.csv"`, key, time.Now().Format("20060102")))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(csvData)
+}
+
+// NotifyCohort maneja POST /organizations/{org_id}/cohorts/{key}/notify (PP-F3-API-004)
+func (h *SearchHandler) NotifyCohort(w http.ResponseWriter, r *http.Request) {
+	p, ok := principalFromReq(w, r)
+	if !ok {
+		return
+	}
+	orgID, err := uuid.Parse(chi.URLParam(r, "org_id"))
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.ValidationFailed, "OrgID inválido", err.Error()))
+		return
+	}
+	key := chi.URLParam(r, "key")
+
+	var body struct {
+		Message string         `json:"message"`
+		Params  map[string]any `json:"params"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	if strings.TrimSpace(body.Message) == "" || len(body.Message) > 500 {
+		problem.Write(w, r, problem.New(problem.ValidationFailed, "Mensaje inválido", "El mensaje debe tener entre 1 y 500 caracteres"))
+		return
+	}
+
+	if h.cohorts == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_ = json.NewEncoder(w).Encode(map[string]any{"scheduled": 0, "skipped_by_preference": 0})
+		return
+	}
+
+	res, err := h.cohorts.Notify(r.Context(), orgID, p.UserID, key, body.Params, body.Message)
+	if err != nil {
+		if err == domain.ErrCampaignRateLimited {
+			problem.Write(w, r, problem.New(problem.CampaignRateLimited, "Campaña limitada por frecuencia", "Solo se permite una campaña por cohorte cada 7 días"))
+			return
+		}
+		problem.Write(w, r, problem.New(problem.Internal, "Error notificando cohorte", err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	_ = json.NewEncoder(w).Encode(res)
+}
+
+// GetPlatformStats maneja GET /admin/platform/stats (PP-F3-API-006)
+func (h *SearchHandler) GetPlatformStats(w http.ResponseWriter, r *http.Request) {
+	p, ok := principalFromReq(w, r)
+	if !ok {
+		return
+	}
+	if !p.HasRole("super_admin") {
+		problem.Write(w, r, problem.New(problem.Forbidden, "Acceso denegado", "Se requiere super_admin"))
+		return
+	}
+
+	granularity := r.URL.Query().Get("granularity")
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+
+	if h.stats == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"series": []any{}})
+		return
+	}
+
+	series, err := h.stats.GetStats(r.Context(), granularity, from, to)
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.Internal, "Error consultando estadísticas", err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"series": series})
+}
+
+// GetTopOrganizations maneja GET /admin/platform/top-organizations (PP-F3-API-006)
+func (h *SearchHandler) GetTopOrganizations(w http.ResponseWriter, r *http.Request) {
+	p, ok := principalFromReq(w, r)
+	if !ok {
+		return
+	}
+	if !p.HasRole("super_admin") {
+		problem.Write(w, r, problem.New(problem.Forbidden, "Acceso denegado", "Se requiere super_admin"))
+		return
+	}
+
+	metric := r.URL.Query().Get("metric")
+	period := r.URL.Query().Get("period")
+
+	if h.stats == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+		return
+	}
+
+	data, err := h.stats.GetTopOrganizations(r.Context(), metric, period)
+	if err != nil {
+		problem.Write(w, r, problem.New(problem.Internal, "Error consultando top organizaciones", err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"data": data})
 }

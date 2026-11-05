@@ -35,6 +35,69 @@ const saved = ref(false)
 const conflict = ref(false)
 const saving = ref(false)
 
+// Pestañas (General vs Directorio FE-007)
+const activeTab = ref<'general' | 'directory'>('general')
+const dirListed = ref(false)
+const dirServices = ref<string[]>([])
+const dirShowPhone = ref(true)
+const dirNeighborhood = ref('')
+const dirLat = ref<number | null>(null)
+const dirLon = ref<number | null>(null)
+const dirSaving = ref(false)
+const dirSaved = ref(false)
+const dirError = ref<string | null>(null)
+
+const AVAILABLE_DIR_SERVICES = [
+  'urgencias_24h', 'cirugia', 'hospitalizacion', 'laboratorio',
+  'ecografia', 'vacunacion', 'odontologia', 'dermatologia',
+  'oftalmologia', 'peluqueria'
+]
+
+function toggleService(s: string) {
+  if (dirServices.value.includes(s)) {
+    dirServices.value = dirServices.value.filter((x) => x !== s)
+  } else if (dirServices.value.length < 10) {
+    dirServices.value.push(s)
+  }
+}
+
+function captureLocation() {
+  if (!navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      dirLat.value = Math.round(pos.coords.latitude * 1000) / 1000
+      dirLon.value = Math.round(pos.coords.longitude * 1000) / 1000
+    },
+    () => alert('No se pudo obtener la ubicación GPS'),
+  )
+}
+
+async function saveDirectory() {
+  dirSaving.value = true
+  dirSaved.value = false
+  dirError.value = null
+  try {
+    const res = await fetch(`/api/v1/organizations/${orgId.value}/directory-listing`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        listed: dirListed.value,
+        services: dirServices.value,
+        show_phone: dirShowPhone.value,
+        neighborhood: dirNeighborhood.value ? dirNeighborhood.value : undefined,
+        geo_lat: dirLat.value ?? undefined,
+        geo_lon: dirLon.value ?? undefined,
+      }),
+    })
+    if (!res.ok) throw new Error('Error guardando ficha de directorio')
+    dirSaved.value = true
+  } catch (err: any) {
+    dirError.value = err.message || 'Error'
+  } finally {
+    dirSaving.value = false
+  }
+}
+
 function fill(o: Organization) {
   original.value = o
   form.type = o.type
@@ -148,6 +211,126 @@ async function save() {
   <section class="mx-auto max-w-xl space-y-6">
     <h1 class="text-2xl font-bold">{{ t('orgs.nav.settings') }}</h1>
 
+    <!-- Tabs General / Directorio (FE-007) -->
+    <div class="flex border-b border-surface-200 gap-4 text-sm font-medium">
+      <button
+        type="button"
+        class="pb-2 border-b-2 transition"
+        :class="
+          activeTab === 'general'
+            ? 'border-primary-600 text-primary-600'
+            : 'border-transparent text-surface-500 hover:text-surface-700'
+        "
+        @click="activeTab = 'general'"
+      >
+        General
+      </button>
+      <button
+        type="button"
+        class="pb-2 border-b-2 transition"
+        :class="
+          activeTab === 'directory'
+            ? 'border-primary-600 text-primary-600'
+            : 'border-transparent text-surface-500 hover:text-surface-700'
+        "
+        @click="activeTab = 'directory'"
+      >
+        Directorio Público
+      </button>
+    </div>
+
+    <!-- Pestaña Directorio (FE-007) -->
+    <div v-if="activeTab === 'directory'" class="space-y-6">
+      <div class="space-y-1">
+        <h2 class="text-lg font-semibold text-surface-900">Ficha en Directorio Público</h2>
+        <p class="text-sm text-surface-600">
+          Configura cómo aparece tu centro veterinario en el directorio público para que los tutores te encuentren.
+        </p>
+      </div>
+
+      <p v-if="dirSaved" class="p-3 bg-green-50 text-green-700 text-sm rounded-lg">
+        Ficha de directorio guardada con éxito.
+      </p>
+      <p v-if="dirError" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+        {{ dirError }}
+      </p>
+
+      <form class="space-y-5" @submit.prevent="saveDirectory">
+        <label class="flex items-start gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200 cursor-pointer">
+          <input v-model="dirListed" type="checkbox" class="mt-1" />
+          <span>
+            <span class="block font-medium text-surface-900">Listar en el Directorio Público</span>
+            <span class="block text-xs text-surface-500">
+              Permite que cualquier persona encuentre tu centro por ciudad o cercanía.
+            </span>
+          </span>
+        </label>
+
+        <div>
+          <label class="label">Barrio o zona</label>
+          <input
+            v-model="dirNeighborhood"
+            type="text"
+            placeholder="Ej. El Poblado, Chapinero, etc."
+            class="input"
+          />
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer text-sm">
+          <input v-model="dirShowPhone" type="checkbox" />
+          <span>Mostrar teléfono de contacto en el directorio</span>
+        </label>
+
+        <div class="space-y-2">
+          <label class="label">Servicios ofrecidos (hasta 10)</label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="s in AVAILABLE_DIR_SERVICES"
+              :key="s"
+              type="button"
+              class="px-2.5 py-1 text-xs rounded-full font-medium transition"
+              :class="
+                dirServices.includes(s)
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-surface-100 text-surface-700 hover:bg-surface-200'
+              "
+              @click="toggleService(s)"
+            >
+              {{ s.replace('_', ' ') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2 p-3 bg-surface-50 rounded-lg border border-surface-200 text-sm">
+          <div class="font-medium text-surface-800">Ubicación Geográfica (Geo)</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-surface-500">Latitud (redondeada a 3 decimales)</label>
+              <input v-model.number="dirLat" type="number" step="0.001" class="input text-xs" />
+            </div>
+            <div>
+              <label class="text-xs text-surface-500">Longitud (redondeada a 3 decimales)</label>
+              <input v-model.number="dirLon" type="number" step="0.001" class="input text-xs" />
+            </div>
+          </div>
+          <button
+            type="button"
+            class="text-xs text-primary-600 hover:underline flex items-center gap-1 mt-1"
+            @click="captureLocation"
+          >
+            <span class="pi pi-map-marker"></span>
+            Usar ubicación actual GPS
+          </button>
+        </div>
+
+        <button type="submit" class="btn-primary" :disabled="dirSaving">
+          {{ dirSaving ? 'Guardando...' : 'Guardar ficha de directorio' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Pestaña General -->
+    <div v-else-if="activeTab === 'general'" class="space-y-6">
     <p
       v-if="conflict"
       class="rounded-lg bg-amber-50 p-4 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
@@ -253,5 +436,6 @@ async function save() {
         {{ saving ? t('common.saving') : t('common.save') }}
       </button>
     </form>
+    </div>
   </section>
 </template>

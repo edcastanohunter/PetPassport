@@ -98,13 +98,13 @@ func (u *UploadStore) Stage(ctx context.Context, s app.StagedUpload) error {
 }
 
 const uploadColumns = `id, encounter_id, uploaded_by, object_key, content_type, size_bytes,
-	COALESCE(description, ''), visible_to_guardian, created_at`
+	COALESCE(description, ''), visible_to_guardian, created_at, COALESCE(scan_status, 'pending')`
 
 func scanUpload(row pgx.Row) (app.StagedUpload, error) {
 	var s app.StagedUpload
 	var ct string
 	err := row.Scan(&s.Attachment.ID, &s.EncounterID, &s.UploadedBy, &s.Attachment.ObjectKey, &ct,
-		&s.Attachment.SizeBytes, &s.Attachment.Description, &s.Attachment.VisibleToGuardian, &s.CreatedAt)
+		&s.Attachment.SizeBytes, &s.Attachment.Description, &s.Attachment.VisibleToGuardian, &s.CreatedAt, &s.ScanStatus)
 	s.Attachment.ContentType = domain.ContentType(ct)
 	return s, err
 }

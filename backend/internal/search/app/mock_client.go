@@ -69,6 +69,12 @@ func (m *MockClient) GetAliases(ctx context.Context) (map[string][]string, error
 	return out, nil
 }
 
+func (m *MockClient) GetMapping(ctx context.Context, index string) ([]byte, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return []byte(fmt.Sprintf(`{"%s":{"mappings":{"properties":{"id":{"type":"keyword"}}}}}`, index)), nil
+}
+
 func (m *MockClient) UpdateAliases(ctx context.Context, actions []AliasAction) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

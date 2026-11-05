@@ -345,9 +345,18 @@ func run() error {
 	if cfg.Notifications.EmailWebhookSecret != "" {
 		webhookSecrets["generic"] = []byte(cfg.Notifications.EmailWebhookSecret)
 	}
+	pushSvc := notificationsapp.NewPushService(
+		notificationsinfra.NewPushStore(pool.Pool),
+		notificationsapp.VAPIDConfig{
+			PublicKey:  os.Getenv("VAPID_PUBLIC_KEY"),
+			PrivateKey: os.Getenv("VAPID_PRIVATE_KEY"),
+			Subject:    "mailto:soporte@petpassport.app",
+		},
+		nil,
+	)
 	notificationHandlers := notificationshttp.NewNotificationHandlers(
 		notificationsapp.NewPreferences(notificationsinfra.NewPrefStore(pool.Pool), []byte(cfg.Notifications.UnsubscribeSecret), nil),
-		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger)
+		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger).WithPush(pushSvc)
 	// Search (F3 M3.1).
 	osClient, err := searchapp.NewClient(searchapp.OpenSearchConfig{
 		Addresses: cfg.Search.Addresses,
@@ -378,8 +387,19 @@ func run() error {
 	if redisClient != nil {
 		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
 	}
-	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache)
+	cohortSvc := searchapp.NewCohortService(pool.Pool, osClient)
+	platformStatsSvc := searchapp.NewPlatformStatsService(pool.Pool)
+	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache).
+		WithCohorts(cohortSvc).
+		WithStats(platformStatsSvc)
 	medHandler := medicationshttp.NewMedicationHandler(medSvc, resilientSearch)
+
+	directorySvc := orgapp.NewDirectoryService(pool.Pool)
+	orgHandlers := orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
+		WithIPHashSalt(cfg.IPHashSalt).
+		WithDirectory(directorySvc)
+
+	petHandlers := pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter)
 
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
@@ -387,9 +407,8 @@ func run() error {
 		Handlers: apiHandlers{
 			Handlers:      identityHandlers,
 			AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
-			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
-				WithIPHashSalt(cfg.IPHashSalt),
+			PetHandlers:   petHandlers,
+			OrgHandlers:   orgHandlers,
 			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
 			ClinicalHandlers:     clinicalHandlers,
 			SchedulingHandlers:   schedulingHandlers,
@@ -399,6 +418,9 @@ func run() error {
 		Mount: func(r chi.Router) {
 			searchHandler.MountRoutes(r)
 			medHandler.MountRoutes(r)
+			orgHandlers.MountDirectoryRoutes(r)
+			petHandlers.MountProvisionalRoutes(r)
+			notificationHandlers.MountPushRoutes(r)
 		},
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
 		RateLimit:   rateLimitMW,

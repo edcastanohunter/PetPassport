@@ -35,6 +35,8 @@ type Organization struct {
 	invitations  map[uuid.UUID]Invitation
 	uncommitted  []any
 
+	directoryListing DirectoryListingPayload
+
 	// pendingPublicCode lo fija app tras reservarlo (O5); no se persiste.
 	pendingPublicCode string
 }
@@ -190,6 +192,8 @@ func (o *Organization) ApplyEvent(evt any) error {
 			m.Status = MemberStatusRemoved
 			o.members[e.UserID] = m
 		}
+	case OrganizationDirectoryListingUpdated:
+		o.directoryListing = e.Listing
 	default:
 		return &kernel.DomainError{Code: "UNKNOWN_EVENT", Message: "evento desconocido para Organization"}
 	}

@@ -57,6 +57,17 @@ const (
 	SearchUnavailable   Code = "SEARCH_UNAVAILABLE"
 	SearchQueryInvalid  Code = "SEARCH_QUERY_INVALID"
 	AdminReasonRequired Code = "ADMIN_REASON_REQUIRED"
+
+	// Hardening & Features (PP-F3-API-011, M3.4)
+	CohortTooLarge          Code = "COHORT_TOO_LARGE"
+	CampaignRateLimited     Code = "CAMPAIGN_RATE_LIMITED"
+	DirectoryNotListed      Code = "DIRECTORY_NOT_LISTED"
+	ClaimContactMismatch    Code = "CLAIM_CONTACT_MISMATCH"
+	ClaimExpired            Code = "CLAIM_EXPIRED"
+	ProvisionalOnlyCreator  Code = "PROVISIONAL_ONLY_CREATOR"
+	PushSubscriptionInvalid Code = "PUSH_SUBSCRIPTION_INVALID"
+	AttachmentScanPending   Code = "ATTACHMENT_SCAN_PENDING"
+	AttachmentQuarantined   Code = "ATTACHMENT_QUARANTINED"
 )
 
 var defaultStatus = map[Code]int{
@@ -99,6 +110,16 @@ var defaultStatus = map[Code]int{
 	SearchUnavailable:   http.StatusServiceUnavailable,
 	SearchQueryInvalid:  http.StatusUnprocessableEntity,
 	AdminReasonRequired: http.StatusUnprocessableEntity,
+
+	CohortTooLarge:          http.StatusUnprocessableEntity,
+	CampaignRateLimited:     http.StatusTooManyRequests,
+	DirectoryNotListed:      http.StatusNotFound,
+	ClaimContactMismatch:    http.StatusForbidden,
+	ClaimExpired:            http.StatusGone,
+	ProvisionalOnlyCreator:  http.StatusForbidden,
+	PushSubscriptionInvalid: http.StatusUnprocessableEntity,
+	AttachmentScanPending:   http.StatusConflict,
+	AttachmentQuarantined:   http.StatusGone,
 
 	Code("VOID_WINDOW_EXPIRED"):   http.StatusForbidden,
 	Code("VOID_NOT_ALLOWED"):      http.StatusForbidden,

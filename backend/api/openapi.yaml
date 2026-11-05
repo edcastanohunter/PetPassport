@@ -4867,6 +4867,15 @@ components:
             clinical: { type: boolean }
             account: { type: boolean }
             security: { type: boolean }
+        push:
+          type: object
+          description: Una clave por categoría para notificaciones web push (PP-F3-API-008).
+          properties:
+            appointments: { type: boolean }
+            preventive_care: { type: boolean }
+            clinical: { type: boolean }
+            account: { type: boolean }
+            security: { type: boolean }
         digest:
           type: object
           required: [clinic_daily_agenda]

@@ -35,7 +35,7 @@ func TestRegistry_PIIInventory(t *testing.T) {
 		}
 	}
 	sort.Strings(withPII)
-	want := []string{"GuardianshipTransferInitiated", "MemberInvited"}
+	want := []string{"GuardianshipTransferInitiated", "MemberInvited", "ProvisionalPetRegistered"}
 	if strings.Join(withPII, ",") != strings.Join(want, ",") {
 		t.Fatalf("inventario PII: %v; documentado: %v (actualiza privacy-runbook.md §4)", withPII, want)
 	}

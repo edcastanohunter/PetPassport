@@ -46,4 +46,4 @@ Controles de F1/F2 vigentes. F3 añade dos almacenes nuevos (OpenSearch, Redis),
 
 ## 9. Threat model F3
 
-**[PP-F3-SEC-009] (MUST)** Actualización STRIDE con OpenSearch, Redis, asynq, directorio, push, ClamAV, CDN, réplicas múltiples (p. ej. *split-brain* de leases, *cache poisoning* por invalidación perdida → TTLs cortos como red de seguridad, *replay* de tareas asynq → idempotencia). Revisado antes de M3.4.
+**[PP-F3-SEC-009] (MUST)** Actualización STRIDE con OpenSearch, Redis, asynq, directorio, push, ClamAV, CDN, réplicas múltiples (p. ej. *split-brain* de leases, *cache poisoning* por invalidación perdida → TTLs cortos como red de seguridad, *replay* de tareas asynq → idempotencia). Documento formal en [`docs/phase-3/threat-model.md`](threat-model.md). Revisado y completado para M3.4.

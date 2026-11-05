@@ -27,6 +27,11 @@ type DownloadPresigner interface {
 	PresignDownload(ctx context.Context, key string, ttl time.Duration, filename, contentType string) (string, error)
 }
 
+// ObjectReader es la capacidad de obtener un flujo de lectura directo de un objeto (antivirus, exportación).
+type ObjectReader interface {
+	GetObject(ctx context.Context, key string) (io.ReadCloser, error)
+}
+
 // Keys de foto con prefijo pets/<petID>/ (DOM-004 PhotoRef).
 func PhotoKey(petID, objectID, suffix string) string {
 	return "pets/" + petID + "/" + objectID + suffix

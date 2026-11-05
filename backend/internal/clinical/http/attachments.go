@@ -227,6 +227,12 @@ func (h *ClinicalHandlers) GetEncounterAttachment(ctx context.Context, req gen.G
 	if guardian && !a.VisibleToGuardian {
 		return nil, &kernel.NotFoundError{Resource: "attachment"}
 	}
+	if a.ScanStatus == "pending" {
+		return nil, &problem.DirectError{P: problem.New(problem.AttachmentScanPending, "Adjunto en análisis", "El archivo está siendo analizado por el antivirus")}
+	}
+	if a.ScanStatus == "infected" {
+		return nil, &problem.DirectError{P: problem.New(problem.AttachmentQuarantined, "Adjunto en cuarentena", "El archivo fue bloqueado por contener contenido malicioso")}
+	}
 	if h.Objects == nil {
 		return nil, storageUnavailable()
 	}

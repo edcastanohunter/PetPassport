@@ -12,10 +12,13 @@ import (
 )
 
 func TestParsePreferencesInvalidJSON(t *testing.T) {
-	if _, err := domain.ParsePreferences([]byte(`{`), nil); err == nil {
+	if _, err := domain.ParsePreferences([]byte(`{`), nil, nil); err == nil {
 		t.Fatal("email inválido debe fallar")
 	}
-	if _, err := domain.ParsePreferences(nil, []byte(`not-json`)); err == nil {
+	if _, err := domain.ParsePreferences(nil, []byte(`{`), nil); err == nil {
+		t.Fatal("push inválido debe fallar")
+	}
+	if _, err := domain.ParsePreferences(nil, nil, []byte(`not-json`)); err == nil {
 		t.Fatal("digest inválido debe fallar")
 	}
 }

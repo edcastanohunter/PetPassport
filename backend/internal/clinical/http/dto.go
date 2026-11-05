@@ -169,6 +169,7 @@ func stagedView(s app.StagedUpload) app.AttachmentView {
 		ID: s.Attachment.ID, ObjectKey: s.Attachment.ObjectKey, ContentType: string(s.Attachment.ContentType),
 		SizeBytes: s.Attachment.SizeBytes, Description: s.Attachment.Description,
 		VisibleToGuardian: s.Attachment.VisibleToGuardian, CreatedAt: s.CreatedAt,
+		ScanStatus: s.ScanStatus,
 	}
 }
 

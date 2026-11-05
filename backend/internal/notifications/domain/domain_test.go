@@ -27,7 +27,7 @@ func TestPreferencesSecurityAlwaysOn(t *testing.T) {
 }
 
 func TestParsePreferencesDefaults(t *testing.T) {
-	p, err := domain.ParsePreferences(nil, nil)
+	p, err := domain.ParsePreferences(nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,11 +39,11 @@ func TestParsePreferencesDefaults(t *testing.T) {
 	if p.Digest.ClinicDailyAgenda {
 		t.Fatal("el resumen diario es opt-in")
 	}
-	p, err = domain.ParsePreferences([]byte(`{"clinical":false}`), []byte(`{"clinic_daily_agenda":true}`))
+	p, err = domain.ParsePreferences([]byte(`{"clinical":false}`), nil, []byte(`{"clinic_daily_agenda":true}`))
 	if err != nil || p.Allows(domain.Clinical) || !p.Digest.ClinicDailyAgenda {
 		t.Fatalf("parse: %+v %v", p, err)
 	}
-	if _, err := domain.ParsePreferences([]byte(`{`), nil); err == nil {
+	if _, err := domain.ParsePreferences([]byte(`{`), nil, nil); err == nil {
 		t.Fatal("JSON inválido debe fallar")
 	}
 }

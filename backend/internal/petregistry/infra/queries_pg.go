@@ -350,6 +350,95 @@ func (r *Queries) TransferByTokenHash(ctx context.Context, hash []byte, now time
 	return petapp.TransferView{PetID: row.PetID, ExpiresAt: row.ExpiresAt.Time}, nil
 }
 
+// ClaimByTokenHash resuelve una reclamación pendiente y vigente (PP-F3-API-007).
+func (r *Queries) ClaimByTokenHash(ctx context.Context, hash []byte, now time.Time) (petapp.ClaimView, error) {
+	row := r.raw.QueryRow(ctx, `
+		SELECT token_hash, pet_id, organization_id, contact_hash, contact_kind, status, expires_at, resend_count, created_at
+		FROM read_petregistry.pet_claims
+		WHERE token_hash = $1 AND expires_at > $2`, hash, now)
+	var v petapp.ClaimView
+	err := row.Scan(&v.TokenHash, &v.PetID, &v.OrganizationID, &v.ContactHash, &v.ContactKind, &v.Status, &v.ExpiresAt, &v.ResendCount, &v.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return petapp.ClaimView{}, &kernel.NotFoundError{Resource: "claim"}
+	}
+	return v, err
+}
+
+// ClaimByPetID obtiene la reclamación activa de una mascota provisional.
+func (r *Queries) ClaimByPetID(ctx context.Context, petID uuid.UUID) (petapp.ClaimView, error) {
+	row := r.raw.QueryRow(ctx, `
+		SELECT token_hash, pet_id, organization_id, contact_hash, contact_kind, status, expires_at, resend_count, created_at
+		FROM read_petregistry.pet_claims
+		WHERE pet_id = $1 AND status = 'pending'
+		ORDER BY created_at DESC LIMIT 1`, petID)
+	var v petapp.ClaimView
+	err := row.Scan(&v.TokenHash, &v.PetID, &v.OrganizationID, &v.ContactHash, &v.ContactKind, &v.Status, &v.ExpiresAt, &v.ResendCount, &v.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return petapp.ClaimView{}, &kernel.NotFoundError{Resource: "claim"}
+	}
+	return v, err
+}
+
+// ListProvisionalPets lista los pacientes provisionales de una clínica con estado opcional (PP-F3-API-007).
+func (r *Queries) ListProvisionalPets(ctx context.Context, orgID uuid.UUID, status string) ([]petapp.ProvisionalPetView, error) {
+	query := `
+		SELECT p.id, p.name, p.species, COALESCE(p.breed, ''), p.sex, COALESCE(p.microchip, ''), p.created_at,
+		       COALESCE(c.status, 'unclaimed'), c.expires_at, COALESCE(c.resend_count, 0)
+		FROM read_petregistry.pets p
+		LEFT JOIN LATERAL (
+			SELECT status, expires_at, resend_count
+			FROM read_petregistry.pet_claims
+			WHERE pet_id = p.id
+			ORDER BY created_at DESC
+			LIMIT 1
+		) c ON true
+		WHERE p.provisional = true AND p.provisional_org_id = $1`
+	var rows pgx.Rows
+	var err error
+	if status != "" {
+		query += " AND COALESCE(c.status, 'unclaimed') = $2 ORDER BY p.created_at DESC"
+		rows, err = r.raw.Query(ctx, query, orgID, status)
+	} else {
+		query += " ORDER BY p.created_at DESC"
+		rows, err = r.raw.Query(ctx, query, orgID)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []petapp.ProvisionalPetView
+	for rows.Next() {
+		var item petapp.ProvisionalPetView
+		var exp *time.Time
+		if err := rows.Scan(&item.PetID, &item.Name, &item.Species, &item.Breed, &item.Sex, &item.Microchip, &item.CreatedAt, &item.ClaimStatus, &exp, &item.ResendCount); err != nil {
+			return nil, err
+		}
+		item.ClaimExpiresAt = exp
+		list = append(list, item)
+	}
+	return list, rows.Err()
+}
+
+// FindMatchingPetByMicrochip busca si el tutor ya tiene una mascota con el mismo microchip (PP-F3-API-007).
+func (r *Queries) FindMatchingPetByMicrochip(ctx context.Context, guardianID uuid.UUID, microchip string) (*petapp.MatchingPetView, error) {
+	if strings.TrimSpace(microchip) == "" || guardianID == uuid.Nil {
+		return nil, nil
+	}
+	row := r.raw.QueryRow(ctx, `
+		SELECT id, name
+		FROM read_petregistry.pets
+		WHERE guardian_id = $1 AND microchip = $2 AND status = 'active'
+		LIMIT 1`, guardianID, microchip)
+	var m petapp.MatchingPetView
+	if err := row.Scan(&m.PetID, &m.Name); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &m, nil
+}
+
 // helpers --------------------------------------------------------------------
 
 func pgStr(p *string) string {

@@ -41,6 +41,7 @@ type OrgHandlers struct {
 	idem        *idempotency.Store
 	memberships auth.MembershipLoader // recarga tras aceptar invitación (caché invalidada)
 	me          MeRenderer
+	directory   *app.DirectoryService
 	logger      *slog.Logger
 	ipHashSalt  string // ip_hash del audit log en acciones admin
 }
@@ -51,6 +52,11 @@ func NewOrgHandlers(svc *app.Service, idem *idempotency.Store, memberships auth.
 		logger = slog.Default()
 	}
 	return &OrgHandlers{svc: svc, idem: idem, memberships: memberships, me: me, logger: logger}
+}
+
+func (h *OrgHandlers) WithDirectory(d *app.DirectoryService) *OrgHandlers {
+	h.directory = d
+	return h
 }
 
 func principal(ctx context.Context) (auth.Principal, error) {

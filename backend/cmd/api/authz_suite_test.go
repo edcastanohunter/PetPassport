@@ -130,6 +130,22 @@ func (fakePetQueries) TransferByTokenHash(context.Context, []byte, time.Time) (p
 	return petapp.TransferView{PetID: petID, ExpiresAt: time.Now().Add(time.Hour)}, nil
 }
 
+func (fakePetQueries) ClaimByTokenHash(context.Context, []byte, time.Time) (petapp.ClaimView, error) {
+	return petapp.ClaimView{PetID: petID, OrganizationID: orgActive, ExpiresAt: time.Now().Add(time.Hour)}, nil
+}
+
+func (fakePetQueries) ClaimByPetID(context.Context, uuid.UUID) (petapp.ClaimView, error) {
+	return petapp.ClaimView{PetID: petID, OrganizationID: orgActive, ExpiresAt: time.Now().Add(time.Hour)}, nil
+}
+
+func (fakePetQueries) ListProvisionalPets(context.Context, uuid.UUID, string) ([]petapp.ProvisionalPetView, error) {
+	return nil, nil
+}
+
+func (fakePetQueries) FindMatchingPetByMicrochip(context.Context, uuid.UUID, string) (*petapp.MatchingPetView, error) {
+	return nil, nil
+}
+
 type fakeOrgQueries struct{}
 
 func orgView(id uuid.UUID) (orgapp.OrgView, bool) {

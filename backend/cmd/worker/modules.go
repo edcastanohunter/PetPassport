@@ -67,6 +67,7 @@ func registerAsyncProjections(subs *projection.Subscriptions) {
 	subs.Register(clinicalinfra.NewWeightProjector())
 	subs.Register(clinicalinfra.NewCustodyProjector())
 	subs.Register(clinicalinfra.NewVaccinationDueProjector())
+	subs.Register(clinicalinfra.NewMergePetProjector())
 	subs.Register(orginfra.NewStatsProjector())
 	subs.Register(searchinfra.NewPetsSearchProjector(nil))
 	subs.Register(searchinfra.NewClinicalSearchProjector(nil))

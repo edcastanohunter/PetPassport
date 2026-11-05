@@ -38,9 +38,10 @@ func (c Category) Valid() bool {
 // Optional indica si el usuario puede desactivar la categoría.
 func (c Category) Optional() bool { return c.Valid() && c != Security }
 
-// Preferences son las preferencias de un usuario (canal email).
+// Preferences son las preferencias de un usuario (canales email y push, PP-F3-DOM-011, PP-F3-API-008).
 type Preferences struct {
 	Email  map[Category]bool `json:"email"`
+	Push   map[Category]bool `json:"push"`
 	Digest Digest            `json:"digest"`
 }
 
@@ -49,22 +50,58 @@ type Digest struct {
 	ClinicDailyAgenda bool `json:"clinic_daily_agenda"`
 }
 
-// DefaultPreferences activa todas las categorías y ningún resumen.
+// DefaultPushPreferences activa las categorías por defecto para push (PP-F3-DAT-006).
+func DefaultPushPreferences() map[Category]bool {
+	return map[Category]bool{
+		Appointments:   true,
+		PreventiveCare: true,
+		Clinical:       false,
+		Account:        false,
+		Security:       true,
+	}
+}
+
+// DefaultPreferences activa todas las categorías de email y las por defecto de push.
 func DefaultPreferences() Preferences {
-	p := Preferences{Email: map[Category]bool{}}
+	p := Preferences{
+		Email: map[Category]bool{},
+		Push:  DefaultPushPreferences(),
+	}
 	for _, c := range All() {
 		p.Email[c] = true
 	}
 	return p
 }
 
-// Allows indica si el usuario quiere recibir la categoría. Security siempre.
+// Allows indica si el usuario quiere recibir la categoría por email. Security siempre.
 func (p Preferences) Allows(c Category) bool {
+	return p.AllowsEmail(c)
+}
+
+// AllowsEmail indica si el usuario quiere recibir la categoría por email.
+func (p Preferences) AllowsEmail(c Category) bool {
 	if c == Security {
 		return true
 	}
 	v, ok := p.Email[c]
-	return !ok || v // ausente = valor por defecto (activa)
+	return !ok || v
+}
+
+// AllowsPush indica si el usuario quiere recibir la categoría por push.
+func (p Preferences) AllowsPush(c Category) bool {
+	if c == Security {
+		return true
+	}
+	if p.Push == nil {
+		def := DefaultPushPreferences()
+		return def[c]
+	}
+	v, ok := p.Push[c]
+	if !ok {
+		def := DefaultPushPreferences()
+		return def[c]
+	}
+	return v
 }
 
 // Normalize devuelve las preferencias saneadas: security fuerza true, se
@@ -76,16 +113,33 @@ func (p Preferences) Normalize() Preferences {
 			out.Email[c] = v
 		}
 	}
+	if p.Push != nil {
+		for c, v := range p.Push {
+			if c.Optional() {
+				out.Push[c] = v
+			}
+		}
+	}
+	out.Email[Security] = true
+	out.Push[Security] = true
 	out.Digest = p.Digest
 	return out
 }
 
-// ParsePreferences lee el JSON de las columnas email/digest.
-func ParsePreferences(email, digest []byte) (Preferences, error) {
-	p := Preferences{Email: map[Category]bool{}}
+// ParsePreferences lee el JSON de las columnas email/push/digest.
+func ParsePreferences(email, push, digest []byte) (Preferences, error) {
+	p := Preferences{
+		Email: map[Category]bool{},
+		Push:  DefaultPushPreferences(),
+	}
 	if len(email) > 0 {
 		if err := json.Unmarshal(email, &p.Email); err != nil {
 			return Preferences{}, fmt.Errorf("notifications: preferencias email: %w", err)
+		}
+	}
+	if len(push) > 0 {
+		if err := json.Unmarshal(push, &p.Push); err != nil {
+			return Preferences{}, fmt.Errorf("notifications: preferencias push: %w", err)
 		}
 	}
 	if len(digest) > 0 {

@@ -82,7 +82,7 @@ func (q *Queries) Access(ctx context.Context, id uuid.UUID) (app.EncounterAccess
 func (q *Queries) Attachments(ctx context.Context, encounterID uuid.UUID) ([]app.AttachmentView, error) {
 	rows, err := q.pool.Query(ctx, `
 		SELECT id, object_key, content_type, size_bytes, COALESCE(description,''), visible_to_guardian,
-		       addendum_seq, created_at
+		       addendum_seq, created_at, COALESCE(scan_status, 'clean')
 		FROM read_clinical.encounter_attachments WHERE encounter_id = $1
 		ORDER BY addendum_seq NULLS FIRST, created_at, id`, encounterID)
 	if err != nil {
@@ -93,7 +93,7 @@ func (q *Queries) Attachments(ctx context.Context, encounterID uuid.UUID) ([]app
 	for rows.Next() {
 		var a app.AttachmentView
 		if err := rows.Scan(&a.ID, &a.ObjectKey, &a.ContentType, &a.SizeBytes, &a.Description,
-			&a.VisibleToGuardian, &a.AddendumSeq, &a.CreatedAt); err != nil {
+			&a.VisibleToGuardian, &a.AddendumSeq, &a.CreatedAt, &a.ScanStatus); err != nil {
 			return nil, err
 		}
 		out = append(out, a)
