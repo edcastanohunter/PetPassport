@@ -107,6 +107,7 @@ type FallbackBackend interface {
 	SearchPatientsPG(ctx context.Context, req PatientSearchRequest, principal auth.Principal) (*PatientSearchResponse, error)
 	SearchClinicalPG(ctx context.Context, req ClinicalSearchRequest, principal auth.Principal) (*ClinicalSearchResponse, error)
 	SuggestPatientsPG(ctx context.Context, orgID uuid.UUID, q string, principal auth.Principal) ([]SuggestPatientItem, error)
+	SuggestMedicationsPG(ctx context.Context, q string, species string, limit int) ([]SuggestMedicationItem, error)
 }
 
 // ResilientSearchService coordina la búsqueda con OpenSearch y la degradación automática a PostgreSQL.
@@ -190,6 +191,25 @@ func (s *ResilientSearchService) SuggestPatients(ctx context.Context, orgID uuid
 	metricDegradedRequests.Inc()
 	if s.fallback != nil {
 		items, err := s.fallback.SuggestPatientsPG(ctx, orgID, q, principal)
+		return items, "degraded", err
+	}
+	return nil, "degraded", fmt.Errorf("search unavailable and fallback not configured")
+}
+
+// SuggestMedications ejecuta el autocompletado de medicamentos con degradación a PostgreSQL (ARQ-004, API-003).
+func (s *ResilientSearchService) SuggestMedications(ctx context.Context, q string, species string, limit int) ([]SuggestMedicationItem, string, error) {
+	if s.breaker.Allow() {
+		items, err := s.primary.SuggestMedications(ctx, q, species, limit)
+		if err == nil {
+			s.breaker.RecordSuccess()
+			return items, "full", nil
+		}
+		s.breaker.RecordFailure()
+	}
+
+	metricDegradedRequests.Inc()
+	if s.fallback != nil {
+		items, err := s.fallback.SuggestMedicationsPG(ctx, q, species, limit)
 		return items, "degraded", err
 	}
 	return nil, "degraded", fmt.Errorf("search unavailable and fallback not configured")

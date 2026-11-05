@@ -542,6 +542,23 @@ func (e *Encounter) handlePlan(c SetPlan) ([]any, error) {
 	}
 	ve := &kernel.ValidationError{}
 	plan := c.Plan.normalize(ve)
+	for i := range plan.Medications {
+		m := &plan.Medications[i]
+		if m.CatalogID != nil {
+			if c.Catalog != nil {
+				targetID, name, err := c.Catalog.ResolveActiveMedication(*m.CatalogID)
+				if err != nil {
+					ve.Add(fieldIdx("plan.medications", i)+".catalog_id", "INVALID")
+				} else {
+					m.CatalogID = &targetID
+					m.CatalogNameSnapshot = &name
+					m.FreeText = false
+				}
+			}
+		} else {
+			m.FreeText = true
+		}
+	}
 	if err := ve.ErrOrNil(); err != nil {
 		return nil, err
 	}

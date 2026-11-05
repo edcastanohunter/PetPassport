@@ -13,8 +13,9 @@ import (
 )
 
 type dummySource struct {
-	pets     []domain.PetDoc
-	clinical []domain.ClinicalDoc
+	pets        []domain.PetDoc
+	clinical    []domain.ClinicalDoc
+	medications []domain.MedicationDoc
 }
 
 func (d *dummySource) LoadPetDocs(ctx context.Context, petIDs []uuid.UUID) ([]domain.PetDoc, error) {
@@ -35,6 +36,18 @@ func (d *dummySource) LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUID) 
 		for _, c := range d.clinical {
 			if c.PetID == id.String() {
 				out = append(out, c)
+			}
+		}
+	}
+	return out, nil
+}
+
+func (d *dummySource) LoadMedicationDocs(ctx context.Context, catalogIDs []uuid.UUID) ([]domain.MedicationDoc, error) {
+	var out []domain.MedicationDoc
+	for _, id := range catalogIDs {
+		for _, m := range d.medications {
+			if m.CatalogID == id.String() {
+				out = append(out, m)
 			}
 		}
 	}
@@ -180,4 +193,68 @@ func TestAccessProjector_UpdateByQuery_QA001(t *testing.T) {
 		t.Fatalf("expected OrgB to find the encounter after update_by_query access projection, got %d", len(res.Data))
 	}
 	t.Log("QA-001 ACCESO ACTUALIZADO POR UPDATE_BY_QUERY VERIFICADO")
+}
+
+func TestIndexer_ProcessBulkMedications(t *testing.T) {
+	mockOS := NewMockClient()
+	_ = mockOS.CreateIndex(context.Background(), "medications-v1", nil)
+	_ = mockOS.UpdateAliases(context.Background(), []AliasAction{
+		{Type: "add", Index: "medications-v1", Alias: domain.AliasMedicationsWrite},
+		{Type: "add", Index: "medications-v1", Alias: domain.IndexMedications},
+	})
+
+	activeID := uuid.New()
+	mergedID := uuid.New()
+
+	source := &dummySource{
+		medications: []domain.MedicationDoc{
+			{
+				CatalogID: activeID.String(),
+				Name:      "Amoxicilina 500mg",
+				Status:    "active",
+				Species:   []string{"dog", "cat"},
+			},
+			{
+				CatalogID: mergedID.String(),
+				Name:      "Amoxil",
+				Status:    "merged",
+			},
+		},
+	}
+
+	indexer := NewIndexer(mockOS, source, nil, nil)
+
+	// Primero indexamos ambos
+	err := indexer.ProcessBulkMedications(context.Background(), []string{activeID.String(), mergedID.String()})
+	if err != nil {
+		t.Fatalf("ProcessBulkMedications: %v", err)
+	}
+
+	res, err := mockOS.Search(context.Background(), domain.IndexMedications, map[string]any{
+		"query": map[string]any{"bool": map[string]any{}},
+	})
+	if err != nil {
+		t.Fatalf("search medications in mockOS: %v", err)
+	}
+
+	// El activo debe existir en mockOS y el merged no
+	foundActive := false
+	foundMerged := false
+	for _, hit := range res.Hits.Hits {
+		var doc domain.MedicationDoc
+		_ = json.Unmarshal(hit.Source, &doc)
+		if doc.CatalogID == activeID.String() {
+			foundActive = true
+		}
+		if doc.CatalogID == mergedID.String() {
+			foundMerged = true
+		}
+	}
+
+	if !foundActive {
+		t.Fatalf("se esperaba que el medicamento activo estuviera indexado")
+	}
+	if foundMerged {
+		t.Fatalf("se esperaba que el medicamento merged fuera eliminado")
+	}
 }

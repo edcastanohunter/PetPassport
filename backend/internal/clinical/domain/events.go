@@ -85,7 +85,7 @@ func (DiagnosesSet) EventName() string { return "DiagnosesSet" }
 // SchemaVersion implementa eventstore.Event.
 func (DiagnosesSet) SchemaVersion() int { return 1 }
 
-// PlanSet: reemplazo completo del plan.
+// PlanSet: reemplazo completo del plan (schema v2: PP-F3-DOM-006).
 type PlanSet struct {
 	EncounterID uuid.UUID `json:"encounter_id"`
 	Plan        Plan      `json:"plan"`
@@ -95,7 +95,7 @@ type PlanSet struct {
 func (PlanSet) EventName() string { return "PlanSet" }
 
 // SchemaVersion implementa eventstore.Event.
-func (PlanSet) SchemaVersion() int { return 1 }
+func (PlanSet) SchemaVersion() int { return 2 }
 
 // FollowUpRecommended: control recomendado.
 type FollowUpRecommended struct {

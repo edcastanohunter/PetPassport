@@ -2,6 +2,7 @@ package infra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -265,5 +266,82 @@ func (s *PGFallback) SuggestPatientsPG(ctx context.Context, orgID uuid.UUID, q s
 		item.PetID = petID.String()
 		items = append(items, item)
 	}
+	return items, nil
+}
+
+// SuggestMedicationsPG autocompleta medicamentos desde PostgreSQL cuando OpenSearch no está disponible (ARQ-004).
+func (s *PGFallback) SuggestMedicationsPG(ctx context.Context, q string, species string, limit int) ([]app.SuggestMedicationItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+	cleanQ := strings.TrimSpace(q)
+	likePattern := "%" + cleanQ + "%"
+
+	query := `
+		SELECT id, name, active_ingredients, form, concentration, presentation,
+		       manufacturer, species, routes, prescription_required, controlled,
+		       default_route, default_dose_unit
+		FROM ref.medications
+		WHERE status = 'active'
+		  AND ($1 = '' OR $1 = ANY(species) OR cardinality(species) = 0)
+		  AND ($2 = '' OR name ILIKE $3 OR name_norm % $2)
+		ORDER BY usage_count DESC, name ASC
+		LIMIT $4
+	`
+
+	rows, err := s.pool.Query(ctx, query, species, cleanQ, likePattern, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []app.SuggestMedicationItem
+	for rows.Next() {
+		var (
+			id                   uuid.UUID
+			name, form           string
+			conc, pres, manu     *string
+			defRoute, defUnit    *string
+			specList, routeList  []string
+			actJSON              []byte
+			prescReq, controlled bool
+		)
+
+		if err := rows.Scan(
+			&id, &name, &actJSON, &form, &conc, &pres,
+			&manu, &specList, &routeList, &prescReq, &controlled,
+			&defRoute, &defUnit,
+		); err != nil {
+			return nil, err
+		}
+
+		var ingredients []struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(actJSON, &ingredients)
+		var ingNames []string
+		for _, ing := range ingredients {
+			if ing.Name != "" {
+				ingNames = append(ingNames, ing.Name)
+			}
+		}
+
+		items = append(items, app.SuggestMedicationItem{
+			CatalogID:            id.String(),
+			Name:                 name,
+			ActiveIngredients:    ingNames,
+			Form:                 form,
+			Concentration:        conc,
+			Presentation:         pres,
+			Manufacturer:         manu,
+			Species:              specList,
+			Routes:               routeList,
+			PrescriptionRequired: prescReq,
+			Controlled:           controlled,
+			DefaultRoute:         defRoute,
+			DefaultDoseUnit:      defUnit,
+		})
+	}
+
 	return items, nil
 }

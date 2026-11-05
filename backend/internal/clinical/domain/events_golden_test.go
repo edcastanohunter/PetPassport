@@ -3,6 +3,7 @@ package domain
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -36,6 +37,7 @@ func TestEvents_Golden(t *testing.T) {
 		DiagnosesSet{EncounterID: encID, Diagnoses: []Diagnosis{{Text: "Artrosis", Certainty: CertaintyPresumptive}}},
 		PlanSet{EncounterID: encID, Plan: Plan{
 			Medications: []MedicationItem{{
+				FreeText:       true,
 				MedicationName: "Meloxicam", Dose: 0.2, DoseUnit: "mg_per_kg", Route: "oral",
 				Frequency: Frequency{Once: true}, Instructions: "Con alimento",
 			}},
@@ -72,7 +74,11 @@ func TestEvents_Golden(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			golden := filepath.Join("testdata", "golden", name.EventName()+".json")
+			goldenName := name.EventName() + ".json"
+			if sv, ok := e.(interface{ SchemaVersion() int }); ok && sv.SchemaVersion() > 1 {
+				goldenName = fmt.Sprintf("%s_v%d.json", name.EventName(), sv.SchemaVersion())
+			}
+			golden := filepath.Join("testdata", "golden", goldenName)
 			if *update {
 				if err := os.MkdirAll(filepath.Dir(golden), 0o750); err != nil { //nolint:gosec // testdata local
 					t.Fatal(err)
@@ -93,7 +99,7 @@ func TestEvents_Golden(t *testing.T) {
 	}
 }
 
-// TestEvents_SchemaVersion: todos los eventos del agregado nacen en v1.
+// TestEvents_SchemaVersion: valida versiones de esquema (PlanSet nace en v2, resto en v1).
 func TestEvents_SchemaVersion(t *testing.T) {
 	for _, e := range []eventstoreEvent{
 		EncounterOpened{}, EncounterDetailsUpdated{}, VitalsRecorded{}, EncounterNarrativeUpdated{},
@@ -101,8 +107,12 @@ func TestEvents_SchemaVersion(t *testing.T) {
 		AttachmentAdded{}, AttachmentRemoved{}, AttachmentVisibilityChanged{}, EncounterSigned{},
 		EncounterAddendumAdded{}, EncounterDiscarded{},
 	} {
-		if e.SchemaVersion() != 1 {
-			t.Errorf("%s: schema_version %d, want 1", e.EventName(), e.SchemaVersion())
+		want := 1
+		if e.EventName() == "PlanSet" {
+			want = 2
+		}
+		if e.SchemaVersion() != want {
+			t.Errorf("%s: schema_version %d, want %d", e.EventName(), e.SchemaVersion(), want)
 		}
 	}
 }

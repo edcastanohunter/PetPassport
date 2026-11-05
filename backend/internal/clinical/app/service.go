@@ -60,6 +60,7 @@ type Options struct {
 	PetAccess    PetAccess
 	Membership   Membership
 	Appointments AppointmentAccess
+	Catalog      MedicationCatalogPort
 	Queries      EncounterQueries
 	IDs          kernel.IDGenerator
 	Clock        kernel.Clock
@@ -74,6 +75,7 @@ type Service struct {
 	petAccess    PetAccess
 	membership   Membership
 	appointments AppointmentAccess
+	catalog      MedicationCatalogPort
 	queries      EncounterQueries
 	ids          kernel.IDGenerator
 	clock        kernel.Clock
@@ -96,7 +98,7 @@ func NewService(opts Options) *Service {
 	return &Service{
 		repo: opts.Repo, uow: opts.UoW, projects: opts.Projects,
 		petAccess: opts.PetAccess, membership: opts.Membership, appointments: opts.Appointments,
-		queries: opts.Queries, ids: opts.IDs, clock: opts.Clock, logger: opts.Logger,
+		catalog: opts.Catalog, queries: opts.Queries, ids: opts.IDs, clock: opts.Clock, logger: opts.Logger,
 	}
 }
 
@@ -355,10 +357,22 @@ func (s *Service) handleDiagnoses(ctx context.Context, cmd bus.Command) (bus.Res
 
 func (s *Service) handlePlan(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 	c := cmd.(domain.SetPlan)
+	if s.catalog != nil {
+		c.Catalog = catalogValidatorAdapter{ctx: ctx, catalog: s.catalog}
+	}
 	return s.run(ctx, c.EncounterID, func(_ context.Context, _ *domain.Encounter, a domain.Actor) (any, error) {
 		c.Actor = a
 		return c, nil
 	})
+}
+
+type catalogValidatorAdapter struct {
+	ctx     context.Context
+	catalog MedicationCatalogPort
+}
+
+func (a catalogValidatorAdapter) ResolveActiveMedication(id uuid.UUID) (uuid.UUID, string, error) {
+	return a.catalog.ResolveActiveMedication(a.ctx, id)
 }
 
 func (s *Service) handleFollowUp(ctx context.Context, cmd bus.Command) (bus.Result, error) {

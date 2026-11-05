@@ -22,6 +22,9 @@ import (
 	identityhttp "github.com/edcastanohunter/petpassport/backend/internal/identity/http"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/identity/infra/keycloakadmin"
+	medicationsapp "github.com/edcastanohunter/petpassport/backend/internal/medications/app"
+	medicationshttp "github.com/edcastanohunter/petpassport/backend/internal/medications/http"
+	medicationsinfra "github.com/edcastanohunter/petpassport/backend/internal/medications/infra"
 	notificationsapp "github.com/edcastanohunter/petpassport/backend/internal/notifications/app"
 	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
@@ -234,6 +237,10 @@ func run() error {
 	}
 	authz.InitMetrics(tel.Registry)
 
+	// Medication Catalog (F3 M3.2).
+	medStore := medicationsinfra.NewStore(pool.Pool)
+	medSvc := medicationsapp.NewCatalogService(medStore)
+
 	// Clinical Records (F2 M2.1).
 	clinicalQueries := clinicalinfra.NewQueries(pool.Pool)
 	clinicalPets := clinicalinfra.NewCachedPetAccessAdapter(clinicalinfra.NewPetAccess(pool.Pool), distCache)
@@ -244,6 +251,7 @@ func run() error {
 		PetAccess:    clinicalPets,
 		Membership:   clinicalinfra.NewMembership(pool.Pool),
 		Appointments: clinicalinfra.NewAppointmentAdapter(pool.Pool),
+		Catalog:      medSvc,
 		Queries:      clinicalQueries,
 		Logger:       logger,
 	})
@@ -371,6 +379,7 @@ func run() error {
 		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
 	}
 	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache)
+	medHandler := medicationshttp.NewMedicationHandler(medSvc, resilientSearch)
 
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
@@ -389,6 +398,7 @@ func run() error {
 		Guard: guard.Middleware,
 		Mount: func(r chi.Router) {
 			searchHandler.MountRoutes(r)
+			medHandler.MountRoutes(r)
 		},
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
 		RateLimit:   rateLimitMW,

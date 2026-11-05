@@ -36,6 +36,8 @@ import UnsubscribePage from '@/features/notifications/UnsubscribePage.vue'
 import AdminOrganizationsPage from '@/features/admin/AdminOrganizationsPage.vue'
 import AdminUsersPage from '@/features/admin/AdminUsersPage.vue'
 import AdminAuditPage from '@/features/admin/AdminAuditPage.vue'
+import AdminMedicationsPage from '@/features/admin/AdminMedicationsPage.vue'
+import OrgMedicationSuggestionsPage from '@/features/orgs/OrgMedicationSuggestionsPage.vue'
 import OrgSearchPage from '@/features/search/OrgSearchPage.vue'
 import OwnerSearchPage from '@/features/search/OwnerSearchPage.vue'
 import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
@@ -246,6 +248,12 @@ export function createAppRouter() {
         component: OrgSettingsPage,
         meta: { ...orgMeta, requiresOrgRole: ADMIN_ROLES },
       },
+      {
+        path: '/org/:orgId/medication-suggestions',
+        name: 'org-medication-suggestions',
+        component: OrgMedicationSuggestionsPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
       { path: '/admin', redirect: { name: 'admin-organizations' } },
       {
         path: '/admin/organizations',
@@ -255,6 +263,12 @@ export function createAppRouter() {
       },
       { path: '/admin/users', name: 'admin-users', component: AdminUsersPage, meta: adminMeta },
       { path: '/admin/audit', name: 'admin-audit', component: AdminAuditPage, meta: adminMeta },
+      {
+        path: '/admin/catalogs/medications',
+        name: 'admin-medications',
+        component: AdminMedicationsPage,
+        meta: adminMeta,
+      },
       {
         path: '/unsubscribe/:token',
         name: 'unsubscribe',

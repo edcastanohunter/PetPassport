@@ -354,20 +354,35 @@ func (f Frequency) valid() bool {
 	return false
 }
 
-// MedicationItem es un medicamento estructurado del plan (base de
-// Prescription en F4).
+// MedicationItem es un medicamento estructurado del plan (schema v2: PP-F3-DOM-006).
 type MedicationItem struct {
-	MedicationName string    `json:"medication_name"`
-	Presentation   string    `json:"presentation,omitempty"`
-	Dose           float64   `json:"dose"`
-	DoseUnit       DoseUnit  `json:"dose_unit"`
-	Route          Route     `json:"route"`
-	Frequency      Frequency `json:"frequency"`
-	DurationDays   *int      `json:"duration_days,omitempty"`
-	Instructions   string    `json:"instructions,omitempty"`
+	CatalogID           *uuid.UUID `json:"catalog_id,omitempty"`
+	FreeText            bool       `json:"free_text"`
+	CatalogNameSnapshot *string    `json:"catalog_name_snapshot,omitempty"`
+	MedicationName      string     `json:"medication_name"`
+	Presentation        string     `json:"presentation,omitempty"`
+	Dose                float64    `json:"dose"`
+	DoseUnit            DoseUnit   `json:"dose_unit"`
+	Route               Route      `json:"route"`
+	Frequency           Frequency  `json:"frequency"`
+	DurationDays        *int       `json:"duration_days,omitempty"`
+	Instructions        string     `json:"instructions,omitempty"`
 }
 
 func (m MedicationItem) normalize(ve *kernel.ValidationError, field string) MedicationItem {
+	if m.CatalogID == nil {
+		m.FreeText = true
+	} else if *m.CatalogID == uuid.Nil {
+		ve.Add(field+".catalog_id", "INVALID")
+	}
+	if m.CatalogNameSnapshot != nil {
+		snap, err := cleanText(*m.CatalogNameSnapshot, MaxMedicationNameLen, false)
+		if err != nil {
+			ve.Add(field+".catalog_name_snapshot", "INVALID")
+		} else {
+			m.CatalogNameSnapshot = &snap
+		}
+	}
 	name, err := cleanText(m.MedicationName, MaxMedicationNameLen, false)
 	if err != nil || name == "" {
 		ve.Add(field+".medication_name", "INVALID")

@@ -387,17 +387,89 @@ func TestEncounter_Diagnoses(t *testing.T) {
 	}
 }
 
+type mockCatalogValidator struct {
+	resolved map[uuid.UUID]struct {
+		id   uuid.UUID
+		name string
+		err  error
+	}
+}
+
+func (m mockCatalogValidator) ResolveActiveMedication(id uuid.UUID) (uuid.UUID, string, error) {
+	if res, ok := m.resolved[id]; ok {
+		return res.id, res.name, res.err
+	}
+	return uuid.Nil, "", kernel.NewDomainError("MEDICATION_NOT_FOUND", "not found")
+}
+
 func TestEncounter_Plan(t *testing.T) {
 	plan := Plan{
 		Medications: []MedicationItem{
-			{MedicationName: "Amoxicilina", Dose: 12.5, DoseUnit: "mg_per_kg", Route: "oral", Frequency: Frequency{Every: 12, Unit: "hours"}, DurationDays: ptr(7)},
-			{MedicationName: "Meloxicam", Dose: 0.1, DoseUnit: "mg_per_kg", Route: "sc", Frequency: Frequency{Once: true}},
+			{FreeText: true, MedicationName: "Amoxicilina", Dose: 12.5, DoseUnit: "mg_per_kg", Route: "oral", Frequency: Frequency{Every: 12, Unit: "hours"}, DurationDays: ptr(7)},
+			{FreeText: true, MedicationName: "Meloxicam", Dose: 0.1, DoseUnit: "mg_per_kg", Route: "sc", Frequency: Frequency{Once: true}},
 		},
 		Procedures:      []Procedure{{Name: "Limpieza ótica", Notes: "bilateral"}},
 		Recommendations: "Reposo",
 	}
 	testkit.Scenario[*Encounter](t, newEnc).Given(opened()).
 		When(SetPlan{EncounterID: encID, Plan: plan, Actor: vet}).Then(PlanSet{EncounterID: encID, Plan: plan})
+
+	// PP-F3-DOM-006: validación de catalog_id activo y resolución de merged.
+	catActiveID := uuid.MustParse("0192f3a1-7a10-7f0b-8c3e-0a1b2c3d4e90")
+	catMergedID := uuid.MustParse("0192f3a1-7a10-7f0b-8c3e-0a1b2c3d4e91")
+	catTargetID := uuid.MustParse("0192f3a1-7a10-7f0b-8c3e-0a1b2c3d4e92")
+	mockCat := mockCatalogValidator{
+		resolved: map[uuid.UUID]struct {
+			id   uuid.UUID
+			name string
+			err  error
+		}{
+			catActiveID: {id: catActiveID, name: "Amoxicilina 500mg", err: nil},
+			catMergedID: {id: catTargetID, name: "Amoxicilina Clavulánico", err: nil},
+		},
+	}
+
+	planCatalog := Plan{
+		Medications: []MedicationItem{
+			{CatalogID: &catActiveID, MedicationName: "Amox", Dose: 10, DoseUnit: "mg", Route: "oral", Frequency: Frequency{Once: true}},
+		},
+	}
+	expectedPlan := Plan{
+		Medications: []MedicationItem{
+			{CatalogID: &catActiveID, FreeText: false, CatalogNameSnapshot: ptr("Amoxicilina 500mg"), MedicationName: "Amox", Dose: 10, DoseUnit: "mg", Route: "oral", Frequency: Frequency{Once: true}},
+		},
+		Procedures: []Procedure{},
+	}
+	testkit.Scenario[*Encounter](t, newEnc).Given(opened()).
+		When(SetPlan{EncounterID: encID, Plan: planCatalog, Actor: vet, Catalog: mockCat}).
+		Then(PlanSet{EncounterID: encID, Plan: expectedPlan})
+
+	// Merged se resuelve al destino
+	planMerged := Plan{
+		Medications: []MedicationItem{
+			{CatalogID: &catMergedID, MedicationName: "Amox", Dose: 10, DoseUnit: "mg", Route: "oral", Frequency: Frequency{Once: true}},
+		},
+	}
+	expectedMergedPlan := Plan{
+		Medications: []MedicationItem{
+			{CatalogID: &catTargetID, FreeText: false, CatalogNameSnapshot: ptr("Amoxicilina Clavulánico"), MedicationName: "Amox", Dose: 10, DoseUnit: "mg", Route: "oral", Frequency: Frequency{Once: true}},
+		},
+		Procedures: []Procedure{},
+	}
+	testkit.Scenario[*Encounter](t, newEnc).Given(opened()).
+		When(SetPlan{EncounterID: encID, Plan: planMerged, Actor: vet, Catalog: mockCat}).
+		Then(PlanSet{EncounterID: encID, Plan: expectedMergedPlan})
+
+	// Descontinuado o inexistente falla
+	unknownID := uuid.MustParse("0192f3a1-7a10-7f0b-8c3e-0a1b2c3d4e99")
+	planBadCat := Plan{
+		Medications: []MedicationItem{
+			{CatalogID: &unknownID, MedicationName: "Bad", Dose: 10, DoseUnit: "mg", Route: "oral", Frequency: Frequency{Once: true}},
+		},
+	}
+	testkit.Scenario[*Encounter](t, newEnc).Given(opened()).
+		When(SetPlan{EncounterID: encID, Plan: planBadCat, Actor: vet, Catalog: mockCat}).
+		ThenError(&kernel.ValidationError{})
 	med := func(f func(*MedicationItem)) Plan {
 		m := plan.Medications[0]
 		f(&m)

@@ -5637,6 +5637,17 @@ components:
       additionalProperties: false
       required: [medication_name, dose, dose_unit, route, frequency]
       properties:
+        catalog_id:
+          type: string
+          format: uuid
+          nullable: true
+        free_text:
+          type: boolean
+          default: false
+        catalog_name_snapshot:
+          type: string
+          maxLength: 160
+          nullable: true
         medication_name:
           type: string
           minLength: 1

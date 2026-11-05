@@ -8,6 +8,7 @@ describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
       .filter((r) => r.path.startsWith('/admin') && !r.redirect)
     expect(admin.map((r) => r.path).sort()).toEqual([
       '/admin/audit',
+      '/admin/catalogs/medications',
       '/admin/organizations',
       '/admin/users',
     ])

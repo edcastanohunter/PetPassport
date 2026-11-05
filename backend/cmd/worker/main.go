@@ -81,6 +81,8 @@ func dispatch(cmd string, args []string) error {
 		return exportUser(args)
 	case "search":
 		return searchCommand(args)
+	case "catalog-import":
+		return catalogImportCommand(args)
 	default:
 		return fmt.Errorf("subcomando desconocido %q (run|leases|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
@@ -268,6 +270,8 @@ func run() error {
 					return searchIndexer.ProcessBulkPets(ctx, p.DocIDs)
 				case "clinical":
 					return searchIndexer.ProcessBulkClinical(ctx, p.DocIDs)
+				case "medications":
+					return searchIndexer.ProcessBulkMedications(ctx, p.DocIDs)
 				}
 			}
 			return nil
