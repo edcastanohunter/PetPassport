@@ -153,8 +153,14 @@ function frequency(m: NonNullable<Encounter['plan']['medications']>[number]) {
         <tbody>
           <tr v-for="(m, i) in e.plan.medications" :key="i">
             <td :data-label="t('encounters.plan.medication')">
-              {{ m.medication_name
-              }}<template v-if="m.presentation"> ({{ m.presentation }})</template>
+              <span>{{ m.catalog_name_snapshot || m.medication_name }}</span>
+              <span
+                v-if="m.free_text"
+                class="ml-2 rounded bg-surface-100 px-1.5 py-0.5 text-xs text-surface-600 dark:bg-surface-800 dark:text-surface-400"
+              >
+                {{ t('medications.freeText', 'Texto libre') }}
+              </span>
+              <template v-if="m.presentation"> ({{ m.presentation }})</template>
               <p v-if="m.instructions" class="text-surface-500">{{ m.instructions }}</p>
             </td>
             <td :data-label="t('encounters.plan.dose')">

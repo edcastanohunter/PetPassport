@@ -127,7 +127,16 @@ func (p *EncountersProjector) Project(ctx context.Context, tx pgx.Tx, e eventsto
 		_, err = tx.Exec(ctx, `UPDATE read_clinical.encounters
 			SET version = $2, updated_at = $3, last_activity_at = $3, plan = $4::jsonb
 			WHERE id = $1 AND version < $2`, ev.EncounterID, e.StreamVersion, e.OccurredAt, plan)
-		return err
+		if err != nil {
+			return err
+		}
+		for _, m := range ev.Plan.Medications {
+			if m.CatalogID != nil {
+				_, _ = tx.Exec(ctx, `UPDATE ref.medications SET usage_count = usage_count + 1 WHERE id = $1`, *m.CatalogID)
+				_, _ = tx.Exec(ctx, `INSERT INTO ref.medications_changes (medication_id) VALUES ($1)`, *m.CatalogID)
+			}
+		}
+		return nil
 
 	case domain.FollowUpRecommended:
 		fu, err := jsonArg(map[string]any{"due_date": ev.DueDate, "reason": ev.Reason})

@@ -68,6 +68,11 @@ type AppointmentAccess interface {
 	CheckedIn(ctx context.Context, appointmentID, petID, orgID uuid.UUID) (bool, error)
 }
 
+// MedicationCatalogPort define el puerto para validar y resolver medicamentos del catálogo (PP-F3-DOM-006).
+type MedicationCatalogPort interface {
+	ResolveActiveMedication(ctx context.Context, id uuid.UUID) (resolvedID uuid.UUID, name string, err error)
+}
+
 // Repository persiste y rehidrata el agregado Encounter (ARQ-004).
 type Repository interface {
 	// Load rehidrata por replay; agregado vacío (versión 0) si el stream no existe.

@@ -151,6 +151,23 @@ type SuggestPatientItem struct {
 	AccessLevel         string `json:"access_level"`
 }
 
+// SuggestMedicationItem representa un medicamento sugerido con autocompletado (PP-F3-PRD-004, API-003).
+type SuggestMedicationItem struct {
+	CatalogID            string   `json:"catalog_id"`
+	Name                 string   `json:"name"`
+	ActiveIngredients    []string `json:"active_ingredients"`
+	Form                 string   `json:"form"`
+	Concentration        *string  `json:"concentration,omitempty"`
+	Presentation         *string  `json:"presentation,omitempty"`
+	Manufacturer         *string  `json:"manufacturer,omitempty"`
+	Species              []string `json:"species,omitempty"`
+	Routes               []string `json:"routes,omitempty"`
+	PrescriptionRequired bool     `json:"prescription_required"`
+	Controlled           bool     `json:"controlled"`
+	DefaultRoute         *string  `json:"default_route,omitempty"`
+	DefaultDoseUnit      *string  `json:"default_dose_unit,omitempty"`
+}
+
 // FreshnessInfo indica el retraso de indexación.
 type FreshnessInfo struct {
 	LagSeconds int64 `json:"lag_seconds"`
@@ -734,6 +751,90 @@ func (s *QueryService) SuggestPatients(ctx context.Context, orgID uuid.UUID, q s
 			GuardianDisplayName: doc.GuardianDisplayName,
 			MicrochipSuffix:     doc.MicrochipSuffix,
 			AccessLevel:         accessLevel,
+		})
+	}
+
+	return items, nil
+}
+
+// SuggestMedications autocompleta medicamentos desde OpenSearch con boost de usage_count (PP-F3-PRD-004, API-003).
+func (s *QueryService) SuggestMedications(ctx context.Context, q string, species string, limit int) ([]SuggestMedicationItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+	cleanQ := strings.TrimSpace(q)
+
+	filters := []any{
+		map[string]any{"term": map[string]any{"status": "active"}},
+	}
+	if species != "" {
+		filters = append(filters, map[string]any{
+			"bool": map[string]any{
+				"should": []any{
+					map[string]any{"term": map[string]any{"species": species}},
+					map[string]any{"bool": map[string]any{"must_not": map[string]any{"exists": map[string]any{"field": "species"}}}},
+				},
+				"minimum_should_match": 1,
+			},
+		})
+	}
+
+	var queryClause any
+	if cleanQ != "" {
+		queryClause = map[string]any{
+			"multi_match": map[string]any{
+				"query":  cleanQ,
+				"fields": []string{"name^3", "name.suggest^3", "active_ingredients^2", "active_ingredients.suggest^2", "synonyms"},
+			},
+		}
+	} else {
+		queryClause = map[string]any{"match_all": map[string]any{}}
+	}
+
+	searchBody := map[string]any{
+		"size": limit,
+		"query": map[string]any{
+			"function_score": map[string]any{
+				"query": map[string]any{
+					"bool": map[string]any{
+						"must":   queryClause,
+						"filter": filters,
+					},
+				},
+				"field_value_factor": map[string]any{
+					"field":    "usage_count",
+					"factor":   1.2,
+					"modifier": "log1p",
+					"missing":  0,
+				},
+				"boost_mode": "sum",
+			},
+		},
+	}
+
+	resp, err := s.client.Search(ctx, domain.IndexMedications, searchBody)
+	if err != nil {
+		return nil, fmt.Errorf("search medications suggest: %w", err)
+	}
+
+	var items []SuggestMedicationItem
+	for _, hit := range resp.Hits.Hits {
+		var doc domain.MedicationDoc
+		if err := json.Unmarshal(hit.Source, &doc); err != nil {
+			continue
+		}
+		items = append(items, SuggestMedicationItem{
+			CatalogID:            doc.CatalogID,
+			Name:                 doc.Name,
+			ActiveIngredients:    doc.ActiveIngredients,
+			Form:                 doc.Form,
+			Concentration:        doc.Concentration,
+			Presentation:         doc.Presentation,
+			Manufacturer:         doc.Manufacturer,
+			Species:              doc.Species,
+			Routes:               doc.Routes,
+			PrescriptionRequired: doc.PrescriptionRequired,
+			Controlled:           doc.Controlled,
 		})
 	}
 

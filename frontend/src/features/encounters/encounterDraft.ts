@@ -34,6 +34,9 @@ export interface Draft {
 }
 
 export interface MedicationDraft {
+  catalog_id?: string | null
+  free_text?: boolean
+  catalog_name_snapshot?: string | null
   medication_name: string
   presentation: string
   dose: number | string | null
@@ -77,6 +80,9 @@ export const CLINICAL_SECTIONS: readonly SectionKey[] = ['diagnoses', 'plan', 'f
 
 export function emptyMedication(): MedicationDraft {
   return {
+    catalog_id: null,
+    free_text: false,
+    catalog_name_snapshot: null,
     medication_name: '',
     presentation: '',
     dose: null,
@@ -110,6 +116,9 @@ export function draftFrom(e: Encounter): Draft {
     diagnoses: e.diagnoses.map((d) => ({ text: d.text, certainty: d.certainty })),
     plan: {
       medications: (e.plan.medications ?? []).map((m) => ({
+        catalog_id: m.catalog_id ?? null,
+        free_text: m.free_text ?? false,
+        catalog_name_snapshot: m.catalog_name_snapshot ?? null,
         medication_name: m.medication_name,
         presentation: m.presentation ?? '',
         dose: m.dose,
@@ -186,6 +195,9 @@ export function medicationPayload(m: MedicationDraft): MedicationItem | null {
   if (!text(m.medication_name) || dose === undefined) return null
   if (!m.once && every === undefined) return null
   const item: MedicationItem = {
+    catalog_id: m.catalog_id ?? null,
+    free_text: m.free_text ?? !m.catalog_id,
+    catalog_name_snapshot: m.catalog_name_snapshot ?? null,
     medication_name: m.medication_name.trim(),
     dose,
     dose_unit: m.dose_unit,

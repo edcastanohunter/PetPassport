@@ -268,12 +268,19 @@ func toPlan(p domain.Plan) gen.Plan {
 			f.Every = ptr(m.Frequency.Every)
 			f.Unit = ptr(gen.FrequencyUnit(m.Frequency.Unit))
 		}
-		meds = append(meds, gen.MedicationItem{
+		item := gen.MedicationItem{
 			MedicationName: m.MedicationName, Presentation: optStr(m.Presentation),
 			Dose: float32(m.Dose), DoseUnit: gen.MedicationItemDoseUnit(m.DoseUnit),
 			Route: gen.MedicationItemRoute(m.Route), Frequency: f,
 			DurationDays: m.DurationDays, Instructions: optStr(m.Instructions),
-		})
+			FreeText:            ptr(m.FreeText),
+			CatalogNameSnapshot: m.CatalogNameSnapshot,
+		}
+		if m.CatalogID != nil {
+			id := openapi_types.UUID(*m.CatalogID)
+			item.CatalogId = &id
+		}
+		meds = append(meds, item)
 	}
 	procs := make([]gen.Procedure, 0, len(p.Procedures))
 	for _, pr := range p.Procedures {
@@ -297,7 +304,17 @@ func fromPlan(p gen.Plan) domain.Plan {
 			if m.Frequency.Unit != nil {
 				f.Unit = string(*m.Frequency.Unit)
 			}
+			var catID *uuid.UUID
+			if m.CatalogId != nil {
+				u := uuid.UUID(*m.CatalogId)
+				catID = &u
+			}
+			freeText := false
+			if m.FreeText != nil {
+				freeText = *m.FreeText
+			}
 			out.Medications = append(out.Medications, domain.MedicationItem{
+				CatalogID: catID, FreeText: freeText, CatalogNameSnapshot: m.CatalogNameSnapshot,
 				MedicationName: m.MedicationName, Presentation: strOr(m.Presentation),
 				Dose: float64(m.Dose), DoseUnit: domain.DoseUnit(m.DoseUnit), Route: domain.Route(m.Route),
 				Frequency: f, DurationDays: m.DurationDays, Instructions: strOr(m.Instructions),

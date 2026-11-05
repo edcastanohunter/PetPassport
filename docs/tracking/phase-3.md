@@ -20,8 +20,8 @@
 | PP-F3-PRD-001 | PRD | Búsqueda de pacientes con autocompletado tolerante a errores | MUST | M3.1 | IMPLEMENTADO | | | OpenSearch n-gram + ICU folding + QuickSearchModal (Ctrl+K) |
 | PP-F3-PRD-002 | PRD | Búsqueda en historiales con filtros, facetas, resaltado y sinónimos | MUST | M3.1 | IMPLEMENTADO | | | Sinónimos vet, facetas agregadas y resaltado seguro [[mark]] |
 | PP-F3-PRD-003 | PRD | Búsqueda del tutor en sus mascotas | MUST | M3.1 | IMPLEMENTADO | | | /me/search, atajos frecuentes y enlaces a carnet/historial |
-| PP-F3-PRD-004 | PRD | Autocompletado de medicamentos en el plan con texto libre y sugerencia | MUST | M3.2 | EN_PROGRESO | | | |
-| PP-F3-PRD-005 | PRD | Mantenimiento del catálogo: CRUD, fusión, importación, sugerencias, métrica | MUST | M3.2 | EN_PROGRESO | | | |
+| PP-F3-PRD-004 | PRD | Autocompletado de medicamentos en el plan con texto libre y sugerencia | MUST | M3.2 | IMPLEMENTADO | | | MedicationPicker con /suggest/medications, boost usage_count, texto libre y modal sugerir |
+| PP-F3-PRD-005 | PRD | Mantenimiento del catálogo: CRUD, fusión, importación, sugerencias, métrica | MUST | M3.2 | IMPLEMENTADO | | | CRUD auditado, fusión con redirección lógica, importación ICA, sugerencias y métricas |
 | PP-F3-PRD-006 | PRD | Directorio público opt-in de clínicas | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-PRD-007 | PRD | Cohortes de pacientes y campañas de recordatorio | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-PRD-008 | PRD | Panel de plataforma para SuperAdmin | SHOULD | M3.4 | PENDIENTE | | | |
@@ -35,8 +35,8 @@
 | PP-F3-DOM-002 | DOM | Context map F3 | MUST | M3.0 | IMPLEMENTADO | | | docs/phase-3/02 |
 | PP-F3-DOM-003 | DOM | Modelo de documentos de búsqueda | MUST | M3.1 | IMPLEMENTADO | | | PetDoc y ClinicalDoc con access denormalizado |
 | PP-F3-DOM-004 | DOM | Proyección de access por mascota | MUST | M3.1 | IMPLEMENTADO | | | update_by_query en clinical y reindex en pets |
-| PP-F3-DOM-005 | DOM | Modelo del catálogo de medicamentos y sugerencias | MUST | M3.2 | EN_PROGRESO | | | |
-| PP-F3-DOM-006 | DOM | MedicationItem v2 y upcaster PlanSet | MUST | M3.2 | EN_PROGRESO | | | |
+| PP-F3-DOM-005 | DOM | Modelo del catálogo de medicamentos y sugerencias | MUST | M3.2 | IMPLEMENTADO | | | Entidades Medication, ActiveIngredient, Regulatory, Source, Suggestion, ImportBatch |
+| PP-F3-DOM-006 | DOM | MedicationItem v2 y upcaster PlanSet | MUST | M3.2 | IMPLEMENTADO | | | MedicationItem v2, upcaster PlanSet v1->v2 con golden test y validación active/merged |
 | PP-F3-DOM-007 | DOM | Paciente provisional: registro, reclamación, fusión | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-DOM-008 | DOM | Políticas F3: indexación, access, invalidación, anomalías | MUST | M3.1 | IMPLEMENTADO | | | AccessFilter, post-filtro PetAccess, AbuseDetector |
 | PP-F3-DOM-009 | DOM | Cohortes como consultas parametrizadas | SHOULD | M3.4 | PENDIENTE | | | |
@@ -60,7 +60,7 @@
 | PP-F3-ARQ-016 | ARQ | CDN para estáticos y media | MUST | M3.3 | PENDIENTE | | | |
 | PP-F3-API-001 | API | Endpoints de búsqueda | MUST | M3.1 | IMPLEMENTADO | | | /search/patients, /search/clinical, /me/search |
 | PP-F3-API-002 | API | Endpoints de autocompletado | MUST | M3.1 | IMPLEMENTADO | | | /suggest/patients, /me/suggest/pets |
-| PP-F3-API-003 | API | Endpoints del catálogo de medicamentos | MUST | M3.2 | EN_PROGRESO | | | |
+| PP-F3-API-003 | API | Endpoints del catálogo de medicamentos | MUST | M3.2 | IMPLEMENTADO | | | Endpoints /catalogs/medications, /suggest/medications y /admin/catalogs/medications/* |
 | PP-F3-API-004 | API | Endpoints de cohortes | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-API-005 | API | Endpoints del directorio | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-API-006 | API | Endpoints del panel de plataforma | SHOULD | M3.4 | PENDIENTE | | | |
@@ -70,7 +70,7 @@
 | PP-F3-API-010 | API | Límites y degradación en respuestas | MUST | M3.0 | IMPLEMENTADO | | | Cabeceras RateLimit-* y Problem JSON RATE_LIMITED |
 | PP-F3-API-011 | API | Catálogo de errores F3 | MUST | M3.1 | IMPLEMENTADO | | | SEARCH_UNAVAILABLE, SEARCH_QUERY_INVALID, ADMIN_REASON_REQUIRED |
 | PP-F3-DAT-001 | DAT | Índices, mappings, analizadores y sinónimos OpenSearch | MUST | M3.1 | IMPLEMENTADO | | | pets, clinical, vet_synonyms_es.txt y aliases de lectura/escritura |
-| PP-F3-DAT-002 | DAT | DDL del catálogo de medicamentos | MUST | M3.2 | EN_PROGRESO | | | |
+| PP-F3-DAT-002 | DAT | DDL del catálogo de medicamentos | MUST | M3.2 | IMPLEMENTADO | | | Migración 20261102000017_medications_catalog.sql y permisos |
 | PP-F3-DAT-003 | DAT | DDL leases, index_queue, reindex_jobs | MUST | M3.0 | IMPLEMENTADO | | | Migración 20261101000016_platform_worker_leases.sql |
 | PP-F3-DAT-004 | DAT | Esquema de claves Redis | MUST | M3.0 | IMPLEMENTADO | | | DB 0 (cache, ratelimit), DB 1 (asynq) con prefijos |
 | PP-F3-DAT-005 | DAT | DDL pacientes provisionales, claims, aliases | SHOULD | M3.4 | PENDIENTE | | | |
@@ -80,8 +80,8 @@
 | PP-F3-DAT-009 | DAT | Snapshots OpenSearch y persistencia Redis | MUST | M3.0 | IMPLEMENTADO | | | Redis AOF everysec + maxmemory LRU |
 | PP-F3-FE-001 | FE | Búsqueda global clínica | MUST | M3.1 | IMPLEMENTADO | | | QuickSearchModal (Ctrl+K), OrgSearchPage con filtros y facetas |
 | PP-F3-FE-002 | FE | Búsqueda del tutor | MUST | M3.1 | IMPLEMENTADO | | | OwnerSearchPage (/app/search), atajos y enlaces directos |
-| PP-F3-FE-003 | FE | Medication picker en el editor | MUST | M3.2 | EN_PROGRESO | | | |
-| PP-F3-FE-004 | FE | Administración del catálogo y sugerencias | MUST | M3.2 | EN_PROGRESO | | | |
+| PP-F3-FE-003 | FE | Medication picker en el editor | MUST | M3.2 | IMPLEMENTADO | | | MedicationPicker en EncounterEditorPage con autocomplete, chip de catálogo y modal |
+| PP-F3-FE-004 | FE | Administración del catálogo y sugerencias | MUST | M3.2 | IMPLEMENTADO | | | AdminMedicationsPage (catálogo, sugerencias, importación y métricas) y OrgMedicationSuggestionsPage |
 | PP-F3-FE-005 | FE | Cohortes y campañas | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-FE-006 | FE | Panel de plataforma | SHOULD | M3.4 | PENDIENTE | | | |
 | PP-F3-FE-007 | FE | Directorio público y ajustes de listado | SHOULD | M3.4 | PENDIENTE | | | |

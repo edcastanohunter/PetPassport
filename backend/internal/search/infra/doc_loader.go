@@ -282,3 +282,78 @@ func (l *DocumentLoader) LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUI
 
 	return docs, nil
 }
+
+// LoadMedicationDocs carga documentos de medicamentos desde ref.medications para indexación en OpenSearch (ARQ-001).
+func (l *DocumentLoader) LoadMedicationDocs(ctx context.Context, catalogIDs []uuid.UUID) ([]domain.MedicationDoc, error) {
+	if len(catalogIDs) == 0 {
+		return nil, nil
+	}
+
+	rows, err := l.pool.Query(ctx, `
+		SELECT id, name, active_ingredients, form, concentration, presentation,
+		       routes, species, manufacturer, atcvet_code, controlled,
+		       prescription_required, status, synonyms, usage_count
+		FROM ref.medications
+		WHERE id = ANY($1)
+	`, catalogIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var docs []domain.MedicationDoc
+	for rows.Next() {
+		var (
+			id                   uuid.UUID
+			name, form, status   string
+			conc, pres, manu     *string
+			atcvet               *string
+			routes, species, syn []string
+			actJSON              []byte
+			controlled, prescReq bool
+			usage                int
+		)
+
+		if err := rows.Scan(
+			&id, &name, &actJSON, &form, &conc, &pres,
+			&routes, &species, &manu, &atcvet, &controlled,
+			&prescReq, &status, &syn, &usage,
+		); err != nil {
+			return nil, err
+		}
+
+		var ingredients []struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(actJSON, &ingredients)
+		var ingNames []string
+		for _, ing := range ingredients {
+			if ing.Name != "" {
+				ingNames = append(ingNames, ing.Name)
+			}
+		}
+
+		nameSuggest := append([]string{name}, syn...)
+
+		docs = append(docs, domain.MedicationDoc{
+			CatalogID:            id.String(),
+			Name:                 name,
+			NameSuggest:          nameSuggest,
+			ActiveIngredients:    ingNames,
+			Form:                 form,
+			Concentration:        conc,
+			Presentation:         pres,
+			Manufacturer:         manu,
+			Species:              species,
+			Routes:               routes,
+			PrescriptionRequired: prescReq,
+			Controlled:           controlled,
+			Status:               status,
+			Synonyms:             syn,
+			ATCVetCode:           atcvet,
+			UsageCount:           usage,
+		})
+	}
+
+	return docs, rows.Err()
+}

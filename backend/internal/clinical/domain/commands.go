@@ -98,10 +98,17 @@ type SetDiagnoses struct {
 func (SetDiagnoses) CommandName() string { return "clinical.SetDiagnoses" }
 
 // SetPlan reemplaza el plan (E3, E4).
+// CatalogValidator valida que los catalog_id referenciados existan
+// y estén activos, resolviendo redirecciones de fusión (PP-F3-DOM-006).
+type CatalogValidator interface {
+	ResolveActiveMedication(id uuid.UUID) (resolvedID uuid.UUID, name string, err error)
+}
+
 type SetPlan struct {
 	EncounterID uuid.UUID
 	Plan        Plan
 	Actor       Actor
+	Catalog     CatalogValidator
 }
 
 // CommandName implementa bus.Command.

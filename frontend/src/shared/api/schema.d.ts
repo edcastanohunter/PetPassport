@@ -3018,6 +3018,11 @@ export interface components {
             unit?: "hours" | "days";
         };
         MedicationItem: {
+            /** Format: uuid */
+            catalog_id?: string | null;
+            /** @default false */
+            free_text: boolean;
+            catalog_name_snapshot?: string | null;
             medication_name: string;
             presentation?: string;
             dose: number;

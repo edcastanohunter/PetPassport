@@ -47,6 +47,7 @@ func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.EncounterNarrativeUpdated{} })
 	reg.Register(func() eventstore.Event { return domain.DiagnosesSet{} })
 	reg.Register(func() eventstore.Event { return domain.PlanSet{} })
+	reg.RegisterUpcaster(PlanSetUpcasterV1ToV2{})
 	reg.Register(func() eventstore.Event { return domain.FollowUpRecommended{} })
 	reg.Register(func() eventstore.Event { return domain.FollowUpCleared{} })
 	reg.Register(func() eventstore.Event { return domain.AttendingVetAssigned{} })

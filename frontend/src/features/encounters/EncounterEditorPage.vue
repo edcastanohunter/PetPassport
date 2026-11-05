@@ -17,6 +17,7 @@ import PatientSummaryPanel from '@/features/records/PatientSummaryPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import AddendumForm from './AddendumForm.vue'
 import EncounterDetail from './EncounterDetail.vue'
+import MedicationPicker from './MedicationPicker.vue'
 import { discardEncounter, getEncounter, signEncounter } from './encounterApi'
 import {
   BODY_SYSTEMS,
@@ -727,10 +728,15 @@ const visibleMeds = computed(() => draft.value?.plan.medications ?? [])
                 data-testid="medication-row"
               >
                 <div class="grid gap-2 sm:grid-cols-4">
-                  <label class="sm:col-span-2">
+                  <div class="sm:col-span-2">
                     <span class="label">{{ t('encounters.plan.medication') }}</span>
-                    <input v-model="m.medication_name" class="input" maxlength="200" />
-                  </label>
+                    <MedicationPicker
+                      v-model="draft.plan.medications[i]"
+                      :species="encounter?.pet?.species"
+                      :org-id="orgId"
+                      :disabled="!canClinical"
+                    />
+                  </div>
                   <label class="sm:col-span-2">
                     <span class="label">{{ t('encounters.plan.presentation') }}</span>
                     <input v-model="m.presentation" class="input" maxlength="200" />

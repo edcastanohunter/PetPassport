@@ -32,6 +32,7 @@ var (
 type DocumentSource interface {
 	LoadPetDocs(ctx context.Context, petIDs []uuid.UUID) ([]domain.PetDoc, error)
 	LoadClinicalDocs(ctx context.Context, docIDs []uuid.UUID) ([]domain.ClinicalDoc, error)
+	LoadMedicationDocs(ctx context.Context, catalogIDs []uuid.UUID) ([]domain.MedicationDoc, error)
 }
 
 // IndexQueueRepository define las operaciones con la tabla search.index_queue.
@@ -177,6 +178,69 @@ func (idx *Indexer) ProcessBulkClinical(ctx context.Context, docIDs []string) er
 	if idx.queue != nil {
 		for docID, ver := range docVersions {
 			_ = idx.queue.DeleteIndexed(ctx, "clinical", docID, ver)
+		}
+	}
+
+	return nil
+}
+
+// ProcessBulkMedications procesa un lote de IDs de medicamentos para indexación o eliminación (ARQ-001).
+func (idx *Indexer) ProcessBulkMedications(ctx context.Context, catalogIDs []string) error {
+	var uuids []uuid.UUID
+	for _, idStr := range catalogIDs {
+		if u, err := uuid.Parse(idStr); err == nil {
+			uuids = append(uuids, u)
+		}
+	}
+	if len(uuids) == 0 {
+		return nil
+	}
+
+	docs, err := idx.source.LoadMedicationDocs(ctx, uuids)
+	if err != nil {
+		return fmt.Errorf("loading medication docs: %w", err)
+	}
+
+	var ops []BulkOperation
+	for _, doc := range docs {
+		if doc.Status == "merged" {
+			ops = append(ops, BulkOperation{
+				Action: "delete",
+				Index:  domain.AliasMedicationsWrite,
+				ID:     doc.CatalogID,
+			})
+		} else {
+			ops = append(ops, BulkOperation{
+				Action:   "index",
+				Index:    domain.AliasMedicationsWrite,
+				ID:       doc.CatalogID,
+				Document: doc,
+			})
+		}
+	}
+
+	if len(ops) > 0 {
+		resp, err := idx.client.Bulk(ctx, ops)
+		if err != nil {
+			metricBulkErrors.WithLabelValues(domain.IndexMedications).Inc()
+			return fmt.Errorf("bulk medications: %w", err)
+		}
+		if resp.Errors {
+			for _, item := range resp.Items {
+				for _, opResp := range item {
+					if opResp.Error != nil && opResp.Status != 404 && opResp.Status != 409 {
+						idx.logger.WarnContext(ctx, "bulk medication error", "id", opResp.ID, "reason", opResp.Error.Reason)
+						metricBulkErrors.WithLabelValues(domain.IndexMedications).Inc()
+					}
+				}
+			}
+		}
+		metricBulkIndexed.WithLabelValues(domain.IndexMedications).Add(float64(len(ops)))
+	}
+
+	if idx.queue != nil {
+		for _, id := range catalogIDs {
+			_ = idx.queue.DeleteIndexed(ctx, "medications", id, 0)
 		}
 	}
 

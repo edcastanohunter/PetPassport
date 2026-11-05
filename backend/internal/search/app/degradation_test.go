@@ -46,6 +46,13 @@ func (f *mockFallbackBackend) SuggestPatientsPG(ctx context.Context, orgID uuid.
 	}, nil
 }
 
+func (f *mockFallbackBackend) SuggestMedicationsPG(ctx context.Context, q string, species string, limit int) ([]SuggestMedicationItem, error) {
+	f.called = true
+	return []SuggestMedicationItem{
+		{CatalogID: "med-pg-01", Name: "Amoxicilina PG"},
+	}, nil
+}
+
 type failingOSClient struct {
 	Client
 }
