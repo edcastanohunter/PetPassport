@@ -52,6 +52,7 @@ const encCursor = ref<string | undefined>()
 
 const custody = computed(() => summary.value?.access === 'custody')
 const canOpen = computed(() => summary.value?.access === 'linked' && !!membership.value)
+const isProvisional = computed(() => (pet.value?.status as string) === 'provisional')
 
 onMounted(async () => {
   if (suspended.value) return
@@ -191,7 +192,7 @@ function typeLabel(k: string) {
           <div class="flex items-center gap-2">
             <h1 class="text-2xl font-bold">{{ petName || t('records.patient') }}</h1>
             <span
-              v-if="pet?.status === 'provisional'"
+              v-if="isProvisional"
               class="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
               data-testid="provisional-badge"
             >
@@ -215,7 +216,7 @@ function typeLabel(k: string) {
       </header>
 
       <div
-        v-if="pet?.status === 'provisional'"
+        v-if="isProvisional"
         class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
         role="note"
         data-testid="provisional-banner"

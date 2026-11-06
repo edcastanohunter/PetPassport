@@ -8,3 +8,6 @@ paths = [
   '''backend/api/gen/api\.gen\.go''',
   '''frontend/package-lock\.json''',
 ]
+commits = [
+  "3a935905d880487f6cad49de1ffd89cc3f16207b",
+]

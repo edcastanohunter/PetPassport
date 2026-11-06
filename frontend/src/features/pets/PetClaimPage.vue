@@ -104,7 +104,7 @@ async function acceptClaim(mergeIntoPetId?: string) {
 }
 
 function login() {
-  session.login({ returnTo: route.fullPath })
+  session.login(route.fullPath)
 }
 </script>
 

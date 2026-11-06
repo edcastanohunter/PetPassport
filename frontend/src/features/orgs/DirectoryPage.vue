@@ -88,6 +88,11 @@ function clearGeo() {
   userGeo.value = null
   search()
 }
+
+function selectService(serviceId: string) {
+  selectedService.value = serviceId
+  search()
+}
 </script>
 
 <template>
@@ -154,10 +159,7 @@ function clearGeo() {
               ? 'bg-surface-900 text-white'
               : 'bg-surface-100 text-surface-700 hover:bg-surface-200'
           "
-          @click="
-            selectedService = ''
-            search()
-          "
+          @click="selectService('')"
         >
           Todos
         </button>
@@ -171,10 +173,7 @@ function clearGeo() {
               ? 'bg-primary-600 text-white'
               : 'bg-surface-100 text-surface-700 hover:bg-surface-200'
           "
-          @click="
-            selectedService = selectedService === svc.id ? '' : svc.id
-            search()
-          "
+          @click="selectService(selectedService === svc.id ? '' : svc.id)"
         >
           {{ svc.label }}
         </button>
