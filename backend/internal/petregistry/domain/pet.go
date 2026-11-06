@@ -44,28 +44,32 @@ type GuardianshipTransfer struct {
 // la versión, así que el repositorio persiste con expected =
 // Version - len(uncommitted).
 type Pet struct {
-	id           uuid.UUID
-	version      int64
-	guardianID   uuid.UUID
-	name         PetName
-	species      Species
-	speciesOther string
-	breed        *string
-	sex          Sex
-	neutered     Tristate
-	birthDate    *BirthDate
-	markings     *string
-	microchip    *Microchip
-	corrections  int
-	photo        *PhotoRef
-	status       PetStatus
-	deceasedAt   *kernel.CivilDate
-	careLinks    map[uuid.UUID]CareLink
-	activeLinks  int
-	requests     map[uuid.UUID]CareLinkRequest
-	alerts       []PetAlert
-	pending      *GuardianshipTransfer
-	uncommitted  []any
+	id               uuid.UUID
+	version          int64
+	guardianID       uuid.UUID
+	name             PetName
+	species          Species
+	speciesOther     string
+	breed            *string
+	sex              Sex
+	neutered         Tristate
+	birthDate        *BirthDate
+	markings         *string
+	microchip        *Microchip
+	corrections      int
+	photo            *PhotoRef
+	status           PetStatus
+	deceasedAt       *kernel.CivilDate
+	careLinks        map[uuid.UUID]CareLink
+	activeLinks      int
+	requests         map[uuid.UUID]CareLinkRequest
+	alerts           []PetAlert
+	pending          *GuardianshipTransfer
+	provisional      bool
+	provisionalOrgID *uuid.UUID
+	mergedInto       *uuid.UUID
+	unclaimed        bool
+	uncommitted      []any
 }
 
 // ID devuelve el identificador del agregado.
@@ -76,6 +80,18 @@ func (p *Pet) Version() int64 { return p.version }
 
 // GuardianID devuelve el tutor actual.
 func (p *Pet) GuardianID() uuid.UUID { return p.guardianID }
+
+// Provisional indica si la mascota fue creada de forma provisional por una clínica (PP-F3-DOM-007).
+func (p *Pet) Provisional() bool { return p.provisional }
+
+// ProvisionalOrgID devuelve la clínica creadora si es provisional.
+func (p *Pet) ProvisionalOrgID() *uuid.UUID { return p.provisionalOrgID }
+
+// MergedInto devuelve la mascota en la que fue fusionada si aplica.
+func (p *Pet) MergedInto() *uuid.UUID { return p.mergedInto }
+
+// IsUnclaimed indica si se marcó tras 90 días sin reclamar.
+func (p *Pet) IsUnclaimed() bool { return p.unclaimed }
 
 // Name devuelve el nombre (emails de transferencia).
 func (p *Pet) Name() string { return string(p.name) }
@@ -213,6 +229,46 @@ func (p *Pet) ApplyEvent(evt any) error {
 	case PetGuardianshipTransferred:
 		p.guardianID = e.ToGuardianID
 		p.pending = nil
+	case ProvisionalPetRegistered:
+		p.id = e.PetID
+		p.guardianID = uuid.Nil
+		p.name = PetName(e.Name)
+		p.species = e.Species
+		p.speciesOther = e.SpeciesOther
+		if e.Breed != "" {
+			b := e.Breed
+			p.breed = &b
+		}
+		p.sex = e.Sex
+		p.neutered = e.Neutered
+		if e.BirthDate != nil {
+			p.birthDate = &BirthDate{Date: kernel.CivilDate(e.BirthDate.Date), Approximate: e.BirthDate.Approximate}
+		}
+		if e.Markings != "" {
+			m := e.Markings
+			p.markings = &m
+		}
+		if e.Microchip != "" {
+			m := Microchip(e.Microchip)
+			p.microchip = &m
+		}
+		p.status = PetActive
+		p.careLinks = map[uuid.UUID]CareLink{}
+		p.alerts = append([]PetAlert(nil), e.Alerts...)
+		p.provisional = true
+		orgID := e.OrganizationID
+		p.provisionalOrgID = &orgID
+	case PetClaimInvited:
+		// metadata on claim
+	case PetClaimed:
+		p.guardianID = e.GuardianID
+		p.provisional = false
+	case ProvisionalPetMerged:
+		p.status = PetMerged
+		tgt := e.TargetID
+		p.mergedInto = &tgt
+	case ProvisionalPetUnclaimed:
+		p.unclaimed = true
 	default:
 		return &kernel.DomainError{Code: "UNKNOWN_EVENT", Message: "evento desconocido para Pet"}
 	}
@@ -315,6 +371,16 @@ func (p *Pet) HandleCommand(cmd any) ([]any, error) {
 		return p.handleCancelTransfer(c)
 	case AcceptGuardianshipTransfer:
 		return p.handleAcceptTransfer(c)
+	case RegisterProvisionalPet:
+		return p.handleRegisterProvisional(c)
+	case ClaimPet:
+		return p.handleClaimPet(c)
+	case MergeProvisionalInto:
+		return p.handleMergeProvisionalInto(c)
+	case InvitePetClaim:
+		return p.handleInvitePetClaim(c)
+	case MarkProvisionalUnclaimed:
+		return p.handleMarkProvisionalUnclaimed(c)
 	}
 	return nil, &kernel.DomainError{Code: "UNKNOWN_COMMAND", Message: "comando desconocido para Pet"}
 }
@@ -676,4 +742,165 @@ func addFieldError(ve *kernel.ValidationError, err error, field string) {
 		return
 	}
 	ve.Add(field, "INVALID")
+}
+
+func (p *Pet) handleRegisterProvisional(c RegisterProvisionalPet) ([]any, error) {
+	if p.version != 0 {
+		return nil, kernel.NewDomainError("PET_ALREADY_REGISTERED", "La mascota ya está registrada.")
+	}
+	ve := &kernel.ValidationError{}
+	name, err := NewPetName(c.Name)
+	if err != nil {
+		ve.Add("name", "INVALID")
+	}
+	species, err := NewSpecies(c.Species)
+	if err != nil {
+		ve.Add("species", "INVALID")
+	}
+	if species.IsOther() && strings.TrimSpace(c.SpeciesOther) == "" {
+		ve.Add("species_other", "REQUIRED")
+	}
+	sex, err := NewSex(c.Sex)
+	if err != nil {
+		ve.Add("sex", "INVALID")
+	}
+	neutered, err := NewTristate(c.Neutered)
+	if err != nil {
+		ve.Add("neutered", "INVALID")
+	}
+	var bdp *BirthDatePayload
+	if c.BirthDate != nil {
+		bd, err := NewBirthDate(c.BirthDate.Date, c.BirthDate.Approximate, kernel.CivilDateOf(c.Now))
+		if err != nil {
+			addFieldError(ve, err, "birth_date")
+		} else {
+			bdp = &BirthDatePayload{Date: bd.Date.String(), Approximate: bd.Approximate}
+		}
+	}
+	var breedStr, markingsStr, microchipStr string
+	if c.Breed != nil && *c.Breed != "" {
+		b, err := NewBreed(*c.Breed)
+		if err != nil {
+			ve.Add("breed", "INVALID")
+		} else {
+			breedStr = string(b)
+		}
+	}
+	if c.Markings != nil && *c.Markings != "" {
+		m, err := NewMarkings(*c.Markings)
+		if err != nil {
+			ve.Add("markings", "INVALID")
+		} else {
+			markingsStr = string(m)
+		}
+	}
+	if c.Microchip != nil && *c.Microchip != "" {
+		m, err := NewMicrochip(*c.Microchip)
+		if err != nil {
+			ve.Add("microchip", "INVALID")
+		} else {
+			microchipStr = string(m)
+		}
+	}
+	if err := ve.ErrOrNil(); err != nil {
+		return nil, err
+	}
+	regEvt := ProvisionalPetRegistered{
+		PetID:          c.PetID,
+		OrganizationID: c.OrgID,
+		CreatedBy:      c.CreatedBy,
+		Name:           string(name),
+		Species:        species,
+		SpeciesOther:   c.SpeciesOther,
+		Breed:          breedStr,
+		Sex:            sex,
+		Neutered:       neutered,
+		BirthDate:      bdp,
+		Markings:       markingsStr,
+		Microchip:      microchipStr,
+		Alerts:         c.Alerts,
+	}
+	if c.GuardianEmail != "" || c.GuardianPhone != "" {
+		regEvt.PII = &ProvisionalPetPII{
+			GuardianEmail: c.GuardianEmail,
+			GuardianPhone: c.GuardianPhone,
+		}
+	}
+	careLinkEvt := CareLinkGranted{
+		PetID:          c.PetID,
+		OrganizationID: c.OrgID,
+		GrantedBy:      c.CreatedBy,
+	}
+	p.record(regEvt)
+	p.record(careLinkEvt)
+	return p.uncommitted, nil
+}
+
+func (p *Pet) handleClaimPet(c ClaimPet) ([]any, error) {
+	if p.version == 0 {
+		return nil, &kernel.NotFoundError{Resource: "pet"}
+	}
+	if !p.provisional {
+		return nil, kernel.NewDomainError("PET_NOT_PROVISIONAL", "La mascota no es provisional.")
+	}
+	if p.status == PetMerged {
+		return nil, kernel.NewDomainError("PET_ALREADY_MERGED", "La mascota ya está fusionada.")
+	}
+	if c.GuardianID == uuid.Nil {
+		return nil, kernel.NewDomainError("INVALID_GUARDIAN", "Tutor inválido.")
+	}
+	p.record(PetClaimed{
+		PetID:      p.id,
+		GuardianID: c.GuardianID,
+		ClaimedAt:  c.Now,
+	})
+	return p.uncommitted, nil
+}
+
+func (p *Pet) handleMergeProvisionalInto(c MergeProvisionalInto) ([]any, error) {
+	if p.version == 0 {
+		return nil, &kernel.NotFoundError{Resource: "pet"}
+	}
+	if !p.provisional {
+		return nil, kernel.NewDomainError("PET_NOT_PROVISIONAL", "La mascota no es provisional.")
+	}
+	if p.status == PetMerged {
+		return nil, kernel.NewDomainError("PET_ALREADY_MERGED", "La mascota ya está fusionada.")
+	}
+	if c.TargetPetID == uuid.Nil || c.TargetPetID == p.id {
+		return nil, kernel.NewDomainError("INVALID_TARGET", "Mascota destino inválida.")
+	}
+	p.record(ProvisionalPetMerged{
+		PetID:    p.id,
+		TargetID: c.TargetPetID,
+		MergedAt: c.Now,
+	})
+	return p.uncommitted, nil
+}
+
+func (p *Pet) handleInvitePetClaim(c InvitePetClaim) ([]any, error) {
+	if p.version == 0 {
+		return nil, &kernel.NotFoundError{Resource: "pet"}
+	}
+	if !p.provisional {
+		return nil, kernel.NewDomainError("PET_NOT_PROVISIONAL", "La mascota no es provisional.")
+	}
+	p.record(PetClaimInvited{
+		PetID:          p.id,
+		OrganizationID: c.OrganizationID,
+		ExpiresAt:      c.ExpiresAt,
+		ResendCount:    c.ResendCount,
+	})
+	return p.uncommitted, nil
+}
+
+func (p *Pet) handleMarkProvisionalUnclaimed(_ MarkProvisionalUnclaimed) ([]any, error) {
+	if p.version == 0 {
+		return nil, &kernel.NotFoundError{Resource: "pet"}
+	}
+	if !p.provisional || p.unclaimed {
+		return nil, nil
+	}
+	p.record(ProvisionalPetUnclaimed{PetID: p.id})
+	return p.uncommitted, nil
 }

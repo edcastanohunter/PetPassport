@@ -143,6 +143,11 @@ func (s *Service) RegisterCommands(b *bus.Bus) {
 	b.Register(domain.InitiateGuardianshipTransfer{}, s.handleInitiateTransfer)
 	b.Register(domain.CancelGuardianshipTransfer{}, s.handleCancelTransfer)
 	b.Register(domain.AcceptGuardianshipTransfer{}, s.handleAcceptTransfer)
+	b.Register(domain.RegisterProvisionalPet{}, s.handleRegisterProvisionalPet)
+	b.Register(domain.ClaimPet{}, s.handleClaimPet)
+	b.Register(domain.MergeProvisionalInto{}, s.handleMergeProvisionalInto)
+	b.Register(domain.InvitePetClaim{}, s.handleInvitePetClaim)
+	b.Register(domain.MarkProvisionalUnclaimed{}, s.handleMarkProvisionalUnclaimed)
 }
 
 // Dispatch ejecuta un comando por el bus (fachada para http).
@@ -225,6 +230,49 @@ func (s *Service) handleRegisterPet(ctx context.Context, cmd bus.Command) (bus.R
 		return bus.Result{}, err
 	}
 	return bus.Result{AggregateID: c.PetID, Version: versionOf(stored)}, nil
+}
+
+func (s *Service) handleRegisterProvisionalPet(ctx context.Context, cmd bus.Command) (bus.Result, error) {
+	c := cmd.(domain.RegisterProvisionalPet)
+	if c.PetID == uuid.Nil {
+		c.PetID = s.ids.NewID()
+	}
+	if c.Now.IsZero() {
+		c.Now = s.clock.Now()
+	}
+	stored, err := s.execute(ctx, uuid.Nil, func(pet *domain.Pet) ([]any, error) {
+		return pet.HandleCommand(c)
+	})
+	if err != nil {
+		return bus.Result{}, err
+	}
+	return bus.Result{AggregateID: c.PetID, Version: versionOf(stored)}, nil
+}
+
+func (s *Service) handleClaimPet(ctx context.Context, cmd bus.Command) (bus.Result, error) {
+	c := cmd.(domain.ClaimPet)
+	if c.Now.IsZero() {
+		c.Now = s.clock.Now()
+	}
+	return s.simple(ctx, c.PetID, c)
+}
+
+func (s *Service) handleMergeProvisionalInto(ctx context.Context, cmd bus.Command) (bus.Result, error) {
+	c := cmd.(domain.MergeProvisionalInto)
+	if c.Now.IsZero() {
+		c.Now = s.clock.Now()
+	}
+	return s.simple(ctx, c.PetID, c)
+}
+
+func (s *Service) handleInvitePetClaim(ctx context.Context, cmd bus.Command) (bus.Result, error) {
+	c := cmd.(domain.InvitePetClaim)
+	return s.simple(ctx, c.PetID, c)
+}
+
+func (s *Service) handleMarkProvisionalUnclaimed(ctx context.Context, cmd bus.Command) (bus.Result, error) {
+	c := cmd.(domain.MarkProvisionalUnclaimed)
+	return s.simple(ctx, c.PetID, c)
 }
 
 func (s *Service) handleUpdatePetProfile(ctx context.Context, cmd bus.Command) (bus.Result, error) {

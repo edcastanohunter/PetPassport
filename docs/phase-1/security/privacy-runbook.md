@@ -132,6 +132,7 @@ Verificado en M1.4 con `cmd/api/pii_inventory_test.go`. Si un evento con `pii{}`
 |---|---|---|---|---|
 | `MemberInvited` | `email` | persona invitada | `nil` | al invitar puede no existir cuenta (no hay `UserID`) |
 | `GuardianshipTransferInitiated` | `to_email` | destinatario de la transferencia | `nil` | ídem |
+| `ProvisionalPetRegistered` | `guardian_email`, `guardian_phone` | tutor de la mascota provisional | `nil` | ídem |
 
 Otros datos personales fuera de `pii{}`, revisados:
 

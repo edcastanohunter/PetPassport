@@ -52,6 +52,7 @@ const encCursor = ref<string | undefined>()
 
 const custody = computed(() => summary.value?.access === 'custody')
 const canOpen = computed(() => summary.value?.access === 'linked' && !!membership.value)
+const isProvisional = computed(() => (pet.value?.status as string) === 'provisional')
 
 onMounted(async () => {
   if (suspended.value) return
@@ -188,7 +189,16 @@ function typeLabel(k: string) {
           class="h-20 w-20 rounded-full object-cover"
         />
         <div class="flex-1">
-          <h1 class="text-2xl font-bold">{{ petName || t('records.patient') }}</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-bold">{{ petName || t('records.patient') }}</h1>
+            <span
+              v-if="isProvisional"
+              class="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+              data-testid="provisional-badge"
+            >
+              {{ t('pets.provisional.badge') }}
+            </span>
+          </div>
           <p class="text-sm text-surface-500">
             {{ speciesLabel }}<template v-if="pet?.breed"> · {{ pet.breed }}</template>
             <template v-if="pet?.status === 'deceased'"> · {{ t('pets.inMemoriam') }}</template>
@@ -204,6 +214,16 @@ function typeLabel(k: string) {
           <span class="pi pi-plus mr-2" aria-hidden="true" />{{ t('encounters.open.button') }}
         </button>
       </header>
+
+      <div
+        v-if="isProvisional"
+        class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+        role="note"
+        data-testid="provisional-banner"
+      >
+        <span class="pi pi-info-circle mr-1" aria-hidden="true" />
+        {{ t('pets.provisional.notice') }}
+      </div>
 
       <div
         v-if="custody"

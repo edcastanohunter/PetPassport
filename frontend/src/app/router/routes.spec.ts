@@ -10,6 +10,7 @@ describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
       '/admin/audit',
       '/admin/catalogs/medications',
       '/admin/organizations',
+      '/admin/platform',
       '/admin/users',
     ])
     for (const r of admin) {

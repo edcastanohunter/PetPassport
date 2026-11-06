@@ -205,3 +205,87 @@ func (PetGuardianshipTransferred) EventName() string { return "PetGuardianshipTr
 
 // SchemaVersion implementa eventstore.Event.
 func (PetGuardianshipTransferred) SchemaVersion() int { return 1 }
+
+// ProvisionalPetPII encapsula los datos de contacto del tutor aún no registrado (ADR-002: sub-objeto pii).
+type ProvisionalPetPII struct {
+	GuardianEmail string `json:"guardian_email,omitempty"`
+	GuardianPhone string `json:"guardian_phone,omitempty"`
+}
+
+// ProvisionalPetRegistered nace una mascota provisional creada por una clínica (PP-F3-DOM-007).
+type ProvisionalPetRegistered struct {
+	PetID          uuid.UUID          `json:"pet_id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	CreatedBy      uuid.UUID          `json:"created_by"`
+	Name           string             `json:"name"`
+	Species        Species            `json:"species"`
+	SpeciesOther   string             `json:"species_other,omitempty"`
+	Breed          string             `json:"breed,omitempty"`
+	Sex            Sex                `json:"sex"`
+	Neutered       Tristate           `json:"neutered"`
+	BirthDate      *BirthDatePayload  `json:"birth_date,omitempty"`
+	Markings       string             `json:"markings,omitempty"`
+	Microchip      string             `json:"microchip,omitempty"`
+	Alerts         []PetAlert         `json:"alerts"`
+	PII            *ProvisionalPetPII `json:"pii,omitempty"`
+}
+
+// EventName implementa eventstore.Event.
+func (ProvisionalPetRegistered) EventName() string { return "ProvisionalPetRegistered" }
+
+// SchemaVersion implementa eventstore.Event.
+func (ProvisionalPetRegistered) SchemaVersion() int { return 1 }
+
+// PIISubjects: el destinatario puede no tener cuenta aún en la plataforma.
+func (e ProvisionalPetRegistered) PIISubjects() []uuid.UUID { return nil }
+
+// PetClaimInvited registra la invitación para reclamar una mascota provisional.
+type PetClaimInvited struct {
+	PetID          uuid.UUID `json:"pet_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	ResendCount    int       `json:"resend_count"`
+}
+
+// EventName implementa eventstore.Event.
+func (PetClaimInvited) EventName() string { return "PetClaimInvited" }
+
+// SchemaVersion implementa eventstore.Event.
+func (PetClaimInvited) SchemaVersion() int { return 1 }
+
+// PetClaimed el tutor reclama la mascota provisional; pasa a ser mascota normal (PP-F3-DOM-007).
+type PetClaimed struct {
+	PetID      uuid.UUID `json:"pet_id"`
+	GuardianID uuid.UUID `json:"guardian_id"`
+	ClaimedAt  time.Time `json:"claimed_at"`
+}
+
+// EventName implementa eventstore.Event.
+func (PetClaimed) EventName() string { return "PetClaimed" }
+
+// SchemaVersion implementa eventstore.Event.
+func (PetClaimed) SchemaVersion() int { return 1 }
+
+// ProvisionalPetMerged la mascota provisional se fusiona en otra mascota existente del tutor (PP-F3-DOM-007).
+type ProvisionalPetMerged struct {
+	PetID    uuid.UUID `json:"pet_id"`
+	TargetID uuid.UUID `json:"target_id"`
+	MergedAt time.Time `json:"merged_at"`
+}
+
+// EventName implementa eventstore.Event.
+func (ProvisionalPetMerged) EventName() string { return "ProvisionalPetMerged" }
+
+// SchemaVersion implementa eventstore.Event.
+func (ProvisionalPetMerged) SchemaVersion() int { return 1 }
+
+// ProvisionalPetUnclaimed marca de 90 días sin reclamar (PP-F3-DOM-007).
+type ProvisionalPetUnclaimed struct {
+	PetID uuid.UUID `json:"pet_id"`
+}
+
+// EventName implementa eventstore.Event.
+func (ProvisionalPetUnclaimed) EventName() string { return "ProvisionalPetUnclaimed" }
+
+// SchemaVersion implementa eventstore.Event.
+func (ProvisionalPetUnclaimed) SchemaVersion() int { return 1 }

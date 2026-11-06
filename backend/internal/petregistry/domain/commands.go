@@ -156,3 +156,75 @@ type AcceptGuardianshipTransfer struct {
 func (AcceptGuardianshipTransfer) CommandName() string {
 	return "petregistry.AcceptGuardianshipTransfer"
 }
+
+// RegisterProvisionalPet registra un paciente provisional por una clínica (PP-F3-DOM-007).
+type RegisterProvisionalPet struct {
+	PetID         uuid.UUID
+	OrgID         uuid.UUID
+	CreatedBy     uuid.UUID
+	Name          string
+	Species       string
+	SpeciesOther  string
+	Breed         *string
+	Sex           string
+	Neutered      string
+	BirthDate     *BirthDateInput
+	Markings      *string
+	Microchip     *string
+	Alerts        []PetAlert
+	GuardianEmail string
+	GuardianPhone string
+	Now           time.Time
+}
+
+// CommandName implementa bus.Command.
+func (RegisterProvisionalPet) CommandName() string {
+	return "petregistry.RegisterProvisionalPet"
+}
+
+// ClaimPet el tutor autenticado reclama la mascota provisional (PP-F3-DOM-007).
+type ClaimPet struct {
+	PetID      uuid.UUID
+	GuardianID uuid.UUID
+	Now        time.Time
+}
+
+// CommandName implementa bus.Command.
+func (ClaimPet) CommandName() string {
+	return "petregistry.ClaimPet"
+}
+
+// MergeProvisionalInto fusiona una mascota provisional en otra existente (PP-F3-DOM-007).
+type MergeProvisionalInto struct {
+	PetID       uuid.UUID
+	TargetPetID uuid.UUID
+	Now         time.Time
+}
+
+// CommandName implementa bus.Command.
+func (MergeProvisionalInto) CommandName() string {
+	return "petregistry.MergeProvisionalInto"
+}
+
+// InvitePetClaim registra una invitación de reclamación (PP-F3-DOM-007).
+type InvitePetClaim struct {
+	PetID          uuid.UUID
+	OrganizationID uuid.UUID
+	ExpiresAt      time.Time
+	ResendCount    int
+}
+
+// CommandName implementa bus.Command.
+func (InvitePetClaim) CommandName() string {
+	return "petregistry.InvitePetClaim"
+}
+
+// MarkProvisionalUnclaimed marca una mascota provisional tras 90 días sin reclamar (PP-F3-DOM-007).
+type MarkProvisionalUnclaimed struct {
+	PetID uuid.UUID
+}
+
+// CommandName implementa bus.Command.
+func (MarkProvisionalUnclaimed) CommandName() string {
+	return "petregistry.MarkProvisionalUnclaimed"
+}

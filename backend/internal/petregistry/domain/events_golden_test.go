@@ -44,6 +44,15 @@ func TestEvents_Golden(t *testing.T) {
 		PetAlertsUpdated{PetID: petID, Alerts: []PetAlert{{Kind: "allergy", Text: "Penicilina"}}, UpdatedBy: guardianID},
 		GuardianshipTransferCancelled{PetID: petID},
 		PetGuardianshipTransferred{PetID: petID, FromGuardianID: guardianID, ToGuardianID: uuid.MustParse("0192f3a1-2222-7000-8000-000000000003")},
+		ProvisionalPetRegistered{
+			PetID: petID, OrganizationID: orgID, CreatedBy: guardianID, Name: "Rocky",
+			Species: SpeciesDog, Sex: SexMale, Neutered: TristateNo, Alerts: []PetAlert{},
+			PII: &ProvisionalPetPII{GuardianEmail: "rocky@example.com"},
+		},
+		PetClaimInvited{PetID: petID, OrganizationID: orgID, ExpiresAt: time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC), ResendCount: 1},
+		PetClaimed{PetID: petID, GuardianID: guardianID, ClaimedAt: time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)},
+		ProvisionalPetMerged{PetID: petID, TargetID: uuid.MustParse("0192f3a1-2222-7000-8000-000000000003"), MergedAt: time.Date(2026, 11, 10, 12, 30, 0, 0, time.UTC)},
+		ProvisionalPetUnclaimed{PetID: petID},
 	}
 	for _, e := range events {
 		name, ok := e.(interface{ EventName() string })

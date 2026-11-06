@@ -47,6 +47,10 @@ const OrgMedicationSuggestionsPage = () =>
   import('@/features/orgs/OrgMedicationSuggestionsPage.vue')
 const OrgSearchPage = () => import('@/features/search/OrgSearchPage.vue')
 const OwnerSearchPage = () => import('@/features/search/OwnerSearchPage.vue')
+const DirectoryPage = () => import('@/features/orgs/DirectoryPage.vue')
+const OrgCohortsPage = () => import('@/features/search/OrgCohortsPage.vue')
+const AdminPlatformPage = () => import('@/features/admin/AdminPlatformPage.vue')
+const PetClaimPage = () => import('@/features/pets/PetClaimPage.vue')
 
 const orgMeta = {
   layout: 'org',
@@ -65,6 +69,12 @@ export function createAppRouter() {
     history: createWebHistory(),
     routes: [
       { path: '/', name: 'home', component: HomePage, meta: { layout: 'public' } },
+      {
+        path: '/directory',
+        name: 'directory',
+        component: DirectoryPage,
+        meta: { layout: 'public' },
+      },
       {
         path: '/legal/terms',
         name: 'legal-terms',
@@ -254,6 +264,12 @@ export function createAppRouter() {
         component: OrgMedicationSuggestionsPage,
         meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
       },
+      {
+        path: '/org/:orgId/cohorts',
+        name: 'org-cohorts',
+        component: OrgCohortsPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
       { path: '/admin', redirect: { name: 'admin-organizations' } },
       {
         path: '/admin/organizations',
@@ -270,9 +286,21 @@ export function createAppRouter() {
         meta: adminMeta,
       },
       {
+        path: '/admin/platform',
+        name: 'admin-platform',
+        component: AdminPlatformPage,
+        meta: adminMeta,
+      },
+      {
         path: '/unsubscribe/:token',
         name: 'unsubscribe',
         component: UnsubscribePage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/pet-claims/:token',
+        name: 'pet-claim',
+        component: PetClaimPage,
         meta: { layout: 'public' },
       },
       {

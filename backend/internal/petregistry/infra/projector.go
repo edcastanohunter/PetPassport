@@ -314,6 +314,99 @@ func (p *PetsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 			UPDATE read_petregistry.guardian_inbox SET guardian_id = $2
 			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID, ev.ToGuardianID)
 		return err
+
+	case domain.ProvisionalPetRegistered:
+		alerts := ev.Alerts
+		if alerts == nil {
+			alerts = []domain.PetAlert{}
+		}
+		alertsJSON, err := json.Marshal(alerts)
+		if err != nil {
+			return err
+		}
+		var birthDate, markings, breed, microchip any
+		approx := false
+		if ev.BirthDate != nil {
+			birthDate = ev.BirthDate.Date
+			approx = ev.BirthDate.Approximate
+		}
+		if ev.Breed != "" {
+			breed = ev.Breed
+		}
+		if ev.Markings != "" {
+			markings = ev.Markings
+		}
+		if ev.Microchip != "" {
+			microchip = ev.Microchip
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO read_petregistry.pets
+			  (id, version, guardian_id, guardian_display_name, name, species, species_other, breed,
+			   sex, neutered, birth_date, birth_date_approximate, markings, microchip, status, created_at, updated_at, alerts,
+			   provisional, provisional_org_id)
+			VALUES ($1,$2,NULL,'',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'active',$13,$13,$14,true,$15)
+			ON CONFLICT (id) DO UPDATE SET
+			  version = EXCLUDED.version, name = EXCLUDED.name,
+			  species = EXCLUDED.species, species_other = EXCLUDED.species_other, breed = EXCLUDED.breed,
+			  sex = EXCLUDED.sex, neutered = EXCLUDED.neutered, birth_date = EXCLUDED.birth_date,
+			  birth_date_approximate = EXCLUDED.birth_date_approximate, markings = EXCLUDED.markings,
+			  microchip = EXCLUDED.microchip, alerts = EXCLUDED.alerts, status = 'active',
+			  updated_at = EXCLUDED.updated_at, provisional = true, provisional_org_id = EXCLUDED.provisional_org_id
+			WHERE read_petregistry.pets.version < EXCLUDED.version`,
+			ev.PetID, e.StreamVersion, ev.Name, string(ev.Species), ev.SpeciesOther,
+			breed, string(ev.Sex), string(ev.Neutered), birthDate, approx, markings, microchip, e.OccurredAt, alertsJSON, ev.OrganizationID)
+		return err
+
+	case domain.PetClaimInvited:
+		info, ok := app.ClaimTokenInfoFrom(ctx, ev.PetID)
+		if !ok || len(info.TokenHash) == 0 {
+			return nil
+		}
+		_, err := tx.Exec(ctx, `
+			INSERT INTO read_petregistry.pet_claims
+			  (token_hash, pet_id, organization_id, contact_hash, contact_kind, status, expires_at, resend_count, created_at)
+			VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, $8)
+			ON CONFLICT (token_hash) DO NOTHING`,
+			info.TokenHash, ev.PetID, ev.OrganizationID, info.ContactHash, info.ContactKind, ev.ExpiresAt, ev.ResendCount, e.OccurredAt)
+		return err
+
+	case domain.PetClaimed:
+		name := ""
+		if p.guardian != nil {
+			name = p.guardian.DisplayName(ctx, ev.GuardianID)
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pet_claims SET status = 'accepted'
+			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pets SET version = $2, updated_at = $3,
+			  guardian_id = $4, guardian_display_name = $5, provisional = false
+			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, ev.GuardianID, name)
+		return err
+
+	case domain.ProvisionalPetMerged:
+		if _, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pet_claims SET status = 'accepted'
+			 WHERE pet_id = $1 AND status = 'pending'`, ev.PetID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO read_petregistry.pet_aliases (old_pet_id, pet_id, merged_at)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (old_pet_id) DO UPDATE SET pet_id = EXCLUDED.pet_id, merged_at = EXCLUDED.merged_at`,
+			ev.PetID, ev.TargetID, ev.MergedAt); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `
+			UPDATE read_petregistry.pets SET version = $2, updated_at = $3,
+			  status = 'merged', merged_into = $4
+			 WHERE id = $1`, ev.PetID, e.StreamVersion, e.OccurredAt, ev.TargetID)
+		return err
+
+	case domain.ProvisionalPetUnclaimed:
+		return nil
 	}
 	return fmt.Errorf("petregistry projector: evento no manejado %s", e.Type)
 }

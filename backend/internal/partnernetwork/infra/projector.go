@@ -41,6 +41,7 @@ func (p *OrgsProjector) Handles() []string {
 		"OrganizationRegistered", "OrganizationProfileUpdated", "OrganizationVerificationReset",
 		"OrganizationVerified", "OrganizationRejected", "OrganizationSuspended", "OrganizationReactivated",
 		"MemberInvited", "InvitationRevoked", "MemberJoined", "MemberRoleChanged", "MemberRemoved",
+		"OrganizationDirectoryListingUpdated",
 	}
 }
 
@@ -117,10 +118,33 @@ func (p *OrgsProjector) Project(ctx context.Context, tx pgx.Tx, e eventstore.Sto
 		return setStatus(ctx, tx, ev.OrganizationID, e, "rejected", ev.Reason)
 
 	case domain.OrganizationSuspended:
+		_, _ = tx.Exec(ctx, `UPDATE read_partnernetwork.organizations SET directory_listed = false WHERE id = $1`, ev.OrganizationID)
 		return setStatus(ctx, tx, ev.OrganizationID, e, "suspended", ev.Reason)
 
 	case domain.OrganizationReactivated:
 		return setStatus(ctx, tx, ev.OrganizationID, e, "active", ev.Reason)
+
+	case domain.OrganizationDirectoryListingUpdated:
+		var geoJSON []byte
+		if ev.Listing.GeoLat != nil && ev.Listing.GeoLon != nil {
+			geoJSON, _ = json.Marshal(map[string]float64{
+				"lat": *ev.Listing.GeoLat,
+				"lon": *ev.Listing.GeoLon,
+			})
+		}
+		_, err := tx.Exec(ctx, `
+			UPDATE read_partnernetwork.organizations
+			SET directory_listed = $1,
+			    directory_services = $2,
+			    directory_show_phone = $3,
+			    directory_neighborhood = $4,
+			    directory_geo = $5,
+			    version = $6,
+			    updated_at = $7
+			WHERE id = $8`,
+			ev.Listing.Listed, ev.Listing.Services, ev.Listing.ShowPhone, ev.Listing.Neighborhood,
+			geoJSON, e.StreamVersion, e.OccurredAt, ev.OrganizationID)
+		return err
 
 	case domain.MemberInvited:
 		if ev.PII == nil {

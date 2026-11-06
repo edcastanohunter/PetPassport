@@ -37,6 +37,10 @@ const (
 	// basta estar autenticado (el dominio verifica que el email coincide).
 	PetTransferRead   Action = "pet:transfer:read"
 	PetTransferAccept Action = "pet:transfer:accept"
+	// Pacientes provisionales y reclamación (PP-F3-API-007, PP-F3-DOM-007).
+	PetRegisterProvisional Action = "pet:register_provisional"
+	PetClaimRead           Action = "pet:claim:read"
+	PetClaimAccept         Action = "pet:claim:accept"
 )
 
 // Acciones sobre organizaciones (IAM-010, filas org:* ; M1.3).
@@ -118,6 +122,8 @@ type PetResource struct {
 	ID                   uuid.UUID
 	GuardianID           uuid.UUID
 	ActiveCareLinkOrgIDs []uuid.UUID
+	Provisional          bool
+	ProvisionalOrgID     *uuid.UUID
 }
 
 // EncounterResource es la vista de autorización de un encuentro (SEC-001).
@@ -232,6 +238,7 @@ func petRead(p auth.Principal, res Resource) Decision {
 
 // petManage: solo G o super_admin (update, microchip, photo, deceased,
 // transfer, carelink:grant/revoke).
+// PP-F3-DOM-007 (RN-21): Si la mascota es provisional, solo la org creadora puede editar.
 func petManage(p auth.Principal, res Resource) Decision {
 	if d := authenticatedOnly(p, nil); !d.Allow {
 		return d
@@ -240,6 +247,17 @@ func petManage(p auth.Principal, res Resource) Decision {
 	if !ok {
 		return deny("pet resource required")
 	}
+	if r.Provisional {
+		if r.ProvisionalOrgID != nil {
+			if m, ok := membership(p, *r.ProvisionalOrgID); ok && m.OrgStatus == "active" {
+				return allow
+			}
+		}
+		if isSuperAdmin(p) {
+			return Decision{Allow: true, Reason: "super_admin"}
+		}
+		return deny("only creator org can manage provisional pet")
+	}
 	switch {
 	case isGuardian(p, r):
 		return allow
@@ -247,6 +265,11 @@ func petManage(p auth.Principal, res Resource) Decision {
 		return Decision{Allow: true, Reason: "super_admin"}
 	}
 	return deny("only guardian")
+}
+
+// petRegisterProvisional: miembro de clínica con rol de clínica y org activa, o super_admin (PP-F3-API-007).
+func petRegisterProvisional(p auth.Principal, res Resource) Decision {
+	return orgPatientsList(p, res)
 }
 
 // petGuardianContactRead: G, L o super_admin. Las lecturas de admin quedan
@@ -632,18 +655,21 @@ var policies = map[Action]Policy{
 	MeUpdate:           authenticatedOnly,
 	OnboardingComplete: authenticatedOnly,
 
-	PetRegister:        petRegister,
-	PetRead:            petRead,
-	PetUpdate:          petManage,
-	PetMicrochip:       petManage,
-	PetPhoto:           petManage,
-	PetDeceased:        petManage,
-	PetTransfer:        petManage,
-	PetCareLinkGrant:   petManage,
-	PetCareLinkRevoke:  petManage,
-	PetGuardianContact: petGuardianContactRead,
-	PetTransferRead:    authenticatedOnly,
-	PetTransferAccept:  authenticatedOnly,
+	PetRegister:            petRegister,
+	PetRead:                petRead,
+	PetUpdate:              petManage,
+	PetMicrochip:           petManage,
+	PetPhoto:               petManage,
+	PetDeceased:            petManage,
+	PetTransfer:            petManage,
+	PetCareLinkGrant:       petManage,
+	PetCareLinkRevoke:      petManage,
+	PetGuardianContact:     petGuardianContactRead,
+	PetTransferRead:        authenticatedOnly,
+	PetTransferAccept:      authenticatedOnly,
+	PetRegisterProvisional: petRegisterProvisional,
+	PetClaimRead:           authenticatedOnly,
+	PetClaimAccept:         authenticatedOnly,
 
 	OrgRegister:       authenticatedOnly,
 	OrgRead:           orgRead,

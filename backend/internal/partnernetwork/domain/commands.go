@@ -154,3 +154,17 @@ type RemoveMember struct {
 
 // CommandName implementa bus.Command.
 func (RemoveMember) CommandName() string { return "partnernetwork.RemoveMember" }
+
+// UpdateDirectoryListing actualiza la ficha pública de la clínica en el directorio (PP-F3-DOM-010).
+type UpdateDirectoryListing struct {
+	OrganizationID uuid.UUID
+	Listed         bool
+	Services       []string
+	ShowPhone      bool
+	Neighborhood   *string
+	GeoLat         *float64
+	GeoLon         *float64
+}
+
+// CommandName implementa bus.Command.
+func (UpdateDirectoryListing) CommandName() string { return "partnernetwork.UpdateDirectoryListing" }

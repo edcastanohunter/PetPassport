@@ -210,6 +210,30 @@ func (MemberRemoved) EventName() string { return "MemberRemoved" }
 // SchemaVersion implementa eventstore.Event.
 func (MemberRemoved) SchemaVersion() int { return 1 }
 
+// DirectoryListingPayload representa los ajustes de visibilidad en el directorio público (PP-F3-DOM-010).
+type DirectoryListingPayload struct {
+	Listed       bool     `json:"listed"`
+	Services     []string `json:"services"`
+	ShowPhone    bool     `json:"show_phone"`
+	Neighborhood *string  `json:"neighborhood,omitempty"`
+	GeoLat       *float64 `json:"geo_lat,omitempty"`
+	GeoLon       *float64 `json:"geo_lon,omitempty"`
+}
+
+// OrganizationDirectoryListingUpdated: cambio en la ficha del directorio (PP-F3-DOM-010).
+type OrganizationDirectoryListingUpdated struct {
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	Listing        DirectoryListingPayload `json:"listing"`
+}
+
+// EventName implementa eventstore.Event.
+func (OrganizationDirectoryListingUpdated) EventName() string {
+	return "OrganizationDirectoryListingUpdated"
+}
+
+// SchemaVersion implementa eventstore.Event.
+func (OrganizationDirectoryListingUpdated) SchemaVersion() int { return 1 }
+
 // PIISubjects: el sujeto de la PII es el invitado (por su email; el UserID
 // puede no existir aún). El cifrado se activa en F5 (SEC-009).
 func (e MemberInvited) PIISubjects() []uuid.UUID { return nil }

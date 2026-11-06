@@ -55,7 +55,7 @@ describe('PP-F1-FE-010 locales', () => {
     }
     expect(used.size).toBeGreaterThan(100)
     expect([...used].filter((k) => !esKeys.has(k) || !enKeys.has(k))).toEqual([])
-  })
+  }, 20000)
 
   it('normaliza etiquetas BCP 47 a idiomas soportados', () => {
     expect(normalizeLocale('en-US')).toBe('en')

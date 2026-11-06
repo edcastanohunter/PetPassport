@@ -92,3 +92,12 @@ func (m *MinIO) PresignDownload(ctx context.Context, key string, ttl time.Durati
 	}
 	return u.String(), nil
 }
+
+// GetObject implementa ObjectReader.
+func (m *MinIO) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
+	obj, err := m.client.GetObject(ctx, m.bucket, key, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("storage: get %s: %w", key, err)
+	}
+	return obj, nil
+}

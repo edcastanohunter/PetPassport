@@ -345,9 +345,18 @@ func run() error {
 	if cfg.Notifications.EmailWebhookSecret != "" {
 		webhookSecrets["generic"] = []byte(cfg.Notifications.EmailWebhookSecret)
 	}
+	pushSvc := notificationsapp.NewPushService(
+		notificationsinfra.NewPushStore(pool.Pool),
+		notificationsapp.VAPIDConfig{
+			PublicKey:  os.Getenv("VAPID_PUBLIC_KEY"),
+			PrivateKey: os.Getenv("VAPID_PRIVATE_KEY"),
+			Subject:    "mailto:soporte@petpassport.app",
+		},
+		nil,
+	)
 	notificationHandlers := notificationshttp.NewNotificationHandlers(
 		notificationsapp.NewPreferences(notificationsinfra.NewPrefStore(pool.Pool), []byte(cfg.Notifications.UnsubscribeSecret), nil),
-		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger)
+		notificationsinfra.NewSuppressions(pool.Pool), webhookSecrets, logger).WithPush(pushSvc)
 	// Search (F3 M3.1).
 	osClient, err := searchapp.NewClient(searchapp.OpenSearchConfig{
 		Addresses: cfg.Search.Addresses,
@@ -378,18 +387,31 @@ func run() error {
 	if redisClient != nil {
 		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
 	}
-	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache)
+	cohortStore := searchinfra.NewPGCohortStore(pool.Pool)
+	cohortSvc := searchapp.NewCohortService(cohortStore, osClient)
+	platformStatsRepo := searchinfra.NewPGPlatformStatsRepository(pool.Pool)
+	platformStatsSvc := searchapp.NewPlatformStatsService(platformStatsRepo)
+	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache).
+		WithCohorts(cohortSvc).
+		WithStats(platformStatsSvc)
 	medHandler := medicationshttp.NewMedicationHandler(medSvc, resilientSearch)
+
+	directoryStore := orginfra.NewPGDirectoryStore(pool.Pool)
+	directorySvc := orgapp.NewDirectoryService(directoryStore)
+	orgHandlers := orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
+		WithIPHashSalt(cfg.IPHashSalt).
+		WithDirectory(directorySvc)
+
+	petHandlers := pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter)
 
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
 		Handlers: apiHandlers{
-			Handlers:      identityHandlers,
-			AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-			PetHandlers:   pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter),
-			OrgHandlers: orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
-				WithIPHashSalt(cfg.IPHashSalt),
+			Handlers:             identityHandlers,
+			AdminHandlers:        identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+			PetHandlers:          petHandlers,
+			OrgHandlers:          orgHandlers,
 			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
 			ClinicalHandlers:     clinicalHandlers,
 			SchedulingHandlers:   schedulingHandlers,
@@ -399,6 +421,9 @@ func run() error {
 		Mount: func(r chi.Router) {
 			searchHandler.MountRoutes(r)
 			medHandler.MountRoutes(r)
+			orgHandlers.MountDirectoryRoutes(r)
+			petHandlers.MountProvisionalRoutes(r)
+			notificationHandlers.MountPushRoutes(r)
 		},
 		Maintenance: maintenance.NewGate(pool.Pool, maintenance.DefaultTTL).Middleware,
 		RateLimit:   rateLimitMW,

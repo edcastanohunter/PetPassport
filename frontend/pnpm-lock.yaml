@@ -43,13 +43,13 @@ importers:
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.1.0
-        version: 4.3.3(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))
+        version: 4.3.3(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))
       '@types/node':
-        specifier: ^22.0.0
-        version: 22.20.5
+        specifier: ^26.0.0
+        version: 26.6.6
       '@vitejs/plugin-vue':
         specifier: ^5.2.0
-        version: 5.2.4(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))(vue@3.5.44(typescript@5.8.3))
+        version: 5.2.4(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))(vue@3.5.44(typescript@5.8.3))
       '@vue/eslint-config-prettier':
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.9.10)
@@ -85,10 +85,10 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+        version: 6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)
       vitest:
         specifier: ^5.0.5
-        version: 5.0.5(@types/node@22.20.5)(jsdom@26.1.0(supports-color@10.2.2))(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))
+        version: 5.0.5(@types/node@26.6.6)(jsdom@26.1.0(supports-color@10.2.2))(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))
       vue-tsc:
         specifier: ^2.2.0
         version: 2.2.12(typescript@5.8.3)
@@ -1081,10 +1081,10 @@ packages:
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
       }
 
-  '@types/node@22.20.5':
+  '@types/node@26.6.6':
     resolution:
       {
-        integrity: sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA==,
+        integrity: sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==,
       }
 
   '@typescript-eslint/eslint-plugin@8.72.1':
@@ -2902,10 +2902,10 @@ packages:
     engines: { node: '>=14.17' }
     hasBin: true
 
-  undici-types@6.21.0:
+  undici-types@8.9.0:
     resolution:
       {
-        integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==,
+        integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==,
       }
 
   uri-js-replace@1.0.2:
@@ -3632,12 +3632,12 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.3
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.3
 
-  '@tailwindcss/vite@4.3.3(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))':
+  '@tailwindcss/vite@4.3.3(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))':
     dependencies:
       '@tailwindcss/node': 4.3.3
       '@tailwindcss/oxide': 4.3.3
       tailwindcss: 4.3.3
-      vite: 6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+      vite: 6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)
 
   '@types/chai@5.2.3':
     dependencies:
@@ -3652,9 +3652,9 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@22.20.5':
+  '@types/node@26.6.6':
     dependencies:
-      undici-types: 6.21.0
+      undici-types: 8.9.0
 
   '@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.3)':
     dependencies:
@@ -3747,19 +3747,19 @@ snapshots:
       '@typescript-eslint/types': 8.72.1
       eslint-visitor-keys: 5.0.1
 
-  '@vitejs/plugin-vue@5.2.4(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))(vue@3.5.44(typescript@5.8.3))':
+  '@vitejs/plugin-vue@5.2.4(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))(vue@3.5.44(typescript@5.8.3))':
     dependencies:
-      vite: 6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+      vite: 6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)
       vue: 3.5.44(typescript@5.8.3)
 
-  '@vitest/mocker@5.0.5(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))':
+  '@vitest/mocker@5.0.5(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.5
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+      vite: 6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)
 
   '@vitest/spy@5.0.5': {}
 
@@ -4745,7 +4745,7 @@ snapshots:
 
   typescript@5.8.3: {}
 
-  undici-types@6.21.0: {}
+  undici-types@8.9.0: {}
 
   uri-js-replace@1.0.2: {}
 
@@ -4761,7 +4761,7 @@ snapshots:
       type-fest: 4.41.0
       vue: 3.5.44(typescript@5.8.3)
 
-  vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0):
+  vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.7)
@@ -4770,15 +4770,15 @@ snapshots:
       rollup: 4.67.3
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 22.20.5
+      '@types/node': 26.6.6
       fsevents: 2.3.3
       jiti: 2.7.0
       lightningcss: 1.32.0
 
-  vitest@5.0.5(@types/node@22.20.5)(jsdom@26.1.0(supports-color@10.2.2))(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)):
+  vitest@5.0.5(@types/node@26.6.6)(jsdom@26.1.0(supports-color@10.2.2))(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.5(vite@6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))
+      '@vitest/mocker': 5.0.5(vite@6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -4789,10 +4789,10 @@ snapshots:
       tinybench: 6.2.2
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 6.4.5(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+      vite: 6.4.5(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.32.0)
       why-is-node-running: 3.2.1
     optionalDependencies:
-      '@types/node': 22.20.5
+      '@types/node': 26.6.6
       jsdom: 26.1.0(supports-color@10.2.2)
     transitivePeerDependencies:
       - msw

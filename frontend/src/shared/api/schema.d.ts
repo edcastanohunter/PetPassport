@@ -2679,6 +2679,14 @@ export interface components {
                 account: boolean;
                 security: boolean;
             };
+            /** @description Una clave por categoría para notificaciones web push (PP-F3-API-008). */
+            push?: {
+                appointments?: boolean;
+                preventive_care?: boolean;
+                clinical?: boolean;
+                account?: boolean;
+                security?: boolean;
+            };
             digest: {
                 clinic_daily_agenda: boolean;
             };

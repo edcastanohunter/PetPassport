@@ -35,6 +35,9 @@ type PetView struct {
 	DeceasedMarkedAt    *time.Time
 	ActiveLinks         []CareLinkView
 	PendingTransfer     *PendingTransferView
+	Provisional         bool
+	ProvisionalOrgID    *uuid.UUID
+	MergedInto          *uuid.UUID
 	Alerts              []domain.PetAlert
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
@@ -126,4 +129,58 @@ func Age(birth kernel.CivilDate, today kernel.CivilDate) (years, months int) {
 		return 0, 0
 	}
 	return years, months
+}
+
+// ClaimView resuelve un token de reclamación (PP-F3-API-007).
+type ClaimView struct {
+	TokenHash      []byte
+	PetID          uuid.UUID
+	OrganizationID uuid.UUID
+	ContactHash    []byte
+	ContactKind    string
+	Status         string
+	ExpiresAt      time.Time
+	ResendCount    int
+	CreatedAt      time.Time
+}
+
+// ProvisionalPetView es la vista de un paciente provisional listado por la clínica (PP-F3-API-007).
+type ProvisionalPetView struct {
+	PetID          uuid.UUID  `json:"pet_id"`
+	Name           string     `json:"name"`
+	Species        string     `json:"species"`
+	Breed          string     `json:"breed,omitempty"`
+	Sex            string     `json:"sex"`
+	Microchip      string     `json:"microchip,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ClaimStatus    string     `json:"claim_status"`
+	ClaimExpiresAt *time.Time `json:"claim_expires_at,omitempty"`
+	ResendCount    int        `json:"resend_count"`
+	ContactMasked  string     `json:"contact_masked,omitempty"`
+}
+
+// MatchingPetView representa una mascota existente que coincide con el microchip (PP-F3-API-007).
+type MatchingPetView struct {
+	PetID uuid.UUID `json:"pet_id"`
+	Name  string    `json:"name"`
+}
+
+// ClaimPreviewView es la previsualización del reclamo para el tutor (GET /pet-claims/{token}).
+type ClaimPreviewView struct {
+	Pet           PetPreviewView   `json:"pet"`
+	Organization  OrgPreviewView   `json:"organization"`
+	ContactMasked string           `json:"contact_masked"`
+	ExistingMatch *MatchingPetView `json:"existing_match,omitempty"`
+}
+
+type PetPreviewView struct {
+	Name     string `json:"name"`
+	Species  string `json:"species"`
+	Breed    string `json:"breed,omitempty"`
+	Sex      string `json:"sex,omitempty"`
+	PhotoURL string `json:"photo_url,omitempty"`
+}
+
+type OrgPreviewView struct {
+	DisplayName string `json:"display_name"`
 }

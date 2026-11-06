@@ -14,6 +14,8 @@ const sections = [
   { name: 'admin-organizations', label: 'admin.nav.organizations' },
   { name: 'admin-users', label: 'admin.nav.users' },
   { name: 'admin-audit', label: 'admin.nav.audit' },
+  { name: 'admin-medications', label: 'admin.nav.medications' },
+  { name: 'admin-platform', label: 'admin.nav.platform' },
 ] as const
 </script>
 

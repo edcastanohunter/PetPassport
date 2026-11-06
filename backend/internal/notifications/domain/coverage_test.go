@@ -12,10 +12,13 @@ import (
 )
 
 func TestParsePreferencesInvalidJSON(t *testing.T) {
-	if _, err := domain.ParsePreferences([]byte(`{`), nil); err == nil {
+	if _, err := domain.ParsePreferences([]byte(`{`), nil, nil); err == nil {
 		t.Fatal("email inválido debe fallar")
 	}
-	if _, err := domain.ParsePreferences(nil, []byte(`not-json`)); err == nil {
+	if _, err := domain.ParsePreferences(nil, []byte(`{`), nil); err == nil {
+		t.Fatal("push inválido debe fallar")
+	}
+	if _, err := domain.ParsePreferences(nil, nil, []byte(`not-json`)); err == nil {
 		t.Fatal("digest inválido debe fallar")
 	}
 }
@@ -54,5 +57,38 @@ func TestVerifyUnsubscribeRejects(t *testing.T) {
 		if _, _, err := domain.VerifyUnsubscribe(secret, tok, now); !errors.Is(err, domain.ErrTokenInvalid) {
 			t.Errorf("%s: error = %v, want ErrTokenInvalid", name, err)
 		}
+	}
+}
+
+func TestPushDomain(t *testing.T) {
+	if err := domain.ValidateEndpoint("https://fcm.googleapis.com/fcm/send/123"); err != nil {
+		t.Fatalf("https endpoint debe ser válido: %v", err)
+	}
+	if err := domain.ValidateEndpoint("http://insecure.com"); err == nil {
+		t.Fatal("http endpoint debe fallar")
+	}
+	if err := domain.ValidateEndpoint("not-a-url"); err == nil {
+		t.Fatal("invalid url debe fallar")
+	}
+
+	h := domain.HashEndpoint("https://example.com")
+	if len(h) != 32 {
+		t.Fatalf("esperado hash sha256 de 32 bytes, obtenido %d", len(h))
+	}
+
+	prefs := domain.DefaultPreferences()
+	if !prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push appointments por defecto debe ser true")
+	}
+	prefs.Push[domain.Appointments] = false
+	if prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push appointments deshabilitado debe ser false")
+	}
+	prefs.Push = nil
+	if !prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push nil debe usar defecto")
+	}
+	if !prefs.AllowsPush(domain.Security) {
+		t.Fatal("push security siempre debe ser true")
 	}
 }

@@ -23,16 +23,16 @@ func NewPrefStore(q Querier) *PrefStore { return &PrefStore{q: q} }
 
 // Get lee las preferencias; ok=false si el usuario no tiene fila.
 func (s *PrefStore) Get(ctx context.Context, user uuid.UUID) (domain.Preferences, bool, error) {
-	var email, digest []byte
+	var email, push, digest []byte
 	err := s.q.QueryRow(ctx,
-		`SELECT email, digest FROM notifications.preferences WHERE user_id = $1`, user).Scan(&email, &digest)
+		`SELECT email, push, digest FROM notifications.preferences WHERE user_id = $1`, user).Scan(&email, &push, &digest)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Preferences{}, false, nil
 	}
 	if err != nil {
 		return domain.Preferences{}, false, err
 	}
-	p, err := domain.ParsePreferences(email, digest)
+	p, err := domain.ParsePreferences(email, push, digest)
 	return p, err == nil, err
 }
 
@@ -42,15 +42,19 @@ func (s *PrefStore) Put(ctx context.Context, user uuid.UUID, p domain.Preference
 	if err != nil {
 		return err
 	}
+	push, err := json.Marshal(p.Push)
+	if err != nil {
+		return err
+	}
 	digest, err := json.Marshal(p.Digest)
 	if err != nil {
 		return err
 	}
 	_, err = s.q.Exec(ctx,
-		`INSERT INTO notifications.preferences (user_id, email, digest, updated_at)
-		 VALUES ($1, $2, $3, now())
-		 ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, digest = EXCLUDED.digest, updated_at = now()`,
-		user, email, digest)
+		`INSERT INTO notifications.preferences (user_id, email, push, digest, updated_at)
+		 VALUES ($1, $2, $3, $4, now())
+		 ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, push = EXCLUDED.push, digest = EXCLUDED.digest, updated_at = now()`,
+		user, email, push, digest)
 	return err
 }
 
@@ -104,4 +108,71 @@ func (s *Suppressions) LastSent(ctx context.Context, recipient uuid.UUID, templa
 		return time.Time{}, false, err
 	}
 	return *t, true, nil
+}
+
+// PushStore persiste y consulta suscripciones push en notifications.push_subscriptions (PP-F3-DAT-006, PP-F3-DOM-011).
+type PushStore struct {
+	q Querier
+}
+
+// NewPushStore construye el store de suscripciones push.
+func NewPushStore(q Querier) *PushStore { return &PushStore{q: q} }
+
+func (s *PushStore) Upsert(ctx context.Context, sub domain.PushSubscription) (uuid.UUID, error) {
+	id := sub.ID
+	if id == uuid.Nil {
+		id = uuid.New()
+	}
+	var outID uuid.UUID
+	err := s.q.QueryRow(ctx, `
+		INSERT INTO notifications.push_subscriptions
+		  (id, user_id, endpoint_hash, endpoint, p256dh, auth, user_agent_hash, status, created_at, last_seen_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', now(), now())
+		ON CONFLICT (endpoint_hash) DO UPDATE SET
+		  user_id = EXCLUDED.user_id,
+		  p256dh = EXCLUDED.p256dh,
+		  auth = EXCLUDED.auth,
+		  user_agent_hash = EXCLUDED.user_agent_hash,
+		  status = 'active',
+		  last_seen_at = now()
+		RETURNING id`,
+		id, sub.UserID, sub.EndpointHash, sub.Endpoint, sub.Keys.P256dh, sub.Keys.Auth, sub.UserAgentHash).Scan(&outID)
+	return outID, err
+}
+
+func (s *PushStore) ListByUser(ctx context.Context, userID uuid.UUID) ([]domain.PushSubscription, error) {
+	rows, err := s.q.Query(ctx, `
+		SELECT id, user_id, endpoint_hash, endpoint, p256dh, auth, user_agent_hash, status, created_at, last_seen_at
+		FROM notifications.push_subscriptions
+		WHERE user_id = $1
+		ORDER BY created_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.PushSubscription
+	for rows.Next() {
+		var sub domain.PushSubscription
+		var statusStr string
+		var p256dh, authStr string
+		if err := rows.Scan(&sub.ID, &sub.UserID, &sub.EndpointHash, &sub.Endpoint, &p256dh, &authStr, &sub.UserAgentHash, &statusStr, &sub.CreatedAt, &sub.LastSeenAt); err != nil {
+			return nil, err
+		}
+		sub.Keys.P256dh = p256dh
+		sub.Keys.Auth = authStr
+		sub.Status = domain.PushSubscriptionStatus(statusStr)
+		list = append(list, sub)
+	}
+	return list, rows.Err()
+}
+
+func (s *PushStore) Delete(ctx context.Context, userID, subID uuid.UUID) error {
+	_, err := s.q.Exec(ctx, `DELETE FROM notifications.push_subscriptions WHERE user_id = $1 AND id = $2`, userID, subID)
+	return err
+}
+
+func (s *PushStore) MarkExpired(ctx context.Context, subID uuid.UUID) error {
+	_, err := s.q.Exec(ctx, `UPDATE notifications.push_subscriptions SET status = 'expired' WHERE id = $1`, subID)
+	return err
 }

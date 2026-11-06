@@ -38,6 +38,7 @@ type Suppressor interface {
 type NotificationHandlers struct {
 	svc            PreferencesService
 	supp           Suppressor
+	push           *app.PushService
 	webhookSecrets map[string][]byte // proveedor → secreto de firma
 	logger         *slog.Logger
 }
@@ -148,17 +149,36 @@ func validSignature(secret, body []byte, header string) bool {
 
 func toDTO(p domain.Preferences) gen.NotificationPreferences {
 	var out gen.NotificationPreferences
-	out.Email.Appointments = p.Allows(domain.Appointments)
-	out.Email.PreventiveCare = p.Allows(domain.PreventiveCare)
-	out.Email.Clinical = p.Allows(domain.Clinical)
-	out.Email.Account = p.Allows(domain.Account)
+	out.Email.Appointments = p.AllowsEmail(domain.Appointments)
+	out.Email.PreventiveCare = p.AllowsEmail(domain.PreventiveCare)
+	out.Email.Clinical = p.AllowsEmail(domain.Clinical)
+	out.Email.Account = p.AllowsEmail(domain.Account)
 	out.Email.Security = true
+
+	out.Push = &struct {
+		Account        *bool `json:"account,omitempty"`
+		Appointments   *bool `json:"appointments,omitempty"`
+		Clinical       *bool `json:"clinical,omitempty"`
+		PreventiveCare *bool `json:"preventive_care,omitempty"`
+		Security       *bool `json:"security,omitempty"`
+	}{}
+	appts := p.AllowsPush(domain.Appointments)
+	out.Push.Appointments = &appts
+	prev := p.AllowsPush(domain.PreventiveCare)
+	out.Push.PreventiveCare = &prev
+	clin := p.AllowsPush(domain.Clinical)
+	out.Push.Clinical = &clin
+	acc := p.AllowsPush(domain.Account)
+	out.Push.Account = &acc
+	sec := true
+	out.Push.Security = &sec
+
 	out.Digest.ClinicDailyAgenda = p.Digest.ClinicDailyAgenda
 	return out
 }
 
 func fromDTO(d gen.NotificationPreferences) domain.Preferences {
-	return domain.Preferences{
+	p := domain.Preferences{
 		Email: map[domain.Category]bool{
 			domain.Appointments:   d.Email.Appointments,
 			domain.PreventiveCare: d.Email.PreventiveCare,
@@ -166,6 +186,23 @@ func fromDTO(d gen.NotificationPreferences) domain.Preferences {
 			domain.Account:        d.Email.Account,
 			domain.Security:       true,
 		},
+		Push:   domain.DefaultPushPreferences(),
 		Digest: domain.Digest{ClinicDailyAgenda: d.Digest.ClinicDailyAgenda},
 	}
+	if d.Push != nil {
+		if d.Push.Appointments != nil {
+			p.Push[domain.Appointments] = *d.Push.Appointments
+		}
+		if d.Push.PreventiveCare != nil {
+			p.Push[domain.PreventiveCare] = *d.Push.PreventiveCare
+		}
+		if d.Push.Clinical != nil {
+			p.Push[domain.Clinical] = *d.Push.Clinical
+		}
+		if d.Push.Account != nil {
+			p.Push[domain.Account] = *d.Push.Account
+		}
+		p.Push[domain.Security] = true
+	}
+	return p
 }

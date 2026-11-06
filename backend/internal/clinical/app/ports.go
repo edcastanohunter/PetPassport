@@ -144,6 +144,7 @@ type AttachmentView struct {
 	VisibleToGuardian bool
 	AddendumSeq       *int
 	CreatedAt         time.Time
+	ScanStatus        string
 }
 
 // PDFView describe el PDF del encuentro (ARQ-010).
@@ -297,6 +298,7 @@ const (
 	ProjectionTimeline = "clinical.medical_timeline"
 	ProjectionWeight   = "clinical.weight_history"
 	ProjectionCustody  = "clinical.encounter_custody"
+	ProjectionMergePet = "clinical.merge-pet"
 )
 
 // Freshness informa el retraso de una proyección asíncrona (API-013).
@@ -335,6 +337,7 @@ type StagedUpload struct {
 	EncounterID uuid.UUID
 	UploadedBy  uuid.UUID
 	CreatedAt   time.Time
+	ScanStatus  string
 }
 
 // StagedUploads es el almacén operacional de adjuntos pendientes de adenda

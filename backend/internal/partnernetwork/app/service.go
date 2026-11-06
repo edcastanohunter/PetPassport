@@ -134,6 +134,7 @@ func (s *Service) RegisterCommands(b *bus.Bus) {
 	b.Register(domain.AcceptInvitation{}, s.handleAccept)
 	b.Register(domain.ChangeMemberRole{}, s.handleSimple)
 	b.Register(domain.RemoveMember{}, s.handleSimple)
+	b.Register(domain.UpdateDirectoryListing{}, s.handleSimple)
 }
 
 // Dispatch ejecuta un comando por el bus (fachada para http).

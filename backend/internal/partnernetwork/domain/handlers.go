@@ -41,6 +41,8 @@ func (o *Organization) HandleCommand(cmd any) ([]any, error) {
 		return o.handleRoleChange(c)
 	case RemoveMember:
 		return o.handleRemove(c)
+	case UpdateDirectoryListing:
+		return o.handleUpdateDirectoryListing(c)
 	}
 	return nil, &kernel.DomainError{Code: "UNKNOWN_COMMAND", Message: "comando desconocido para Organization"}
 }
@@ -359,6 +361,32 @@ func (o *Organization) handleRemove(c RemoveMember) ([]any, error) {
 		return nil, ErrLastAdmin
 	}
 	o.record(MemberRemoved{OrganizationID: o.id, UserID: c.UserID, Reason: strings.TrimSpace(c.Reason)})
+	return o.uncommitted, nil
+}
+
+func (o *Organization) handleUpdateDirectoryListing(c UpdateDirectoryListing) ([]any, error) {
+	if o.version == 0 {
+		return nil, &kernel.NotFoundError{Resource: "organization"}
+	}
+	if o.status != OrgActive {
+		return nil, kernel.NewDomainError("ORGANIZATION_NOT_ACTIVE", "Solo las organizaciones activas pueden configurar el directorio.")
+	}
+	if len(c.Services) > 10 {
+		return nil, kernel.NewDomainError("SERVICES_LIMIT_EXCEEDED", "Se permiten máximo 10 servicios.")
+	}
+	payload := DirectoryListingPayload{
+		Listed:       c.Listed,
+		Services:     c.Services,
+		ShowPhone:    c.ShowPhone,
+		Neighborhood: c.Neighborhood,
+		GeoLat:       c.GeoLat,
+		GeoLon:       c.GeoLon,
+	}
+	evt := OrganizationDirectoryListingUpdated{
+		OrganizationID: o.id,
+		Listing:        payload,
+	}
+	o.record(evt)
 	return o.uncommitted, nil
 }
 

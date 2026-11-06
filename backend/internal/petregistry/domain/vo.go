@@ -231,6 +231,7 @@ type PetStatus string
 const (
 	PetActive   PetStatus = "active"
 	PetDeceased PetStatus = "deceased"
+	PetMerged   PetStatus = "merged"
 )
 
 // invalid construye un ValidationError de un campo (422 VALIDATION_FAILED).

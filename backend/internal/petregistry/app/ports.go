@@ -100,6 +100,14 @@ type PetQueries interface {
 	// TransferByTokenHash resuelve una transferencia pendiente y vigente;
 	// otra cosa → *kernel.NotFoundError (404 sin distinguir).
 	TransferByTokenHash(ctx context.Context, hash []byte, now time.Time) (TransferView, error)
+	// ClaimByTokenHash resuelve una reclamación pendiente y vigente (PP-F3-API-007).
+	ClaimByTokenHash(ctx context.Context, hash []byte, now time.Time) (ClaimView, error)
+	// ClaimByPetID obtiene la reclamación activa de una mascota provisional.
+	ClaimByPetID(ctx context.Context, petID uuid.UUID) (ClaimView, error)
+	// ListProvisionalPets lista los pacientes provisionales de una clínica con estado opcional.
+	ListProvisionalPets(ctx context.Context, orgID uuid.UUID, status string) ([]ProvisionalPetView, error)
+	// FindMatchingPetByMicrochip busca si el tutor ya tiene una mascota con el mismo microchip.
+	FindMatchingPetByMicrochip(ctx context.Context, guardianID uuid.UUID, microchip string) (*MatchingPetView, error)
 }
 
 // ------------------------------------------------- hash de token en contexto
@@ -117,6 +125,29 @@ func WithTransferTokenHash(ctx context.Context, petID uuid.UUID, hash []byte) co
 func TransferTokenHashFrom(ctx context.Context, petID uuid.UUID) []byte {
 	m, _ := ctx.Value(transferHashKey{}).(map[uuid.UUID][]byte)
 	return m[petID]
+}
+
+// ------------------------------------------------- claim token en contexto (PP-F3-DOM-007)
+
+// ClaimTokenInfo datos del token de reclamación para el proyector.
+type ClaimTokenInfo struct {
+	TokenHash   []byte
+	ContactHash []byte
+	ContactKind string
+}
+
+type claimHashKey struct{}
+
+// WithClaimTokenInfo adjunta los datos del token de reclamación al contexto.
+func WithClaimTokenInfo(ctx context.Context, petID uuid.UUID, info ClaimTokenInfo) context.Context {
+	return context.WithValue(ctx, claimHashKey{}, map[uuid.UUID]ClaimTokenInfo{petID: info})
+}
+
+// ClaimTokenInfoFrom recupera los datos del token de reclamación del contexto.
+func ClaimTokenInfoFrom(ctx context.Context, petID uuid.UUID) (ClaimTokenInfo, bool) {
+	m, _ := ctx.Value(claimHashKey{}).(map[uuid.UUID]ClaimTokenInfo)
+	info, ok := m[petID]
+	return info, ok
 }
 
 // ErrMicrochipTaken lo devuelve Reserve cuando el chip pertenece a otra mascota.

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -146,23 +147,47 @@ func (a *AdminService) ListIndices(ctx context.Context) ([]IndexSummary, error) 
 	return summaries, nil
 }
 
+// MappingDriftReport describe el resultado de verificar drift en los mappings de un índice.
+type MappingDriftReport struct {
+	Alias         string `json:"alias"`
+	PhysicalIndex string `json:"physical_index"`
+	Drift         bool   `json:"drift"`
+	Differences   string `json:"differences,omitempty"`
+}
+
 // Reindex inicia un trabajo de reindexación sin downtime (ARQ-003).
 func (a *AdminService) Reindex(ctx context.Context, alias string, reason string, startedBy *uuid.UUID) (uuid.UUID, error) {
 	if strings.TrimSpace(reason) == "" {
 		return uuid.Nil, domain.ErrReasonRequired
 	}
 
+	aliases, err := a.client.GetAliases(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("getting aliases: %w", err)
+	}
+
+	fromIndex := alias + "-v1"
+	if currentIndices, ok := aliases[alias]; ok && len(currentIndices) > 0 {
+		fromIndex = currentIndices[0]
+	}
+
+	version := 1
+	if parts := strings.Split(fromIndex, "-v"); len(parts) == 2 {
+		if v, err := strconv.Atoi(parts[1]); err == nil {
+			version = v
+		}
+	}
+	toIndex := fmt.Sprintf("%s-v%d", alias, version+1)
 	jobID := uuid.New()
-	toIndex := fmt.Sprintf("%s-v2", alias)
 
 	// Registrar en search.reindex_jobs
 	if a.repo != nil {
-		if err := a.repo.CreateReindexJob(ctx, jobID, alias, alias+"-v1", toIndex, startedBy, reason, time.Now()); err != nil {
+		if err := a.repo.CreateReindexJob(ctx, jobID, alias, fromIndex, toIndex, startedBy, reason, time.Now()); err != nil {
 			return uuid.Nil, err
 		}
 	}
 
-	// 1. Crear nuevo índice físico con mapping
+	// 1. Crear nuevo índice físico con mapping versionado del repo
 	mappingData, err := mappings.GetMapping(alias, true)
 	if err != nil {
 		return uuid.Nil, err
@@ -175,7 +200,7 @@ func (a *AdminService) Reindex(ctx context.Context, alias string, reason string,
 		}
 	}
 
-	// 2. Apuntar alias de escritura también al nuevo índice (doble escritura)
+	// 2. Apuntar alias de escritura a ambos (doble escritura)
 	writeAlias := alias + "-write"
 	_ = a.client.UpdateAliases(ctx, []AliasAction{
 		{Type: "add", Index: toIndex, Alias: writeAlias},
@@ -183,8 +208,9 @@ func (a *AdminService) Reindex(ctx context.Context, alias string, reason string,
 
 	// 3. Cambiar alias de lectura atómicamente y retirar del viejo
 	_ = a.client.UpdateAliases(ctx, []AliasAction{
-		{Type: "remove", Index: alias + "-v1", Alias: alias},
+		{Type: "remove", Index: fromIndex, Alias: alias},
 		{Type: "add", Index: toIndex, Alias: alias},
+		{Type: "remove", Index: fromIndex, Alias: writeAlias},
 	})
 
 	if a.repo != nil {
@@ -192,6 +218,100 @@ func (a *AdminService) Reindex(ctx context.Context, alias string, reason string,
 	}
 
 	return jobID, nil
+}
+
+// MappingCheck compara el mapping del repo con el del índice activo y detecta drift (ARQ-003).
+func (a *AdminService) MappingCheck(ctx context.Context) ([]MappingDriftReport, error) {
+	aliases, err := a.client.GetAliases(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting aliases: %w", err)
+	}
+
+	knownAliases := []string{domain.IndexPets, domain.IndexClinical, domain.IndexMedications, domain.IndexOrganizations}
+	var reports []MappingDriftReport
+
+	for _, alias := range knownAliases {
+		targetIndices := aliases[alias]
+		physical := ""
+		if len(targetIndices) > 0 {
+			physical = targetIndices[0]
+		} else {
+			physical = alias + "-v1"
+		}
+
+		repoMappingBytes, err := mappings.GetMapping(alias, false)
+		if err != nil {
+			continue
+		}
+
+		exists, _ := a.client.IndexExists(ctx, physical)
+		if !exists {
+			reports = append(reports, MappingDriftReport{
+				Alias:         alias,
+				PhysicalIndex: physical,
+				Drift:         false,
+			})
+			continue
+		}
+
+		liveMappingBytes, err := a.client.GetMapping(ctx, physical)
+		if err != nil {
+			a.logger.WarnContext(ctx, "could not fetch live mapping", "index", physical, "error", err)
+			continue
+		}
+
+		drift, diff := compareMappings(repoMappingBytes, liveMappingBytes, physical)
+		reports = append(reports, MappingDriftReport{
+			Alias:         alias,
+			PhysicalIndex: physical,
+			Drift:         drift,
+			Differences:   diff,
+		})
+	}
+
+	return reports, nil
+}
+
+func compareMappings(repoJSON, liveJSON []byte, physical string) (bool, string) {
+	var repoMap struct {
+		Mappings struct {
+			Properties map[string]any `json:"properties"`
+		} `json:"mappings"`
+	}
+	if err := json.Unmarshal(repoJSON, &repoMap); err != nil {
+		return false, ""
+	}
+
+	var liveWrapper map[string]struct {
+		Mappings struct {
+			Properties map[string]any `json:"properties"`
+		} `json:"mappings"`
+	}
+	if err := json.Unmarshal(liveJSON, &liveWrapper); err != nil {
+		return false, ""
+	}
+
+	liveMap, ok := liveWrapper[physical]
+	if !ok {
+		return false, ""
+	}
+
+	var diffs []string
+	for k := range repoMap.Mappings.Properties {
+		if _, exists := liveMap.Mappings.Properties[k]; !exists {
+			diffs = append(diffs, fmt.Sprintf("campo %q presente en repo pero ausente en índice vivo", k))
+		}
+	}
+	for k := range liveMap.Mappings.Properties {
+		if _, exists := repoMap.Mappings.Properties[k]; !exists {
+			diffs = append(diffs, fmt.Sprintf("campo %q presente en índice vivo pero ausente en repo", k))
+		}
+	}
+
+	if len(diffs) > 0 {
+		return true, strings.Join(diffs, "; ")
+	}
+	return false, ""
 }
 
 // RetryIndexQueue reintenta documentos fallidos en la cola de indexación.
