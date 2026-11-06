@@ -368,7 +368,11 @@ async function sendCampaign() {
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="p-4 bg-red-50 text-red-700 rounded-lg text-sm" data-testid="cohort-error">
+    <div
+      v-if="error"
+      class="p-4 bg-red-50 text-red-700 rounded-lg text-sm"
+      data-testid="cohort-error"
+    >
       {{ error }}
     </div>
 

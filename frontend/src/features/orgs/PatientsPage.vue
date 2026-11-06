@@ -547,13 +547,22 @@ async function handleImportCSV() {
         <div class="space-y-3 text-sm">
           <div>
             <label class="block font-medium mb-1">{{ t('pets.form.name') }} *</label>
-            <input v-model="newForm.pet.name" required class="input" data-testid="input-provisional-name" />
+            <input
+              v-model="newForm.pet.name"
+              required
+              class="input"
+              data-testid="input-provisional-name"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-medium mb-1">{{ t('pets.form.species') }} *</label>
-              <select v-model="newForm.pet.species" class="input" data-testid="select-provisional-species">
+              <select
+                v-model="newForm.pet.species"
+                class="input"
+                data-testid="select-provisional-species"
+              >
                 <option value="canine">{{ t('pets.species.dog') }}</option>
                 <option value="feline">{{ t('pets.species.cat') }}</option>
                 <option value="other">{{ t('pets.species.other') }}</option>
@@ -587,7 +596,12 @@ async function handleImportCSV() {
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs mb-1">{{ t('pets.provisional.guardianEmail') }}</label>
-                <input v-model="newForm.guardian_contact.email" type="email" class="input" data-testid="input-provisional-email" />
+                <input
+                  v-model="newForm.guardian_contact.email"
+                  type="email"
+                  class="input"
+                  data-testid="input-provisional-email"
+                />
               </div>
               <div>
                 <label class="block text-xs mb-1">{{ t('pets.provisional.guardianPhone') }}</label>
