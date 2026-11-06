@@ -47,7 +47,7 @@ const campaignChannel = ref<'email' | 'push'>('email')
 const notifying = ref(false)
 const notifyResult = ref<{ enqueued: number; recipients: number } | null>(null)
 
-function buildParams(): Record<string, any> {
+function buildParams(): Record<string, unknown> {
   switch (selectedKind.value) {
     case 'vaccine_due':
       return { days_ahead: daysAhead.value }
@@ -85,8 +85,8 @@ async function runCohortQuery() {
       throw new Error(p.detail || p.title || 'Error al ejecutar consulta de cohorte')
     }
     queryResult.value = await res.json()
-  } catch (err: any) {
-    error.value = err.message || 'Error al ejecutar cohorte'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Error al ejecutar cohorte'
   } finally {
     running.value = false
   }
@@ -128,8 +128,8 @@ async function exportCohort() {
       exportSuccess.value = false
       exportReason.value = ''
     }, 1500)
-  } catch (err: any) {
-    alert(err.message || 'Error en la exportación')
+  } catch (err: unknown) {
+    alert(err instanceof Error ? err.message : 'Error en la exportación')
   } finally {
     exporting.value = false
   }
@@ -154,8 +154,8 @@ async function sendCampaign() {
     }
     notifyResult.value = await res.json()
     showNotifyModal.value = false
-  } catch (err: any) {
-    alert(err.message || 'Error en la campaña')
+  } catch (err: unknown) {
+    alert(err instanceof Error ? err.message : 'Error en la campaña')
   } finally {
     notifying.value = false
   }
@@ -268,7 +268,9 @@ async function sendCampaign() {
             max="180"
             class="w-24 px-3 py-1.5 text-sm border rounded-lg border-surface-300"
           />
-          <span class="text-xs text-surface-500">Busca vacunas con fecha límite en los próximos {{ daysAhead }} días</span>
+          <span class="text-xs text-surface-500"
+            >Busca vacunas con fecha límite en los próximos {{ daysAhead }} días</span
+          >
         </div>
 
         <div v-else-if="selectedKind === 'no_visit_since'" class="flex items-center gap-3">
@@ -280,7 +282,9 @@ async function sendCampaign() {
             max="60"
             class="w-24 px-3 py-1.5 text-sm border rounded-lg border-surface-300"
           />
-          <span class="text-xs text-surface-500">Pacientes cuya última visita fue hace más de {{ monthsSince }} meses</span>
+          <span class="text-xs text-surface-500"
+            >Pacientes cuya última visita fue hace más de {{ monthsSince }} meses</span
+          >
         </div>
 
         <div v-else-if="selectedKind === 'diagnosis'" class="flex items-center gap-3 max-w-md">
@@ -293,10 +297,16 @@ async function sendCampaign() {
           />
         </div>
 
-        <div v-else-if="selectedKind === 'species_age_weight'" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <div
+          v-else-if="selectedKind === 'species_age_weight'"
+          class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm"
+        >
           <div>
             <label class="font-medium text-surface-700 block mb-1">Especie:</label>
-            <select v-model="selectedSpecies" class="w-full px-3 py-1.5 text-sm border rounded-lg border-surface-300">
+            <select
+              v-model="selectedSpecies"
+              class="w-full px-3 py-1.5 text-sm border rounded-lg border-surface-300"
+            >
               <option value="dog">Perro</option>
               <option value="cat">Gato</option>
               <option value="rabbit">Conejo</option>
@@ -305,17 +315,37 @@ async function sendCampaign() {
           <div>
             <label class="font-medium text-surface-700 block mb-1">Rango de Edad (años):</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="minAge" type="number" min="0" class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300" />
+              <input
+                v-model.number="minAge"
+                type="number"
+                min="0"
+                class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300"
+              />
               <span>a</span>
-              <input v-model.number="maxAge" type="number" min="0" class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300" />
+              <input
+                v-model.number="maxAge"
+                type="number"
+                min="0"
+                class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300"
+              />
             </div>
           </div>
           <div>
             <label class="font-medium text-surface-700 block mb-1">Rango de Peso (kg):</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="minWeight" type="number" min="0" class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300" />
+              <input
+                v-model.number="minWeight"
+                type="number"
+                min="0"
+                class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300"
+              />
               <span>a</span>
-              <input v-model.number="maxWeight" type="number" min="0" class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300" />
+              <input
+                v-model.number="maxWeight"
+                type="number"
+                min="0"
+                class="w-20 px-2 py-1.5 text-sm border rounded-lg border-surface-300"
+              />
             </div>
           </div>
         </div>
@@ -339,16 +369,25 @@ async function sendCampaign() {
     </div>
 
     <!-- Resultado de Campaña -->
-    <div v-if="notifyResult" class="p-4 bg-green-50 text-green-800 rounded-lg text-sm flex items-center justify-between">
+    <div
+      v-if="notifyResult"
+      class="p-4 bg-green-50 text-green-800 rounded-lg text-sm flex items-center justify-between"
+    >
       <div>
         <span class="font-semibold">Campaña encolada con éxito:</span>
-        {{ notifyResult.enqueued }} recordatorios encolados para {{ notifyResult.recipients }} tutores receptores.
+        {{ notifyResult.enqueued }} recordatorios encolados para
+        {{ notifyResult.recipients }} tutores receptores.
       </div>
-      <button type="button" class="text-xs text-green-900 underline" @click="notifyResult = null">Cerrar</button>
+      <button type="button" class="text-xs text-green-900 underline" @click="notifyResult = null">
+        Cerrar
+      </button>
     </div>
 
     <!-- Resultados de la cohorte -->
-    <div v-if="queryResult" class="bg-surface-0 border border-surface-200 rounded-xl p-5 shadow-sm space-y-4">
+    <div
+      v-if="queryResult"
+      class="bg-surface-0 border border-surface-200 rounded-xl p-5 shadow-sm space-y-4"
+    >
       <div class="flex items-center justify-between">
         <div class="space-y-0.5">
           <h2 class="text-lg font-semibold text-surface-900">
@@ -362,7 +401,9 @@ async function sendCampaign() {
 
       <div v-if="queryResult.sample && queryResult.sample.length > 0" class="overflow-x-auto">
         <table class="w-full text-left text-sm text-surface-700">
-          <thead class="text-xs uppercase bg-surface-50 text-surface-500 border-b border-surface-200">
+          <thead
+            class="text-xs uppercase bg-surface-50 text-surface-500 border-b border-surface-200"
+          >
             <tr>
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Especie / Raza</th>
@@ -374,8 +415,12 @@ async function sendCampaign() {
             <tr v-for="p in queryResult.sample" :key="p.id" class="hover:bg-surface-50 transition">
               <td class="px-4 py-3 font-medium text-surface-900">{{ p.name }}</td>
               <td class="px-4 py-3">{{ p.species }} {{ p.breed ? `(${p.breed})` : '' }}</td>
-              <td class="px-4 py-3 text-surface-600">{{ p.guardian_name || 'Sin tutor asignado' }}</td>
-              <td class="px-4 py-3 font-mono text-xs text-surface-400">{{ p.id.slice(0, 8) }}...</td>
+              <td class="px-4 py-3 text-surface-600">
+                {{ p.guardian_name || 'Sin tutor asignado' }}
+              </td>
+              <td class="px-4 py-3 font-mono text-xs text-surface-400">
+                {{ p.id.slice(0, 8) }}...
+              </td>
             </tr>
           </tbody>
         </table>
@@ -393,7 +438,8 @@ async function sendCampaign() {
       <div class="bg-surface-0 rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
         <h3 class="font-semibold text-lg text-surface-900">Motivo de Exportación CSV</h3>
         <p class="text-xs text-surface-600">
-          Por seguridad y cumplimiento normativo (SEC-006), cada exportación de pacientes queda registrada en la auditoría con el motivo indicado.
+          Por seguridad y cumplimiento normativo (SEC-006), cada exportación de pacientes queda
+          registrada en la auditoría con el motivo indicado.
         </p>
 
         <div>
@@ -439,13 +485,17 @@ async function sendCampaign() {
       <div class="bg-surface-0 rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
         <h3 class="font-semibold text-lg text-surface-900">Enviar Recordatorios a la Cohorte</h3>
         <p class="text-xs text-surface-600">
-          Se enviarán notificaciones a los tutores con consentimiento activo para medicina preventiva.
+          Se enviarán notificaciones a los tutores con consentimiento activo para medicina
+          preventiva.
         </p>
 
         <div class="space-y-3 text-sm">
           <div>
             <label class="label">Plantilla:</label>
-            <select v-model="campaignTemplate" class="w-full p-2 border rounded-lg border-surface-300">
+            <select
+              v-model="campaignTemplate"
+              class="w-full p-2 border rounded-lg border-surface-300"
+            >
               <option value="vaccine_reminder">Recordatorio de Vacunación</option>
               <option value="general_reminder">Revisión Preventiva General</option>
             </select>
@@ -467,7 +517,9 @@ async function sendCampaign() {
 
           <div class="p-3 bg-amber-50 text-amber-800 text-xs rounded-lg space-y-1">
             <div class="font-semibold">Política de enfriamiento (7 días):</div>
-            <div>Solo se puede enviar una campaña a la misma cohorte cada 7 días para evitar spam.</div>
+            <div>
+              Solo se puede enviar una campaña a la misma cohorte cada 7 días para evitar spam.
+            </div>
           </div>
         </div>
 

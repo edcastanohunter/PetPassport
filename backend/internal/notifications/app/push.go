@@ -71,10 +71,10 @@ type PushSubscriptionInput struct {
 
 // PushSubscriptionView vista de una suscripción push para el usuario.
 type PushSubscriptionView struct {
-	ID        uuid.UUID  `json:"id"`
-	Endpoint  string     `json:"endpoint"`
-	Status    string     `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
+	ID         uuid.UUID  `json:"id"`
+	Endpoint   string     `json:"endpoint"`
+	Status     string     `json:"status"`
+	CreatedAt  time.Time  `json:"created_at"`
 	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
 }
 
@@ -158,7 +158,7 @@ func (s *PushService) SendPushNotification(ctx context.Context, sub domain.PushS
 	if err != nil {
 		return fmt.Errorf("webpush send: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode == http.StatusGone || res.StatusCode == http.StatusNotFound {
 		_ = s.store.MarkExpired(ctx, sub.ID)

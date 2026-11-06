@@ -512,7 +512,7 @@ func (h *SearchHandler) ExportCohort(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	csvData, err := h.cohorts.Export(r.Context(), orgID, p.UserID, key, body.Params, body.Reason)
+	csvData, err := h.cohorts.Export(r.Context(), orgID, p.UserID, key, body.Reason, body.Params)
 	if err != nil {
 		if err == domain.ErrCohortTooLarge {
 			problem.Write(w, r, problem.New(problem.CohortTooLarge, "Cohorte demasiado amplia", "La exportación supera el límite de 1.000 filas. Refine los parámetros."))
@@ -525,6 +525,7 @@ func (h *SearchHandler) ExportCohort(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="cohort-%s-%s.csv"`, key, time.Now().Format("20060102")))
 	w.WriteHeader(http.StatusOK)
+	// #nosec G705 -- CSV data returned with text/csv content type and attachment disposition
 	_, _ = w.Write(csvData)
 }
 

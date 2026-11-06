@@ -48,9 +48,16 @@ const dirSaved = ref(false)
 const dirError = ref<string | null>(null)
 
 const AVAILABLE_DIR_SERVICES = [
-  'urgencias_24h', 'cirugia', 'hospitalizacion', 'laboratorio',
-  'ecografia', 'vacunacion', 'odontologia', 'dermatologia',
-  'oftalmologia', 'peluqueria'
+  'urgencias_24h',
+  'cirugia',
+  'hospitalizacion',
+  'laboratorio',
+  'ecografia',
+  'vacunacion',
+  'odontologia',
+  'dermatologia',
+  'oftalmologia',
+  'peluqueria',
 ]
 
 function toggleService(s: string) {
@@ -91,8 +98,8 @@ async function saveDirectory() {
     })
     if (!res.ok) throw new Error('Error guardando ficha de directorio')
     dirSaved.value = true
-  } catch (err: any) {
-    dirError.value = err.message || 'Error'
+  } catch (err: unknown) {
+    dirError.value = err instanceof Error ? err.message : 'Error'
   } finally {
     dirSaving.value = false
   }
@@ -244,7 +251,8 @@ async function save() {
       <div class="space-y-1">
         <h2 class="text-lg font-semibold text-surface-900">Ficha en Directorio Público</h2>
         <p class="text-sm text-surface-600">
-          Configura cómo aparece tu centro veterinario en el directorio público para que los tutores te encuentren.
+          Configura cómo aparece tu centro veterinario en el directorio público para que los tutores
+          te encuentren.
         </p>
       </div>
 
@@ -256,7 +264,9 @@ async function save() {
       </p>
 
       <form class="space-y-5" @submit.prevent="saveDirectory">
-        <label class="flex items-start gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200 cursor-pointer">
+        <label
+          class="flex items-start gap-3 p-3 bg-surface-50 rounded-lg border border-surface-200 cursor-pointer"
+        >
           <input v-model="dirListed" type="checkbox" class="mt-1" />
           <span>
             <span class="block font-medium text-surface-900">Listar en el Directorio Público</span>
@@ -331,111 +341,111 @@ async function save() {
 
     <!-- Pestaña General -->
     <div v-else-if="activeTab === 'general'" class="space-y-6">
-    <p
-      v-if="conflict"
-      class="rounded-lg bg-amber-50 p-4 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-      role="alert"
-    >
-      {{ t('orgs.settings.conflict') }}
-      <button type="button" class="ml-2 underline" @click="load">{{ t('pets.reload') }}</button>
-    </p>
-    <p
-      v-if="error"
-      class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950 dark:text-red-300"
-      role="alert"
-    >
-      {{ error }}
-    </p>
-    <p
-      v-if="saved"
-      class="rounded-lg bg-green-50 p-4 text-green-800 dark:bg-green-950 dark:text-green-200"
-      role="status"
-    >
-      {{ t('orgs.settings.saved') }}
-    </p>
-
-    <p
-      class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
-    >
-      {{ t('orgs.settings.verificationWarning') }}
-    </p>
-
-    <form v-if="original" class="space-y-4" novalidate @submit.prevent="save">
-      <div>
-        <label class="label" for="set-display">{{ t('orgs.form.displayName') }}</label>
-        <input id="set-display" v-model="form.display_name" maxlength="80" class="input" />
-        <FieldError field="set-display" :code="fieldErrors['display_name']" />
-      </div>
-      <div>
-        <label class="label" for="set-legal">{{ t('orgs.form.legalName') }}</label>
-        <input id="set-legal" v-model="form.legal_name" maxlength="120" class="input" />
-        <FieldError field="set-legal" :code="fieldErrors['legal_name']" />
-      </div>
-      <div class="grid grid-cols-3 gap-3">
-        <div>
-          <label class="label" for="set-tax-country">{{ t('orgs.form.taxCountry') }}</label>
-          <select id="set-tax-country" v-model="form.tax_country" class="input">
-            <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
-          </select>
-        </div>
-        <div class="col-span-2">
-          <label class="label" for="set-tax-value">{{ t('orgs.form.taxValue') }}</label>
-          <input
-            id="set-tax-value"
-            v-model="form.tax_value"
-            maxlength="32"
-            class="input font-mono"
-          />
-          <FieldError field="set-tax-value" :code="fieldErrors['tax_value']" />
-        </div>
-      </div>
       <p
-        v-if="legalChanged && original.status === 'active'"
-        class="text-sm font-medium text-amber-700 dark:text-amber-300"
-        role="status"
-        data-testid="reset-warning"
+        v-if="conflict"
+        class="rounded-lg bg-amber-50 p-4 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+        role="alert"
       >
-        {{ t('orgs.settings.willReset') }}
+        {{ t('orgs.settings.conflict') }}
+        <button type="button" class="ml-2 underline" @click="load">{{ t('pets.reload') }}</button>
       </p>
-      <div class="grid grid-cols-2 gap-3">
+      <p
+        v-if="error"
+        class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950 dark:text-red-300"
+        role="alert"
+      >
+        {{ error }}
+      </p>
+      <p
+        v-if="saved"
+        class="rounded-lg bg-green-50 p-4 text-green-800 dark:bg-green-950 dark:text-green-200"
+        role="status"
+      >
+        {{ t('orgs.settings.saved') }}
+      </p>
+
+      <p
+        class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+      >
+        {{ t('orgs.settings.verificationWarning') }}
+      </p>
+
+      <form v-if="original" class="space-y-4" novalidate @submit.prevent="save">
         <div>
-          <label class="label" for="set-city">{{ t('orgs.form.city') }}</label>
-          <input id="set-city" v-model="form.address.city" maxlength="120" class="input" />
-          <FieldError field="set-city" :code="fieldErrors['address.city']" />
+          <label class="label" for="set-display">{{ t('orgs.form.displayName') }}</label>
+          <input id="set-display" v-model="form.display_name" maxlength="80" class="input" />
+          <FieldError field="set-display" :code="fieldErrors['display_name']" />
         </div>
         <div>
-          <label class="label" for="set-region">{{ t('orgs.form.region') }}</label>
-          <input id="set-region" v-model="form.address.region" maxlength="120" class="input" />
+          <label class="label" for="set-legal">{{ t('orgs.form.legalName') }}</label>
+          <input id="set-legal" v-model="form.legal_name" maxlength="120" class="input" />
+          <FieldError field="set-legal" :code="fieldErrors['legal_name']" />
         </div>
-      </div>
-      <div>
-        <label class="label" for="set-line1">{{ t('orgs.form.line1') }}</label>
-        <input id="set-line1" v-model="form.address.line1" maxlength="200" class="input" />
-        <FieldError field="set-line1" :code="fieldErrors['address.line1']" />
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="label" for="set-email">{{ t('orgs.form.email') }}</label>
-          <input id="set-email" v-model="form.contact.email" type="email" class="input" />
-          <FieldError field="set-email" :code="fieldErrors['contact.email']" />
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="label" for="set-tax-country">{{ t('orgs.form.taxCountry') }}</label>
+            <select id="set-tax-country" v-model="form.tax_country" class="input">
+              <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">{{ c.name }}</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="label" for="set-tax-value">{{ t('orgs.form.taxValue') }}</label>
+            <input
+              id="set-tax-value"
+              v-model="form.tax_value"
+              maxlength="32"
+              class="input font-mono"
+            />
+            <FieldError field="set-tax-value" :code="fieldErrors['tax_value']" />
+          </div>
         </div>
-        <div>
-          <label class="label" for="set-phone">{{ t('orgs.form.phone') }}</label>
-          <input id="set-phone" v-model="form.contact.phone" type="tel" class="input" />
-          <FieldError field="set-phone" :code="fieldErrors['contact.phone']" />
-        </div>
-      </div>
-      <div>
-        <label class="label" for="set-web"
-          >{{ t('orgs.form.website') }} ({{ t('common.optional') }})</label
+        <p
+          v-if="legalChanged && original.status === 'active'"
+          class="text-sm font-medium text-amber-700 dark:text-amber-300"
+          role="status"
+          data-testid="reset-warning"
         >
-        <input id="set-web" v-model="form.contact.website" type="url" class="input" />
-        <FieldError field="set-web" :code="fieldErrors['contact.website']" />
-      </div>
-      <button type="submit" class="btn-primary" :disabled="saving" data-testid="save-org">
-        {{ saving ? t('common.saving') : t('common.save') }}
-      </button>
-    </form>
+          {{ t('orgs.settings.willReset') }}
+        </p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label" for="set-city">{{ t('orgs.form.city') }}</label>
+            <input id="set-city" v-model="form.address.city" maxlength="120" class="input" />
+            <FieldError field="set-city" :code="fieldErrors['address.city']" />
+          </div>
+          <div>
+            <label class="label" for="set-region">{{ t('orgs.form.region') }}</label>
+            <input id="set-region" v-model="form.address.region" maxlength="120" class="input" />
+          </div>
+        </div>
+        <div>
+          <label class="label" for="set-line1">{{ t('orgs.form.line1') }}</label>
+          <input id="set-line1" v-model="form.address.line1" maxlength="200" class="input" />
+          <FieldError field="set-line1" :code="fieldErrors['address.line1']" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label" for="set-email">{{ t('orgs.form.email') }}</label>
+            <input id="set-email" v-model="form.contact.email" type="email" class="input" />
+            <FieldError field="set-email" :code="fieldErrors['contact.email']" />
+          </div>
+          <div>
+            <label class="label" for="set-phone">{{ t('orgs.form.phone') }}</label>
+            <input id="set-phone" v-model="form.contact.phone" type="tel" class="input" />
+            <FieldError field="set-phone" :code="fieldErrors['contact.phone']" />
+          </div>
+        </div>
+        <div>
+          <label class="label" for="set-web"
+            >{{ t('orgs.form.website') }} ({{ t('common.optional') }})</label
+          >
+          <input id="set-web" v-model="form.contact.website" type="url" class="input" />
+          <FieldError field="set-web" :code="fieldErrors['contact.website']" />
+        </div>
+        <button type="submit" class="btn-primary" :disabled="saving" data-testid="save-org">
+          {{ saving ? t('common.saving') : t('common.save') }}
+        </button>
+      </form>
     </div>
   </section>
 </template>

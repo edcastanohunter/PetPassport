@@ -14,7 +14,7 @@ import {
   type SearchIndexSummary,
 } from './platformApi'
 
-const { t, d } = useI18n()
+const { t } = useI18n()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -31,9 +31,7 @@ const topOrgs = ref<TopOrganizationItem[]>([])
 const indices = ref<SearchIndexSummary[]>([])
 
 // Diálogos de confirmación con motivo
-type PendingAction =
-  | { type: 'reindex'; alias: string }
-  | { type: 'purge'; families: string[] }
+type PendingAction = { type: 'reindex'; alias: string } | { type: 'purge'; families: string[] }
 
 const pendingAction = ref<PendingAction | null>(null)
 const dialogBusy = ref(false)
@@ -43,6 +41,18 @@ const latestMetrics = computed(() => {
   if (statsSeries.value.length === 0) return null
   return statsSeries.value[statsSeries.value.length - 1]
 })
+
+const activeOrgsCount = computed(() => {
+  const orgs = latestMetrics.value?.organizations as Record<string, number> | undefined
+  return orgs?.active ?? '—'
+})
+
+function getOrgsActive(orgs: unknown): number {
+  if (orgs && typeof orgs === 'object' && 'active' in orgs) {
+    return Number((orgs as Record<string, number>).active) || 0
+  }
+  return 0
+}
 
 async function loadData() {
   loading.value = true
@@ -102,7 +112,10 @@ async function confirmAction(reason: string) {
   try {
     if (pendingAction.value.type === 'reindex') {
       const res = await reindexIndex(pendingAction.value.alias, reason)
-      notice.value = t('admin.platform.reindexSuccess', { alias: pendingAction.value.alias, job: res.job_id })
+      notice.value = t('admin.platform.reindexSuccess', {
+        alias: pendingAction.value.alias,
+        job: res.job_id,
+      })
     } else if (pendingAction.value.type === 'purge') {
       await purgeCache(reason, pendingAction.value.families)
       notice.value = t('admin.platform.purgeSuccess')
@@ -125,12 +138,7 @@ async function confirmAction(reason: string) {
         <p class="text-sm text-surface-500">{{ t('admin.platform.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="btn-secondary text-sm"
-          :disabled="loading"
-          @click="loadData"
-        >
+        <button type="button" class="btn-secondary text-sm" :disabled="loading" @click="loadData">
           <span class="pi pi-refresh mr-1" :class="{ 'animate-spin': loading }" />
           {{ t('common.refresh') }}
         </button>
@@ -167,27 +175,35 @@ async function confirmAction(reason: string) {
       <h2 id="kpi-heading" class="text-lg font-semibold">{{ t('admin.platform.kpi') }}</h2>
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="card p-4 space-y-1">
-          <span class="text-xs font-medium text-surface-500 uppercase">{{ t('admin.platform.usersActive') }}</span>
+          <span class="text-xs font-medium text-surface-500 uppercase">{{
+            t('admin.platform.usersActive')
+          }}</span>
           <p class="text-2xl font-bold" data-testid="kpi-users">
             {{ latestMetrics?.users_active ?? '—' }}
           </p>
         </div>
         <div class="card p-4 space-y-1">
-          <span class="text-xs font-medium text-surface-500 uppercase">{{ t('admin.platform.pets') }}</span>
+          <span class="text-xs font-medium text-surface-500 uppercase">{{
+            t('admin.platform.pets')
+          }}</span>
           <p class="text-2xl font-bold" data-testid="kpi-pets">
             {{ latestMetrics?.pets ?? '—' }}
           </p>
         </div>
         <div class="card p-4 space-y-1">
-          <span class="text-xs font-medium text-surface-500 uppercase">{{ t('admin.platform.encounters') }}</span>
+          <span class="text-xs font-medium text-surface-500 uppercase">{{
+            t('admin.platform.encounters')
+          }}</span>
           <p class="text-2xl font-bold" data-testid="kpi-encounters">
             {{ latestMetrics?.encounters_signed ?? '—' }}
           </p>
         </div>
         <div class="card p-4 space-y-1">
-          <span class="text-xs font-medium text-surface-500 uppercase">{{ t('admin.platform.orgs') }}</span>
+          <span class="text-xs font-medium text-surface-500 uppercase">{{
+            t('admin.platform.orgs')
+          }}</span>
           <p class="text-2xl font-bold" data-testid="kpi-orgs">
-            {{ (latestMetrics?.organizations as Record<string, number>)?.active ?? '—' }}
+            {{ activeOrgsCount }}
           </p>
         </div>
       </div>
@@ -195,7 +211,9 @@ async function confirmAction(reason: string) {
 
     <!-- Filtros de serie temporal -->
     <section class="card p-4 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-200 pb-3 dark:border-surface-800">
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-200 pb-3 dark:border-surface-800"
+      >
         <h2 class="text-lg font-semibold">{{ t('admin.platform.seriesTitle') }}</h2>
         <div class="flex flex-wrap items-center gap-2">
           <select v-model="granularity" class="input py-1 text-sm" @change="loadData">
@@ -242,7 +260,7 @@ async function confirmAction(reason: string) {
               <td class="py-2">{{ point.users_active ?? 0 }}</td>
               <td class="py-2">{{ point.pets ?? 0 }}</td>
               <td class="py-2">{{ point.encounters_signed ?? 0 }}</td>
-              <td class="py-2">{{ (point.organizations as Record<string, number>)?.active ?? 0 }}</td>
+              <td class="py-2">{{ getOrgsActive(point.organizations) }}</td>
             </tr>
             <tr v-if="statsSeries.length === 0">
               <td colspan="5" class="py-4 text-center text-surface-400">
@@ -290,7 +308,9 @@ async function confirmAction(reason: string) {
 
     <!-- Estado de índices y proyecciones -->
     <section class="card p-4 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-200 pb-3 dark:border-surface-800">
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-surface-200 pb-3 dark:border-surface-800"
+      >
         <div>
           <h2 class="text-lg font-semibold">{{ t('admin.platform.indices') }}</h2>
           <p class="text-xs text-surface-500">{{ t('admin.platform.indicesHint') }}</p>
@@ -335,7 +355,9 @@ async function confirmAction(reason: string) {
               <td class="py-2 text-center">
                 <span
                   class="rounded px-2 py-0.5 text-xs font-medium"
-                  :class="idx.drift ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'"
+                  :class="
+                    idx.drift ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                  "
                 >
                   {{ idx.drift ? t('admin.platform.driftYes') : t('admin.platform.driftNo') }}
                 </span>
@@ -363,7 +385,11 @@ async function confirmAction(reason: string) {
     <!-- Diálogo de motivo para auditoría -->
     <ReasonDialog
       v-if="pendingAction"
-      :title="pendingAction.type === 'reindex' ? t('admin.platform.reindexConfirm') : t('admin.platform.purgeConfirm')"
+      :title="
+        pendingAction.type === 'reindex'
+          ? t('admin.platform.reindexConfirm')
+          : t('admin.platform.purgeConfirm')
+      "
       :target="pendingAction.type === 'reindex' ? pendingAction.alias : 'platform_cache'"
       :busy="dialogBusy"
       @confirm="confirmAction"

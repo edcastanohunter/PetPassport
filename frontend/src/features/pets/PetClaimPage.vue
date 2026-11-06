@@ -115,11 +115,7 @@ function login() {
       {{ t('common.loading') }}
     </div>
 
-    <div
-      v-else-if="state === 'invalid'"
-      class="card p-8 text-center space-y-3"
-      role="alert"
-    >
+    <div v-else-if="state === 'invalid'" class="card p-8 text-center space-y-3" role="alert">
       <span class="pi pi-exclamation-triangle text-3xl text-amber-500" />
       <h1 class="text-xl font-bold">{{ t('pets.claim.invalidTitle') }}</h1>
       <p class="text-sm text-surface-600 dark:text-surface-400">
@@ -130,11 +126,7 @@ function login() {
       </RouterLink>
     </div>
 
-    <div
-      v-else-if="state === 'error'"
-      class="card p-8 text-center space-y-3"
-      role="alert"
-    >
+    <div v-else-if="state === 'error'" class="card p-8 text-center space-y-3" role="alert">
       <span class="pi pi-times-circle text-3xl text-red-500" />
       <h1 class="text-xl font-bold">{{ t('common.errorGeneric') }}</h1>
       <button type="button" class="btn-secondary text-sm" @click="fetchPreview">
@@ -240,10 +232,7 @@ function login() {
       </div>
 
       <!-- Aviso para usuarios no autenticados -->
-      <div
-        v-if="!isAuthenticated"
-        class="card p-6 text-center space-y-3"
-      >
+      <div v-if="!isAuthenticated" class="card p-6 text-center space-y-3">
         <p class="text-sm text-surface-600 dark:text-surface-400">
           {{ t('pets.claim.loginPrompt') }}
         </p>

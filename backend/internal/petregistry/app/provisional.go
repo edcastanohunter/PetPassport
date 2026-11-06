@@ -64,11 +64,11 @@ func (s *Service) RegisterProvisional(ctx context.Context, cmd domain.RegisterPr
 
 	if sendInvitation && token != "" && s.notifier != nil && cmd.GuardianEmail != "" {
 		_ = s.notifier.Enqueue(context.WithoutCancel(ctx), notify.Notification{
-			Rule:     "pet_claim_invite",
-			Template: "pet_claim_invite",
-			Category: "account",
-			To:       cmd.GuardianEmail,
-			Locale:   "es",
+			Rule:      "pet_claim_invite",
+			Template:  "pet_claim_invite",
+			Category:  "account",
+			To:        cmd.GuardianEmail,
+			Locale:    "es",
 			SubjectID: cmd.PetID,
 			Payload: map[string]string{
 				"pet_name": cmd.Name,
@@ -232,9 +232,9 @@ func (s *Service) ListProvisionalPets(ctx context.Context, orgID uuid.UUID, stat
 
 // ImportResult resultado de la importación CSV de pacientes provisionales (PP-F3-PRD-013).
 type ImportResult struct {
-	Total    int      `json:"total"`
-	Created  int      `json:"created"`
-	Errors   []string `json:"errors,omitempty"`
+	Total   int      `json:"total"`
+	Created int      `json:"created"`
+	Errors  []string `json:"errors,omitempty"`
 }
 
 // ImportProvisionalPetsCSV procesa un CSV con pacientes provisionales (PP-F3-PRD-013).

@@ -108,9 +108,9 @@ var titles = map[Code]string{
 	PushSubscriptionInvalid: "Suscripción push inválida",
 	AttachmentScanPending:   "Adjunto pendiente de análisis antivirus",
 	AttachmentQuarantined:   "Adjunto en cuarentena por seguridad",
-	Code("PIN_REQUIRED"):          "PIN requerido",
-	Code("PIN_INVALID"):           "PIN incorrecto",
-	Code("SHARE_LOCKED"):          "Enlace bloqueado",
+	Code("PIN_REQUIRED"):    "PIN requerido",
+	Code("PIN_INVALID"):     "PIN incorrecto",
+	Code("SHARE_LOCKED"):    "Enlace bloqueado",
 
 	Code("SLOT_UNAVAILABLE"):     "Franja no disponible",
 	Code("INVALID_TRANSITION"):   "Estado de la cita no válido",

@@ -387,14 +387,17 @@ func run() error {
 	if redisClient != nil {
 		abuseDetector = searchapp.NewAbuseDetector(redisClient.Raw(), logger)
 	}
-	cohortSvc := searchapp.NewCohortService(pool.Pool, osClient)
-	platformStatsSvc := searchapp.NewPlatformStatsService(pool.Pool)
+	cohortStore := searchinfra.NewPGCohortStore(pool.Pool)
+	cohortSvc := searchapp.NewCohortService(cohortStore, osClient)
+	platformStatsRepo := searchinfra.NewPGPlatformStatsRepository(pool.Pool)
+	platformStatsSvc := searchapp.NewPlatformStatsService(platformStatsRepo)
 	searchHandler := searchhttp.NewSearchHandler(resilientSearch, searchAdmin, abuseDetector, distCache).
 		WithCohorts(cohortSvc).
 		WithStats(platformStatsSvc)
 	medHandler := medicationshttp.NewMedicationHandler(medSvc, resilientSearch)
 
-	directorySvc := orgapp.NewDirectoryService(pool.Pool)
+	directoryStore := orginfra.NewPGDirectoryStore(pool.Pool)
+	directorySvc := orgapp.NewDirectoryService(directoryStore)
 	orgHandlers := orghttp.NewOrgHandlers(orgSvc, idemStore, membershipCache, identityHandlers, logger).
 		WithIPHashSalt(cfg.IPHashSalt).
 		WithDirectory(directorySvc)
@@ -405,10 +408,10 @@ func run() error {
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
 		Handlers: apiHandlers{
-			Handlers:      identityHandlers,
-			AdminHandlers: identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
-			PetHandlers:   petHandlers,
-			OrgHandlers:   orgHandlers,
+			Handlers:             identityHandlers,
+			AdminHandlers:        identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+			PetHandlers:          petHandlers,
+			OrgHandlers:          orgHandlers,
 			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
 			ClinicalHandlers:     clinicalHandlers,
 			SchedulingHandlers:   schedulingHandlers,

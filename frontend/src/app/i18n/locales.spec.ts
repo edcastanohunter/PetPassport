@@ -46,20 +46,16 @@ describe('PP-F1-FE-010 locales', () => {
     expect(empty).toEqual([])
   })
 
-  it(
-    'toda clave estática usada en el código existe',
-    () => {
-      const root = join(__dirname, '..', '..')
-      const used = new Set<string>()
-      for (const file of sources(root)) {
-        const text = readFileSync(file, 'utf8')
-        for (const m of text.matchAll(/\bt\(\s*'([a-zA-Z][\w.]*)'/g)) used.add(m[1]!)
-      }
-      expect(used.size).toBeGreaterThan(100)
-      expect([...used].filter((k) => !esKeys.has(k) || !enKeys.has(k))).toEqual([])
-    },
-    20000,
-  )
+  it('toda clave estática usada en el código existe', () => {
+    const root = join(__dirname, '..', '..')
+    const used = new Set<string>()
+    for (const file of sources(root)) {
+      const text = readFileSync(file, 'utf8')
+      for (const m of text.matchAll(/\bt\(\s*'([a-zA-Z][\w.]*)'/g)) used.add(m[1]!)
+    }
+    expect(used.size).toBeGreaterThan(100)
+    expect([...used].filter((k) => !esKeys.has(k) || !enKeys.has(k))).toEqual([])
+  }, 20000)
 
   it('normaliza etiquetas BCP 47 a idiomas soportados', () => {
     expect(normalizeLocale('en-US')).toBe('en')

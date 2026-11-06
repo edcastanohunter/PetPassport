@@ -19,16 +19,16 @@ import (
 // ProvisionalPetRequest cuerpo para registrar una mascota provisional (PP-F3-API-007).
 type ProvisionalPetRequest struct {
 	Pet struct {
-		Name         string                  `json:"name"`
-		Species      string                  `json:"species"`
-		SpeciesOther string                  `json:"species_other,omitempty"`
-		Breed        *string                 `json:"breed,omitempty"`
-		Sex          string                  `json:"sex"`
-		Neutered     string                  `json:"neutered"`
-		BirthDate    *domain.BirthDateInput  `json:"birth_date,omitempty"`
-		Markings     *string                 `json:"markings,omitempty"`
-		Microchip    *string                 `json:"microchip,omitempty"`
-		Alerts       []domain.PetAlert       `json:"alerts,omitempty"`
+		Name         string                 `json:"name"`
+		Species      string                 `json:"species"`
+		SpeciesOther string                 `json:"species_other,omitempty"`
+		Breed        *string                `json:"breed,omitempty"`
+		Sex          string                 `json:"sex"`
+		Neutered     string                 `json:"neutered"`
+		BirthDate    *domain.BirthDateInput `json:"birth_date,omitempty"`
+		Markings     *string                `json:"markings,omitempty"`
+		Microchip    *string                `json:"microchip,omitempty"`
+		Alerts       []domain.PetAlert      `json:"alerts,omitempty"`
 	} `json:"pet"`
 	GuardianContact struct {
 		Email string `json:"email,omitempty"`
@@ -258,10 +258,12 @@ func (h *PetHandlers) ImportProvisionalPets(w http.ResponseWriter, r *http.Reque
 	// Puede venir multipart/form-data o directamente como body CSV
 	reader := r.Body
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		// #nosec G120 -- request body is bounded by http.MaxBytesReader above
 		if err := r.ParseMultipartForm(10 << 20); err == nil {
 			file, _, err := r.FormFile("file")
 			if err == nil {
-				defer file.Close()
+				defer func() { _ = file.Close() }()
 				reader = file
 			}
 		}

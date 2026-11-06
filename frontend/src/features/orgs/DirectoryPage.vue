@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 
 interface DirectoryItem {
   id: string
@@ -55,8 +54,8 @@ async function search() {
     if (!res.ok) throw new Error('Error al consultar el directorio')
     const data = await res.json()
     clinics.value = data.data ?? []
-  } catch (err: any) {
-    error.value = err.message || 'Error al buscar clínicas'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Error al buscar clínicas'
   } finally {
     loading.value = false
   }
@@ -94,11 +93,10 @@ function clearGeo() {
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
     <div class="text-center space-y-2">
-      <h1 class="text-3xl font-bold tracking-tight text-surface-900">
-        Directorio Veterinario
-      </h1>
+      <h1 class="text-3xl font-bold tracking-tight text-surface-900">Directorio Veterinario</h1>
       <p class="text-surface-600 max-w-2xl mx-auto">
-        Encuentra clínicas veterinarias verificadas, servicios especializados y atención cerca de ti.
+        Encuentra clínicas veterinarias verificadas, servicios especializados y atención cerca de
+        ti.
       </p>
     </div>
 
@@ -156,7 +154,10 @@ function clearGeo() {
               ? 'bg-surface-900 text-white'
               : 'bg-surface-100 text-surface-700 hover:bg-surface-200'
           "
-          @click="selectedService = ''; search()"
+          @click="
+            selectedService = ''
+            search()
+          "
         >
           Todos
         </button>
@@ -170,7 +171,10 @@ function clearGeo() {
               ? 'bg-primary-600 text-white'
               : 'bg-surface-100 text-surface-700 hover:bg-surface-200'
           "
-          @click="selectedService = (selectedService === svc.id ? '' : svc.id); search()"
+          @click="
+            selectedService = selectedService === svc.id ? '' : svc.id
+            search()
+          "
         >
           {{ svc.label }}
         </button>
@@ -188,7 +192,10 @@ function clearGeo() {
     </div>
 
     <!-- Resultados -->
-    <div v-else-if="clinics.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div
+      v-else-if="clinics.length > 0"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
       <div
         v-for="clinic in clinics"
         :key="clinic.id"
@@ -209,7 +216,10 @@ function clearGeo() {
 
           <div class="text-sm text-surface-600 flex items-center gap-1.5">
             <span class="pi pi-compass text-surface-400"></span>
-            <span>{{ clinic.city }}<span v-if="clinic.neighborhood">, {{ clinic.neighborhood }}</span></span>
+            <span
+              >{{ clinic.city
+              }}<span v-if="clinic.neighborhood">, {{ clinic.neighborhood }}</span></span
+            >
           </div>
 
           <div v-if="clinic.phone" class="text-sm text-surface-600 flex items-center gap-1.5">
@@ -220,7 +230,10 @@ function clearGeo() {
           </div>
 
           <!-- Servicios ofrecidos -->
-          <div v-if="clinic.services && clinic.services.length > 0" class="flex flex-wrap gap-1.5 pt-2">
+          <div
+            v-if="clinic.services && clinic.services.length > 0"
+            class="flex flex-wrap gap-1.5 pt-2"
+          >
             <span
               v-for="s in clinic.services"
               :key="s"

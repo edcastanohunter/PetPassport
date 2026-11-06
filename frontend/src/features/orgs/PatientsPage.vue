@@ -67,7 +67,9 @@ const newForm = ref<RegisterProvisionalPayload>({
 const showImportModal = ref(false)
 const importBusy = ref(false)
 const importFile = ref<File | null>(null)
-const importResult = ref<{ imported: number; errors: { row: number; error: string }[] } | null>(null)
+const importResult = ref<{ imported: number; errors: { row: number; error: string }[] } | null>(
+  null,
+)
 
 async function fetchPage(reset: boolean) {
   if (suspended.value) return
@@ -100,7 +102,10 @@ async function fetchProvisional() {
   provisionalLoading.value = true
   provisionalError.value = null
   try {
-    provisionalRows.value = await listProvisionalPets(orgId.value, provisionalFilter.value || undefined)
+    provisionalRows.value = await listProvisionalPets(
+      orgId.value,
+      provisionalFilter.value || undefined,
+    )
   } catch (e: unknown) {
     provisionalError.value = e instanceof Error ? e.message : t('common.errorGeneric')
   } finally {
@@ -168,7 +173,14 @@ async function handleCreateProvisional() {
     showNewModal.value = false
     // Limpiar formulario
     newForm.value = {
-      pet: { name: '', species: 'canine', breed: '', sex: 'female', neutered: 'unknown', microchip: '' },
+      pet: {
+        name: '',
+        species: 'canine',
+        breed: '',
+        sex: 'female',
+        neutered: 'unknown',
+        microchip: '',
+      },
       guardian_contact: { email: '', phone: '' },
       send_invitation: true,
     }
@@ -244,11 +256,18 @@ async function handleImportCSV() {
 
     <template v-else>
       <!-- Selector de pestañas -->
-      <nav class="flex border-b border-surface-200 dark:border-surface-800" aria-label="Pestañas de pacientes">
+      <nav
+        class="flex border-b border-surface-200 dark:border-surface-800"
+        aria-label="Pestañas de pacientes"
+      >
         <button
           type="button"
           class="px-4 py-2 text-sm font-medium border-b-2"
-          :class="activeTab === 'linked' ? 'border-primary-600 text-primary-600' : 'border-transparent text-surface-500 hover:text-surface-700'"
+          :class="
+            activeTab === 'linked'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-surface-500 hover:text-surface-700'
+          "
           data-testid="tab-linked"
           @click="switchTab('linked')"
         >
@@ -257,7 +276,11 @@ async function handleImportCSV() {
         <button
           type="button"
           class="px-4 py-2 text-sm font-medium border-b-2"
-          :class="activeTab === 'provisional' ? 'border-primary-600 text-primary-600' : 'border-transparent text-surface-500 hover:text-surface-700'"
+          :class="
+            activeTab === 'provisional'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-surface-500 hover:text-surface-700'
+          "
           data-testid="tab-provisional"
           @click="switchTab('provisional')"
         >
@@ -402,7 +425,9 @@ async function handleImportCSV() {
       <div v-else class="space-y-4" data-testid="provisional-tab-content">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <label for="provisional-filter" class="text-xs text-surface-500">{{ t('pets.provisional.statusFilter') }}</label>
+            <label for="provisional-filter" class="text-xs text-surface-500">{{
+              t('pets.provisional.statusFilter')
+            }}</label>
             <select
               id="provisional-filter"
               v-model="provisionalFilter"
@@ -465,7 +490,8 @@ async function handleImportCSV() {
                 <td class="py-2 font-medium">
                   {{ p.name }}
                   <span class="block text-xs text-surface-500">
-                    {{ speciesLabel(p.species) }}<template v-if="p.breed"> · {{ p.breed }}</template>
+                    {{ speciesLabel(p.species)
+                    }}<template v-if="p.breed"> · {{ p.breed }}</template>
                   </span>
                 </td>
                 <td class="py-2 font-mono text-xs">{{ p.microchip || '—' }}</td>
@@ -482,9 +508,7 @@ async function handleImportCSV() {
                     {{ t(`pets.provisional.status_${p.claim_status}`) }}
                   </span>
                 </td>
-                <td class="py-2 text-center text-xs font-mono">
-                  {{ p.resend_count }} / 3
-                </td>
+                <td class="py-2 text-center text-xs font-mono">{{ p.resend_count }} / 3</td>
                 <td class="py-2 text-right" @click.stop>
                   <button
                     v-if="p.claim_status === 'pending'"
@@ -516,10 +540,7 @@ async function handleImportCSV() {
       role="dialog"
       aria-modal="true"
     >
-      <form
-        class="card w-full max-w-lg space-y-4 p-6"
-        @submit.prevent="handleCreateProvisional"
-      >
+      <form class="card w-full max-w-lg space-y-4 p-6" @submit.prevent="handleCreateProvisional">
         <h2 class="text-xl font-bold">{{ t('pets.provisional.modalTitle') }}</h2>
         <p class="text-xs text-surface-500">{{ t('pets.provisional.modalSubtitle') }}</p>
 
@@ -560,7 +581,9 @@ async function handleImportCSV() {
           </div>
 
           <div class="border-t border-surface-200 pt-3 dark:border-surface-800 space-y-2">
-            <h3 class="font-semibold text-xs text-surface-600 uppercase">{{ t('pets.provisional.guardianContact') }}</h3>
+            <h3 class="font-semibold text-xs text-surface-600 uppercase">
+              {{ t('pets.provisional.guardianContact') }}
+            </h3>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs mb-1">{{ t('pets.provisional.guardianEmail') }}</label>
@@ -606,10 +629,7 @@ async function handleImportCSV() {
       role="dialog"
       aria-modal="true"
     >
-      <form
-        class="card w-full max-w-lg space-y-4 p-6"
-        @submit.prevent="handleImportCSV"
-      >
+      <form class="card w-full max-w-lg space-y-4 p-6" @submit.prevent="handleImportCSV">
         <h2 class="text-xl font-bold">{{ t('pets.provisional.importTitle') }}</h2>
         <p class="text-xs text-surface-500">{{ t('pets.provisional.importSubtitle') }}</p>
 
@@ -624,7 +644,11 @@ async function handleImportCSV() {
           <div
             v-if="importResult"
             class="rounded-lg p-3 text-xs space-y-1"
-            :class="importResult.errors.length ? 'bg-amber-50 text-amber-900' : 'bg-emerald-50 text-emerald-900'"
+            :class="
+              importResult.errors.length
+                ? 'bg-amber-50 text-amber-900'
+                : 'bg-emerald-50 text-emerald-900'
+            "
           >
             <p class="font-semibold">
               {{ t('pets.provisional.importedCount', { count: importResult.imported }) }}

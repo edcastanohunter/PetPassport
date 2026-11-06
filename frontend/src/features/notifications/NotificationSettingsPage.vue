@@ -25,7 +25,9 @@ const error = ref<string | null>(null)
 const saved = ref(false)
 const saving = ref(false)
 
-const pushPermission = ref<NotificationPermission>(typeof Notification !== 'undefined' ? Notification.permission : 'default')
+const pushPermission = ref<NotificationPermission>(
+  typeof Notification !== 'undefined' ? Notification.permission : 'default',
+)
 const pushDevices = ref<PushSubscriptionItem[]>([])
 const pushSubscribing = ref(false)
 const isSubscribedOnThisDevice = ref(false)
@@ -249,7 +251,9 @@ async function save() {
                 <div class="text-xs text-surface-400">
                   Registrado: {{ new Date(dev.created_at).toLocaleDateString() }} · Estado:
                   <span
-                    :class="dev.status === 'active' ? 'text-green-600 font-medium' : 'text-surface-400'"
+                    :class="
+                      dev.status === 'active' ? 'text-green-600 font-medium' : 'text-surface-400'
+                    "
                   >
                     {{ dev.status }}
                   </span>

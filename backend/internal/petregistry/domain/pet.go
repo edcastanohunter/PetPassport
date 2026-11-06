@@ -44,32 +44,32 @@ type GuardianshipTransfer struct {
 // la versión, así que el repositorio persiste con expected =
 // Version - len(uncommitted).
 type Pet struct {
-	id           uuid.UUID
-	version      int64
-	guardianID   uuid.UUID
-	name         PetName
-	species      Species
-	speciesOther string
-	breed        *string
-	sex          Sex
-	neutered     Tristate
-	birthDate    *BirthDate
-	markings     *string
-	microchip    *Microchip
-	corrections  int
-	photo        *PhotoRef
-	status       PetStatus
-	deceasedAt   *kernel.CivilDate
-	careLinks    map[uuid.UUID]CareLink
-	activeLinks  int
-	requests     map[uuid.UUID]CareLinkRequest
-	alerts       []PetAlert
-	pending      *GuardianshipTransfer
-	provisional  bool
+	id               uuid.UUID
+	version          int64
+	guardianID       uuid.UUID
+	name             PetName
+	species          Species
+	speciesOther     string
+	breed            *string
+	sex              Sex
+	neutered         Tristate
+	birthDate        *BirthDate
+	markings         *string
+	microchip        *Microchip
+	corrections      int
+	photo            *PhotoRef
+	status           PetStatus
+	deceasedAt       *kernel.CivilDate
+	careLinks        map[uuid.UUID]CareLink
+	activeLinks      int
+	requests         map[uuid.UUID]CareLinkRequest
+	alerts           []PetAlert
+	pending          *GuardianshipTransfer
+	provisional      bool
 	provisionalOrgID *uuid.UUID
-	mergedInto   *uuid.UUID
-	unclaimed    bool
-	uncommitted  []any
+	mergedInto       *uuid.UUID
+	unclaimed        bool
+	uncommitted      []any
 }
 
 // ID devuelve el identificador del agregado.

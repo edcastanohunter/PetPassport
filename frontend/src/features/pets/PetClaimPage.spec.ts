@@ -9,7 +9,7 @@ import { useSessionStore } from '@/features/auth/sessionStore'
 const replace = vi.fn()
 vi.mock('vue-router', () => ({
   useRouter: () => ({ replace }),
-  useRoute: () => ({ params: { token: 'claim-tok-123' }, fullPath: '/pet-claims/claim-tok-123' }),
+  useRoute: () => ({ params: { token: 'mock-claim-id' }, fullPath: '/pet-claims/mock-claim-id' }),
 }))
 
 function mountPage() {
@@ -59,7 +59,7 @@ describe('PetClaimPage (PP-F3-FE-009, PP-F3-PRD-013)', () => {
   })
 
   it('muestra alerta de duplicado de microchip y opción de fusionar', async () => {
-    global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/accept')) {
         return Promise.resolve({
           ok: true,

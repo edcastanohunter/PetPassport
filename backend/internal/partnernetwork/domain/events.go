@@ -227,7 +227,9 @@ type OrganizationDirectoryListingUpdated struct {
 }
 
 // EventName implementa eventstore.Event.
-func (OrganizationDirectoryListingUpdated) EventName() string { return "OrganizationDirectoryListingUpdated" }
+func (OrganizationDirectoryListingUpdated) EventName() string {
+	return "OrganizationDirectoryListingUpdated"
+}
 
 // SchemaVersion implementa eventstore.Event.
 func (OrganizationDirectoryListingUpdated) SchemaVersion() int { return 1 }

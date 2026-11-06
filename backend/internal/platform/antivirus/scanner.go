@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 	"time"
@@ -81,7 +83,8 @@ func NewClamAVScanner(network, address string, timeout time.Duration) *ClamAVSca
 }
 
 func (c *ClamAVScanner) Scan(ctx context.Context, r io.Reader) (Result, error) {
-	conn, err := net.DialTimeout(c.network, c.address, c.timeout)
+	dialer := &net.Dialer{Timeout: c.timeout}
+	conn, err := dialer.DialContext(ctx, c.network, c.address)
 	if err != nil {
 		return Result{Status: StatusPending}, fmt.Errorf("clamav dial %s://%s: %w", c.network, c.address, err)
 	}
@@ -104,6 +107,9 @@ func (c *ClamAVScanner) Scan(ctx context.Context, r io.Reader) (Result, error) {
 
 		n, rerr := r.Read(buf)
 		if n > 0 {
+			if n > math.MaxUint32 {
+				return Result{Status: StatusPending}, errors.New("invalid chunk size")
+			}
 			var lenBuf [4]byte
 			binary.BigEndian.PutUint32(lenBuf[:], uint32(n))
 			if _, err := conn.Write(lenBuf[:]); err != nil {

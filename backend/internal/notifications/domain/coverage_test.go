@@ -59,3 +59,36 @@ func TestVerifyUnsubscribeRejects(t *testing.T) {
 		}
 	}
 }
+
+func TestPushDomain(t *testing.T) {
+	if err := domain.ValidateEndpoint("https://fcm.googleapis.com/fcm/send/123"); err != nil {
+		t.Fatalf("https endpoint debe ser válido: %v", err)
+	}
+	if err := domain.ValidateEndpoint("http://insecure.com"); err == nil {
+		t.Fatal("http endpoint debe fallar")
+	}
+	if err := domain.ValidateEndpoint("not-a-url"); err == nil {
+		t.Fatal("invalid url debe fallar")
+	}
+
+	h := domain.HashEndpoint("https://example.com")
+	if len(h) != 32 {
+		t.Fatalf("esperado hash sha256 de 32 bytes, obtenido %d", len(h))
+	}
+
+	prefs := domain.DefaultPreferences()
+	if !prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push appointments por defecto debe ser true")
+	}
+	prefs.Push[domain.Appointments] = false
+	if prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push appointments deshabilitado debe ser false")
+	}
+	prefs.Push = nil
+	if !prefs.AllowsPush(domain.Appointments) {
+		t.Fatal("push nil debe usar defecto")
+	}
+	if !prefs.AllowsPush(domain.Security) {
+		t.Fatal("push security siempre debe ser true")
+	}
+}
