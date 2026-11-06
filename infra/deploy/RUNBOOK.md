@@ -597,3 +597,223 @@ Solicitud de portabilidad (ACCESS/portabilidad, RGPD/Ley 1581): la atiende un op
 3. Entregar el archivo por un canal cifrado acordado con la persona (no por correo en claro) y borrarlo
    del servidor: `podman exec pp-worker rm /tmp/export-<uuid>.json`.
 4. Registrar la solicitud (fecha, operador, `user_id`) en el libro de incidencias. Plazo máximo: 15 días hábiles.
+
+## 17. Operación de plataforma, búsqueda y resiliencia F3 (PP-F3-INF-006)
+
+Procedimientos operativos para la Fase 3: gestión de búsqueda en OpenSearch, resiliencia de Redis y colas asynq, coordinación distribuida de workers, escaneo antivirus ClamAV, Web Push (VAPID) y reglas CDN de borde.
+
+### 17.1 Reindex sin downtime en OpenSearch (ARQ-003, DAT-001)
+
+OpenSearch opera con aliases estables (`pets`, `clinical`, `medications`, `organizations`) apuntando a índices físicos versionados (`<alias>-v1`, `<alias>-v2`). La lectura se realiza contra `<alias>` y la indexación en segundo plano utiliza `<alias>-write`.
+
+#### Paso a paso de reindexación sin parada:
+
+1. **Inspección previa de estado y drift**:
+   ```bash
+   podman exec pp-worker /worker search status
+   podman exec pp-worker /worker search mapping-check
+   ```
+   Si `mapping-check` reporta diferencias entre los JSON versionados en `backend/internal/search/mappings/*.json` y los mappings activos, se planifica la reindexación.
+
+2. **Lanzar la reindexación con motivo auditado (SEC-006)**:
+   ```bash
+   podman exec pp-worker /worker search reindex --alias <alias> --reason "actualizacion schema mapping F3"
+   ```
+   El subcomando ejecuta atómicamente:
+   - Crea el nuevo índice físico `<alias>-v(N+1)` con los mappings y analizadores del repositorio.
+   - Añade el nuevo índice al alias de escritura `<alias>-write` para doble escritura temporal.
+   - Sincroniza y reindexa los documentos desde PostgreSQL.
+   - Realiza un cambio atómico de alias de lectura (`add <alias>-v(N+1)` y `remove <alias>-vN`) y retira el índice anterior de `<alias>-write`.
+   - Registra el trabajo completado en `search.reindex_jobs`.
+
+3. **Verificación post-conmutación**:
+   - Comprobar que el alias apunta al nuevo índice: `podman exec pp-worker /worker search status`.
+   - Verificar que no hay degradación en la API: cabecera `X-PP-Search-Mode` debe responder `normal` y la alerta `SearchDegraded` debe estar en estado `OK`.
+
+4. **Rollback de emergencia del alias de lectura**:
+   Si tras la conmutación se detectan anomalías o documentos incompletos, revertir inmediatamente el alias de lectura al índice físico anterior:
+   ```bash
+   curl -s -X POST "http://localhost:9200/_aliases" -H 'Content-Type: application/json' -d '{
+     "actions": [
+       {"remove": {"index": "<alias>-v(N+1)", "alias": "<alias>"}},
+       {"add": {"index": "<alias>-vN", "alias": "<alias>"}}
+     ]
+   }'
+   ```
+   *Nota*: El índice anterior `<alias>-vN` se mantiene retenido durante al menos 24 horas antes de su eliminación física para garantizar la posibilidad de rollback instantáneo.
+
+### 17.2 Incidente de OpenSearch caído (ARQ-004, SEC-002, QA-006)
+
+#### Diagnóstico:
+1. Alerta `SearchDegraded` disparada (> 5% de búsquedas degradadas) o `SearchIndexLagHigh`.
+2. Comprobar salud del cluster local:
+   ```bash
+   curl -fsS http://localhost:9200/_cluster/health | jq .
+   systemctl --user status pp-opensearch
+   ```
+3. **Verificación de degradación automática**:
+   Confirmar que la API continúa respondiendo búsquedas de pacientes e historiales clínicos mediante el fallback a PostgreSQL (búsqueda por trigramas en `pets` y consultas ILIKE en `read_clinical.timeline_entries`). La API inyecta la cabecera `X-PP-Search-Mode: degraded` y `X-PP-Freshness`. La tasa de error 500 debe permanecer en 0%.
+
+#### Restauración del servicio:
+1. **Reinicio del servicio**:
+   ```bash
+   systemctl --user restart pp-opensearch
+   ```
+   El circuit breaker de `internal/search/infra` entrará en estado *half-open* a los 30 segundos; tras 3 consultas consecutivas exitosas contra OpenSearch, se cerrará y la API volverá automáticamente a `X-PP-Search-Mode: normal`.
+
+2. **Decisión: Snapshot vs Rebuild completo**:
+   - **Restaurar Snapshot (DAT-009)**: Si el almacenamiento de OpenSearch sufrió corrupción física pero el repositorio de snapshots está íntegro:
+     ```bash
+     # Listar snapshots disponibles
+     curl -s -X GET "http://localhost:9200/_snapshot/petpassport_snapshots/_all" | jq .
+     # Restaurar snapshot
+     curl -s -X POST "http://localhost:9200/_snapshot/petpassport_snapshots/<snapshot_name>/_restore" -H 'Content-Type: application/json' -d '{
+       "indices": "pets-*,clinical-*,medications-*,organizations-*",
+       "include_global_state": false
+     }'
+     ```
+   - **Rebuild desde PostgreSQL (fuente de verdad)**: Si no hay snapshot disponible o se prefiere reconstruir desde el histórico de eventos:
+     ```bash
+     podman exec pp-worker /worker search init
+     podman exec pp-worker /worker search reindex --alias pets --reason "recuperacion de desastre post-caida"
+     podman exec pp-worker /worker search reindex --alias clinical --reason "recuperacion de desastre post-caida"
+     podman exec pp-worker /worker search reindex --alias medications --reason "recuperacion de desastre post-caida"
+     ```
+
+### 17.3 Incidente de Redis caído o vaciado (ARQ-005, ARQ-006, ARQ-007, QA-006)
+
+Redis se utiliza exclusivamente como almacén efímero: DB 0 para caché compartida L2 y rate limiting distribuido; DB 1 para la cola de tareas asíncronas asynq. PostgreSQL es siempre la fuente durable de verdad.
+
+#### Comportamiento durante la caída:
+- **Rate Limiting (ARQ-007)**: Entra inmediatamente en modo **fail-open** (`RateLimitFailOpen`). Las peticiones no se bloquean, garantizando la continuidad del servicio frente a picos o fallos de red hacia Redis.
+- **Caché compartida L2 (ARQ-006)**: Entra en **fail-miss**. Las comprobaciones de membresía de organizaciones y accesos de mascota (`PetAccess`) se resuelven contra PostgreSQL y se conservan en la memoria L1 de cada réplica de la API.
+- **Asynq / Colas (ARQ-008)**: Los eventos entrantes se persisten en `search.index_queue` y `es.outbox` en PostgreSQL. Los runners de asynq pausan temporalmente la extracción de tareas hasta que Redis se restablezca.
+
+#### Recuperación:
+1. Reiniciar Redis:
+   ```bash
+   systemctl --user restart pp-redis
+   ```
+2. Si se ejecutó un `FLUSHALL` (o pérdida de memoria):
+   - El sistema se recupera de inmediato sin reiniciar la API ni los workers (verificado por el test de integración `TestRedisCacheFlushall`).
+   - La caché L2 se repuebla automáticamente con el tráfico entrante.
+   - Los productores de worker procesan las tareas acumuladas en `search.index_queue` sin pérdida de información.
+
+### 17.4 Gestión y liberación de leases huérfanos de worker (ARQ-009, DAT-003)
+
+Cada réplica de worker compite por leases individuales por runner (`projections`, `outbox`, `command-scheduler`, `clinical.*`, `notifications.*`) almacenados en `platform.worker_leases` con un TTL de 30 segundos renovado cada 10 segundos.
+
+#### Diagnóstico:
+1. Listar el estado de los leases activos:
+   ```bash
+   podman exec pp-worker /worker leases
+   ```
+   Salida esperada:
+   ```text
+   Runner              Holder              ExpiresIn      Renewals
+   projections         pp-worker-1         21s            142
+   outbox              pp-worker-2         18s            98
+   command-scheduler   pp-worker-1         24s            110
+   ```
+2. Si una réplica murió violentamente (OOM, pánico de kernel) y la alerta `LeaseTakeoverStorm` o `OutboxStuck` se dispara:
+   - El lease expirará por TTL en ≤ 30 segundos y otra réplica tomará el control automáticamente.
+   - Si un lease queda bloqueado artificialmente o se requiere forzar su cesión inmediata:
+     ```bash
+     podman exec pp-worker /worker leases --release <nombre_del_runner>
+     ```
+     Ejemplo: `podman exec pp-worker /worker leases --release projections`.
+
+### 17.5 DLQ (Dead-Letter Queue) de asynq (ARQ-008)
+
+Tareas no ordenadas (indexación OpenSearch en bulk, renderizado de PDF Typst, escaneo ClamAV y despachos de notificaciones) gestionadas por colas `critical`, `default` y `low`.
+
+#### Inspección y reintento:
+1. **Acceso a Asynqmon**:
+   Crear un túnel SSH hacia la máquina de staging:
+   ```bash
+   ssh -L 8088:127.0.0.1:8088 petpassport@<vm-staging>
+   ```
+   Abrir `http://localhost:8088` en el navegador para inspeccionar colas activas, latencias y la cola `archived` (DLQ).
+
+2. **Diagnóstico de fallos en DLQ**:
+   - Identificar el campo `error_message` y el tipo de tarea (`search:bulk`, `clinical:pdf`, `notifications:dispatch`).
+   - Si el fallo se debió a indisponibilidad transitoria de un servicio dependiente (p. ej. OpenSearch caído durante una indexación masiva), presionar **Retry All** en Asynqmon o ejecutar desde la API administrativa:
+     ```bash
+     curl -s -X POST "http://localhost:9090/admin/search/index-queue/retry" -H "Authorization: Bearer $SUPERADMIN_TOKEN"
+     ```
+3. **Descarte definitivo de tareas**:
+   Si la tarea falló por datos irreversibles o malformados, eliminar la tarea desde Asynqmon registrando obligatoriamente el `task_id` y el motivo en el registro de incidencias del equipo.
+
+### 17.6 Cuarentena antivirus ClamAV y reescaneo (ARQ-014, SEC-005)
+
+Todo adjunto subido a un encuentro clínico se analiza con ClamAV mediante el servicio `antivirus.Service`.
+
+#### Protocolo ante archivo infectado:
+1. **Aislamiento automático**:
+   - El escáner detecta la firma de malware.
+   - El archivo se traslada en el Object Storage desde su ubicación original hacia `quarantine/<key>` y se borra de la ruta accesible.
+   - Los registros en `read_clinical.attachment_uploads` y `read_clinical.encounter_attachments` se actualizan a `scan_status = 'infected'`.
+   - Se crea una alerta en `platform.security_alerts` (`alert_type = 'malware_detected'`).
+2. **Consulta de alertas de seguridad**:
+   ```sql
+   SELECT id, alert_type, details, created_at
+   FROM platform.security_alerts
+   WHERE alert_type = 'malware_detected'
+   ORDER BY created_at DESC;
+   ```
+3. **Actualización de firmas y reescaneo**:
+   Si se sospecha de un falso positivo o firmas obsoletas (`ClamAVDefinitionsStale`):
+   ```bash
+   podman exec pp-clamav freshclam
+   podman exec pp-clamav clamscan --version
+   ```
+
+### 17.7 Rotación de credenciales Web Push (VAPID) (DOM-011, ARQ-015, SEC-007)
+
+Las notificaciones push para navegadores y PWA se autentican con el protocolo RFC 8292 mediante un par de claves elípticas VAPID (`p256dh`).
+
+#### Procedimiento de rotación:
+1. Generar nuevo par de claves criptográficas:
+   ```bash
+   # Utilizando el comando del worker o script interno
+   podman exec pp-api /api vapid-generate-keys
+   ```
+2. Actualizar las credenciales en `/etc/petpassport/staging.env`:
+   ```bash
+   PP_VAPID_PUBLIC_KEY="<nueva_clave_publica_base64url>"
+   PP_VAPID_PRIVATE_KEY="<nueva_clave_privada_base64url>"
+   ```
+3. Reiniciar los servicios de forma escalonada:
+   ```bash
+   systemctl --user restart pp-api pp-worker
+   ```
+4. **Comportamiento en clientes**:
+   Al cargar la SPA, el cliente compara la clave pública devuelta por `GET /push/vapid-public-key` con la almacenada localmente. Si difiere, solicita automáticamente al `PushManager` del navegador una nueva suscripción y la registra mediante `POST /me/push-subscriptions` sin requerir acción manual del tutor.
+
+### 17.8 Purga de CDN en Cloudflare (ARQ-016, INF-007)
+
+Cloudflare opera como capa de borde y CDN delante del gateway Traefik.
+
+#### Reglas de almacenamiento en caché vigentes:
+- `/assets/*`, `/fonts/*` y hashes de compilación: `Cache-Control: public, max-age=31536000, immutable`.
+- `/index.html`, `/manifest.webmanifest` y `/config.json`: `Cache-Control: no-cache, no-store, must-revalidate`.
+- `/api/*`: `Cache-Control: no-store` con bypass total de caché de borde (Cloudflare Rule: Cache Level = Bypass).
+- `/media/*`: Acceso restringido por URLs firmadas privadas.
+
+#### Procedimiento de purga de caché:
+1. **Purga selectiva en despliegue (automática)**:
+   `deploy.sh` purga únicamente `index.html` tras actualizar la imagen del frontend:
+   ```bash
+   curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+     -H "Authorization: Bearer ${CF_API_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d "{\"files\": [\"https://app.${PP_DOMAIN}/index.html\", \"https://app.${PP_DOMAIN}/config.json\"]}"
+   ```
+2. **Purga completa de emergencia (en caso de incidente de activos web)**:
+   ```bash
+   curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+     -H "Authorization: Bearer ${CF_API_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{"purge_everything": true}'
+   ```
+

@@ -125,6 +125,8 @@ func (h *OrgHandlers) GetDirectoryOrganization(w http.ResponseWriter, r *http.Re
 
 // MountDirectoryRoutes registra las rutas del directorio público y ajustes de organización.
 func (h *OrgHandlers) MountDirectoryRoutes(r chi.Router) {
+	r.Get("/directory", h.SearchDirectory)
+	r.Get("/directory/{id}", h.GetDirectoryOrganization)
 	r.Get("/directory/organizations", h.SearchDirectory)
 	r.Get("/directory/organizations/{id}", h.GetDirectoryOrganization)
 	r.Put("/organizations/{org_id}/directory-listing", h.UpdateDirectoryListing)
