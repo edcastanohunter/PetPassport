@@ -112,11 +112,11 @@
 | PP-F3-INF-003 | INF | Dashboards Search, Redis, Jobs, Workers, SLOs, RUM | MUST | M3.3 | IMPLEMENTADO | | | 6 dashboards Grafana: search, redis, jobs, workers, slos, rum en provisioning |
 | PP-F3-INF-004 | INF | Alertas F3 | MUST | M3.3 | IMPLEMENTADO | | | 12 alertas F3 en alerts.yml, pruebas unitarias en alerts_test.yml y RUNBOOK.md §7.16-§7.27 |
 | PP-F3-INF-005 | INF | Rolling deploy multi-réplica; Helm en CI | MUST | M3.0 | IMPLEMENTADO | | | Helm chart petpassport con replicas api/worker |
-| PP-F3-INF-006 | INF | Runbook F3 | MUST | M3.5 | PENDIENTE | | | |
+| PP-F3-INF-006 | INF | Runbook F3 | MUST | M3.5 | EN_PROGRESO | | | |
 | PP-F3-INF-007 | INF | Configuración de CDN | MUST | M3.3 | IMPLEMENTADO | | | Reglas de caché CDN en Cloudflare (main.tf), purga en deploy.sh y documentación en RUNBOOK.md |
 | PP-F3-QA-001 | QA | Pruebas de indexación y access | MUST | M3.1 | IMPLEMENTADO | | | TestIndexer_IdempotencyAndExternalGTE, TestAccessProjector_UpdateByQuery |
 | PP-F3-QA-002 | QA | Pruebas de relevancia (golden queries) | MUST | M3.1 | IMPLEMENTADO | | | Golden queries MRR = 0.933 (>= 0.8) |
-| PP-F3-QA-003 | QA | Game day y scripts de caos | MUST | M3.5 | PENDIENTE | | | |
+| PP-F3-QA-003 | QA | Game day y scripts de caos | MUST | M3.5 | EN_PROGRESO | | | |
 | PP-F3-QA-004 | QA | Pruebas de leases y failover | MUST | M3.0 | IMPLEMENTADO | | | TestWorkerLease_Failover integration test |
-| PP-F3-QA-005 | QA | E2E F3 | MUST | M3.5 | PENDIENTE | | | |
+| PP-F3-QA-005 | QA | E2E F3 | MUST | M3.5 | EN_PROGRESO | | | |
 | PP-F3-QA-006 | QA | Gates F3 | MUST | M3.0 | IMPLEMENTADO | | | CI gates y TestRedisCacheFlushall integration test |
