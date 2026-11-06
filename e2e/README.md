@@ -11,6 +11,7 @@ Playwright contra el entorno completo de desarrollo (unidades Quadlet rootless):
 | `03-transfer` | 5. Transferencia de tutela entre dos usuarios |
 | `04-f2-care-link-request` | F2 Escenario 4: Búsqueda por microchip → solicitud de vínculo de clínica → tutor aprueba en bandeja → clínica ve ficha → revocación |
 | `05-f2-clinical-flows` | F2 Escenarios 1, 2, 3 y 5: Cita solicitada/propuesta/aceptada → consulta SOAP firmada con adenda → carnet con próxima dosis, declaración, verificación y enlace compartido con PIN → correos transaccionales y baja por token |
+| `06-f3-flows` | F3 Escenarios 1 al 8 (PP-F3-QA-005): Búsqueda con typo → búsqueda clínica con sinónimo y resaltado → picker de medicamentos con catálogo → sugerencia y aprobación admin → cohorte y campaña con email en Mailpit → directorio y vincular → paciente provisional con reclamación y fusión → Web Push opt-in con permisos |
 
 Además, `expectAccessible` pasa axe (WCAG 2.1 A/AA) en home, onboarding, formulario y detalle de
 mascota, lista, registro y resumen de organización, miembros, pacientes, ficha de paciente,

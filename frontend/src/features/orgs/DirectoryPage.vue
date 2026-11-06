@@ -50,7 +50,7 @@ async function search() {
       params.set('radius_km', String(radius.value))
     }
 
-    const res = await fetch(`/api/v1/directory?${params.toString()}`)
+    const res = await fetch(`/api/v1/directory/organizations?${params.toString()}`)
     if (!res.ok) throw new Error('Error al consultar el directorio')
     const data = await res.json()
     clinics.value = data.data ?? []
@@ -96,7 +96,7 @@ function selectService(serviceId: string) {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6" data-testid="directory-page">
     <div class="text-center space-y-2">
       <h1 class="text-3xl font-bold tracking-tight text-surface-900">Directorio Veterinario</h1>
       <p class="text-surface-600 max-w-2xl mx-auto">
@@ -114,6 +114,7 @@ function selectService(serviceId: string) {
             type="text"
             placeholder="Buscar por nombre o servicio..."
             class="w-full px-3 py-2 text-sm border rounded-lg border-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            data-testid="directory-search-input"
             @keyup.enter="search"
           />
         </div>
@@ -123,6 +124,7 @@ function selectService(serviceId: string) {
             type="text"
             placeholder="Ciudad (ej. Bogotá, Medellín)..."
             class="w-full px-3 py-2 text-sm border rounded-lg border-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            data-testid="directory-city-input"
             @keyup.enter="search"
           />
         </div>
@@ -130,6 +132,7 @@ function selectService(serviceId: string) {
           <button
             type="button"
             class="flex-1 px-4 py-2 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition"
+            data-testid="directory-search-btn"
             :disabled="loading"
             @click="search"
           >
@@ -199,6 +202,7 @@ function selectService(serviceId: string) {
         v-for="clinic in clinics"
         :key="clinic.id"
         class="bg-surface-0 border border-surface-200 rounded-xl p-5 shadow-sm hover:shadow transition flex flex-col justify-between space-y-4"
+        data-testid="directory-clinic-card"
       >
         <div class="space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -243,11 +247,18 @@ function selectService(serviceId: string) {
           </div>
         </div>
 
-        <div class="pt-2 border-t border-surface-100 flex items-center justify-end">
+        <div class="pt-2 border-t border-surface-100 flex items-center justify-between">
           <span class="text-xs text-primary-600 font-medium flex items-center gap-1">
             Clínica Verificada
             <span class="pi pi-check-circle text-green-600"></span>
           </span>
+          <RouterLink
+            to="/app/pets"
+            class="text-xs font-semibold text-primary-600 hover:text-primary-800"
+            data-testid="link-clinic-from-directory"
+          >
+            Vincular mascota
+          </RouterLink>
         </div>
       </div>
     </div>

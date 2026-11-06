@@ -203,6 +203,7 @@ async function save() {
             <div class="text-xs text-surface-500">
               Permiso actual:
               <span
+                data-testid="push-permission-value"
                 :class="{
                   'text-green-700 font-medium': pushPermission === 'granted',
                   'text-amber-700 font-medium': pushPermission === 'default',
@@ -216,6 +217,7 @@ async function save() {
           <button
             type="button"
             class="px-3 py-1.5 text-sm rounded font-medium border"
+            data-testid="btn-toggle-push"
             :class="
               isSubscribedOnThisDevice
                 ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'

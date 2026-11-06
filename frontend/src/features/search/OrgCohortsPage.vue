@@ -163,7 +163,7 @@ async function sendCampaign() {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+  <div class="max-w-5xl mx-auto px-4 py-6 space-y-6" data-testid="org-cohorts-page">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-surface-900">Cohortes y Campañas Clínicas</h1>
@@ -176,6 +176,7 @@ async function sendCampaign() {
         <button
           type="button"
           class="px-3 py-1.5 text-sm font-medium rounded-lg border border-surface-300 text-surface-700 hover:bg-surface-50 transition flex items-center gap-1.5"
+          data-testid="btn-open-export-modal"
           @click="showExportModal = true"
         >
           <span class="pi pi-download"></span>
@@ -184,6 +185,7 @@ async function sendCampaign() {
         <button
           type="button"
           class="px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition flex items-center gap-1.5"
+          data-testid="btn-open-notify-modal"
           @click="showNotifyModal = true"
         >
           <span class="pi pi-send"></span>
@@ -207,6 +209,7 @@ async function sendCampaign() {
                 ? 'border-primary-600 bg-primary-50 text-primary-900 font-medium'
                 : 'border-surface-200 hover:bg-surface-50 text-surface-700'
             "
+            data-testid="cohort-kind-vaccine-due"
             @click="selectedKind = 'vaccine_due'"
           >
             <div class="font-semibold">Vacunación Próxima</div>
@@ -355,6 +358,7 @@ async function sendCampaign() {
         <button
           type="button"
           class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition"
+          data-testid="btn-run-cohort"
           :disabled="running"
           @click="runCohortQuery"
         >
@@ -364,7 +368,7 @@ async function sendCampaign() {
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="p-4 bg-red-50 text-red-700 rounded-lg text-sm">
+    <div v-if="error" class="p-4 bg-red-50 text-red-700 rounded-lg text-sm" data-testid="cohort-error">
       {{ error }}
     </div>
 
@@ -372,6 +376,7 @@ async function sendCampaign() {
     <div
       v-if="notifyResult"
       class="p-4 bg-green-50 text-green-800 rounded-lg text-sm flex items-center justify-between"
+      data-testid="campaign-success-alert"
     >
       <div>
         <span class="font-semibold">Campaña encolada con éxito:</span>
@@ -387,10 +392,11 @@ async function sendCampaign() {
     <div
       v-if="queryResult"
       class="bg-surface-0 border border-surface-200 rounded-xl p-5 shadow-sm space-y-4"
+      data-testid="cohort-results-panel"
     >
       <div class="flex items-center justify-between">
         <div class="space-y-0.5">
-          <h2 class="text-lg font-semibold text-surface-900">
+          <h2 class="text-lg font-semibold text-surface-900" data-testid="cohort-total-count">
             Pacientes identificados: {{ queryResult.total_count }}
           </h2>
           <p class="text-xs text-surface-500">
@@ -535,6 +541,7 @@ async function sendCampaign() {
           <button
             type="button"
             class="px-4 py-1.5 text-sm rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700"
+            data-testid="btn-confirm-send-campaign"
             :disabled="notifying"
             @click="sendCampaign"
           >
