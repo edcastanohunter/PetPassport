@@ -47,6 +47,10 @@ tags:
     description: Agendas por profesional y disponibilidad (F2 M2.3, ADR-011)
   - name: documents
     description: Documentos generados y verificación pública (docs/phase-2/04-api.md §13)
+  - name: credentials
+    description: Credenciales profesionales veterinarias (F4 M4.0)
+  - name: prescriptions
+    description: Recetas médicas veterinarias y verificación pública (F4 M4.0)
 security:
   - bearerAuth: []
 paths:
@@ -4011,6 +4015,527 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /me/credentials:
+    get:
+      operationId: listMyCredentials
+      summary: Listar mis credenciales profesionales
+      description: Devuelve las credenciales profesionales registradas por el usuario actual (PP-F4-API-001).
+      tags: [credentials, me]
+      x-pp-action: me:read
+      responses:
+        "200":
+          description: Lista de credenciales
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProfessionalCredential"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: submitCredential
+      summary: Registrar credencial profesional
+      description: Envía una credencial profesional para verificación del colegio/registro (PP-F4-API-001).
+      tags: [credentials, me]
+      x-pp-action: me:update
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitCredentialRequest"
+      responses:
+        "201":
+          description: Credencial registrada en estado pendiente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalCredential"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /me/credentials/{credentialId}:
+    parameters:
+      - $ref: "#/components/parameters/CredentialId"
+    delete:
+      operationId: deleteMyCredential
+      summary: Eliminar credencial profesional
+      description: Elimina una credencial en estado pendiente o rechazada (PP-F4-API-001).
+      tags: [credentials, me]
+      x-pp-action: me:update
+      responses:
+        "204":
+          description: Credencial eliminada
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/members/credentials:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listOrgMembersCredentials
+      summary: Listar estado de credenciales de miembros
+      description: Muestra el estado de verificación de credenciales de los veterinarios de la clínica (PP-F4-API-001).
+      tags: [credentials, organizations]
+      x-pp-action: org:read
+      responses:
+        "200":
+          description: Resumen de credenciales de miembros
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MemberCredentialSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/credentials:
+    get:
+      operationId: listAdminCredentials
+      summary: Listar credenciales para moderación
+      description: Cola de verificación de credenciales para super_admin (PP-F4-API-001).
+      tags: [credentials, admin]
+      x-pp-action: admin:user:list
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, verified, rejected, expired]
+      responses:
+        "200":
+          description: Lista de credenciales
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProfessionalCredential"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/credentials/{credentialId}/verify:
+    parameters:
+      - $ref: "#/components/parameters/CredentialId"
+    post:
+      operationId: verifyAdminCredential
+      summary: Verificar credencial profesional
+      description: Aprueba la credencial profesional de un veterinario tras cotejo (PP-F4-API-001).
+      tags: [credentials, admin]
+      x-pp-action: admin:user:list
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Credencial verificada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalCredential"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/credentials/{credentialId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/CredentialId"
+    post:
+      operationId: rejectAdminCredential
+      summary: Rechazar credencial profesional
+      description: Rechaza la credencial profesional indicando motivo (PP-F4-API-001).
+      tags: [credentials, admin]
+      x-pp-action: admin:user:list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Credencial rechazada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalCredential"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/prescriptions:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: draftPrescription
+      summary: Iniciar borrador de receta médica
+      description: Emite un borrador de prescripción médica veterinaria (PP-F4-API-002, DOM-004).
+      tags: [prescriptions]
+      x-pp-action: prescription:issue
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DraftPrescriptionRequest"
+      responses:
+        "201":
+          description: Receta creada en borrador
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listOrgPrescriptions
+      summary: Listar recetas emitidas por la clínica
+      description: Lista las recetas de la organización con filtros opcionales (PP-F4-API-002).
+      tags: [prescriptions]
+      x-pp-action: prescription:list
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: pet_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: issuer_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Lista de recetas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PrescriptionSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    get:
+      operationId: getPrescription
+      summary: Obtener detalle de una receta
+      description: Devuelve el detalle completo de la receta con ítems y dispensaciones (PP-F4-API-002).
+      tags: [prescriptions]
+      x-pp-action: prescription:read
+      responses:
+        "200":
+          description: Detalle de la receta
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updatePrescriptionDraft
+      summary: Actualizar borrador de receta
+      description: Modifica ítems, vigencia o notas de una receta en estado borrador (PP-F4-API-002).
+      tags: [prescriptions]
+      x-pp-action: prescription:issue
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrescriptionRequest"
+      responses:
+        "200":
+          description: Receta actualizada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/issue:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: issuePrescription
+      summary: Firmar y emitir receta
+      description: El veterinario formaliza la emisión con su firma y credencial profesional (PP-F4-API-002, DOM-005).
+      tags: [prescriptions]
+      x-pp-action: prescription:issue
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signer_name:
+                  type: string
+      responses:
+        "200":
+          description: Receta formalmente emitida con firma y PDF generado
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/revoke:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: revokePrescription
+      summary: Revocar receta emitida
+      description: Revoca una receta emitida que no registra dispensaciones (PP-F4-API-002, DOM-004).
+      tags: [prescriptions]
+      x-pp-action: prescription:revoke
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+      responses:
+        "200":
+          description: Receta revocada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/pdf:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    get:
+      operationId: getPrescriptionPDF
+      summary: Obtener URL o descarga del PDF de la receta
+      description: Emite URL prefirmada del PDF con QR de verificación pública (PP-F4-API-002, ARQ-011).
+      tags: [prescriptions]
+      x-pp-action: prescription:read
+      responses:
+        "200":
+          description: URL del PDF
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, status]
+                properties:
+                  url:
+                    type: string
+                  status:
+                    type: string
+                    enum: [ready, pending]
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /encounters/{encounterId}/prescriptions:
+    parameters:
+      - $ref: "#/components/parameters/EncounterId"
+    get:
+      operationId: listEncounterPrescriptions
+      summary: Listar recetas asociadas a un encuentro clínico
+      description: Devuelve las recetas emitidas a partir del plan de la consulta (PP-F4-API-002).
+      tags: [prescriptions, encounters]
+      x-pp-action: encounter:read
+      responses:
+        "200":
+          description: Lista de recetas del encuentro
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PrescriptionSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /me/prescriptions:
+    get:
+      operationId: listMyPrescriptions
+      summary: Listar mis recetas (tutor)
+      description: Vista del tutor de recetas vigentes o archivadas de sus mascotas (PP-F4-API-004).
+      tags: [prescriptions, me]
+      x-pp-action: me:read
+      parameters:
+        - name: pet_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: source
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [issued, external]
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Lista de recetas del tutor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PrescriptionSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/archive:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: archivePrescription
+      summary: Archivar receta de la vista del tutor
+      description: Oculta la receta de la lista activa del tutor sin alterar su validez médica (PP-F4-API-004).
+      tags: [prescriptions]
+      x-pp-action: me:update
+      responses:
+        "200":
+          description: Receta archivada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /verify/prescriptions/{prescriptionId}:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    get:
+      operationId: verifyPrescription
+      summary: Verificación pública de receta médica
+      description: Endpoint público que recomputa la huella canónica (RFC 8785) contra el stream de eventos (PP-F4-API-004, SEC-006).
+      tags: [prescriptions]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: h
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultado de la verificación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionVerificationResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /healthz:
     get:
       operationId: getHealthz
@@ -4044,6 +4569,20 @@ components:
       bearerFormat: JWT
       description: Access token emitido por Keycloak (realm `petpassport`, audiencia `petpassport-api`).
   parameters:
+    PrescriptionId:
+      name: prescriptionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CredentialId:
+      name: credentialId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     EncounterId:
       name: encounterId
       in: path
@@ -6944,6 +7483,400 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AvailabilitySlot"
+
+    ProfessionalCredential:
+      type: object
+      required: [id, user_id, country, kind, registry_number, issuer, issued_at, status, evidence_object_key, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        kind:
+          type: string
+        registry_number:
+          type: string
+        issuer:
+          type: string
+        issued_at:
+          type: string
+          format: date
+        expires_at:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [pending, verified, rejected, expired]
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        evidence_object_key:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SubmitCredentialRequest:
+      type: object
+      required: [country, kind, registry_number, issuer, issued_at, evidence_object_key]
+      properties:
+        country:
+          type: string
+        kind:
+          type: string
+        registry_number:
+          type: string
+        issuer:
+          type: string
+        issued_at:
+          type: string
+          format: date
+        expires_at:
+          type: string
+          format: date
+          nullable: true
+        evidence_object_key:
+          type: string
+
+    MemberCredentialSummary:
+      type: object
+      required: [user_id, country, kind, registry_number, issuer, status]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        kind:
+          type: string
+        registry_number:
+          type: string
+        issuer:
+          type: string
+        status:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PrescriptionDose:
+      type: object
+      required: [value, unit]
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+
+    PrescriptionQuantity:
+      type: object
+      required: [value, unit]
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+
+    PrescriptionItemDTO:
+      type: object
+      required: [name, dose, route, frequency, quantity]
+      properties:
+        item_id:
+          type: string
+        catalog_id:
+          type: string
+          format: uuid
+          nullable: true
+        free_text:
+          type: string
+          nullable: true
+        name:
+          type: string
+        presentation:
+          type: string
+        dose:
+          $ref: "#/components/schemas/PrescriptionDose"
+        route:
+          type: string
+        frequency:
+          type: string
+        duration_days:
+          type: integer
+          nullable: true
+        quantity:
+          $ref: "#/components/schemas/PrescriptionQuantity"
+        substitution_allowed:
+          type: boolean
+          default: true
+        instructions:
+          type: string
+        controlled:
+          type: boolean
+          default: false
+
+    PrescriptionValidityDTO:
+      type: object
+      properties:
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        refills_allowed:
+          type: integer
+          minimum: 0
+          maximum: 5
+          default: 0
+
+    PrescriptionSummary:
+      type: object
+      required: [id, version, pet_id, guardian_id, country, source, status, refills_allowed, refills_used, items_count, has_controlled, archived_by_guardian, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        pet_id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        source:
+          type: string
+          enum: [issued, external]
+        status:
+          type: string
+          enum: [draft, issued, confirmed, revoked, expired, exhausted]
+        issuer_id:
+          type: string
+          format: uuid
+          nullable: true
+        issuer_org_id:
+          type: string
+          format: uuid
+          nullable: true
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        refills_allowed:
+          type: integer
+        refills_used:
+          type: integer
+        items_count:
+          type: integer
+        has_controlled:
+          type: boolean
+        pdf_object_key:
+          type: string
+          nullable: true
+        archived_by_guardian:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PrescriptionDetail:
+      type: object
+      required: [id, version, pet_id, guardian_id, country, source, status, refills_allowed, refills_used, items, has_controlled, verifications_count, archived_by_guardian, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        pet_id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        source:
+          type: string
+          enum: [issued, external]
+        status:
+          type: string
+          enum: [draft, issued, confirmed, revoked, expired, exhausted]
+        issuer_id:
+          type: string
+          format: uuid
+          nullable: true
+        issuer_org_id:
+          type: string
+          format: uuid
+          nullable: true
+        encounter_id:
+          type: string
+          format: uuid
+          nullable: true
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        refills_allowed:
+          type: integer
+        refills_used:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItemDTO"
+        items_remaining:
+          type: object
+          additionalProperties:
+            type: number
+        has_controlled:
+          type: boolean
+        pdf_object_key:
+          type: string
+          nullable: true
+        credential:
+          type: object
+          nullable: true
+          properties:
+            country:
+              type: string
+            registry_number:
+              type: string
+            verified_at:
+              type: string
+              format: date-time
+        signature:
+          type: object
+          nullable: true
+          properties:
+            signed_by:
+              type: string
+              format: uuid
+            signed_at:
+              type: string
+              format: date-time
+            stream_version:
+              type: integer
+            content_hash:
+              type: string
+        verifications_count:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        archived_by_guardian:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DraftPrescriptionRequest:
+      type: object
+      required: [pet_id, country]
+      properties:
+        pet_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+        encounter_id:
+          type: string
+          format: uuid
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItemDTO"
+        validity:
+          $ref: "#/components/schemas/PrescriptionValidityDTO"
+        notes:
+          type: string
+
+    UpdatePrescriptionRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItemDTO"
+        validity:
+          $ref: "#/components/schemas/PrescriptionValidityDTO"
+        notes:
+          type: string
+
+    PrescriptionVerificationResponse:
+      type: object
+      required: [prescription_id, valid, status, content_hash, verified_at, country, refills_allowed, refills_used, dispensations_count]
+      properties:
+        prescription_id:
+          type: string
+          format: uuid
+        valid:
+          type: boolean
+        status:
+          type: string
+        content_hash:
+          type: string
+        verified_at:
+          type: string
+          format: date-time
+        country:
+          type: string
+        pet_name:
+          type: string
+        pet_species:
+          type: string
+        issuer_name:
+          type: string
+        issuer_org_name:
+          type: string
+        vet_registry:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        refills_allowed:
+          type: integer
+        refills_used:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItemDTO"
+        dispensations_count:
+          type: integer
+        revocation_reason:
+          type: string
+        error_reason:
+          type: string
+
   responses:
     EncounterOK:
       description: Consulta actualizada

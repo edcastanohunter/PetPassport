@@ -45,11 +45,15 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/maintenance"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/pdfrender"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/ratelimit"
 	ppredis "github.com/edcastanohunter/petpassport/backend/internal/platform/redis"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
+	prescriptionapp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/app"
+	prescriptionhttp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/http"
+	prescriptioninfra "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/infra"
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
 	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
@@ -125,6 +129,7 @@ func run() error {
 	orginfra.RegisterEvents(registry)
 	clinicalinfra.RegisterEvents(registry)
 	schedulinginfra.RegisterEvents(registry)
+	prescriptioninfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -404,18 +409,49 @@ func run() error {
 
 	petHandlers := pethttp.NewPetHandlers(petSvc, petQueries, idemStore, objects, logger).WithGuardian(guardianAdapter)
 
+	// Professional Credentials (F4 M4.0).
+	credStore := identityinfra.NewPostgresCredentialStore(pool)
+	credSvc := identityapp.NewCredentialService(credStore, logger)
+	credHandlers := identityhttp.NewCredentialHandlers(credSvc, identityHandlers)
+
+	// Prescriptions (F4 M4.0).
+	rxRepo := prescriptioninfra.NewRepository(store, registry)
+	rxQueries := prescriptioninfra.NewQueries(pool)
+	prescriptioninfra.RegisterSyncProjectors(runner, registry)
+	typstRenderer := pdfrender.NewTypst(cfg.TypstBin, pdfrender.DefaultConcurrency, pdfrender.DefaultTimeout)
+	rxPDFGen := prescriptioninfra.NewPrescriptionPDFGenerator(typstRenderer, objects, cfg.PublicBaseURL)
+	rxSvc := prescriptionapp.NewService(prescriptionapp.Options{
+		Repo:          rxRepo,
+		UoW:           unit,
+		Projects:      prescriptioninfra.NewSyncProjector(runner),
+		Queries:       rxQueries,
+		Credentials:   prescriptioninfra.NewPostgresCredentialCheck(pool.Pool),
+		Rules:         prescriptioninfra.NewPostgresRegulatoryRules(pool.Pool),
+		Catalogs:      prescriptioninfra.NewPostgresCatalogEquivalence(pool.Pool),
+		PlanReader:    prescriptioninfra.NewPostgresEncounterPlanReader(pool.Pool),
+		AccessChecker: prescriptioninfra.NewPostgresPetAccessChecker(pool.Pool),
+		PetReader:     prescriptioninfra.NewPostgresPetReader(pool.Pool),
+		OrgReader:     prescriptioninfra.NewPostgresOrgReader(pool.Pool),
+		UserReader:    prescriptioninfra.NewPostgresUserReader(pool.Pool),
+		PDFGen:        rxPDFGen,
+		Logger:        logger,
+	})
+	prescriptionHandlers := prescriptionhttp.NewPrescriptionHandlers(rxSvc, objects).WithEncounterReader(prescriptioninfra.NewPostgresEncounterAccessReader(pool.Pool))
+
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
 		Handlers: apiHandlers{
 			Handlers:             identityHandlers,
 			AdminHandlers:        identityhttp.NewAdminHandlers(adminSvc, identityHandlers),
+			CredentialHandlers:   credHandlers,
 			PetHandlers:          petHandlers,
 			OrgHandlers:          orgHandlers,
 			StatsHandlers:        orghttp.NewStatsHandlers(orginfra.NewStatsQueries(pool.Pool), logger),
 			ClinicalHandlers:     clinicalHandlers,
 			SchedulingHandlers:   schedulingHandlers,
 			NotificationHandlers: notificationHandlers,
+			PrescriptionHandlers: prescriptionHandlers,
 		},
 		Guard: guard.Middleware,
 		Mount: func(r chi.Router) {

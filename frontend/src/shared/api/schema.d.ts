@@ -2355,6 +2355,342 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar mis credenciales profesionales
+         * @description Devuelve las credenciales profesionales registradas por el usuario actual (PP-F4-API-001).
+         */
+        get: operations["listMyCredentials"];
+        put?: never;
+        /**
+         * Registrar credencial profesional
+         * @description Envía una credencial profesional para verificación del colegio/registro (PP-F4-API-001).
+         */
+        post: operations["submitCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/credentials/{credentialId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar credencial profesional
+         * @description Elimina una credencial en estado pendiente o rechazada (PP-F4-API-001).
+         */
+        delete: operations["deleteMyCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/members/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar estado de credenciales de miembros
+         * @description Muestra el estado de verificación de credenciales de los veterinarios de la clínica (PP-F4-API-001).
+         */
+        get: operations["listOrgMembersCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar credenciales para moderación
+         * @description Cola de verificación de credenciales para super_admin (PP-F4-API-001).
+         */
+        get: operations["listAdminCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/credentials/{credentialId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verificar credencial profesional
+         * @description Aprueba la credencial profesional de un veterinario tras cotejo (PP-F4-API-001).
+         */
+        post: operations["verifyAdminCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/credentials/{credentialId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechazar credencial profesional
+         * @description Rechaza la credencial profesional indicando motivo (PP-F4-API-001).
+         */
+        post: operations["rejectAdminCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar recetas emitidas por la clínica
+         * @description Lista las recetas de la organización con filtros opcionales (PP-F4-API-002).
+         */
+        get: operations["listOrgPrescriptions"];
+        put?: never;
+        /**
+         * Iniciar borrador de receta médica
+         * @description Emite un borrador de prescripción médica veterinaria (PP-F4-API-002, DOM-004).
+         */
+        post: operations["draftPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener detalle de una receta
+         * @description Devuelve el detalle completo de la receta con ítems y dispensaciones (PP-F4-API-002).
+         */
+        get: operations["getPrescription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar borrador de receta
+         * @description Modifica ítems, vigencia o notas de una receta en estado borrador (PP-F4-API-002).
+         */
+        patch: operations["updatePrescriptionDraft"];
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Firmar y emitir receta
+         * @description El veterinario formaliza la emisión con su firma y credencial profesional (PP-F4-API-002, DOM-005).
+         */
+        post: operations["issuePrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revocar receta emitida
+         * @description Revoca una receta emitida que no registra dispensaciones (PP-F4-API-002, DOM-004).
+         */
+        post: operations["revokePrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener URL o descarga del PDF de la receta
+         * @description Emite URL prefirmada del PDF con QR de verificación pública (PP-F4-API-002, ARQ-011).
+         */
+        get: operations["getPrescriptionPDF"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/encounters/{encounterId}/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar recetas asociadas a un encuentro clínico
+         * @description Devuelve las recetas emitidas a partir del plan de la consulta (PP-F4-API-002).
+         */
+        get: operations["listEncounterPrescriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar mis recetas (tutor)
+         * @description Vista del tutor de recetas vigentes o archivadas de sus mascotas (PP-F4-API-004).
+         */
+        get: operations["listMyPrescriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archivar receta de la vista del tutor
+         * @description Oculta la receta de la lista activa del tutor sin alterar su validez médica (PP-F4-API-004).
+         */
+        post: operations["archivePrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/verify/prescriptions/{prescriptionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Verificación pública de receta médica
+         * @description Endpoint público que recomputa la huella canónica (RFC 8785) contra el stream de eventos (PP-F4-API-004, SEC-006).
+         */
+        get: operations["verifyPrescription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -3671,6 +4007,206 @@ export interface components {
         AvailabilityList: {
             data: components["schemas"]["AvailabilitySlot"][];
         };
+        ProfessionalCredential: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            country: string;
+            kind: string;
+            registry_number: string;
+            issuer: string;
+            /** Format: date */
+            issued_at: string;
+            /** Format: date */
+            expires_at?: string | null;
+            /** @enum {string} */
+            status: "pending" | "verified" | "rejected" | "expired";
+            /** Format: date-time */
+            verified_at?: string | null;
+            evidence_object_key: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SubmitCredentialRequest: {
+            country: string;
+            kind: string;
+            registry_number: string;
+            issuer: string;
+            /** Format: date */
+            issued_at: string;
+            /** Format: date */
+            expires_at?: string | null;
+            evidence_object_key: string;
+        };
+        MemberCredentialSummary: {
+            /** Format: uuid */
+            user_id: string;
+            country: string;
+            kind: string;
+            registry_number: string;
+            issuer: string;
+            status: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        PrescriptionDose: {
+            value: number;
+            unit: string;
+        };
+        PrescriptionQuantity: {
+            value: number;
+            unit: string;
+        };
+        PrescriptionItemDTO: {
+            item_id?: string;
+            /** Format: uuid */
+            catalog_id?: string | null;
+            free_text?: string | null;
+            name: string;
+            presentation?: string;
+            dose: components["schemas"]["PrescriptionDose"];
+            route: string;
+            frequency: string;
+            duration_days?: number | null;
+            quantity: components["schemas"]["PrescriptionQuantity"];
+            /** @default true */
+            substitution_allowed: boolean;
+            instructions?: string;
+            /** @default false */
+            controlled: boolean;
+        };
+        PrescriptionValidityDTO: {
+            /** Format: date */
+            valid_until?: string | null;
+            /** @default 0 */
+            refills_allowed: number;
+        };
+        PrescriptionSummary: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            /** Format: uuid */
+            pet_id: string;
+            /** Format: uuid */
+            guardian_id: string;
+            country: string;
+            /** @enum {string} */
+            source: "issued" | "external";
+            /** @enum {string} */
+            status: "draft" | "issued" | "confirmed" | "revoked" | "expired" | "exhausted";
+            /** Format: uuid */
+            issuer_id?: string | null;
+            /** Format: uuid */
+            issuer_org_id?: string | null;
+            /** Format: date-time */
+            issued_at?: string | null;
+            /** Format: date */
+            valid_until?: string | null;
+            refills_allowed: number;
+            refills_used: number;
+            items_count: number;
+            has_controlled: boolean;
+            pdf_object_key?: string | null;
+            archived_by_guardian: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PrescriptionDetail: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            /** Format: uuid */
+            pet_id: string;
+            /** Format: uuid */
+            guardian_id: string;
+            country: string;
+            /** @enum {string} */
+            source: "issued" | "external";
+            /** @enum {string} */
+            status: "draft" | "issued" | "confirmed" | "revoked" | "expired" | "exhausted";
+            /** Format: uuid */
+            issuer_id?: string | null;
+            /** Format: uuid */
+            issuer_org_id?: string | null;
+            /** Format: uuid */
+            encounter_id?: string | null;
+            /** Format: date-time */
+            issued_at?: string | null;
+            /** Format: date */
+            valid_until?: string | null;
+            refills_allowed: number;
+            refills_used: number;
+            items: components["schemas"]["PrescriptionItemDTO"][];
+            items_remaining?: {
+                [key: string]: number;
+            };
+            has_controlled: boolean;
+            pdf_object_key?: string | null;
+            credential?: {
+                country?: string;
+                registry_number?: string;
+                /** Format: date-time */
+                verified_at?: string;
+            } | null;
+            signature?: {
+                /** Format: uuid */
+                signed_by?: string;
+                /** Format: date-time */
+                signed_at?: string;
+                stream_version?: number;
+                content_hash?: string;
+            } | null;
+            verifications_count: number;
+            notes?: string | null;
+            archived_by_guardian: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DraftPrescriptionRequest: {
+            /** Format: uuid */
+            pet_id: string;
+            country: string;
+            /** Format: uuid */
+            encounter_id?: string | null;
+            items?: components["schemas"]["PrescriptionItemDTO"][];
+            validity?: components["schemas"]["PrescriptionValidityDTO"];
+            notes?: string;
+        };
+        UpdatePrescriptionRequest: {
+            items?: components["schemas"]["PrescriptionItemDTO"][];
+            validity?: components["schemas"]["PrescriptionValidityDTO"];
+            notes?: string;
+        };
+        PrescriptionVerificationResponse: {
+            /** Format: uuid */
+            prescription_id: string;
+            valid: boolean;
+            status: string;
+            content_hash: string;
+            /** Format: date-time */
+            verified_at: string;
+            country: string;
+            pet_name?: string;
+            pet_species?: string;
+            issuer_name?: string;
+            issuer_org_name?: string;
+            vet_registry?: string;
+            /** Format: date-time */
+            issued_at?: string | null;
+            /** Format: date */
+            valid_until?: string | null;
+            refills_allowed: number;
+            refills_used: number;
+            items?: components["schemas"]["PrescriptionItemDTO"][];
+            dispensations_count: number;
+            revocation_reason?: string;
+            error_reason?: string;
+        };
     };
     responses: {
         /** @description Consulta actualizada */
@@ -3735,6 +4271,8 @@ export interface components {
         };
     };
     parameters: {
+        PrescriptionId: string;
+        CredentialId: string;
         EncounterId: string;
         AttachmentId: string;
         Cursor: string;
@@ -7357,6 +7895,507 @@ export interface operations {
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listMyCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de credenciales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProfessionalCredential"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    submitCredential: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitCredentialRequest"];
+            };
+        };
+        responses: {
+            /** @description Credencial registrada en estado pendiente */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCredential"];
+                };
+            };
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteMyCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credencial eliminada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgMembersCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumen de credenciales de miembros */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MemberCredentialSummary"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAdminCredentials: {
+        parameters: {
+            query?: {
+                status?: "pending" | "verified" | "rejected" | "expired";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de credenciales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProfessionalCredential"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    verifyAdminCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    reason?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Credencial verificada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCredential"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    rejectAdminCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credentialId: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Credencial rechazada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCredential"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgPrescriptions: {
+        parameters: {
+            query?: {
+                status?: string;
+                pet_id?: string;
+                issuer_id?: string;
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de recetas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PrescriptionSummary"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    draftPrescription: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID que identifica el intento del usuario; repetida con el mismo cuerpo devuelve la respuesta original (ARQ-008). */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftPrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Receta creada en borrador */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle de la receta */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updatePrescriptionDraft: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Receta actualizada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    issuePrescription: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Versión conocida del recurso (ETag de la última lectura). */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    signer_name?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Receta formalmente emitida con firma y PDF generado */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokePrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Receta revocada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPrescriptionPDF: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL del PDF */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        url: string;
+                        /** @enum {string} */
+                        status: "ready" | "pending";
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEncounterPrescriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounterId: components["parameters"]["EncounterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de recetas del encuentro */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PrescriptionSummary"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listMyPrescriptions: {
+        parameters: {
+            query?: {
+                pet_id?: string;
+                status?: string;
+                source?: "issued" | "external";
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de recetas del tutor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PrescriptionSummary"][];
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    archivePrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receta archivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                    };
+                };
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    verifyPrescription: {
+        parameters: {
+            query?: {
+                h?: string;
+            };
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado de la verificación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionVerificationResponse"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

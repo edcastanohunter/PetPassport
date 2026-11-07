@@ -51,6 +51,11 @@ const DirectoryPage = () => import('@/features/orgs/DirectoryPage.vue')
 const OrgCohortsPage = () => import('@/features/search/OrgCohortsPage.vue')
 const AdminPlatformPage = () => import('@/features/admin/AdminPlatformPage.vue')
 const PetClaimPage = () => import('@/features/pets/PetClaimPage.vue')
+const CredentialsPage = () => import('@/features/profile/CredentialsPage.vue')
+const AdminCredentialsPage = () => import('@/features/admin/AdminCredentialsPage.vue')
+const OrgPrescriptionsPage = () => import('@/features/prescriptions/views/OrgPrescriptionsPage.vue')
+const VerifyPrescriptionPage = () =>
+  import('@/features/prescriptions/views/VerifyPrescriptionPage.vue')
 
 const orgMeta = {
   layout: 'org',
@@ -186,6 +191,12 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/profile/credentials',
+        name: 'profile-credentials',
+        component: CredentialsPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/transfers/:token',
         name: 'transfer-accept',
         component: AcceptTransferPage,
@@ -232,6 +243,12 @@ export function createAppRouter() {
         path: '/org/:orgId/encounters/:encounterId',
         name: 'org-encounter',
         component: EncounterEditorPage,
+        meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
+        path: '/org/:orgId/prescriptions',
+        name: 'org-prescriptions',
+        component: OrgPrescriptionsPage,
         meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
       },
       {
@@ -292,6 +309,12 @@ export function createAppRouter() {
         meta: adminMeta,
       },
       {
+        path: '/admin/credentials',
+        name: 'admin-credentials',
+        component: AdminCredentialsPage,
+        meta: adminMeta,
+      },
+      {
         path: '/unsubscribe/:token',
         name: 'unsubscribe',
         component: UnsubscribePage,
@@ -307,6 +330,12 @@ export function createAppRouter() {
         path: '/verify/encounters/:encounterId',
         name: 'verify-encounter',
         component: VerifyEncounterPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/verify/prescriptions/:id',
+        name: 'verify-prescription',
+        component: VerifyPrescriptionPage,
         meta: { layout: 'public' },
       },
       {

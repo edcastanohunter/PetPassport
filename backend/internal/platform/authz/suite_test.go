@@ -127,6 +127,14 @@ func orgRes(s suitePersona) Resource {
 func orgMembersRes(s suitePersona) Resource {
 	return OrgResource{ID: s.org, MembersOnly: true}
 }
+func rxRes(s suitePersona) Resource {
+	return PrescriptionResource{
+		ID:          uuid.MustParse("01930000-0000-7000-8000-00000000f001"),
+		PetID:       sPet,
+		GuardianID:  sTutor,
+		IssuerOrgID: &sLinked,
+	}
+}
 
 var suite = map[Action][]suiteRow{
 	//                                tutor vetL admL recL vetU vetS phAd phar pend  str  sup
@@ -234,6 +242,16 @@ var suite = map[Action][]suiteRow{
 	SearchPatients: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
 	SearchClinical: {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
 	AdminSearch:    {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+
+	// Recetas médicas (PP-F4-SEC-006, SEC-007, API-002, API-004)
+	PrescriptionIssue: {
+		{orgRes, [11]bool{N, Y, N, N, N, N, N, N, N, N, Y}},
+		{rxRes, [11]bool{N, Y, N, N, N, N, N, N, N, N, Y}},
+	},
+	PrescriptionRevoke: {{rxRes, [11]bool{N, Y, Y, N, N, N, N, N, N, N, Y}}},
+	PrescriptionList:   {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	PrescriptionRead:   {{rxRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}}},
+	PrescriptionUpload: {{petRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

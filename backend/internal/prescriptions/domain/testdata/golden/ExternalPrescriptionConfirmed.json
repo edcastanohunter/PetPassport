@@ -1,0 +1,35 @@
+{
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "items": [
+    {
+      "item_id": "item-001",
+      "catalog_id": "01930000-0000-7000-8000-000000000001",
+      "name_snapshot": "Amoxicilina 500mg",
+      "dose": {
+        "value": 500,
+        "unit": "mg"
+      },
+      "route": "oral",
+      "frequency": "every_12_hours",
+      "duration_days": 7,
+      "quantity_to_dispense": {
+        "value": 1,
+        "unit": "pack"
+      },
+      "substitution_allowed": true,
+      "instructions": "Con alimento",
+      "controlled": false
+    }
+  ],
+  "validity": {
+    "valid_until": "2026-12-06",
+    "refills_allowed": 0
+  },
+  "external_meta": {
+    "vet_name": "Dr. Perez",
+    "clinic_name": "Clínica Norte"
+  },
+  "diff": {
+    "edited": true
+  }
+}
