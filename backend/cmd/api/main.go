@@ -47,6 +47,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/outbox"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/pdfrender"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/queue"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/ratelimit"
 	ppredis "github.com/edcastanohunter/petpassport/backend/internal/platform/redis"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
@@ -176,6 +177,11 @@ func run() error {
 				logger.Warn("subscribing to cache invalidations failed", "error", err)
 			}
 		}
+	}
+	var queueClient *queue.Client
+	if cfg.Redis.Addr != "" {
+		queueClient = queue.NewClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.UseTLS, logger)
+		defer func() { _ = queueClient.Close() }()
 	}
 	limiter := ratelimit.NewLimiter(redisClient)
 	rlConfig := ratelimit.DefaultConfig()
@@ -436,7 +442,12 @@ func run() error {
 		PDFGen:        rxPDFGen,
 		Logger:        logger,
 	})
-	prescriptionHandlers := prescriptionhttp.NewPrescriptionHandlers(rxSvc, objects).WithEncounterReader(prescriptioninfra.NewPostgresEncounterAccessReader(pool.Pool))
+	prescriptionHandlers := prescriptionhttp.NewPrescriptionHandlers(rxSvc, objects).
+		WithEncounterReader(prescriptioninfra.NewPostgresEncounterAccessReader(pool.Pool)).
+		WithPetReader(prescriptioninfra.NewPostgresPetReader(pool.Pool))
+	if queueClient != nil {
+		prescriptionHandlers = prescriptionHandlers.WithEnqueuer(queueClient)
+	}
 
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,

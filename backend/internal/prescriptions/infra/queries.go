@@ -228,13 +228,23 @@ func (q *Queries) ListByGuardian(ctx context.Context, guardianID uuid.UUID, petI
 	}
 
 	var sb strings.Builder
-	sb.WriteString(`
+	if status == "archived" {
+		sb.WriteString(`
+SELECT id, version, pet_id, guardian_id, country, source, status,
+       issuer_id, issuer_org_id, issued_at, valid_until, refills_allowed, refills_used,
+       jsonb_array_length(items), has_controlled, pdf_object_key, archived_by_guardian,
+       created_at, updated_at
+  FROM read_prescriptions.prescriptions
+ WHERE guardian_id = $1 AND archived_by_guardian = true`)
+	} else {
+		sb.WriteString(`
 SELECT id, version, pet_id, guardian_id, country, source, status,
        issuer_id, issuer_org_id, issued_at, valid_until, refills_allowed, refills_used,
        jsonb_array_length(items), has_controlled, pdf_object_key, archived_by_guardian,
        created_at, updated_at
   FROM read_prescriptions.prescriptions
  WHERE guardian_id = $1 AND archived_by_guardian = false`)
+	}
 
 	args := []any{guardianID}
 	argIdx := 2
@@ -244,7 +254,7 @@ SELECT id, version, pet_id, guardian_id, country, source, status,
 		args = append(args, *petID)
 		argIdx++
 	}
-	if status != "" {
+	if status != "" && status != "archived" {
 		fmt.Fprintf(&sb, " AND status = $%d", argIdx)
 		args = append(args, status)
 		argIdx++
@@ -399,4 +409,74 @@ func (q *Queries) FindExpiredPrescriptions(ctx context.Context, today time.Time)
 		}
 	}
 	return ids, rows.Err()
+}
+
+// GetExtractionJob obtiene el estado del trabajo de análisis de visión para una prescripción.
+func (q *Queries) GetExtractionJob(ctx context.Context, id uuid.UUID) (*app.ExtractionJobDTO, error) {
+	const sel = `
+		SELECT attempt, status, extractor_id, legibility, warnings, error
+		  FROM read_prescriptions.extraction_jobs
+		 WHERE prescription_id = $1
+		 ORDER BY attempt DESC
+		 LIMIT 1`
+
+	var (
+		dto          app.ExtractionJobDTO
+		warningsJSON []byte
+	)
+	dto.PrescriptionID = id
+
+	err := q.pool.QueryRow(ctx, sel, id).Scan(
+		&dto.Attempt, &dto.Status, &dto.ExtractorID, &dto.Legibility, &warningsJSON, &dto.Reason,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrPrescriptionNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("query extraction job %s: %w", id, err)
+	}
+
+	if len(warningsJSON) > 0 && string(warningsJSON) != "null" {
+		_ = json.Unmarshal(warningsJSON, &dto.Warnings)
+	}
+
+	return &dto, nil
+}
+
+// GetImage devuelve la referencia a la imagen para una página dada de la receta externa.
+func (q *Queries) GetImage(ctx context.Context, id uuid.UUID, page int) (*domain.ImageRef, error) {
+	const sel = `
+		SELECT object_key, content_type, page, width, height, sha256
+		  FROM read_prescriptions.images
+		 WHERE prescription_id = $1 AND page = $2`
+
+	var img domain.ImageRef
+	err := q.pool.QueryRow(ctx, sel, id, page).Scan(
+		&img.ObjectKey, &img.ContentType, &img.Page, &img.Width, &img.Height, &img.Sha256,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrPrescriptionNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("query prescription image %s p%d: %w", id, page, err)
+	}
+	return &img, nil
+}
+
+// AddImage persiste una nueva página de imagen en read_prescriptions.images.
+func (q *Queries) AddImage(ctx context.Context, id uuid.UUID, img domain.ImageRef) error {
+	const ins = `
+		INSERT INTO read_prescriptions.images (
+			prescription_id, page, object_key, content_type, width, height, sha256, scan_status, uploaded_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', now())
+		ON CONFLICT (prescription_id, page) DO UPDATE SET
+			object_key = EXCLUDED.object_key,
+			content_type = EXCLUDED.content_type,
+			width = EXCLUDED.width,
+			height = EXCLUDED.height,
+			sha256 = EXCLUDED.sha256,
+			uploaded_at = now()`
+
+	_, err := q.pool.Exec(ctx, ins, id, img.Page, img.ObjectKey, img.ContentType, img.Width, img.Height, img.Sha256)
+	return err
 }

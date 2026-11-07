@@ -2627,6 +2627,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pets/{petId}/prescriptions/external": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subir receta externa para extracción OCR
+         * @description Sube entre 1 y 5 imágenes de una receta médica externa para extracción automática con IA (PP-F4-PRD-005, PP-F4-API-003).
+         */
+        post: operations["uploadExternalPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Añadir página a receta externa en borrador
+         * @description Añade una nueva página antes de confirmar la extracción (PP-F4-API-003).
+         */
+        post: operations["addPrescriptionImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/images/{page}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+                page: number;
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener URL prefirmada de una página de la receta externa
+         * @description Devuelve la URL o redirección para visualizar una página (PP-F4-API-003).
+         */
+        get: operations["getPrescriptionImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/extraction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultar estado y resultado de extracción OCR
+         * @description Devuelve el estado del análisis y los datos extraídos de la receta externa (PP-F4-API-003).
+         */
+        get: operations["getPrescriptionExtraction"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/extraction/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reintentar extracción OCR
+         * @description Re-encola el análisis OCR si falló o fue solicitado reupload (máximo 3 intentos) (PP-F4-API-003).
+         */
+        post: operations["retryPrescriptionExtraction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar receta externa revisada
+         * @description Confirma los ítems de la receta externa con atestación explícita del tutor (PP-F4-API-003, PRD-006).
+         */
+        post: operations["confirmExternalPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prescriptions/{prescriptionId}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reabrir receta externa para edición
+         * @description Permite reabrir a borrador una receta confirmada si no tiene cotizaciones abiertas ni dispensaciones (PP-F4-API-003, DOM-007).
+         */
+        post: operations["reopenExternalPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/prescriptions": {
         parameters: {
             query?: never;
@@ -4075,6 +4230,7 @@ export interface components {
             instructions?: string;
             /** @default false */
             controlled: boolean;
+            extraction_ref?: number | null;
         };
         PrescriptionValidityDTO: {
             /** Format: date */
@@ -4162,6 +4318,12 @@ export interface components {
             verifications_count: number;
             notes?: string | null;
             archived_by_guardian: boolean;
+            images?: components["schemas"]["PrescriptionImageDTO"][];
+            external_meta?: {
+                vet_name?: string;
+                clinic_name?: string;
+                issued_on?: string;
+            };
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4206,6 +4368,80 @@ export interface components {
             dispensations_count: number;
             revocation_reason?: string;
             error_reason?: string;
+        };
+        AddPrescriptionImageResponse: {
+            page: number;
+            object_key: string;
+        };
+        PrescriptionImageDTO: {
+            page: number;
+            object_key: string;
+            content_type?: string;
+            bytes?: number;
+        };
+        ExtractionCandidateDTO: {
+            /** Format: uuid */
+            catalog_id: string;
+            name: string;
+            /** Format: float */
+            score: number;
+        };
+        ExtractionConfidenceDTO: {
+            /** Format: float */
+            product?: number;
+            /** Format: float */
+            dose?: number;
+            /** Format: float */
+            frequency?: number;
+            /** Format: float */
+            duration?: number;
+            /** Format: float */
+            quantity?: number;
+            /** Format: float */
+            overall?: number;
+        };
+        ExtractionItemDTO: {
+            index: number;
+            raw_text: string;
+            product?: {
+                text?: string;
+                candidates?: components["schemas"]["ExtractionCandidateDTO"][];
+            };
+            dose?: string;
+            frequency?: string;
+            duration?: string;
+            quantity?: string;
+            confidence?: components["schemas"]["ExtractionConfidenceDTO"];
+            bbox?: number[];
+        };
+        ExtractionHeaderDTO: {
+            vet_name?: string;
+            clinic_name?: string;
+            issued_on?: string;
+        };
+        ExtractionDataDTO: {
+            legibility?: string;
+            warnings?: string[];
+            header?: components["schemas"]["ExtractionHeaderDTO"];
+            items?: components["schemas"]["ExtractionItemDTO"][];
+        };
+        ExtractionResponse: {
+            /** @enum {string} */
+            status: "queued" | "processing" | "done" | "reupload_requested" | "failed";
+            attempt: number;
+            extraction?: components["schemas"]["ExtractionDataDTO"];
+            reason?: string;
+        };
+        ConfirmExternalPrescriptionRequest: {
+            items: components["schemas"]["PrescriptionItemDTO"][];
+            validity?: components["schemas"]["PrescriptionValidityDTO"];
+            external_meta?: {
+                vet_name?: string;
+                clinic_name?: string;
+                issued_on?: string;
+            };
+            notes?: string;
+            attestation: boolean;
         };
     };
     responses: {
@@ -8317,6 +8553,230 @@ export interface operations {
                     };
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    uploadExternalPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                petId: components["parameters"]["PetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                    country?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Receta externa creada y extracción encolada */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            415: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    addPrescriptionImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Imagen añadida */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddPrescriptionImageResponse"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPrescriptionImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+                page: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada de la imagen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        url: string;
+                    };
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPrescriptionExtraction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado y resultado de la extracción */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionResponse"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    retryPrescriptionExtraction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Extracción re-encolada */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionResponse"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    confirmExternalPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmExternalPrescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Receta externa confirmada */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    reopenExternalPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receta externa reabierta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrescriptionDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

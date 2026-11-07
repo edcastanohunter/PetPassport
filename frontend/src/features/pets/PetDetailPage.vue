@@ -426,6 +426,20 @@ function undoDeceased() {
         </span>
       </RouterLink>
 
+      <RouterLink
+        :to="{ name: 'pet-prescription-new', params: { petId } }"
+        class="card flex items-center gap-3"
+        data-testid="prescription-upload-link"
+      >
+        <span class="pi pi-file-plus" aria-hidden="true" />
+        <span>
+          <span class="block font-semibold">Subir receta externa (OCR)</span>
+          <span class="block text-sm text-surface-500"
+            >Escanea o sube una prescripción médica de tu veterinario</span
+          >
+        </span>
+      </RouterLink>
+
       <PetAlertsPanel class="card" :pet="pet" :editable="pet.status === 'active'" @changed="load" />
       <CareLinksPanel :pet="pet" @changed="load" />
       <TransferPanel :pet="pet" @changed="load" />

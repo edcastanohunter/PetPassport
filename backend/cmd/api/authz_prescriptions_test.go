@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"time"
 
@@ -24,6 +25,11 @@ type fakePrescriptionRepo struct{}
 
 func (fakePrescriptionRepo) Load(_ context.Context, id uuid.UUID) (*prescriptiondomain.Prescription, error) {
 	rx := prescriptiondomain.NewPrescription()
+	rx.ID = id
+	rx.PetID = petID
+	rx.GuardianID = tutorID
+	rx.Country = "CO"
+	rx.Status = prescriptiondomain.StatusConfirmed
 	return rx, nil
 }
 
@@ -99,6 +105,31 @@ func (fakePrescriptionQueries) RecordVerification(_ context.Context, _ uuid.UUID
 
 func (fakePrescriptionQueries) SetPDFObjectKey(_ context.Context, _ uuid.UUID, _ string, _ int) error {
 	return nil
+}
+
+func (fakePrescriptionQueries) GetImage(_ context.Context, _ uuid.UUID, _ int) (*prescriptiondomain.ImageRef, error) {
+	return &prescriptiondomain.ImageRef{
+		ObjectKey:   "prescriptions/test.jpg",
+		ContentType: "image/jpeg",
+		Page:        1,
+	}, nil
+}
+
+func (fakePrescriptionQueries) AddImage(_ context.Context, _ uuid.UUID, _ prescriptiondomain.ImageRef) error {
+	return nil
+}
+
+func (fakePrescriptionQueries) GetExtractionJob(_ context.Context, id uuid.UUID) (*prescriptionapp.ExtractionJobDTO, error) {
+	return &prescriptionapp.ExtractionJobDTO{
+		PrescriptionID: id,
+		Status:         "done",
+		Attempt:        1,
+		Extraction: &prescriptiondomain.Extraction{
+			Legibility: 0.95,
+			Header:     prescriptiondomain.ExtractedHeader{},
+			Items:      []prescriptiondomain.ExtractedItem{},
+		},
+	}, nil
 }
 
 func (fakePrescriptionQueries) FindExpiredPrescriptions(_ context.Context, _ time.Time) ([]uuid.UUID, error) {
@@ -198,6 +229,26 @@ func (fakeEncounterAccessReader) GetEncounterAccess(_ context.Context, id uuid.U
 	}, nil
 }
 
+type fakePetReader struct{}
+
+func (fakePetReader) GetPetInfo(_ context.Context, _ uuid.UUID) (string, string, uuid.UUID, error) {
+	return "Luna", "canine", tutorID, nil
+}
+
+type fakeStorage struct{}
+
+func (fakeStorage) Put(_ context.Context, _ string, _ string, _ io.Reader, _ int64) error {
+	return nil
+}
+
+func (fakeStorage) Delete(_ context.Context, _ string) error {
+	return nil
+}
+
+func (fakeStorage) PresignGet(_ context.Context, _ string, _ time.Duration) (string, error) {
+	return "https://storage.local/presigned-url", nil
+}
+
 func newSuitePrescriptionHandlers(logger *slog.Logger) *prescriptionhttp.PrescriptionHandlers {
 	queries := fakePrescriptionQueries{}
 	svc := prescriptionapp.NewService(prescriptionapp.Options{
@@ -208,10 +259,13 @@ func newSuitePrescriptionHandlers(logger *slog.Logger) *prescriptionhttp.Prescri
 		Rules:         fakeRegulatoryRules{},
 		PlanReader:    fakeEncounterPlanReader{},
 		AccessChecker: fakePetAccessChecker{},
+		PetReader:     fakePetReader{},
 		Clock:         kernel.RealClock{},
 		Logger:        logger,
 	})
-	return prescriptionhttp.NewPrescriptionHandlers(svc, nil).WithEncounterReader(fakeEncounterAccessReader{})
+	return prescriptionhttp.NewPrescriptionHandlers(svc, fakeStorage{}).
+		WithEncounterReader(fakeEncounterAccessReader{}).
+		WithPetReader(fakePetReader{})
 }
 
 func newSuiteCredentialHandlers(base *identityhttp.Handlers, logger *slog.Logger) *identityhttp.CredentialHandlers {
@@ -241,6 +295,17 @@ var prescriptionsMatrix = map[string][9]int{
 	"listAdminCredentials":  {403, 403, 403, 403, 403, 403, 403, 403, ok},
 	"verifyAdminCredential": {403, 403, 403, 403, 403, 403, 403, 403, ok},
 	"rejectAdminCredential": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+
+	// prescription:upload (tutor de la mascota o super_admin) (PP-F4-API-003)
+	"uploadExternalPrescription":  {ok, 403, 403, 403, 403, 403, 403, 403, ok},
+	"addPrescriptionImage":        {ok, 403, 403, 403, 403, 403, 403, 403, ok},
+	"retryPrescriptionExtraction": {ok, 403, 403, 403, 403, 403, 403, 403, ok},
+	"confirmExternalPrescription": {ok, 403, 403, 403, 403, 403, 403, 403, ok},
+	"reopenExternalPrescription":  {ok, 403, 403, 403, 403, 403, 403, 403, ok},
+
+	// prescription:read (tutor de la mascota, miembros vinculados o super_admin) (PP-F4-API-003)
+	"getPrescriptionExtraction": {ok, ok, ok, ok, 403, 403, 403, 403, ok},
+	"getPrescriptionImage":      {ok, ok, ok, ok, 403, 403, 403, 403, ok},
 }
 
 func init() {

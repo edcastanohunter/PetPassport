@@ -9,9 +9,9 @@
 | PP-F4-PRD-002 | PRD | Emitir receta firmada desde consulta o directa; PDF/QR | MUST | M4.0 | IMPLEMENTADO | | | Emisión de receta firmada desde consulta o directa con PDF y QR de verificación |
 | PP-F4-PRD-003 | PRD | Verificación pública de receta | MUST | M4.0 | IMPLEMENTADO | | | Verificación pública contra hash canónico RFC 8785 de eventos |
 | PP-F4-PRD-004 | PRD | Revocar receta | MUST | M4.0 | IMPLEMENTADO | | | Revocación de receta con motivo y bloqueo si hay dispensaciones previas |
-| PP-F4-PRD-005 | PRD | Subir receta externa y ver extracción | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-PRD-006 | PRD | Revisar y confirmar extracción lado a lado | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-PRD-007 | PRD | Mis recetas (tutor) | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-PRD-005 | PRD | Subir receta externa y ver extracción | MUST | M4.1 | IMPLEMENTADO | | | Subida multipágina (1–5) con validación de formato/tamaño y extracción OCR con Claude/Tesseract |
+| PP-F4-PRD-006 | PRD | Revisar y confirmar extracción lado a lado | MUST | M4.1 | IMPLEMENTADO | | | Revisión lado a lado con visor zoom/pan, confianza de ítems, edición y gate obligatorio de atestación |
+| PP-F4-PRD-007 | PRD | Mis recetas (tutor) | MUST | M4.1 | IMPLEMENTADO | | | Bandeja de recetas tutor con filtros por mascota/estado/origen, badges de verificación y acciones |
 | PP-F4-PRD-008 | PRD | Solicitar cotización a farmacias | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-PRD-009 | PRD | Tablero de cotizaciones en tiempo real y comparación | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-PRD-010 | PRD | Pedido, seguimiento y dispensación reflejada | MUST | M4.2 | PENDIENTE | | | |
@@ -33,7 +33,7 @@
 | PP-F4-DOM-004 | DOM | Agregado Prescription: comandos e invariantes R1–R9 | MUST | M4.0 | IMPLEMENTADO | | | Agregado Prescription con invariantes canónicas R1–R9 testeadas |
 | PP-F4-DOM-005 | DOM | Value Objects de receta | MUST | M4.0 | IMPLEMENTADO | | | Value Objects: DoseVO, QuantityVO, CredentialRef, SignatureBlock |
 | PP-F4-DOM-006 | DOM | Eventos Prescription v1 | MUST | M4.0 | IMPLEMENTADO | | | Eventos Prescription v1 con golden tests y migración de eventos |
-| PP-F4-DOM-007 | DOM | Entidad Extraction y Confirmation.Diff | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-DOM-007 | DOM | Entidad Extraction y Confirmation.Diff | MUST | M4.1 | IMPLEMENTADO | | | Entidad Extraction, estados, cálculo de diferencias Confirmation.Diff y confirmación externa |
 | PP-F4-DOM-008 | DOM | Agregado QuoteRequest (saga): comandos e invariantes Q1–Q8 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-009 | DOM | Agregado Order: transiciones e invariantes O1–O8 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-010 | DOM | Eventos Pharmacy Orders v1 | MUST | M4.2 | PENDIENTE | | | |
@@ -53,12 +53,12 @@
 | PP-F4-ARQ-009 | ARQ | Sitio de desarrolladores | SHOULD | M4.3 | PENDIENTE | | | |
 | PP-F4-ARQ-010 | ARQ | Borde partners.<dominio> en Traefik y WAF | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-ARQ-011 | ARQ | PDF y verificación de recetas | MUST | M4.0 | IMPLEMENTADO | | | Generación de PDF con Typst, QR de verificación y subida S3/MinIO |
-| PP-F4-ARQ-012 | ARQ | Pipeline OCR en worker (integración) | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-ARQ-012 | ARQ | Pipeline OCR en worker (integración) | MUST | M4.1 | IMPLEMENTADO | | | Pipeline Asynq TypeOCRPipeline cableado con preprocesado, Claude/mock, fallback y matcher |
 | PP-F4-ARQ-013 | ARQ | Contratos de minimización de datos hacia partners | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-ARQ-014 | ARQ | Read models F4 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-API-001 | API | Endpoints de credenciales | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de credenciales en /app/profile/credentials y /admin/credentials |
 | PP-F4-API-002 | API | Endpoints de recetas emitidas | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de prescripción: borrador, emisión, revocación y PDF |
-| PP-F4-API-003 | API | Endpoints de recetas externas y extracción | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-API-003 | API | Endpoints de recetas externas y extracción | MUST | M4.1 | IMPLEMENTADO | | | Endpoints declarados en OpenAPI 3.1 e implementados con authz x-pp-action y Problem Details |
 | PP-F4-API-004 | API | Mis recetas y verificación pública | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de mis recetas tutor, archivo y verificación pública |
 | PP-F4-API-005 | API | Endpoints de cotización (tutor) y SSE | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-API-006 | API | Endpoints de pedidos (tutor) | MUST | M4.2 | PENDIENTE | | | |
@@ -77,12 +77,12 @@
 | PP-F4-DAT-001 | DAT | DDL read_prescriptions | MUST | M4.0 | IMPLEMENTADO | | | DDL read_prescriptions: prescriptions, items, verifications, dispensations |
 | PP-F4-DAT-002 | DAT | DDL read_pharmacyorders | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DAT-003 | DAT | DDL credenciales, partner_integrations, mapeos, webhooks, partner_calls | MUST | M4.0 | IMPLEMENTADO | | | DDL identity.professional_credentials y tablas B2B base |
-| PP-F4-DAT-004 | DAT | DDL ocr: uso, presupuesto, métricas, evaluación | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-DAT-004 | DAT | DDL ocr: uso, presupuesto, métricas, evaluación | MUST | M4.1 | IMPLEMENTADO | | | Migración SQL 20261107000024_ocr_tables.sql con schemas y tablas de presupuesto, uso y métricas |
 | PP-F4-DAT-005 | DAT | ref.regulatory_rules con semilla CO | MUST | M4.0 | IMPLEMENTADO | | | Tabla ref.regulatory_rules con datos iniciales para Colombia (CO) |
 | PP-F4-DAT-006 | DAT | Retención de imágenes, payloads y PII de pedidos | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-FE-001 | FE | Veterinario: credencial, emitir receta, mis recetas | MUST | M4.0 | IMPLEMENTADO | | | Vistas Vue: CredentialsPage, AdminCredentialsPage, IssuePrescriptionModal, OrgPrescriptionsPage |
-| PP-F4-FE-002 | FE | Tutor: subir receta externa y revisión lado a lado | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-FE-003 | FE | Tutor: mis recetas | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-FE-002 | FE | Tutor: subir receta externa y revisión lado a lado | MUST | M4.1 | IMPLEMENTADO | | | Vista UploadExternalPrescriptionPage con dropzone, stepper, visor de imagen y atestación |
+| PP-F4-FE-003 | FE | Tutor: mis recetas | MUST | M4.1 | IMPLEMENTADO | | | Vista GuardianPrescriptionsPage con tarjetas, filtros, visor de detalle y archivado |
 | PP-F4-FE-004 | FE | Tutor: wizard de cotización | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-FE-005 | FE | Tutor: tablero de cotizaciones (SSE) | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-FE-006 | FE | Tutor: pedidos | MUST | M4.2 | PENDIENTE | | | |
@@ -93,16 +93,16 @@
 | PP-F4-FE-011 | FE | Administración F4 | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-FE-012 | FE | Verificación pública de receta | MUST | M4.0 | IMPLEMENTADO | | | Vista pública VerifyPrescriptionPage con cotejo criptográfico de hash |
 | PP-F4-FE-013 | FE | Sitio de desarrolladores | SHOULD | M4.3 | PENDIENTE | | | |
-| PP-F4-OCR-001 | OCR | Pipeline y estados | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-002 | OCR | Preprocesado y calidad de imagen | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-003 | OCR | Extractor Claude con salida estructurada y manejo de respuesta | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-004 | OCR | Extractor de respaldo (Tesseract) | SHOULD | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-005 | OCR | Emparejamiento con catálogo | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-006 | OCR | Umbrales y reglas de revisión | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-007 | OCR | Dataset y evaluación continua con gate | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-008 | OCR | Presupuesto y control de coste | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-009 | OCR | Privacidad y proveedor | MUST | M4.1 | EN_PROGRESO | | | |
-| PP-F4-OCR-010 | OCR | Métricas de precisión en producción | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-OCR-001 | OCR | Pipeline y estados | MUST | M4.1 | IMPLEMENTADO | | | Pipeline secuencial con estados queued/processing/done/failed/reupload_requested |
+| PP-F4-OCR-002 | OCR | Preprocesado y calidad de imagen | MUST | M4.1 | IMPLEMENTADO | | | Preprocesador binarización, deskew, estimación de blur Laplacian y auto-rotación |
+| PP-F4-OCR-003 | OCR | Extractor Claude con salida estructurada y manejo de respuesta | MUST | M4.1 | IMPLEMENTADO | | | Extractor Claude con tools structured output, validación de schemas y manejo de refusals |
+| PP-F4-OCR-004 | OCR | Extractor de respaldo (Tesseract) | SHOULD | M4.1 | IMPLEMENTADO | | | Extractor Tesseract fallback implementado con regex parsing para cabecera y posología |
+| PP-F4-OCR-005 | OCR | Emparejamiento con catálogo | MUST | M4.1 | IMPLEMENTADO | | | Matcher fuzzy con similitud trigram y búsqueda sobre catálogo ref.medications |
+| PP-F4-OCR-006 | OCR | Umbrales y reglas de revisión | MUST | M4.1 | IMPLEMENTADO | | | Cálculo de confianza global y por campo (verde >=0.85, ámbar >=0.60, rojo <0.60) |
+| PP-F4-OCR-007 | OCR | Dataset y evaluación continua con gate | MUST | M4.1 | IMPLEMENTADO | | | Dataset sintético v1 (65 muestras) y subcomando worker ocr-eval con gates de F1 |
+| PP-F4-OCR-008 | OCR | Presupuesto y control de coste | MUST | M4.1 | IMPLEMENTADO | | | Control de presupuesto diario y mensual en ocr.budget con corte 503 AI_BUDGET_EXCEEDED |
+| PP-F4-OCR-009 | OCR | Privacidad y proveedor | MUST | M4.1 | IMPLEMENTADO | | | Zero-data-retention con Anthropic API y minimización estricta sin PII del tutor enviada |
+| PP-F4-OCR-010 | OCR | Métricas de precisión en producción | MUST | M4.1 | IMPLEMENTADO | | | Registro de latencia, tokens, costes y diffs de corrección humana en ocr.field_metrics |
 | PP-F4-SEC-001 | SEC | Autorización F4 y separación de audiencias | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-SEC-002 | SEC | Autenticación de partners | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-SEC-003 | SEC | Webhooks: firma y replay | MUST | M4.3 | PENDIENTE | | | |
@@ -110,7 +110,7 @@
 | PP-F4-SEC-005 | SEC | Minimización y auditoría de envíos a partners | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-SEC-006 | SEC | Integridad y fraude de recetas | MUST | M4.0 | IMPLEMENTADO | | | Integridad criptográfica SHA-256 sobre eventos en orden canónico RFC 8785 |
 | PP-F4-SEC-007 | SEC | Cumplimiento regulatorio | MUST | M4.0 | IMPLEMENTADO | | | Cumplimiento regulatorio, bloqueo de refills para controlados, expiración worker |
-| PP-F4-SEC-008 | SEC | Proveedor de IA y datos | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-SEC-008 | SEC | Proveedor de IA y datos | MUST | M4.1 | IMPLEMENTADO | | | Auditoría de egress con EgressClient, rate limiting y aislamiento de endpoints OCR |
 | PP-F4-SEC-009 | SEC | Threat model F4 | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-SEC-010 | SEC | Prevención de abuso | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-INF-001 | INF | Borde B2B, sandbox, mTLS | MUST | M4.4 | PENDIENTE | | | |
@@ -122,7 +122,7 @@
 | PP-F4-INF-007 | INF | Publicación del sitio de desarrolladores | SHOULD | M4.3 | PENDIENTE | | | |
 | PP-F4-QA-001 | QA | Pruebas de saga e invariantes | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-QA-002 | QA | Contratos: Partner API, checklist go-live, adaptadores | MUST | M4.3 | PENDIENTE | | | |
-| PP-F4-QA-003 | QA | Evaluación OCR en CI y mocks | MUST | M4.1 | EN_PROGRESO | | | |
+| PP-F4-QA-003 | QA | Evaluación OCR en CI y mocks | MUST | M4.1 | IMPLEMENTADO | | | Harness de evaluación worker ocr-eval con mock extractor superando F1 >= 0.85 |
 | PP-F4-QA-004 | QA | Pruebas de seguridad B2B y prompt injection | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-QA-005 | QA | E2E F4 | MUST | M4.5 | PENDIENTE | | | |
 | PP-F4-QA-006 | QA | Validación con piloto y revisión legal | MUST | M4.5 | PENDIENTE | | | |

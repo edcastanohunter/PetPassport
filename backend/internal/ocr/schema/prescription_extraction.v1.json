@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PrescriptionExtraction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["legibility", "language", "header", "items", "warnings"],
+  "properties": {
+    "legibility": {
+      "type": "number",
+      "description": "Legibilidad global estimada del documento (0 a 1)"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["es", "en", "other"]
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vet_name", "vet_registry", "clinic_name", "issued_on", "pet_name", "species"],
+      "properties": {
+        "vet_name": { "$ref": "#/$defs/field_text" },
+        "vet_registry": { "$ref": "#/$defs/field_text" },
+        "clinic_name": { "$ref": "#/$defs/field_text" },
+        "issued_on": { "$ref": "#/$defs/field_date" },
+        "pet_name": { "$ref": "#/$defs/field_text" },
+        "species": { "$ref": "#/$defs/field_text" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["raw_text", "product", "dose", "route", "frequency", "duration", "quantity", "notes", "page", "bbox"],
+        "properties": {
+          "raw_text": { "type": "string" },
+          "product": { "$ref": "#/$defs/field_text" },
+          "dose": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "unit", "confidence"],
+            "properties": {
+              "value": { "type": ["number", "null"] },
+              "unit": { "type": ["string", "null"] },
+              "confidence": { "type": "number" }
+            }
+          },
+          "route": { "$ref": "#/$defs/field_enum_route" },
+          "frequency": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["every", "unit", "raw", "confidence"],
+            "properties": {
+              "every": { "type": ["integer", "null"] },
+              "unit": { "type": ["string", "null"], "enum": ["hours", "days", null] },
+              "raw": { "type": ["string", "null"] },
+              "confidence": { "type": "number" }
+            }
+          },
+          "duration": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["days", "confidence"],
+            "properties": {
+              "days": { "type": ["integer", "null"] },
+              "confidence": { "type": "number" }
+            }
+          },
+          "quantity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "unit", "confidence"],
+            "properties": {
+              "value": { "type": ["number", "null"] },
+              "unit": { "type": ["string", "null"] },
+              "confidence": { "type": "number" }
+            }
+          },
+          "notes": { "type": ["string", "null"] },
+          "page": { "type": "integer" },
+          "bbox": {
+            "type": ["array", "null"],
+            "items": { "type": "number" }
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "field_text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "confidence"],
+      "properties": {
+        "value": { "type": ["string", "null"] },
+        "confidence": { "type": "number" }
+      }
+    },
+    "field_date": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "confidence"],
+      "properties": {
+        "value": { "type": ["string", "null"] },
+        "confidence": { "type": "number" }
+      }
+    },
+    "field_enum_route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "confidence"],
+      "properties": {
+        "value": {
+          "type": ["string", "null"],
+          "enum": ["oral", "sc", "im", "iv", "topical", "ophthalmic", "otic", "inhaled", "rectal", null]
+        },
+        "confidence": { "type": "number" }
+      }
+    }
+  }
+}
