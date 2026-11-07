@@ -5,10 +5,10 @@
 
 | ID | Área | Requisito | Prio | Hito | Estado | Issue | PR | Notas |
 |---|---|---|---|---|---|---|---|---|
-| PP-F4-PRD-001 | PRD | Credencial profesional del veterinario con verificación | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-PRD-002 | PRD | Emitir receta firmada desde consulta o directa; PDF/QR | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-PRD-003 | PRD | Verificación pública de receta | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-PRD-004 | PRD | Revocar receta | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-PRD-001 | PRD | Credencial profesional del veterinario con verificación | MUST | M4.0 | IMPLEMENTADO | | | Credenciales profesionales veterinarias con moderación admin |
+| PP-F4-PRD-002 | PRD | Emitir receta firmada desde consulta o directa; PDF/QR | MUST | M4.0 | IMPLEMENTADO | | | Emisión de receta firmada desde consulta o directa con PDF y QR de verificación |
+| PP-F4-PRD-003 | PRD | Verificación pública de receta | MUST | M4.0 | IMPLEMENTADO | | | Verificación pública contra hash canónico RFC 8785 de eventos |
+| PP-F4-PRD-004 | PRD | Revocar receta | MUST | M4.0 | IMPLEMENTADO | | | Revocación de receta con motivo y bloqueo si hay dispensaciones previas |
 | PP-F4-PRD-005 | PRD | Subir receta externa y ver extracción | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-PRD-006 | PRD | Revisar y confirmar extracción lado a lado | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-PRD-007 | PRD | Mis recetas (tutor) | MUST | M4.1 | PENDIENTE | | | |
@@ -24,25 +24,25 @@
 | PP-F4-PRD-017 | PRD | Veterinario: estado de recetas y avisos de sustitución | SHOULD | M4.2 | PENDIENTE | | | |
 | PP-F4-PRD-018 | PRD | SuperAdmin: partners, reglas regulatorias, presupuesto IA, monitor | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-PRD-019 | PRD | Notificaciones del ciclo receta→pedido | MUST | M4.2 | PENDIENTE | | | |
-| PP-F4-PRD-020 | PRD | Sustancias controladas: emitir sí, pedir no | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-PRD-020 | PRD | Sustancias controladas: emitir sí, pedir no | MUST | M4.0 | IMPLEMENTADO | | | Detección de sustancias de control especial (flag controlado en catálogo/receta) |
 | PP-F4-PRD-021 | PRD | Farmacias cercanas al solicitar cotización | SHOULD | M4.2 | PENDIENTE | | | |
 | PP-F4-PRD-022 | PRD | Valoración de farmacia | COULD | M4.5 | PENDIENTE | | | |
-| PP-F4-DOM-001 | DOM | Glosario F4 | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-002 | DOM | Context map F4 | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-003 | DOM | ProfessionalCredential en Identity | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-004 | DOM | Agregado Prescription: comandos e invariantes R1–R9 | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-005 | DOM | Value Objects de receta | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-006 | DOM | Eventos Prescription v1 | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-DOM-001 | DOM | Glosario F4 | MUST | M4.0 | IMPLEMENTADO | | | Glosario F4 documentado en especificaciones y dominio |
+| PP-F4-DOM-002 | DOM | Context map F4 | MUST | M4.0 | IMPLEMENTADO | | | Context map F4 con separación Identity/Prescriptions/PharmacyOrders |
+| PP-F4-DOM-003 | DOM | ProfessionalCredential en Identity | MUST | M4.0 | IMPLEMENTADO | | | ProfessionalCredential agregado en módulo Identity con ciclo de vida |
+| PP-F4-DOM-004 | DOM | Agregado Prescription: comandos e invariantes R1–R9 | MUST | M4.0 | IMPLEMENTADO | | | Agregado Prescription con invariantes canónicas R1–R9 testeadas |
+| PP-F4-DOM-005 | DOM | Value Objects de receta | MUST | M4.0 | IMPLEMENTADO | | | Value Objects: DoseVO, QuantityVO, CredentialRef, SignatureBlock |
+| PP-F4-DOM-006 | DOM | Eventos Prescription v1 | MUST | M4.0 | IMPLEMENTADO | | | Eventos Prescription v1 con golden tests y migración de eventos |
 | PP-F4-DOM-007 | DOM | Entidad Extraction y Confirmation.Diff | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-DOM-008 | DOM | Agregado QuoteRequest (saga): comandos e invariantes Q1–Q8 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-009 | DOM | Agregado Order: transiciones e invariantes O1–O8 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-010 | DOM | Eventos Pharmacy Orders v1 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-011 | DOM | PartnerIntegration, ProductMapping, WebhookDelivery, PartnerCall | MUST | M4.2 | PENDIENTE | | | |
-| PP-F4-DOM-012 | DOM | Reglas regulatorias por país | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-DOM-013 | DOM | Puertos F4 | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-DOM-012 | DOM | Reglas regulatorias por país | MUST | M4.0 | IMPLEMENTADO | | | Reglas regulatorias por país cargadas desde ref.regulatory_rules |
+| PP-F4-DOM-013 | DOM | Puertos F4 | MUST | M4.0 | IMPLEMENTADO | | | Puertos hexagonales y adaptadores en infra/app de prescriptions |
 | PP-F4-DOM-014 | DOM | Process managers y políticas F4 | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-DOM-015 | DOM | SLA por partner (proyección) | SHOULD | M4.5 | PENDIENTE | | | |
-| PP-F4-ARQ-001 | ARQ | Módulos nuevos y reglas de dependencia | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-ARQ-001 | ARQ | Módulos nuevos y reglas de dependencia | MUST | M4.0 | IMPLEMENTADO | | | Estructura hexagonal con depguard en .golangci.yml |
 | PP-F4-ARQ-002 | ARQ | Saga de cotización: orquestación, timeouts, idempotencia | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-ARQ-003 | ARQ | PartnerGateway y niveles portal/api/adapter | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-ARQ-004 | ARQ | Webhooks salientes firmados con reintentos | MUST | M4.3 | PENDIENTE | | | |
@@ -52,20 +52,20 @@
 | PP-F4-ARQ-008 | ARQ | Entorno sandbox | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-ARQ-009 | ARQ | Sitio de desarrolladores | SHOULD | M4.3 | PENDIENTE | | | |
 | PP-F4-ARQ-010 | ARQ | Borde partners.<dominio> en Traefik y WAF | MUST | M4.4 | PENDIENTE | | | |
-| PP-F4-ARQ-011 | ARQ | PDF y verificación de recetas | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-ARQ-011 | ARQ | PDF y verificación de recetas | MUST | M4.0 | IMPLEMENTADO | | | Generación de PDF con Typst, QR de verificación y subida S3/MinIO |
 | PP-F4-ARQ-012 | ARQ | Pipeline OCR en worker (integración) | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-ARQ-013 | ARQ | Contratos de minimización de datos hacia partners | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-ARQ-014 | ARQ | Read models F4 | MUST | M4.2 | PENDIENTE | | | |
-| PP-F4-API-001 | API | Endpoints de credenciales | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-API-002 | API | Endpoints de recetas emitidas | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-API-001 | API | Endpoints de credenciales | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de credenciales en /app/profile/credentials y /admin/credentials |
+| PP-F4-API-002 | API | Endpoints de recetas emitidas | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de prescripción: borrador, emisión, revocación y PDF |
 | PP-F4-API-003 | API | Endpoints de recetas externas y extracción | MUST | M4.1 | PENDIENTE | | | |
-| PP-F4-API-004 | API | Mis recetas y verificación pública | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-API-004 | API | Mis recetas y verificación pública | MUST | M4.0 | IMPLEMENTADO | | | Endpoints de mis recetas tutor, archivo y verificación pública |
 | PP-F4-API-005 | API | Endpoints de cotización (tutor) y SSE | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-API-006 | API | Endpoints de pedidos (tutor) | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-API-007 | API | Endpoints del portal de farmacia | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-API-008 | API | Configuración de farmacia: integración, mapeo, credenciales, webhook | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-API-009 | API | Administración: partners, reglas, presupuesto IA, monitor OCR | MUST | M4.3 | PENDIENTE | | | |
-| PP-F4-API-010 | API | Catálogo de errores F4 | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-API-010 | API | Catálogo de errores F4 | MUST | M4.0 | IMPLEMENTADO | | | Catálogo de errores F4 documentado en OpenAPI y manejado en handlers |
 | PP-F4-PTN-001 | PTN | Contrato partner/v1 y versionado | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-PTN-002 | PTN | Autenticación client credentials y sandbox | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-PTN-003 | PTN | Endpoints partner | MUST | M4.3 | PENDIENTE | | | |
@@ -74,13 +74,13 @@
 | PP-F4-PTN-006 | PTN | Límites por partner | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-PTN-007 | PTN | Onboarding y checklist go-live | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-PTN-008 | PTN | SLA y métricas para partners | SHOULD | M4.5 | PENDIENTE | | | |
-| PP-F4-DAT-001 | DAT | DDL read_prescriptions | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-DAT-001 | DAT | DDL read_prescriptions | MUST | M4.0 | IMPLEMENTADO | | | DDL read_prescriptions: prescriptions, items, verifications, dispensations |
 | PP-F4-DAT-002 | DAT | DDL read_pharmacyorders | MUST | M4.2 | PENDIENTE | | | |
-| PP-F4-DAT-003 | DAT | DDL credenciales, partner_integrations, mapeos, webhooks, partner_calls | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-DAT-003 | DAT | DDL credenciales, partner_integrations, mapeos, webhooks, partner_calls | MUST | M4.0 | IMPLEMENTADO | | | DDL identity.professional_credentials y tablas B2B base |
 | PP-F4-DAT-004 | DAT | DDL ocr: uso, presupuesto, métricas, evaluación | MUST | M4.1 | PENDIENTE | | | |
-| PP-F4-DAT-005 | DAT | ref.regulatory_rules con semilla CO | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-DAT-005 | DAT | ref.regulatory_rules con semilla CO | MUST | M4.0 | IMPLEMENTADO | | | Tabla ref.regulatory_rules con datos iniciales para Colombia (CO) |
 | PP-F4-DAT-006 | DAT | Retención de imágenes, payloads y PII de pedidos | MUST | M4.4 | PENDIENTE | | | |
-| PP-F4-FE-001 | FE | Veterinario: credencial, emitir receta, mis recetas | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-FE-001 | FE | Veterinario: credencial, emitir receta, mis recetas | MUST | M4.0 | IMPLEMENTADO | | | Vistas Vue: CredentialsPage, AdminCredentialsPage, IssuePrescriptionModal, OrgPrescriptionsPage |
 | PP-F4-FE-002 | FE | Tutor: subir receta externa y revisión lado a lado | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-FE-003 | FE | Tutor: mis recetas | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-FE-004 | FE | Tutor: wizard de cotización | MUST | M4.2 | PENDIENTE | | | |
@@ -91,7 +91,7 @@
 | PP-F4-FE-009 | FE | Portal: configuración y mapeo | MUST | M4.2 | PENDIENTE | | | |
 | PP-F4-FE-010 | FE | Portal: integración, credenciales, webhooks, métricas | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-FE-011 | FE | Administración F4 | MUST | M4.3 | PENDIENTE | | | |
-| PP-F4-FE-012 | FE | Verificación pública de receta | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-FE-012 | FE | Verificación pública de receta | MUST | M4.0 | IMPLEMENTADO | | | Vista pública VerifyPrescriptionPage con cotejo criptográfico de hash |
 | PP-F4-FE-013 | FE | Sitio de desarrolladores | SHOULD | M4.3 | PENDIENTE | | | |
 | PP-F4-OCR-001 | OCR | Pipeline y estados | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-OCR-002 | OCR | Preprocesado y calidad de imagen | MUST | M4.1 | PENDIENTE | | | |
@@ -108,8 +108,8 @@
 | PP-F4-SEC-003 | SEC | Webhooks: firma y replay | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-SEC-004 | SEC | Egress y anti-SSRF | MUST | M4.3 | PENDIENTE | | | |
 | PP-F4-SEC-005 | SEC | Minimización y auditoría de envíos a partners | MUST | M4.2 | PENDIENTE | | | |
-| PP-F4-SEC-006 | SEC | Integridad y fraude de recetas | MUST | M4.0 | EN_PROGRESO | | | |
-| PP-F4-SEC-007 | SEC | Cumplimiento regulatorio | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-SEC-006 | SEC | Integridad y fraude de recetas | MUST | M4.0 | IMPLEMENTADO | | | Integridad criptográfica SHA-256 sobre eventos en orden canónico RFC 8785 |
+| PP-F4-SEC-007 | SEC | Cumplimiento regulatorio | MUST | M4.0 | IMPLEMENTADO | | | Cumplimiento regulatorio, bloqueo de refills para controlados, expiración worker |
 | PP-F4-SEC-008 | SEC | Proveedor de IA y datos | MUST | M4.1 | PENDIENTE | | | |
 | PP-F4-SEC-009 | SEC | Threat model F4 | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-SEC-010 | SEC | Prevención de abuso | MUST | M4.4 | PENDIENTE | | | |
@@ -126,4 +126,4 @@
 | PP-F4-QA-004 | QA | Pruebas de seguridad B2B y prompt injection | MUST | M4.4 | PENDIENTE | | | |
 | PP-F4-QA-005 | QA | E2E F4 | MUST | M4.5 | PENDIENTE | | | |
 | PP-F4-QA-006 | QA | Validación con piloto y revisión legal | MUST | M4.5 | PENDIENTE | | | |
-| PP-F4-QA-007 | QA | Gates F4 | MUST | M4.0 | EN_PROGRESO | | | |
+| PP-F4-QA-007 | QA | Gates F4 | MUST | M4.0 | IMPLEMENTADO | | | Cobertura domain >= 90% (90.4%), authz matrix y linters limpios |

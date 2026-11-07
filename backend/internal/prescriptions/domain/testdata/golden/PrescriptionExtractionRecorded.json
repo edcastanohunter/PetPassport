@@ -1,0 +1,16 @@
+{
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "extraction": {
+    "version": 1,
+    "extractor_id": "claude-opus-5-5",
+    "legibility": 0.95,
+    "warnings": [],
+    "header": {
+      "vet_name": "Dr. Perez",
+      "confidence": null
+    },
+    "items": [],
+    "cost_usd": 0.02,
+    "latency_ms": 1200
+  }
+}

@@ -9,6 +9,7 @@ describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
     expect(admin.map((r) => r.path).sort()).toEqual([
       '/admin/audit',
       '/admin/catalogs/medications',
+      '/admin/credentials',
       '/admin/organizations',
       '/admin/platform',
       '/admin/users',

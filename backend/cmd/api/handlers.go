@@ -8,6 +8,7 @@ import (
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	prescriptionhttp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/http"
 	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 )
 
@@ -18,12 +19,14 @@ type apiHandlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
 	*identityhttp.AdminHandlers
+	*identityhttp.CredentialHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
 	*schedulinghttp.SchedulingHandlers
 	*notificationshttp.NotificationHandlers
+	*prescriptionhttp.PrescriptionHandlers
 }
 
 var _ gen.StrictServerInterface = apiHandlers{}

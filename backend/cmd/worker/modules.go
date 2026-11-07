@@ -18,6 +18,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/process"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/projection"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/scheduler"
+	prescriptioninfra "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/infra"
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
 	schedulinginfra "github.com/edcastanohunter/petpassport/backend/internal/scheduling/infra"
 	searchinfra "github.com/edcastanohunter/petpassport/backend/internal/search/infra"
@@ -37,6 +38,7 @@ func newRegistry() (*eventstore.Registry, error) {
 	orginfra.RegisterEvents(reg)
 	clinicalinfra.RegisterEvents(reg)
 	schedulinginfra.RegisterEvents(reg)
+	prescriptioninfra.RegisterEvents(reg)
 	if err := reg.Validate(); err != nil {
 		return nil, fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -56,6 +58,7 @@ func newSyncRunner(pool *db.Pool, reg *eventstore.Registry, logger *slog.Logger)
 		petinfra.NewGuardianAdapter(identitySvc), petinfra.NewOrganizationAdapter(orgQueries))
 	clinicalinfra.RegisterSyncProjectors(runner, reg)
 	schedulinginfra.RegisterSyncProjectors(runner, reg)
+	prescriptioninfra.RegisterSyncProjectors(runner, reg)
 	return runner
 }
 

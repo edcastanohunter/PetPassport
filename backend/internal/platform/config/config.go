@@ -70,6 +70,7 @@ type Config struct {
 	OTLPEndpoint  string
 	LogLevel      slog.Level
 	PublicBaseURL string
+	TypstBin      string
 
 	Redis struct {
 		Addr     string
@@ -171,6 +172,7 @@ func Load() (*Config, error) {
 	}
 
 	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
+	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
 
 	cfg.Redis.Addr = os.Getenv("PP_REDIS_ADDR")
 	cfg.Redis.Password = os.Getenv("PP_REDIS_PASSWORD")
@@ -339,6 +341,7 @@ func LoadWorker() (*Worker, error) {
 	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
 	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
 	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
+	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
 
 	cfg.SMTP.Host = os.Getenv("PP_SMTP_HOST")
 	port, err := getenvInt("PP_SMTP_PORT", 1025)

@@ -21,6 +21,7 @@ import (
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
+	prescriptionhttp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/http"
 	schedulinghttp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/http"
 	"github.com/edcastanohunter/petpassport/backend/test/testkit"
 )
@@ -31,12 +32,14 @@ type handlers struct {
 	httpserver.SystemHandlers
 	*identityhttp.Handlers
 	*identityhttp.AdminHandlers
+	*identityhttp.CredentialHandlers
 	*pethttp.PetHandlers
 	*orghttp.OrgHandlers
 	*orghttp.StatsHandlers
 	*clinicalhttp.ClinicalHandlers
 	*schedulinghttp.SchedulingHandlers
 	*notificationshttp.NotificationHandlers
+	*prescriptionhttp.PrescriptionHandlers
 }
 
 type env struct {

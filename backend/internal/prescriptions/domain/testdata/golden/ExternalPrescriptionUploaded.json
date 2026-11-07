@@ -1,0 +1,14 @@
+{
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "pet_id": "01930000-0000-7000-8000-000000000001",
+  "guardian_id": "01930000-0000-7000-8000-000000000001",
+  "images": [
+    {
+      "object_key": "rx/page1.jpg",
+      "content_type": "image/jpeg",
+      "page": 1,
+      "sha256": "c2hhMjU2"
+    }
+  ],
+  "country": "CO"
+}

@@ -1,0 +1,35 @@
+{
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "pet_id": "01930000-0000-7000-8000-000000000001",
+  "guardian_id": "01930000-0000-7000-8000-000000000001",
+  "source": "issued",
+  "issuer_id": "01930000-0000-7000-8000-000000000001",
+  "issuer_org_id": "01930000-0000-7000-8000-000000000001",
+  "country": "CO",
+  "items": [
+    {
+      "item_id": "item-001",
+      "catalog_id": "01930000-0000-7000-8000-000000000001",
+      "name_snapshot": "Amoxicilina 500mg",
+      "dose": {
+        "value": 500,
+        "unit": "mg"
+      },
+      "route": "oral",
+      "frequency": "every_12_hours",
+      "duration_days": 7,
+      "quantity_to_dispense": {
+        "value": 1,
+        "unit": "pack"
+      },
+      "substitution_allowed": true,
+      "instructions": "Con alimento",
+      "controlled": false
+    }
+  ],
+  "validity": {
+    "valid_until": "2026-12-06",
+    "refills_allowed": 0
+  },
+  "notes": "Instrucciones especiales para farmacia"
+}

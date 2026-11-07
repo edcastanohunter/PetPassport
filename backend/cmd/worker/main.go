@@ -215,6 +215,13 @@ func run() error {
 	for _, nr := range notif {
 		runners = append(runners, makeLeased(nr.Name, nr.Run))
 	}
+	rxRunners, err := prescriptionsRunners(a, logger)
+	if err != nil {
+		return err
+	}
+	for _, rx := range rxRunners {
+		runners = append(runners, makeLeased(rx.Name, rx.Run))
+	}
 
 	// Pool de workers asynq (PP-F3-ARQ-008) si Redis está configurado
 	if a.cfg.Redis.Addr != "" {

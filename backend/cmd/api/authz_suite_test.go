@@ -257,6 +257,8 @@ func newSuiteHandlers() apiHandlers {
 		ClinicalHandlers:     newSuiteClinicalHandlers(idem, logger),
 		SchedulingHandlers:   newSuiteSchedulingHandlers(idem, logger),
 		NotificationHandlers: notificationshttp.NewNotificationHandlers(fakePreferences{}, nil, nil, logger),
+		CredentialHandlers:   newSuiteCredentialHandlers(identityHandlers, logger),
+		PrescriptionHandlers: newSuitePrescriptionHandlers(logger),
 	}
 }
 
@@ -372,6 +374,8 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(attID).Convert(f.Type))
 		case f.Name == "JobId":
 			field.Set(reflect.ValueOf(jobID).Convert(f.Type))
+		case f.Name == "Id", f.Name == "PrescriptionId", f.Name == "CredentialId":
+			field.Set(reflect.ValueOf(rxID).Convert(f.Type))
 		case f.Name == "Token":
 			field.SetString("tok_tok_tok_tok_tok_tok_tok")
 		case f.Name == "Body" && f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct &&
@@ -514,6 +518,8 @@ var matrix = map[string][9]int{
 var accountOps = map[string]bool{
 	"getMe": true, "updateMe": true, "completeOnboarding": true, "acceptConsent": true,
 	"getNotificationPreferences": true, "putNotificationPreferences": true, "getInbox": true,
+	"listMyCredentials": true, "submitCredential": true, "deleteMyCredential": true,
+	"listMyPrescriptions": true, "archivePrescription": true,
 }
 
 func TestRoutes_AuthzMatrix(t *testing.T) {

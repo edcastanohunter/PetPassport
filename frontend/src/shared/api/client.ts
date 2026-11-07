@@ -72,6 +72,11 @@ export type Agenda = components['schemas']['Agenda']
 export type AgendaTimeRange = components['schemas']['AgendaTimeRange']
 export type AgendaDayException = components['schemas']['AgendaDayException']
 export type AvailabilitySlot = components['schemas']['AvailabilitySlot']
+export type ProfessionalCredential = components['schemas']['ProfessionalCredential']
+export type PrescriptionSummary = components['schemas']['PrescriptionSummary']
+export type PrescriptionDetail = components['schemas']['PrescriptionDetail']
+export type PrescriptionItemDTO = components['schemas']['PrescriptionItemDTO']
+export type PublicPrescriptionVerification = components['schemas']['PublicPrescriptionVerification']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {
