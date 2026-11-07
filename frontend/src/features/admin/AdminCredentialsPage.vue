@@ -4,7 +4,7 @@ import { api, ApiError, type ProfessionalCredential } from '@/shared/api/client'
 
 const credentials = ref<ProfessionalCredential[]>([])
 const loading = ref(false)
-const filterStatus = ref<string>('pending')
+const filterStatus = ref<'' | 'pending' | 'verified' | 'rejected' | 'expired'>('pending')
 const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 
@@ -17,7 +17,7 @@ async function loadCredentials() {
   loading.value = true
   error.value = null
   try {
-    const res = await api.GET('/admin/credentials', {
+    const res = await api().GET('/admin/credentials', {
       params: {
         query: filterStatus.value ? { status: filterStatus.value } : undefined,
       },
@@ -33,13 +33,18 @@ async function loadCredentials() {
   }
 }
 
+function setFilter(status: '' | 'pending' | 'verified' | 'rejected' | 'expired') {
+  filterStatus.value = status
+  void loadCredentials()
+}
+
 async function verifyCredential(id: string) {
   processing.value = true
   error.value = null
   notice.value = null
   try {
-    const res = await api.POST('/admin/credentials/{id}/verify', {
-      params: { path: { id } },
+    const res = await api().POST('/admin/credentials/{credentialId}/verify', {
+      params: { path: { credentialId: id } },
     })
     if (res.error) {
       throw new ApiError(res.error, res.response.status)
@@ -69,8 +74,8 @@ async function confirmReject() {
   error.value = null
   notice.value = null
   try {
-    const res = await api.POST('/admin/credentials/{id}/reject', {
-      params: { path: { id: rejectingId.value } },
+    const res = await api().POST('/admin/credentials/{credentialId}/reject', {
+      params: { path: { credentialId: rejectingId.value } },
       body: { reason: rejectReason.value.trim() },
     })
     if (res.error) {
@@ -124,7 +129,7 @@ onMounted(() => {
             { id: 'verified', label: 'Verificadas' },
             { id: 'rejected', label: 'Rechazadas' },
             { id: '', label: 'Todas' },
-          ]"
+          ] as const"
           :key="st.id"
           type="button"
           :class="[
@@ -133,10 +138,7 @@ onMounted(() => {
               : 'text-slate-600 hover:text-slate-900',
             'rounded-md px-3 py-1.5 transition',
           ]"
-          @click="
-            filterStatus = st.id
-            loadCredentials()
-          "
+          @click="setFilter(st.id)"
         >
           {{ st.label }}
         </button>
@@ -204,9 +206,6 @@ onMounted(() => {
               >
                 {{ c.status }}
               </span>
-              <div v-if="c.reason" class="mt-1 text-xs text-rose-600" :title="c.reason">
-                Motivo: {{ c.reason.slice(0, 25) }}…
-              </div>
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-2" v-if="c.status === 'pending'">

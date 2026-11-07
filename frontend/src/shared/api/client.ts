@@ -76,7 +76,9 @@ export type ProfessionalCredential = components['schemas']['ProfessionalCredenti
 export type PrescriptionSummary = components['schemas']['PrescriptionSummary']
 export type PrescriptionDetail = components['schemas']['PrescriptionDetail']
 export type PrescriptionItemDTO = components['schemas']['PrescriptionItemDTO']
-export type PublicPrescriptionVerification = components['schemas']['PublicPrescriptionVerification']
+export type PrescriptionVerificationResponse =
+  components['schemas']['PrescriptionVerificationResponse']
+export type PublicPrescriptionVerification = PrescriptionVerificationResponse
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

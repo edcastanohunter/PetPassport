@@ -35,7 +35,7 @@ async function loadPrescriptions() {
   loading.value = true
   error.value = null
   try {
-    const res = await api.GET('/org/{orgId}/prescriptions', {
+    const res = await api().GET('/organizations/{orgId}/prescriptions', {
       params: {
         path: { orgId },
         query: filterStatus.value ? { status: filterStatus.value } : undefined,
@@ -55,8 +55,8 @@ async function viewDetail(id: string) {
   loadingDetail.value = true
   selectedDetail.value = null
   try {
-    const res = await api.GET('/prescriptions/{id}', {
-      params: { path: { id } },
+    const res = await api().GET('/prescriptions/{prescriptionId}', {
+      params: { path: { prescriptionId: id } },
     })
     if (res.error) throw new ApiError(res.error, res.response.status)
     selectedDetail.value = res.data ?? null
@@ -87,8 +87,8 @@ async function confirmRevoke() {
   revoking.value = true
   error.value = null
   try {
-    const res = await api.POST('/prescriptions/{id}/revoke', {
-      params: { path: { id: revokingId.value } },
+    const res = await api().POST('/prescriptions/{prescriptionId}/revoke', {
+      params: { path: { prescriptionId: revokingId.value } },
       body: { reason: revokeReason.value.trim() },
     })
     if (res.error) throw new ApiError(res.error, res.response.status)
@@ -107,11 +107,11 @@ async function confirmRevoke() {
 
 async function downloadPDF(id: string) {
   try {
-    const res = await api.GET('/prescriptions/{id}/pdf', {
-      params: { path: { id } },
+    const res = await api().GET('/prescriptions/{prescriptionId}/pdf', {
+      params: { path: { prescriptionId: id } },
     })
-    if (res.data?.download_url) {
-      window.open(res.data.download_url, '_blank')
+    if (res.data?.url) {
+      window.open(res.data.url, '_blank')
     } else {
       notice.value = 'El PDF aún se está generando, intenta de nuevo en unos segundos.'
     }
@@ -398,23 +398,6 @@ onMounted(() => {
                 <div v-if="it.instructions" class="mt-1.5 text-xs italic text-slate-600">
                   "{{ it.instructions }}"
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Dispensations -->
-          <div v-if="selectedDetail.dispensations && selectedDetail.dispensations.length > 0">
-            <h4 class="font-bold uppercase tracking-wider text-xs text-slate-500 mb-3">
-              Historial de Dispensaciones
-            </h4>
-            <div class="space-y-2">
-              <div
-                v-for="(disp, i) in selectedDetail.dispensations"
-                :key="i"
-                class="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs"
-              >
-                <div class="font-bold text-emerald-900">Fecha: {{ disp.at }}</div>
-                <div class="text-emerald-700">Farmacia: {{ disp.pharmacy_org_id }}</div>
               </div>
             </div>
           </div>

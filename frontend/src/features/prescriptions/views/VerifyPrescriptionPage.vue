@@ -15,8 +15,11 @@ async function verifyPrescription() {
   loading.value = true
   error.value = null
   try {
-    const res = await api.GET('/public/prescriptions/{id}', {
-      params: { path: { id: prescriptionId } },
+    const res = await api().GET('/verify/prescriptions/{prescriptionId}', {
+      params: {
+        path: { prescriptionId },
+        query: expectedHash ? { h: expectedHash } : undefined,
+      },
     })
     if (res.error) {
       error.value = 'No se encontró la receta o el identificador es inválido.'
@@ -174,10 +177,10 @@ onMounted(() => {
               <div class="mt-1 text-base font-bold text-slate-900">
                 {{ verification.issuer_name }}
               </div>
-              <div class="mt-0.5 text-xs text-slate-600">
+              <div v-if="verification.vet_registry" class="mt-0.5 text-xs text-slate-600">
                 Matrícula:
-                <span class="font-semibold">{{ verification.credential.registry_number }}</span> ({{
-                  verification.credential.country
+                <span class="font-semibold">{{ verification.vet_registry }}</span> ({{
+                  verification.country
                 }})
               </div>
             </div>
@@ -186,8 +189,10 @@ onMounted(() => {
               <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">
                 Clínica / Emisor
               </div>
-              <div class="mt-1 text-base font-bold text-slate-900">{{ verification.org_name }}</div>
-              <div class="mt-0.5 text-xs text-slate-600">
+              <div class="mt-1 text-base font-bold text-slate-900">
+                {{ verification.issuer_org_name || 'Clínica Veterinaria' }}
+              </div>
+              <div v-if="verification.issued_at" class="mt-0.5 text-xs text-slate-600">
                 Fecha de emisión: {{ verification.issued_at.slice(0, 10) }}
               </div>
             </div>
@@ -197,11 +202,14 @@ onMounted(() => {
           <div class="border-b border-slate-100 pb-5">
             <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Paciente</div>
             <div class="mt-1 flex items-center gap-3">
-              <span class="text-lg font-bold text-slate-900">{{ verification.pet.name }}</span>
+              <span class="text-lg font-bold text-slate-900">{{
+                verification.pet_name || 'Paciente'
+              }}</span>
               <span
+                v-if="verification.pet_species"
                 class="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold capitalize text-slate-600"
               >
-                {{ verification.pet.species }}
+                {{ verification.pet_species }}
               </span>
             </div>
             <p class="mt-1 text-[11px] text-slate-400">
@@ -217,8 +225,8 @@ onMounted(() => {
             </div>
             <div class="space-y-3">
               <div
-                v-for="it in verification.items"
-                :key="it.item_id"
+                v-for="(it, itIdx) in verification.items"
+                :key="it.item_id || itIdx"
                 class="rounded-xl border border-slate-200 bg-slate-50 p-4"
               >
                 <div class="flex items-center justify-between font-bold text-slate-900">
@@ -260,30 +268,8 @@ onMounted(() => {
               </span>
             </div>
 
-            <div
-              v-if="verification.dispensations.length === 0"
-              class="rounded-lg bg-slate-50 p-3 text-xs text-slate-500 text-center"
-            >
-              No se han registrado entregas para esta receta.
-            </div>
-            <div v-else class="space-y-2">
-              <div
-                v-for="(d, idx) in verification.dispensations"
-                :key="idx"
-                class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs flex justify-between items-center"
-              >
-                <div>
-                  <span class="font-semibold text-slate-800">Fecha: {{ d.at.slice(0, 10) }}</span>
-                  <div class="text-[11px] text-slate-500">
-                    Farmacia: {{ d.pharmacy_org_id.slice(0, 8) }}…
-                  </div>
-                </div>
-                <span
-                  class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800"
-                >
-                  Entregado
-                </span>
-              </div>
+            <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              Dispensaciones registradas: <strong>{{ verification.dispensations_count }}</strong>
             </div>
           </div>
 

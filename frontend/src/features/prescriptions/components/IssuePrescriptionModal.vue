@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { api, ApiError, type PrescriptionItemDTO } from '@/shared/api/client'
+import {
+  api,
+  ApiError,
+  type PrescriptionItemDTO,
+  type ProfessionalCredential,
+} from '@/shared/api/client'
 
 const props = defineProps<{
   orgId: string
@@ -66,10 +71,11 @@ function defaultItem(): FormItem {
 
 async function checkCredential() {
   try {
-    const res = await api.GET('/me/credentials')
+    const res = await api().GET('/me/credentials')
     if (res.data?.data) {
-      const verified = res.data.data.some(
-        (c) => c.status === 'verified' && c.country.toUpperCase() === form.country.toUpperCase(),
+      const verified = (res.data.data as ProfessionalCredential[]).some(
+        (c: ProfessionalCredential) =>
+          c.status === 'verified' && c.country.toUpperCase() === form.country.toUpperCase(),
       )
       hasVerifiedCred.value = verified
     }
@@ -82,12 +88,12 @@ async function prefillFromEncounter() {
   if (!props.encounterId || !props.orgId) return
   loading.value = true
   try {
-    const res = await api.GET('/org/{orgId}/encounters/{encounterId}', {
-      params: { path: { orgId: props.orgId, encounterId: props.encounterId } },
+    const res = await api().GET('/encounters/{encounterId}', {
+      params: { path: { encounterId: props.encounterId } },
     })
     if (res.data) {
       const enc = res.data
-      if (enc.pet_id) form.petId = enc.pet_id
+      if (enc.pet?.id) form.petId = enc.pet.id
       if (enc.plan?.medications) {
         form.items = enc.plan.medications.map((m) => {
           let freqStr = ''
@@ -97,9 +103,9 @@ async function prefillFromEncounter() {
           }
           return {
             name: m.medication_name,
-            catalog_id: m.catalog_id,
-            free_text: m.catalog_id ? undefined : m.medication_name,
-            presentation: '',
+            catalog_id: m.catalog_id ? m.catalog_id : undefined,
+            free_text: m.free_text ? m.medication_name : undefined,
+            presentation: m.presentation ?? '',
             dose_value: m.dose ?? 1,
             dose_unit: m.dose_unit ?? 'mg',
             route: m.route ?? 'oral',
@@ -189,14 +195,19 @@ async function handleDraft() {
   submitting.value = true
   error.value = null
   try {
-    const res = await api.POST('/org/{orgId}/prescriptions', {
-      params: { path: { orgId: props.orgId } },
+    const res = await api().POST('/organizations/{orgId}/prescriptions', {
+      params: {
+        path: { orgId: props.orgId },
+        header: { 'Idempotency-Key': crypto.randomUUID() },
+      },
       body: {
         pet_id: form.petId,
         country: form.country,
         encounter_id: props.encounterId ? props.encounterId : undefined,
-        valid_until: form.validUntil ? form.validUntil : undefined,
-        refills_allowed: form.refillsAllowed,
+        validity: {
+          valid_until: form.validUntil ? form.validUntil : undefined,
+          refills_allowed: form.refillsAllowed,
+        },
         notes: form.notes ? form.notes.trim() : undefined,
         items: form.items.map(toPayloadItem),
       },
@@ -226,14 +237,19 @@ async function handleSignAndIssue() {
   error.value = null
   try {
     // 1. Crear borrador
-    const draftRes = await api.POST('/org/{orgId}/prescriptions', {
-      params: { path: { orgId: props.orgId } },
+    const draftRes = await api().POST('/organizations/{orgId}/prescriptions', {
+      params: {
+        path: { orgId: props.orgId },
+        header: { 'Idempotency-Key': crypto.randomUUID() },
+      },
       body: {
         pet_id: form.petId,
         country: form.country,
         encounter_id: props.encounterId ? props.encounterId : undefined,
-        valid_until: form.validUntil ? form.validUntil : undefined,
-        refills_allowed: form.refillsAllowed,
+        validity: {
+          valid_until: form.validUntil ? form.validUntil : undefined,
+          refills_allowed: form.refillsAllowed,
+        },
         notes: form.notes ? form.notes.trim() : undefined,
         items: form.items.map(toPayloadItem),
       },
@@ -243,8 +259,11 @@ async function handleSignAndIssue() {
     if (!rxId) throw new Error('No se recibió el ID de la receta')
 
     // 2. Firmar y emitir
-    const issueRes = await api.POST('/prescriptions/{id}/issue', {
-      params: { path: { id: rxId } },
+    const issueRes = await api().POST('/prescriptions/{prescriptionId}/issue', {
+      params: {
+        path: { prescriptionId: rxId },
+        header: { 'If-Match': draftRes.data?.version ?? 1 },
+      },
       body: { signer_name: signerName.value.trim() },
     })
     if (issueRes.error) throw new ApiError(issueRes.error, issueRes.response.status)

@@ -28,7 +28,7 @@ async function loadCredentials() {
   loading.value = true
   error.value = null
   try {
-    const res = await api.GET('/me/credentials')
+    const res = await api().GET('/me/credentials')
     if (res.error) {
       throw new ApiError(res.error, res.response.status)
     }
@@ -49,7 +49,10 @@ async function submitCredential() {
   error.value = null
   success.value = null
   try {
-    const res = await api.POST('/me/credentials', {
+    const res = await api().POST('/me/credentials', {
+      params: {
+        header: { 'Idempotency-Key': crypto.randomUUID() },
+      },
       body: {
         country: form.country,
         kind: form.kind,
@@ -82,8 +85,8 @@ async function deleteCredential(id: string) {
   if (!confirm('¿Seguro que deseas eliminar esta credencial?')) return
   error.value = null
   try {
-    const res = await api.DELETE('/me/credentials/{id}', {
-      params: { path: { id } },
+    const res = await api().DELETE('/me/credentials/{credentialId}', {
+      params: { path: { credentialId: id } },
     })
     if (res.error) {
       throw new ApiError(res.error, res.response.status)
@@ -322,12 +325,6 @@ onMounted(() => {
             <span class="mx-2 text-slate-300">•</span>
             <span>Expedida: {{ c.issued_at }}</span>
             <span v-if="c.expires_at" class="ml-2 text-slate-400">(Vence: {{ c.expires_at }})</span>
-          </div>
-          <div
-            v-if="c.status === 'rejected' && c.reason"
-            class="mt-2 rounded bg-rose-50 p-2 text-xs text-rose-700"
-          >
-            <strong>Motivo de rechazo:</strong> {{ c.reason }}
           </div>
         </div>
 
