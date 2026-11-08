@@ -14,21 +14,23 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// Nombres de colas según PP-F3-ARQ-008.
+// Nombres de colas según PP-F3-ARQ-008, PP-F4-ARQ-012.
 const (
 	QueueCritical = "critical"
 	QueueDefault  = "default"
+	QueueOCR      = "ocr"
 	QueueLow      = "low"
 )
 
-// Prioridades de colas (6 : 3 : 1).
+// Prioridades de colas (6 : 3 : 4 : 1).
 var QueuePriorities = map[string]int{
 	QueueCritical: 6,
 	QueueDefault:  3,
+	QueueOCR:      4,
 	QueueLow:      1,
 }
 
-// Tipos de trabajos asynq (PP-F3-ARQ-008).
+// Tipos de trabajos asynq (PP-F3-ARQ-008, PP-F4-OCR-001).
 const (
 	TypeNotifyEmail   = "notify:email"
 	TypeNotifyPush    = "notify:push"
@@ -41,6 +43,7 @@ const (
 	TypeExportCohort  = "export:cohort"
 	TypeCatalogImport = "catalog:import"
 	TypeStatsRefresh  = "stats:refresh"
+	TypeOCRPipeline   = "ocr:pipeline"
 )
 
 var (
@@ -102,6 +105,43 @@ type DocRenderPayload struct {
 	Kind    string `json:"kind"`
 	Ref     string `json:"ref"`
 	Version int64  `json:"version"`
+}
+
+// OCRPipelinePayload es el payload para procesar una receta externa con OCR (PP-F4-OCR-001).
+type OCRPipelinePayload struct {
+	PrescriptionID uuid.UUID `json:"prescription_id"`
+	Attempt        int       `json:"attempt"`
+	Country        string    `json:"country"`
+	PetSpecies     string    `json:"pet_species"`
+	PetName        string    `json:"pet_name"`
+	GuardianName   string    `json:"guardian_name"`
+}
+
+// EnqueueOCRPipeline encola un trabajo de análisis de receta en la cola 'ocr' (PP-F4-ARQ-012, OCR-001).
+func (c *Client) EnqueueOCRPipeline(ctx context.Context, p OCRPipelinePayload) (*asynq.TaskInfo, error) {
+	if c == nil || c.client == nil {
+		return nil, nil
+	}
+	payload, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+
+	taskID := fmt.Sprintf("ocr:pipeline:%s:%d", p.PrescriptionID, p.Attempt)
+	task := asynq.NewTask(TypeOCRPipeline, payload,
+		asynq.TaskID(taskID),
+		asynq.Queue(QueueOCR),
+		asynq.MaxRetry(3),
+		asynq.Timeout(120*time.Second),
+		asynq.Retention(24*time.Hour),
+	)
+
+	info, err := c.client.EnqueueContext(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+	metricTasksEnqueued.WithLabelValues(TypeOCRPipeline, QueueOCR).Inc()
+	return info, nil
 }
 
 // MediaProcessPayload es el payload para procesar una imagen o archivo.

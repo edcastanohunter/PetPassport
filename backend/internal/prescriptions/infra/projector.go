@@ -36,6 +36,8 @@ func (*PrescriptionsProjector) Handles() []string {
 		"PrescriptionIssued",
 		"PrescriptionRevoked",
 		"ExternalPrescriptionUploaded",
+		"PrescriptionExtractionRecorded",
+		"PrescriptionReuploadRequested",
 		"ExternalPrescriptionConfirmed",
 		"ExternalPrescriptionReopened",
 		"PrescriptionPharmacistValidated",
@@ -217,7 +219,48 @@ ON CONFLICT (prescription_id, page) DO NOTHING`
 				return err
 			}
 		}
+
+		const insertInitialJob = `
+INSERT INTO read_prescriptions.extraction_jobs (
+  prescription_id, attempt, status, created_at, updated_at
+) VALUES ($1, 1, 'queued', $2, $2)
+ON CONFLICT (prescription_id, attempt) DO NOTHING`
+		_, _ = tx.Exec(ctx, insertInitialJob, ev.PrescriptionID, e.OccurredAt)
 		return nil
+
+	case domain.PrescriptionExtractionRecorded:
+		warningsJSON, _ := jsonBytes(ev.Extraction.Warnings)
+		const upsertDoneJob = `
+INSERT INTO read_prescriptions.extraction_jobs (
+  prescription_id, attempt, status, extractor_id, legibility, warnings,
+  cost_usd, latency_ms, created_at, updated_at
+) VALUES ($1, $2, 'done', $3, $4, $5, $6, $7, $8, $8)
+ON CONFLICT (prescription_id, attempt) DO UPDATE SET
+  status = 'done',
+  extractor_id = EXCLUDED.extractor_id,
+  legibility = EXCLUDED.legibility,
+  warnings = EXCLUDED.warnings,
+  cost_usd = EXCLUDED.cost_usd,
+  latency_ms = EXCLUDED.latency_ms,
+  updated_at = EXCLUDED.updated_at`
+		_, err = tx.Exec(ctx, upsertDoneJob,
+			ev.PrescriptionID, ev.Extraction.Version, ev.Extraction.ExtractorID,
+			ev.Extraction.Legibility, warningsJSON, ev.Extraction.CostUSD,
+			ev.Extraction.LatencyMs, e.OccurredAt,
+		)
+		return err
+
+	case domain.PrescriptionReuploadRequested:
+		const upsertReuploadJob = `
+INSERT INTO read_prescriptions.extraction_jobs (
+  prescription_id, attempt, status, error, created_at, updated_at
+) VALUES ($1, 1, 'reupload_requested', $2, $3, $3)
+ON CONFLICT (prescription_id, attempt) DO UPDATE SET
+  status = 'reupload_requested',
+  error = EXCLUDED.error,
+  updated_at = EXCLUDED.updated_at`
+		_, err = tx.Exec(ctx, upsertReuploadJob, ev.PrescriptionID, ev.Reason, e.OccurredAt)
+		return err
 
 	case domain.ExternalPrescriptionConfirmed:
 		itemsJSON, err := jsonBytes(ev.Items)

@@ -1,16 +1,23 @@
 package http
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/queue"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/reqctx"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/prescriptions/app"
@@ -23,11 +30,23 @@ type EncounterAccessReader interface {
 	GetEncounterAccess(ctx context.Context, id uuid.UUID) (*authz.EncounterResource, error)
 }
 
-// PrescriptionHandlers implementa los endpoints de recetas emitidas y verificación pública (PP-F4-API-002, API-004).
+// PetAccessReader permite consultar información de la mascota para authz (PP-F4-API-003).
+type PetAccessReader interface {
+	GetPetInfo(ctx context.Context, petID uuid.UUID) (name string, species string, guardianID uuid.UUID, err error)
+}
+
+// OCREnqueuer encola trabajos en la cola asynq de OCR (PP-F4-ARQ-012).
+type OCREnqueuer interface {
+	EnqueueOCRPipeline(ctx context.Context, p queue.OCRPipelinePayload) (*asynq.TaskInfo, error)
+}
+
+// PrescriptionHandlers implementa los endpoints de recetas emitidas y verificación pública (PP-F4-API-002, API-003, API-004).
 type PrescriptionHandlers struct {
 	svc             *app.Service
 	storage         storage.ObjectStorage
 	encounterReader EncounterAccessReader
+	petReader       PetAccessReader
+	enqueuer        OCREnqueuer
 }
 
 // NewPrescriptionHandlers construye los handlers de prescripciones.
@@ -41,6 +60,18 @@ func NewPrescriptionHandlers(svc *app.Service, storage storage.ObjectStorage) *P
 // WithEncounterReader asocia el lector de acceso a encuentros para verificación de permisos.
 func (h *PrescriptionHandlers) WithEncounterReader(r EncounterAccessReader) *PrescriptionHandlers {
 	h.encounterReader = r
+	return h
+}
+
+// WithPetReader asocia el lector de información de mascotas.
+func (h *PrescriptionHandlers) WithPetReader(r PetAccessReader) *PrescriptionHandlers {
+	h.petReader = r
+	return h
+}
+
+// WithEnqueuer asocia el cliente encolador asynq.
+func (h *PrescriptionHandlers) WithEnqueuer(e OCREnqueuer) *PrescriptionHandlers {
+	h.enqueuer = e
 	return h
 }
 
@@ -581,6 +612,13 @@ func toDomainItem(it gen.PrescriptionItemDTO) domain.PrescriptionItem {
 		itemID = &id
 	}
 
+	var extRef *domain.ExtractionRefVO
+	if it.ExtractionRef != nil {
+		extRef = &domain.ExtractionRefVO{
+			ItemIndex: *it.ExtractionRef,
+		}
+	}
+
 	return domain.PrescriptionItem{
 		ItemID:       *itemID,
 		CatalogID:    catID,
@@ -601,6 +639,7 @@ func toDomainItem(it gen.PrescriptionItemDTO) domain.PrescriptionItem {
 		SubstitutionAllowed: subAllowed,
 		Instructions:        instr,
 		Controlled:          ctrl,
+		ExtractionRef:       extRef,
 	}
 }
 
@@ -610,6 +649,11 @@ func toGenPrescriptionItem(it domain.PrescriptionItem) gen.PrescriptionItemDTO {
 	pres := it.Presentation
 	instr := it.Instructions
 	itemID := it.ItemID
+	var extRef *int
+	if it.ExtractionRef != nil {
+		idx := it.ExtractionRef.ItemIndex
+		extRef = &idx
+	}
 	return gen.PrescriptionItemDTO{
 		ItemId:       &itemID,
 		CatalogId:    it.CatalogID,
@@ -630,6 +674,7 @@ func toGenPrescriptionItem(it domain.PrescriptionItem) gen.PrescriptionItemDTO {
 		SubstitutionAllowed: &subAllowed,
 		Instructions:        &instr,
 		Controlled:          &ctrl,
+		ExtractionRef:       extRef,
 	}
 }
 
@@ -731,6 +776,42 @@ func toGenPrescriptionDetail(d *app.ReadPrescriptionDetail) gen.PrescriptionDeta
 		remaining = &m
 	}
 
+	var images *[]gen.PrescriptionImageDTO
+	if len(d.Images) > 0 {
+		imgList := make([]gen.PrescriptionImageDTO, 0, len(d.Images))
+		for _, img := range d.Images {
+			ct := img.ContentType
+			imgList = append(imgList, gen.PrescriptionImageDTO{
+				Page:        img.Page,
+				ObjectKey:   img.ObjectKey,
+				ContentType: &ct,
+			})
+		}
+		images = &imgList
+	}
+
+	var extMeta *struct {
+		ClinicName *string `json:"clinic_name,omitempty"`
+		IssuedOn   *string `json:"issued_on,omitempty"`
+		VetName    *string `json:"vet_name,omitempty"`
+	}
+	if d.ExternalMeta != nil {
+		var issuedOnStr *string
+		if d.ExternalMeta.IssuedOn != nil {
+			s := d.ExternalMeta.IssuedOn.String()
+			issuedOnStr = &s
+		}
+		extMeta = &struct {
+			ClinicName *string `json:"clinic_name,omitempty"`
+			IssuedOn   *string `json:"issued_on,omitempty"`
+			VetName    *string `json:"vet_name,omitempty"`
+		}{
+			ClinicName: d.ExternalMeta.ClinicName,
+			IssuedOn:   issuedOnStr,
+			VetName:    d.ExternalMeta.VetName,
+		}
+	}
+
 	return gen.PrescriptionDetail{
 		Id:                 d.ID,
 		Version:            int(d.Version),
@@ -755,6 +836,8 @@ func toGenPrescriptionDetail(d *app.ReadPrescriptionDetail) gen.PrescriptionDeta
 		VerificationsCount: d.Verifications,
 		Notes:              d.Notes,
 		ArchivedByGuardian: d.ArchivedByGuardian,
+		Images:             images,
+		ExternalMeta:       extMeta,
 		CreatedAt:          d.CreatedAt,
 		UpdatedAt:          d.UpdatedAt,
 	}
@@ -768,4 +851,572 @@ func limitOf(l *int) int {
 		return 100
 	}
 	return *l
+}
+
+// UploadExternalPrescription sube entre 1 y 5 imágenes de receta externa e inicia la extracción OCR (PP-F4-API-003, PRD-005).
+func (h *PrescriptionHandlers) UploadExternalPrescription(ctx context.Context, req gen.UploadExternalPrescriptionRequestObject) (gen.UploadExternalPrescriptionResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	petID := uuid.UUID(req.PetId)
+	if h.petReader == nil {
+		return nil, errors.New("prescriptions: petReader no configurado")
+	}
+	_, _, guardianID, err := h.petReader.GetPetInfo(ctx, petID)
+	if err != nil {
+		return nil, err
+	}
+	if d := authz.Can(p, authz.PrescriptionUpload, authz.PetResource{ID: petID, GuardianID: guardianID}); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	if req.Body == nil {
+		return nil, kernel.NewDomainError("EMPTY_IMAGES", "Se requiere al menos una imagen de la receta.")
+	}
+
+	var images []domain.ImageRef
+	var country string
+	page := 1
+
+	for {
+		part, err := req.Body.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		formName := part.FormName()
+		if formName == "country" {
+			cBytes, _ := io.ReadAll(io.LimitReader(part, 16))
+			country = strings.ToUpper(strings.TrimSpace(string(cBytes)))
+			continue
+		}
+		if part.FileName() == "" && formName != "files" && formName != "images" && formName != "file" {
+			continue
+		}
+		if len(images) >= 5 {
+			return nil, kernel.NewDomainError("EXTERNAL_UPLOAD_LIMIT", "No se pueden subir más de 5 páginas por receta.")
+		}
+		data, err := io.ReadAll(io.LimitReader(part, 10*1024*1024+1))
+		if err != nil {
+			return nil, err
+		}
+		if len(data) > 10*1024*1024 {
+			return nil, kernel.NewDomainError("PAYLOAD_TOO_LARGE", "Cada página no puede superar 10 MB.")
+		}
+		if len(data) == 0 {
+			continue
+		}
+
+		ct := http.DetectContentType(data)
+		ext := ".jpg"
+		if strings.Contains(ct, "pdf") {
+			ext = ".pdf"
+			ct = "application/pdf"
+		} else if strings.Contains(ct, "png") {
+			ext = ".png"
+			ct = "image/png"
+		} else {
+			ct = "image/jpeg"
+		}
+
+		imgID := uuid.New().String()
+		key := fmt.Sprintf("prescriptions/external/%s/%d_%s%s", petID.String(), page, imgID, ext)
+		if h.storage != nil {
+			if err := h.storage.Put(ctx, key, ct, bytes.NewReader(data), int64(len(data))); err != nil {
+				return nil, err
+			}
+		}
+		images = append(images, domain.ImageRef{
+			Page:        page,
+			ObjectKey:   key,
+			ContentType: ct,
+		})
+		page++
+	}
+
+	if len(images) == 0 {
+		return nil, kernel.NewDomainError("EMPTY_IMAGES", "Se requiere al menos una imagen de la receta.")
+	}
+	if country == "" {
+		country = "CO"
+	}
+
+	cmd := app.UploadExternalPrescriptionCmd{
+		PetID:   petID,
+		Country: country,
+		Images:  images,
+	}
+	rxID, err := h.svc.UploadExternalPrescription(ctx, cmd, guardianID)
+	if err != nil {
+		return nil, err
+	}
+
+	if h.enqueuer != nil {
+		_, _ = h.enqueuer.EnqueueOCRPipeline(ctx, queue.OCRPipelinePayload{
+			PrescriptionID: rxID,
+			Attempt:        1,
+			Country:        country,
+		})
+	}
+
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+
+	return gen.UploadExternalPrescription202JSONResponse(toGenPrescriptionDetail(detail)), nil
+}
+
+// AddPrescriptionImage añade una página adicional a una receta en borrador (PP-F4-API-003).
+func (h *PrescriptionHandlers) AddPrescriptionImage(ctx context.Context, req gen.AddPrescriptionImageRequestObject) (gen.AddPrescriptionImageResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionUpload, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	if req.Body == nil {
+		return nil, kernel.NewDomainError("EMPTY_IMAGES", "Falta el archivo de la página.")
+	}
+
+	part, err := req.Body.NextPart()
+	if err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(io.LimitReader(part, 10*1024*1024+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > 10*1024*1024 {
+		return nil, kernel.NewDomainError("PAYLOAD_TOO_LARGE", "La página no puede superar 10 MB.")
+	}
+	if len(data) == 0 {
+		return nil, kernel.NewDomainError("EMPTY_IMAGES", "Archivo de imagen vacío.")
+	}
+
+	ct := http.DetectContentType(data)
+	ext := ".jpg"
+	if strings.Contains(ct, "pdf") {
+		ext = ".pdf"
+		ct = "application/pdf"
+	} else if strings.Contains(ct, "png") {
+		ext = ".png"
+		ct = "image/png"
+	} else {
+		ct = "image/jpeg"
+	}
+
+	page := len(detail.Images) + 1
+	imgID := uuid.New().String()
+	key := fmt.Sprintf("prescriptions/external/%s/%d_%s%s", detail.PetID.String(), page, imgID, ext)
+	if h.storage != nil {
+		if err := h.storage.Put(ctx, key, ct, bytes.NewReader(data), int64(len(data))); err != nil {
+			return nil, err
+		}
+	}
+
+	imgRef := domain.ImageRef{
+		Page:        page,
+		ObjectKey:   key,
+		ContentType: ct,
+	}
+	guardianID := p.UserID
+	if p.HasRole("super_admin") {
+		guardianID = detail.GuardianID
+	}
+	if err := h.svc.AddPrescriptionImage(ctx, rxID, imgRef, guardianID); err != nil {
+		return nil, err
+	}
+
+	return gen.AddPrescriptionImage201JSONResponse{
+		ObjectKey: key,
+		Page:      page,
+	}, nil
+}
+
+// GetPrescriptionImage devuelve la URL de lectura o redirección prefirmada de una página (PP-F4-API-003).
+func (h *PrescriptionHandlers) GetPrescriptionImage(ctx context.Context, req gen.GetPrescriptionImageRequestObject) (gen.GetPrescriptionImageResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionRead, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	img, err := h.svc.GetImage(ctx, rxID, req.Page)
+	if err != nil {
+		return nil, err
+	}
+	if img == nil {
+		return nil, &kernel.NotFoundError{Resource: "image"}
+	}
+
+	if h.storage == nil {
+		return nil, errors.New("prescriptions: storage no configurado")
+	}
+	url, err := h.storage.PresignGet(ctx, img.ObjectKey, 15*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+
+	return gen.GetPrescriptionImage200JSONResponse{
+		Url: url,
+	}, nil
+}
+
+// GetPrescriptionExtraction consulta el estado y datos del análisis OCR (PP-F4-API-003).
+func (h *PrescriptionHandlers) GetPrescriptionExtraction(ctx context.Context, req gen.GetPrescriptionExtractionRequestObject) (gen.GetPrescriptionExtractionResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionRead, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	job, err := h.svc.GetExtraction(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+
+	return gen.GetPrescriptionExtraction200JSONResponse(toGenExtractionResponse(job)), nil
+}
+
+// RetryPrescriptionExtraction solicita un reintento del análisis OCR si falló o requirió reupload (PP-F4-API-003).
+func (h *PrescriptionHandlers) RetryPrescriptionExtraction(ctx context.Context, req gen.RetryPrescriptionExtractionRequestObject) (gen.RetryPrescriptionExtractionResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionUpload, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	guardianID := p.UserID
+	if p.HasRole("super_admin") {
+		guardianID = detail.GuardianID
+	}
+	if err := h.svc.RetryExtraction(ctx, rxID, guardianID); err != nil {
+		return nil, err
+	}
+
+	job, err := h.svc.GetExtraction(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+
+	if h.enqueuer != nil {
+		_, _ = h.enqueuer.EnqueueOCRPipeline(ctx, queue.OCRPipelinePayload{
+			PrescriptionID: rxID,
+			Attempt:        job.Attempt,
+			Country:        detail.Country,
+		})
+	}
+
+	return gen.RetryPrescriptionExtraction202JSONResponse(toGenExtractionResponse(job)), nil
+}
+
+// ConfirmExternalPrescription confirma los datos revisados con atestación humana explícita (PP-F4-API-003, PRD-006).
+func (h *PrescriptionHandlers) ConfirmExternalPrescription(ctx context.Context, req gen.ConfirmExternalPrescriptionRequestObject) (gen.ConfirmExternalPrescriptionResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionUpload, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	body := req.Body
+	if body == nil {
+		return nil, &kernel.ValidationError{}
+	}
+	if !body.Attestation {
+		return nil, kernel.NewDomainError("ATTESTATION_REQUIRED", "Debes confirmar que los medicamentos coinciden con tu receta.")
+	}
+
+	var items []domain.PrescriptionItem
+	for _, it := range body.Items {
+		items = append(items, toDomainItem(it))
+	}
+
+	var val domain.Validity
+	if body.Validity != nil {
+		if body.Validity.ValidUntil != nil {
+			vu, err := kernel.NewCivilDate(body.Validity.ValidUntil.String())
+			if err == nil {
+				val.ValidUntil = vu
+			}
+		}
+		if body.Validity.RefillsAllowed != nil {
+			val.RefillsAllowed = *body.Validity.RefillsAllowed
+		}
+	}
+
+	var meta domain.ExternalMeta
+	if body.ExternalMeta != nil {
+		meta.VetName = body.ExternalMeta.VetName
+		meta.ClinicName = body.ExternalMeta.ClinicName
+		if body.ExternalMeta.IssuedOn != nil {
+			if vu, err := kernel.NewCivilDate(*body.ExternalMeta.IssuedOn); err == nil {
+				meta.IssuedOn = &vu
+			}
+		}
+	}
+	var notes string
+	if body.Notes != nil {
+		notes = *body.Notes
+	}
+
+	guardianID := p.UserID
+	if p.HasRole("super_admin") {
+		guardianID = detail.GuardianID
+	}
+	cmd := app.ConfirmExternalPrescriptionCmd{
+		PrescriptionID: rxID,
+		Items:          items,
+		Validity:       val,
+		ExternalMeta:   meta,
+		Notes:          notes,
+		Attestation:    body.Attestation,
+	}
+	if err := h.svc.ConfirmExternalPrescription(ctx, cmd, guardianID); err != nil {
+		return nil, err
+	}
+
+	updated, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	ver := updated.Version
+	return gen.ConfirmExternalPrescription200JSONResponse{
+		Body: toGenPrescriptionDetail(updated),
+		Headers: gen.ConfirmExternalPrescription200ResponseHeaders{
+			ETag: &ver,
+		},
+	}, nil
+}
+
+// ReopenExternalPrescription reabre una receta externa confirmada a borrador (PP-F4-API-003, DOM-007).
+func (h *PrescriptionHandlers) ReopenExternalPrescription(ctx context.Context, req gen.ReopenExternalPrescriptionRequestObject) (gen.ReopenExternalPrescriptionResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rxID := uuid.UUID(req.PrescriptionId)
+	detail, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+	res := authz.PrescriptionResource{
+		ID:          detail.ID,
+		PetID:       detail.PetID,
+		GuardianID:  detail.GuardianID,
+		IssuerOrgID: detail.IssuerOrgID,
+		IssuerID:    detail.IssuerID,
+	}
+	if d := authz.Can(p, authz.PrescriptionUpload, res); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	guardianID := p.UserID
+	if p.HasRole("super_admin") {
+		guardianID = detail.GuardianID
+	}
+	if err := h.svc.ReopenExternal(ctx, rxID, guardianID); err != nil {
+		return nil, err
+	}
+
+	updated, err := h.svc.GetByID(ctx, rxID)
+	if err != nil {
+		return nil, err
+	}
+
+	return gen.ReopenExternalPrescription200JSONResponse(toGenPrescriptionDetail(updated)), nil
+}
+
+func toGenExtractionResponse(job *app.ExtractionJobDTO) gen.ExtractionResponse {
+	resp := gen.ExtractionResponse{
+		Attempt: job.Attempt,
+		Reason:  job.Reason,
+	}
+
+	switch job.Status {
+	case "queued", "preprocessing", "extracting", "matching":
+		resp.Status = gen.ExtractionResponseStatusQueued
+	case "done":
+		resp.Status = gen.ExtractionResponseStatusDone
+	case "reupload_requested":
+		resp.Status = gen.ExtractionResponseStatusReuploadRequested
+	case "failed", "refused":
+		resp.Status = gen.ExtractionResponseStatusFailed
+	default:
+		resp.Status = gen.ExtractionResponseStatusQueued
+	}
+
+	if job.Extraction != nil {
+		ext := job.Extraction
+		data := gen.ExtractionDataDTO{
+			Warnings: &ext.Warnings,
+		}
+		if ext.Legibility > 0 {
+			leg := fmt.Sprintf("%.2f", ext.Legibility)
+			data.Legibility = &leg
+		}
+		hdr := gen.ExtractionHeaderDTO{
+			VetName:    ext.Header.VetName,
+			ClinicName: ext.Header.Clinic,
+			IssuedOn:   ext.Header.Date,
+		}
+		data.Header = &hdr
+
+		items := make([]gen.ExtractionItemDTO, 0, len(ext.Items))
+		for _, it := range ext.Items {
+			itDTO := gen.ExtractionItemDTO{
+				Index:   it.Index,
+				RawText: it.RawText,
+			}
+			if it.Dose != "" {
+				itDTO.Dose = &it.Dose
+			}
+			if it.Frequency != "" {
+				itDTO.Frequency = &it.Frequency
+			}
+			if it.Duration != "" {
+				itDTO.Duration = &it.Duration
+			}
+			if it.Quantity != "" {
+				itDTO.Quantity = &it.Quantity
+			}
+
+			// product
+			prodDTO := struct {
+				Candidates *[]gen.ExtractionCandidateDTO `json:"candidates,omitempty"`
+				Text       *string                       `json:"text,omitempty"`
+			}{
+				Text: &it.Product.Text,
+			}
+			if len(it.Product.Candidates) > 0 {
+				candDTOs := make([]gen.ExtractionCandidateDTO, 0, len(it.Product.Candidates))
+				for _, c := range it.Product.Candidates {
+					candDTOs = append(candDTOs, gen.ExtractionCandidateDTO{
+						CatalogId: c.CatalogID,
+						Name:      c.Name,
+						Score:     float32(c.Score),
+					})
+				}
+				prodDTO.Candidates = &candDTOs
+			}
+			itDTO.Product = &prodDTO
+
+			// confidence
+			if len(it.Confidence) > 0 {
+				conf := gen.ExtractionConfidenceDTO{}
+				if v, ok := it.Confidence["product"]; ok {
+					f := float32(v)
+					conf.Product = &f
+				}
+				if v, ok := it.Confidence["dose"]; ok {
+					f := float32(v)
+					conf.Dose = &f
+				}
+				if v, ok := it.Confidence["frequency"]; ok {
+					f := float32(v)
+					conf.Frequency = &f
+				}
+				if v, ok := it.Confidence["duration"]; ok {
+					f := float32(v)
+					conf.Duration = &f
+				}
+				if v, ok := it.Confidence["quantity"]; ok {
+					f := float32(v)
+					conf.Quantity = &f
+				}
+				if v, ok := it.Confidence["overall"]; ok {
+					f := float32(v)
+					conf.Overall = &f
+				}
+				itDTO.Confidence = &conf
+			}
+
+			if len(it.BBox) > 0 {
+				bbox := make([]float32, len(it.BBox))
+				for i, b := range it.BBox {
+					bbox[i] = float32(b)
+				}
+				itDTO.Bbox = &bbox
+			}
+
+			items = append(items, itDTO)
+		}
+		data.Items = &items
+		resp.Extraction = &data
+	}
+
+	return resp
 }

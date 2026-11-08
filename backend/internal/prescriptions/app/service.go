@@ -32,6 +32,7 @@ type Options struct {
 	OrgReader     OrgNameReader
 	UserReader    UserNameReader
 	PDFGen        PDFGenerator
+	OpenQuotes    OpenQuoteChecker
 	Logger        *slog.Logger
 	Clock         kernel.Clock
 	IDs           kernel.IDGenerator
@@ -52,6 +53,7 @@ type Service struct {
 	orgReader     OrgNameReader
 	userReader    UserNameReader
 	pdfGen        PDFGenerator
+	openQuotes    OpenQuoteChecker
 	logger        *slog.Logger
 	clock         kernel.Clock
 	ids           kernel.IDGenerator
@@ -85,6 +87,7 @@ func NewService(opts Options) *Service {
 		orgReader:     opts.OrgReader,
 		userReader:    opts.UserReader,
 		pdfGen:        opts.PDFGen,
+		openQuotes:    opts.OpenQuotes,
 		logger:        logger,
 		clock:         clock,
 		ids:           ids,
@@ -559,8 +562,22 @@ func (s *Service) UploadExternalPrescription(ctx context.Context, cmd UploadExte
 	return rxID, nil
 }
 
-// ConfirmExternalPrescription confirma los datos de una receta externa validada (PP-F4-DOM-006).
+// ConfirmExternalPrescription confirma los datos de una receta externa validada (PP-F4-DOM-006, PRD-006, API-003).
 func (s *Service) ConfirmExternalPrescription(ctx context.Context, cmd ConfirmExternalPrescriptionCmd, guardianID uuid.UUID) error {
+	if !cmd.Attestation {
+		return kernel.NewDomainError("ATTESTATION_REQUIRED", "Debes confirmar que los medicamentos coinciden con tu receta.")
+	}
+
+	if s.openQuotes != nil {
+		hasOpen, err := s.openQuotes.HasOpenQuotes(ctx, cmd.PrescriptionID)
+		if err != nil {
+			return err
+		}
+		if hasOpen {
+			return kernel.NewDomainError("QUOTE_REQUEST_OPEN", "No se puede modificar una receta con solicitudes de cotización abiertas.")
+		}
+	}
+
 	now := s.clock.Now().UTC()
 
 	return s.uow.Do(ctx, func(txCtx context.Context) error {
@@ -569,19 +586,32 @@ func (s *Service) ConfirmExternalPrescription(ctx context.Context, cmd ConfirmEx
 			return err
 		}
 
+		if rx.GuardianID != guardianID && guardianID != uuid.Nil {
+			return kernel.NewDomainError("FORBIDDEN", "Solo el tutor propietario puede confirmar la receta.")
+		}
+
 		rule, err := s.rules.ForCountry(txCtx, rx.Country)
 		if err != nil {
 			return err
 		}
 
-		val := domain.Validity{
-			ValidUntil:     cmd.ValidUntil,
-			RefillsAllowed: cmd.RefillsAllowed,
+		val := cmd.Validity
+		if val.ValidUntil == "" && cmd.Validity.RefillsAllowed == 0 {
+			val = domain.Validity{
+				ValidUntil:     kernel.CivilDateOf(now).AddDays(30),
+				RefillsAllowed: 0,
+			}
 		}
-		extMeta := domain.ExternalMeta{}
-		diff := map[string]any{"notes": cmd.Notes}
 
-		if _, err := rx.ConfirmExternalPrescription(cmd.Items, val, extMeta, diff, rule, now); err != nil {
+		diff := cmd.Diff
+		if diff == nil {
+			diff = make(map[string]any)
+		}
+		if cmd.Notes != "" {
+			diff["notes"] = cmd.Notes
+		}
+
+		if _, err := rx.ConfirmExternalItems(cmd.Items, val, cmd.ExternalMeta, diff, rule, now); err != nil {
 			return err
 		}
 
@@ -597,6 +627,140 @@ func (s *Service) ConfirmExternalPrescription(ctx context.Context, cmd ConfirmEx
 		}
 		return nil
 	})
+}
+
+// ReopenExternal permite reabrir una receta externa confirmada si no hay cotizaciones abiertas ni dispensaciones (PP-F4-DOM-007, API-003).
+func (s *Service) ReopenExternal(ctx context.Context, id uuid.UUID, guardianID uuid.UUID) error {
+	if s.openQuotes != nil {
+		hasOpen, err := s.openQuotes.HasOpenQuotes(ctx, id)
+		if err != nil {
+			return err
+		}
+		if hasOpen {
+			return kernel.NewDomainError("QUOTE_REQUEST_OPEN", "No se puede reabrir una receta con solicitudes de cotización abiertas.")
+		}
+	}
+
+	return s.uow.Do(ctx, func(txCtx context.Context) error {
+		rx, err := s.repo.Load(txCtx, id)
+		if err != nil {
+			return err
+		}
+		if rx.GuardianID != guardianID && guardianID != uuid.Nil {
+			return kernel.NewDomainError("FORBIDDEN", "Solo el tutor propietario puede reabrir la receta.")
+		}
+
+		if _, err := rx.ReopenExternal(); err != nil {
+			return err
+		}
+
+		meta := eventstore.Metadata{
+			ActorID: guardianID.String(),
+		}
+		stored, err := s.repo.Save(txCtx, rx, meta)
+		if err != nil {
+			return err
+		}
+		if s.projects != nil {
+			return s.projects.Apply(txCtx, stored)
+		}
+		return nil
+	})
+}
+
+// ValidateByPharmacist registra la validación o rechazo profesional por una farmacia aliada (PP-F4-DOM-007, PRD-012).
+func (s *Service) ValidateByPharmacist(ctx context.Context, id uuid.UUID, pharmacistID, orgID uuid.UUID, status, note string) error {
+	return s.uow.Do(ctx, func(txCtx context.Context) error {
+		rx, err := s.repo.Load(txCtx, id)
+		if err != nil {
+			return err
+		}
+
+		if _, err := rx.ValidateByPharmacist(pharmacistID, orgID, status, note); err != nil {
+			return err
+		}
+
+		meta := eventstore.Metadata{
+			ActorID:    pharmacistID.String(),
+			ActorOrgID: orgID.String(),
+		}
+		stored, err := s.repo.Save(txCtx, rx, meta)
+		if err != nil {
+			return err
+		}
+		if s.projects != nil {
+			return s.projects.Apply(txCtx, stored)
+		}
+		return nil
+	})
+}
+
+// AddPrescriptionImage añade una página a una receta externa en borrador (PP-F4-API-003).
+func (s *Service) AddPrescriptionImage(ctx context.Context, id uuid.UUID, img domain.ImageRef, guardianID uuid.UUID) error {
+	rx, err := s.repo.Load(ctx, id)
+	if err != nil {
+		return err
+	}
+	if rx.GuardianID != guardianID && guardianID != uuid.Nil {
+		return kernel.NewDomainError("FORBIDDEN", "Solo el tutor puede añadir páginas a la receta.")
+	}
+	if rx.Status != domain.StatusDraft {
+		return domain.ErrPrescriptionNotDraft
+	}
+	if len(rx.Images) >= 5 {
+		return domain.ErrExternalUploadLimit
+	}
+	return s.queries.AddImage(ctx, id, img)
+}
+
+// GetExtraction obtiene el estado del análisis de OCR para una receta (PP-F4-API-003).
+func (s *Service) GetExtraction(ctx context.Context, id uuid.UUID) (*ExtractionJobDTO, error) {
+	rx, err := s.repo.Load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := s.queries.GetExtractionJob(ctx, id)
+	if err != nil {
+		job = &ExtractionJobDTO{
+			PrescriptionID: id,
+			Status:         "queued",
+			Attempt:        1,
+		}
+	}
+	if rx.Extraction != nil {
+		job.Extraction = rx.Extraction
+		if job.Status == "queued" || job.Status == "" {
+			job.Status = "done"
+		}
+	}
+	return job, nil
+}
+
+// RetryExtraction solicita un nuevo intento de análisis OCR hasta un máximo de 3 (PP-F4-API-003).
+func (s *Service) RetryExtraction(ctx context.Context, id uuid.UUID, guardianID uuid.UUID) error {
+	rx, err := s.repo.Load(ctx, id)
+	if err != nil {
+		return err
+	}
+	if rx.GuardianID != guardianID && guardianID != uuid.Nil {
+		return kernel.NewDomainError("FORBIDDEN", "Solo el tutor puede reintentar el análisis.")
+	}
+	if rx.Status != domain.StatusDraft {
+		return domain.ErrPrescriptionNotDraft
+	}
+
+	job, err := s.queries.GetExtractionJob(ctx, id)
+	if err == nil && job != nil {
+		if job.Status == "extracting" || job.Status == "preprocessing" {
+			return kernel.NewDomainError("EXTRACTION_IN_PROGRESS", "La extracción ya está en progreso.")
+		}
+		if job.Attempt >= 3 {
+			return kernel.NewDomainError("EXTRACTION_RETRY_LIMIT", "Se ha alcanzado el límite máximo de 3 reintentos.")
+		}
+	}
+
+	return nil
 }
 
 // RecordDispensation registra la dispensación parcial o total de la receta en farmacia (PP-F4-DOM-004, DOM-006).
@@ -776,6 +940,11 @@ func (s *Service) ExpirePrescriptions(ctx context.Context) (int, error) {
 // GetByID consulta el detalle de la receta en el read model.
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*ReadPrescriptionDetail, error) {
 	return s.queries.GetByID(ctx, id)
+}
+
+// GetImage obtiene la referencia de una imagen de receta externa por página (PP-F4-API-003).
+func (s *Service) GetImage(ctx context.Context, id uuid.UUID, page int) (*domain.ImageRef, error) {
+	return s.queries.GetImage(ctx, id, page)
 }
 
 // ListByOrg lista recetas emitidas por una organización.

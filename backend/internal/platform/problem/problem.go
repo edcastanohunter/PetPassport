@@ -144,6 +144,25 @@ var defaultStatus = map[Code]int{
 
 	// Notifications (M2.4): webhooks del proveedor de email.
 	Code("WEBHOOK_SIGNATURE_INVALID"): http.StatusUnauthorized,
+
+	// Prescriptions / OCR F4 (PP-F4-API-010).
+	Code("CREDENTIAL_REQUIRED"):       http.StatusForbidden,
+	Code("CREDENTIAL_EXPIRED"):        http.StatusForbidden,
+	Code("PRESCRIPTION_INCOMPLETE"):   http.StatusUnprocessableEntity,
+	Code("VALIDITY_OUT_OF_RULES"):     http.StatusUnprocessableEntity,
+	Code("ITEM_INVALID"):              http.StatusUnprocessableEntity,
+	Code("ATTESTATION_REQUIRED"):      http.StatusUnprocessableEntity,
+	Code("PRESCRIPTION_NOT_DRAFT"):    http.StatusConflict,
+	Code("PRESCRIPTION_DISPENSED"):    http.StatusConflict,
+	Code("PRESCRIPTION_NOT_QUOTABLE"): http.StatusUnprocessableEntity,
+	Code("EXTRACTION_IN_PROGRESS"):    http.StatusConflict,
+	Code("EXTRACTION_FAILED"):         http.StatusUnprocessableEntity,
+	Code("REUPLOAD_REQUIRED"):         http.StatusUnprocessableEntity,
+	Code("EXTRACTION_RETRY_LIMIT"):    http.StatusTooManyRequests,
+	Code("AI_BUDGET_EXCEEDED"):        http.StatusServiceUnavailable,
+	Code("QUOTE_REQUEST_OPEN"):        http.StatusConflict,
+	Code("EXTERNAL_UPLOAD_LIMIT"):     http.StatusUnprocessableEntity,
+	Code("EMPTY_IMAGES"):              http.StatusUnprocessableEntity,
 }
 
 // FieldError describe un error de validación por campo.

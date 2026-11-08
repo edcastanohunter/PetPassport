@@ -79,6 +79,13 @@ export type PrescriptionItemDTO = components['schemas']['PrescriptionItemDTO']
 export type PrescriptionVerificationResponse =
   components['schemas']['PrescriptionVerificationResponse']
 export type PublicPrescriptionVerification = PrescriptionVerificationResponse
+export type ExtractionResponse = components['schemas']['ExtractionResponse']
+export type ExtractionDataDTO = components['schemas']['ExtractionDataDTO']
+export type ExtractionItemDTO = components['schemas']['ExtractionItemDTO']
+export type ExtractionCandidateDTO = components['schemas']['ExtractionCandidateDTO']
+export type ConfirmExternalPrescriptionRequest =
+  components['schemas']['ConfirmExternalPrescriptionRequest']
+export type PrescriptionImageDTO = components['schemas']['PrescriptionImageDTO']
 
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {

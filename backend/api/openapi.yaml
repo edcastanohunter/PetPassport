@@ -4443,6 +4443,256 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /pets/{petId}/prescriptions/external:
+    parameters:
+      - $ref: "#/components/parameters/PetId"
+    post:
+      operationId: uploadExternalPrescription
+      summary: Subir receta externa para extracción OCR
+      description: Sube entre 1 y 5 imágenes de una receta médica externa para extracción automática con IA (PP-F4-PRD-005, PP-F4-API-003).
+      tags: [prescriptions]
+      x-pp-action: prescription:upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                country:
+                  type: string
+      responses:
+        "202":
+          description: Receta externa creada y extracción encolada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "415":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/images:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: addPrescriptionImage
+      summary: Añadir página a receta externa en borrador
+      description: Añade una nueva página antes de confirmar la extracción (PP-F4-API-003).
+      tags: [prescriptions]
+      x-pp-action: prescription:upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Imagen añadida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddPrescriptionImageResponse"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/images/{page}:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+      - name: page
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      operationId: getPrescriptionImage
+      summary: Obtener URL prefirmada de una página de la receta externa
+      description: Devuelve la URL o redirección para visualizar una página (PP-F4-API-003).
+      tags: [prescriptions]
+      x-pp-action: prescription:read
+      responses:
+        "200":
+          description: URL prefirmada de la imagen
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/extraction:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    get:
+      operationId: getPrescriptionExtraction
+      summary: Consultar estado y resultado de extracción OCR
+      description: Devuelve el estado del análisis y los datos extraídos de la receta externa (PP-F4-API-003).
+      tags: [prescriptions]
+      x-pp-action: prescription:read
+      responses:
+        "200":
+          description: Estado y resultado de la extracción
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractionResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/extraction/retry:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: retryPrescriptionExtraction
+      summary: Reintentar extracción OCR
+      description: Re-encola el análisis OCR si falló o fue solicitado reupload (máximo 3 intentos) (PP-F4-API-003).
+      tags: [prescriptions]
+      x-pp-action: prescription:upload
+      responses:
+        "202":
+          description: Extracción re-encolada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractionResponse"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: confirmExternalPrescription
+      summary: Confirmar receta externa revisada
+      description: Confirma los ítems de la receta externa con atestación explícita del tutor (PP-F4-API-003, PRD-006).
+      tags: [prescriptions]
+      x-pp-action: prescription:upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmExternalPrescriptionRequest"
+      responses:
+        "200":
+          description: Receta externa confirmada
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{prescriptionId}/reopen:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: reopenExternalPrescription
+      summary: Reabrir receta externa para edición
+      description: Permite reabrir a borrador una receta confirmada si no tiene cotizaciones abiertas ni dispensaciones (PP-F4-API-003, DOM-007).
+      tags: [prescriptions]
+      x-pp-action: prescription:upload
+      responses:
+        "200":
+          description: Receta externa reabierta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrescriptionDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /me/prescriptions:
     get:
       operationId: listMyPrescriptions
@@ -7620,6 +7870,9 @@ components:
         controlled:
           type: boolean
           default: false
+        extraction_ref:
+          type: integer
+          nullable: true
 
     PrescriptionValidityDTO:
       type: object
@@ -7785,6 +8038,19 @@ components:
           nullable: true
         archived_by_guardian:
           type: boolean
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionImageDTO"
+        external_meta:
+          type: object
+          properties:
+            vet_name:
+              type: string
+            clinic_name:
+              type: string
+            issued_on:
+              type: string
         created_at:
           type: string
           format: date-time
@@ -7876,6 +8142,160 @@ components:
           type: string
         error_reason:
           type: string
+
+    AddPrescriptionImageResponse:
+      type: object
+      required: [page, object_key]
+      properties:
+        page:
+          type: integer
+        object_key:
+          type: string
+
+    PrescriptionImageDTO:
+      type: object
+      required: [page, object_key]
+      properties:
+        page:
+          type: integer
+        object_key:
+          type: string
+        content_type:
+          type: string
+        bytes:
+          type: integer
+
+    ExtractionCandidateDTO:
+      type: object
+      required: [catalog_id, name, score]
+      properties:
+        catalog_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        score:
+          type: number
+          format: float
+
+    ExtractionConfidenceDTO:
+      type: object
+      properties:
+        product:
+          type: number
+          format: float
+        dose:
+          type: number
+          format: float
+        frequency:
+          type: number
+          format: float
+        duration:
+          type: number
+          format: float
+        quantity:
+          type: number
+          format: float
+        overall:
+          type: number
+          format: float
+
+    ExtractionItemDTO:
+      type: object
+      required: [index, raw_text]
+      properties:
+        index:
+          type: integer
+        raw_text:
+          type: string
+        product:
+          type: object
+          properties:
+            text:
+              type: string
+            candidates:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExtractionCandidateDTO"
+        dose:
+          type: string
+        frequency:
+          type: string
+        duration:
+          type: string
+        quantity:
+          type: string
+        confidence:
+          $ref: "#/components/schemas/ExtractionConfidenceDTO"
+        bbox:
+          type: array
+          items:
+            type: number
+            format: float
+
+    ExtractionHeaderDTO:
+      type: object
+      properties:
+        vet_name:
+          type: string
+        clinic_name:
+          type: string
+        issued_on:
+          type: string
+
+    ExtractionDataDTO:
+      type: object
+      properties:
+        legibility:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        header:
+          $ref: "#/components/schemas/ExtractionHeaderDTO"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtractionItemDTO"
+
+    ExtractionResponse:
+      type: object
+      required: [status, attempt]
+      properties:
+        status:
+          type: string
+          enum: [queued, processing, done, reupload_requested, failed]
+        attempt:
+          type: integer
+        extraction:
+          $ref: "#/components/schemas/ExtractionDataDTO"
+        reason:
+          type: string
+
+    ConfirmExternalPrescriptionRequest:
+      type: object
+      required: [items, attestation]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItemDTO"
+        validity:
+          $ref: "#/components/schemas/PrescriptionValidityDTO"
+        external_meta:
+          type: object
+          properties:
+            vet_name:
+              type: string
+            clinic_name:
+              type: string
+            issued_on:
+              type: string
+        notes:
+          type: string
+        attestation:
+          type: boolean
 
   responses:
     EncounterOK:

@@ -56,6 +56,10 @@ const AdminCredentialsPage = () => import('@/features/admin/AdminCredentialsPage
 const OrgPrescriptionsPage = () => import('@/features/prescriptions/views/OrgPrescriptionsPage.vue')
 const VerifyPrescriptionPage = () =>
   import('@/features/prescriptions/views/VerifyPrescriptionPage.vue')
+const UploadExternalPrescriptionPage = () =>
+  import('@/features/prescriptions/views/UploadExternalPrescriptionPage.vue')
+const GuardianPrescriptionsPage = () =>
+  import('@/features/prescriptions/views/GuardianPrescriptionsPage.vue')
 
 const orgMeta = {
   layout: 'org',
@@ -164,6 +168,18 @@ export function createAppRouter() {
         path: '/app/pets/:petId/card',
         name: 'pet-card',
         component: GuardianCardPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/pets/:petId/prescriptions/new',
+        name: 'pet-prescription-new',
+        component: UploadExternalPrescriptionPage,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/prescriptions',
+        name: 'guardian-prescriptions',
+        component: GuardianPrescriptionsPage,
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {

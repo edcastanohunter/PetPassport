@@ -90,9 +90,24 @@ type PrescriptionDocItem struct {
 	Controlled   bool    `json:"controlled"`
 }
 
+// ExtractionJobDTO contiene el estado y resultado del análisis de visión (PP-F4-API-003).
+type ExtractionJobDTO struct {
+	PrescriptionID uuid.UUID          `json:"prescription_id"`
+	Status         string             `json:"status"` // queued|preprocessing|extracting|matching|done|reupload_requested|failed|refused
+	Attempt        int                `json:"attempt"`
+	ExtractorID    *string            `json:"extractor_id,omitempty"`
+	Legibility     *float64           `json:"legibility,omitempty"`
+	Warnings       []string           `json:"warnings"`
+	Extraction     *domain.Extraction `json:"extraction,omitempty"`
+	Reason         *string            `json:"reason,omitempty"`
+}
+
 // PrescriptionQueries define el puerto de consultas sobre el esquema read_prescriptions.
 type PrescriptionQueries interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*ReadPrescriptionDetail, error)
+	GetExtractionJob(ctx context.Context, id uuid.UUID) (*ExtractionJobDTO, error)
+	GetImage(ctx context.Context, id uuid.UUID, page int) (*domain.ImageRef, error)
+	AddImage(ctx context.Context, id uuid.UUID, img domain.ImageRef) error
 	ListByOrg(ctx context.Context, orgID uuid.UUID, status string, petID *uuid.UUID, issuerID *uuid.UUID, limit int) ([]ReadPrescriptionSummary, error)
 	ListByGuardian(ctx context.Context, guardianID uuid.UUID, petID *uuid.UUID, status string, source string, limit int) ([]ReadPrescriptionSummary, error)
 	ListByEncounter(ctx context.Context, encounterID uuid.UUID) ([]ReadPrescriptionSummary, error)
@@ -181,13 +196,20 @@ type UploadExternalPrescriptionCmd struct {
 	Images  []domain.ImageRef
 }
 
-// ConfirmExternalPrescriptionCmd confirma los datos extraídos de la receta externa.
+// OpenQuoteChecker comprueba si una receta tiene cotizaciones de farmacia abiertas (PP-F4-API-003, DOM-013).
+type OpenQuoteChecker interface {
+	HasOpenQuotes(ctx context.Context, prescriptionID uuid.UUID) (bool, error)
+}
+
+// ConfirmExternalPrescriptionCmd confirma los datos extraídos de la receta externa (PP-F4-API-003, PRD-006).
 type ConfirmExternalPrescriptionCmd struct {
-	PrescriptionID uuid.UUID
-	Items          []domain.PrescriptionItem
-	ValidUntil     kernel.CivilDate
-	RefillsAllowed int
-	Notes          string
+	PrescriptionID uuid.UUID                 `json:"prescription_id"`
+	Items          []domain.PrescriptionItem `json:"items"`
+	Validity       domain.Validity           `json:"validity"`
+	ExternalMeta   domain.ExternalMeta       `json:"external_meta"`
+	Diff           map[string]any            `json:"diff,omitempty"`
+	Notes          string                    `json:"notes,omitempty"`
+	Attestation    bool                      `json:"attestation"`
 }
 
 // RecordDispensationCmd registra una dispensación en farmacia.

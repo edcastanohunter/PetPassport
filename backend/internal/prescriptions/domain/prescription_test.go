@@ -821,3 +821,104 @@ func TestPrescription_ImmutableVersionCheck(t *testing.T) {
 		t.Errorf("expected error confirming non-external prescription")
 	}
 }
+
+func TestPrescription_DOM007_ExternalLifecycle(t *testing.T) {
+	now := time.Date(2026, 11, 7, 10, 0, 0, 0, time.UTC)
+	rules := sampleRule()
+	item := sampleItem(ptr(uuid.New()), "Amoxicilina 500mg", false)
+
+	// 1. Upload external
+	rx := NewPrescription()
+	rxID := uuid.New()
+	petID := uuid.New()
+	guardianID := uuid.New()
+	images := []ImageRef{
+		{ObjectKey: "rx/1/page-1.webp", ContentType: "image/webp", Page: 1, Sha256: []byte("sha")},
+	}
+	_, err := rx.UploadExternalPrescription(rxID, petID, guardianID, images, "CO")
+	if err != nil {
+		t.Fatalf("upload external failed: %v", err)
+	}
+
+	// 2. RecordExtraction
+	ext := Extraction{
+		Version:     1,
+		ExtractorID: "claude:claude-opus-5-5:prompt-v1",
+		Legibility:  0.92,
+		Warnings:    []string{},
+		Header: ExtractedHeader{
+			VetName: ptr("Dr. Juan Pérez"),
+		},
+		Items: []ExtractedItem{
+			{Index: 0, RawText: "Amoxicilina 500mg", Product: ExtractedProduct{Text: "Amoxicilina 500mg"}},
+		},
+		CostUSD:   0.025,
+		LatencyMs: 1200,
+	}
+	recEvt, err := rx.RecordExtraction(ext)
+	if err != nil {
+		t.Fatalf("record extraction failed: %v", err)
+	}
+	if recEvt.Extraction.ExtractorID != ext.ExtractorID {
+		t.Errorf("expected extractor id %s, got %s", ext.ExtractorID, recEvt.Extraction.ExtractorID)
+	}
+	if rx.Extraction == nil || rx.Extraction.Legibility != 0.92 {
+		t.Errorf("extraction not applied to aggregate")
+	}
+
+	// 3. ConfirmExternalItems
+	val := Validity{ValidUntil: kernel.CivilDateOf(now).AddDays(30), RefillsAllowed: 1}
+	extMeta := ExternalMeta{VetName: ptr("Dr. Juan Pérez"), ClinicName: ptr("Clínica Veterinaria Central")}
+	diff := map[string]any{"items": []any{map[string]any{"action": "accepted", "item_id": item.ItemID}}}
+	confirmEvt, err := rx.ConfirmExternalItems([]PrescriptionItem{item}, val, extMeta, diff, rules, now)
+	if err != nil {
+		t.Fatalf("confirm external items failed: %v", err)
+	}
+	if confirmEvt.PrescriptionID != rxID {
+		t.Errorf("wrong rx id on confirmation")
+	}
+	if rx.Status != StatusConfirmed {
+		t.Errorf("expected status confirmed, got %s", rx.Status)
+	}
+
+	// 4. ValidateByPharmacist (pharmacist validation)
+	pharmID := uuid.New()
+	pharmOrgID := uuid.New()
+	valEvt, err := rx.ValidateByPharmacist(pharmID, pharmOrgID, "validated", "Receta verificada con éxito")
+	if err != nil {
+		t.Fatalf("pharmacist validate failed: %v", err)
+	}
+	if valEvt.Status != "validated" {
+		t.Errorf("expected validated status, got %s", valEvt.Status)
+	}
+	if rx.Validation == nil || rx.Validation.Status != "validated" {
+		t.Errorf("validation not applied to aggregate")
+	}
+
+	// Invalid validation status
+	_, err = rx.ValidateByPharmacist(pharmID, pharmOrgID, "unknown_status", "")
+	if err == nil {
+		t.Errorf("expected error for invalid validation status")
+	}
+
+	// 5. ReopenExternal
+	reopenEvt, err := rx.ReopenExternal()
+	if err != nil {
+		t.Fatalf("reopen external failed: %v", err)
+	}
+	if reopenEvt.PrescriptionID != rxID {
+		t.Errorf("wrong rx id on reopen")
+	}
+	if rx.Status != StatusDraft {
+		t.Errorf("expected status draft after reopen, got %s", rx.Status)
+	}
+
+	// 6. RequestReupload in draft
+	reuploadEvt, err := rx.RequestReupload("Imagen demasiado borrosa")
+	if err != nil {
+		t.Fatalf("request reupload failed: %v", err)
+	}
+	if reuploadEvt.Reason != "Imagen demasiado borrosa" {
+		t.Errorf("expected reason 'Imagen demasiado borrosa', got '%s'", reuploadEvt.Reason)
+	}
+}

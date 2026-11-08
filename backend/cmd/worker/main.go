@@ -83,6 +83,8 @@ func dispatch(cmd string, args []string) error {
 		return searchCommand(args)
 	case "catalog-import":
 		return catalogImportCommand(args)
+	case "ocr-eval":
+		return ocrEvalCommand(args)
 	default:
 		return fmt.Errorf("subcomando desconocido %q (run|leases|rebuild|pause|resume|status|snapshots|maintenance|export|healthcheck)", cmd)
 	}
@@ -295,6 +297,8 @@ func run() error {
 			}
 			return nil
 		})
+
+		registerOCRWorker(asynqSrv, a, logger)
 		runners = append(runners, worker.Runner{
 			Name: "asynq-worker-pool",
 			Run: func(runCtx context.Context) error {

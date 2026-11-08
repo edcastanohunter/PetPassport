@@ -345,9 +345,12 @@ func TestService_ExternalPrescriptionLifecycle(t *testing.T) {
 	confirmCmd := ConfirmExternalPrescriptionCmd{
 		PrescriptionID: rxID,
 		Items:          []domain.PrescriptionItem{item},
-		ValidUntil:     kernel.CivilDateOf(time.Now()).AddDays(30),
-		RefillsAllowed: 1,
-		Notes:          "Confirmada por el tutor",
+		Validity: domain.Validity{
+			ValidUntil:     kernel.CivilDateOf(time.Now()).AddDays(30),
+			RefillsAllowed: 1,
+		},
+		Notes:       "Confirmada por el tutor",
+		Attestation: true,
 	}
 	if err := svc.ConfirmExternalPrescription(ctx, confirmCmd, guardianID); err != nil {
 		t.Fatalf("confirm external failed: %v", err)
@@ -356,6 +359,38 @@ func TestService_ExternalPrescriptionLifecycle(t *testing.T) {
 	rxConfirmed, _ := repo.Load(ctx, rxID)
 	if rxConfirmed.Status != domain.StatusConfirmed {
 		t.Errorf("expected confirmed rx, got: %v", rxConfirmed.Status)
+	}
+
+	// 3. Reopen
+	if err := svc.ReopenExternal(ctx, rxID, guardianID); err != nil {
+		t.Fatalf("reopen external failed: %v", err)
+	}
+	rxReopened, _ := repo.Load(ctx, rxID)
+	if rxReopened.Status != domain.StatusDraft {
+		t.Errorf("expected draft rx after reopen, got: %v", rxReopened.Status)
+	}
+
+	// 4. Re-confirm
+	if err := svc.ConfirmExternalPrescription(ctx, confirmCmd, guardianID); err != nil {
+		t.Fatalf("re-confirm failed: %v", err)
+	}
+
+	// 5. Validate by pharmacist
+	pharmID := uuid.New()
+	pharmOrgID := uuid.New()
+	if err := svc.ValidateByPharmacist(ctx, rxID, pharmID, pharmOrgID, "validated", "Aprobada"); err != nil {
+		t.Fatalf("validate by pharmacist failed: %v", err)
+	}
+	rxValidated, _ := repo.Load(ctx, rxID)
+	if rxValidated.Validation == nil || rxValidated.Validation.Status != "validated" {
+		t.Errorf("expected validation to be applied")
+	}
+
+	// 6. Test Attestation Required
+	confirmWithoutAttestation := confirmCmd
+	confirmWithoutAttestation.Attestation = false
+	if err := svc.ConfirmExternalPrescription(ctx, confirmWithoutAttestation, guardianID); err == nil {
+		t.Errorf("expected error when attestation is false")
 	}
 }
 

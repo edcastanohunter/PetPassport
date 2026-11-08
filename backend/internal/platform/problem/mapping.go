@@ -121,6 +121,25 @@ var titles = map[Code]string{
 	Code("INVALID_PROFESSIONAL"): "Profesional no válido",
 
 	Code("WEBHOOK_SIGNATURE_INVALID"): "Firma del webhook inválida",
+
+	// Prescriptions / OCR F4 (PP-F4-API-010)
+	Code("CREDENTIAL_REQUIRED"):       "Credencial requerida",
+	Code("CREDENTIAL_EXPIRED"):        "Credencial caducada",
+	Code("PRESCRIPTION_INCOMPLETE"):   "Receta incompleta",
+	Code("VALIDITY_OUT_OF_RULES"):     "Vigencia fuera de reglas",
+	Code("ITEM_INVALID"):              "Medicamento no válido",
+	Code("ATTESTATION_REQUIRED"):      "Confirmación requerida",
+	Code("PRESCRIPTION_NOT_DRAFT"):    "La receta no está en borrador",
+	Code("PRESCRIPTION_DISPENSED"):    "Receta dispensada",
+	Code("PRESCRIPTION_NOT_QUOTABLE"): "Receta no cotizable",
+	Code("EXTRACTION_IN_PROGRESS"):    "Extracción en curso",
+	Code("EXTRACTION_FAILED"):         "Error de extracción",
+	Code("REUPLOAD_REQUIRED"):         "Imagen no legible",
+	Code("EXTRACTION_RETRY_LIMIT"):    "Límite de reintentos de extracción superado",
+	Code("AI_BUDGET_EXCEEDED"):        "Servicio de extracción temporalmente no disponible",
+	Code("QUOTE_REQUEST_OPEN"):        "Hay una solicitud de cotización abierta",
+	Code("EXTERNAL_UPLOAD_LIMIT"):     "Límite de imágenes superado",
+	Code("EMPTY_IMAGES"):              "Imágenes no proporcionadas",
 }
 
 func titleFor(c Code) string {

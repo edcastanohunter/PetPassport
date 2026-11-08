@@ -303,6 +303,95 @@ func (p *Prescription) UploadExternalPrescription(
 	return evt, nil
 }
 
+// RecordExtraction registra el resultado del análisis estructurado de visión/OCR (PP-F4-DOM-007).
+func (p *Prescription) RecordExtraction(extraction Extraction) (*PrescriptionExtractionRecorded, error) {
+	if p.Source != SourceExternal {
+		return nil, kernel.NewDomainError("INVALID_SOURCE", "Solo recetas externas pueden registrar extracción.")
+	}
+	if p.Status != StatusDraft {
+		return nil, ErrPrescriptionNotDraft
+	}
+	evt := &PrescriptionExtractionRecorded{
+		PrescriptionID: p.ID,
+		Extraction:     extraction,
+	}
+	p.record(evt)
+	return evt, nil
+}
+
+// RequestReupload solicita nueva foto si la legibilidad o calidad fue insuficiente (PP-F4-DOM-007, OCR-006).
+func (p *Prescription) RequestReupload(reason string) (*PrescriptionReuploadRequested, error) {
+	if p.Source != SourceExternal {
+		return nil, kernel.NewDomainError("INVALID_SOURCE", "Solo recetas externas admiten solicitud de re-subida.")
+	}
+	if p.Status != StatusDraft {
+		return nil, ErrPrescriptionNotDraft
+	}
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		reason = "La imagen de la receta no es legible. Por favor, toma una foto con mejor iluminación y enfoque."
+	}
+	evt := &PrescriptionReuploadRequested{
+		PrescriptionID: p.ID,
+		Reason:         reason,
+	}
+	p.record(evt)
+	return evt, nil
+}
+
+// ConfirmExternalItems es alias de ConfirmExternalPrescription para la interfaz canónica (PP-F4-DOM-007).
+func (p *Prescription) ConfirmExternalItems(
+	items []PrescriptionItem,
+	validity Validity,
+	externalMeta ExternalMeta,
+	diff map[string]any,
+	rules *RegulatoryRule,
+	now time.Time,
+) (*ExternalPrescriptionConfirmed, error) {
+	return p.ConfirmExternalPrescription(items, validity, externalMeta, diff, rules, now)
+}
+
+// ReopenExternal permite al tutor reabrir una receta confirmada para ajustar datos si no hay cotización abierta (PP-F4-DOM-007).
+func (p *Prescription) ReopenExternal() (*ExternalPrescriptionReopened, error) {
+	if p.Source != SourceExternal {
+		return nil, kernel.NewDomainError("INVALID_SOURCE", "Solo recetas externas pueden reabrirse.")
+	}
+	if p.Status != StatusConfirmed {
+		return nil, kernel.NewDomainError("INVALID_STATUS", "Solo recetas confirmadas pueden reabrirse.")
+	}
+	if len(p.Dispensations) > 0 {
+		return nil, ErrPrescriptionDispensed
+	}
+	evt := &ExternalPrescriptionReopened{
+		PrescriptionID: p.ID,
+	}
+	p.record(evt)
+	return evt, nil
+}
+
+// ValidateByPharmacist registra la validación o rechazo profesional por parte de una farmacia aliada (PP-F4-DOM-007).
+func (p *Prescription) ValidateByPharmacist(by uuid.UUID, orgID uuid.UUID, status string, note string) (*PrescriptionPharmacistValidated, error) {
+	if p.Source != SourceExternal {
+		return nil, kernel.NewDomainError("INVALID_SOURCE", "Solo recetas externas pueden ser validadas por un farmacéutico.")
+	}
+	if p.Status != StatusConfirmed {
+		return nil, kernel.NewDomainError("INVALID_STATUS", "Solo recetas externas confirmadas pueden ser validadas.")
+	}
+	status = strings.ToLower(strings.TrimSpace(status))
+	if status != "validated" && status != "rejected" {
+		return nil, kernel.NewDomainError("INVALID_VALIDATION_STATUS", "El estado de validación debe ser 'validated' o 'rejected'.")
+	}
+	evt := &PrescriptionPharmacistValidated{
+		PrescriptionID: p.ID,
+		By:             by,
+		OrgID:          orgID,
+		Status:         status,
+		Note:           strings.TrimSpace(note),
+	}
+	p.record(evt)
+	return evt, nil
+}
+
 // ConfirmExternalPrescription confirma y ajusta los ítems de una receta externa (PP-F4-DOM-006).
 func (p *Prescription) ConfirmExternalPrescription(
 	items []PrescriptionItem,

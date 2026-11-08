@@ -46,6 +46,11 @@ const contexts = computed(() => {
             }}</RouterLink>
           </li>
           <li>
+            <RouterLink to="/app/prescriptions" class="hover:underline">{{
+              t('nav.prescriptions')
+            }}</RouterLink>
+          </li>
+          <li>
             <RouterLink to="/app/inbox" class="hover:underline">{{ t('nav.inbox') }}</RouterLink>
           </li>
           <li>
