@@ -13,7 +13,7 @@ jobs:
     # misma versión de Prometheus que se despliega (infra/quadlet).
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: promtool check + test
         run: |
           docker run --rm -v "$PWD/infra/observability:/w:ro" -w /w --entrypoint /bin/sh \

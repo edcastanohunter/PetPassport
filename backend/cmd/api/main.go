@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
@@ -34,6 +36,10 @@ import (
 	petapp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/app"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
 	petinfra "github.com/edcastanohunter/petpassport/backend/internal/petregistry/infra"
+	pharmacyapp "github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/app"
+	pharmacyordersdomain "github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/domain"
+	pharmacyhttp "github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/http"
+	pharmacyinfra "github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
@@ -53,6 +59,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 	prescriptionapp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/app"
+	prescriptiondomain "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/domain"
 	prescriptionhttp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/http"
 	prescriptioninfra "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/infra"
 	schedulingapp "github.com/edcastanohunter/petpassport/backend/internal/scheduling/app"
@@ -131,6 +138,7 @@ func run() error {
 	clinicalinfra.RegisterEvents(registry)
 	schedulinginfra.RegisterEvents(registry)
 	prescriptioninfra.RegisterEvents(registry)
+	pharmacyinfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -449,6 +457,35 @@ func run() error {
 		prescriptionHandlers = prescriptionHandlers.WithEnqueuer(queueClient)
 	}
 
+	// Pharmacy Orders (F4 M4.2).
+	pharmacyQRRepo := pharmacyinfra.NewQuoteRequestRepository(store, registry)
+	pharmacyOrderRepo := pharmacyinfra.NewOrderRepository(store, registry)
+	pharmacyQueries := pharmacyinfra.NewQueries(pool.Pool)
+	pharmacyinfra.RegisterSyncProjectors(runner, registry)
+	pharmacyGateway := pharmacyinfra.NewPortalPartnerGateway(pool.Pool)
+	pharmacyDirectory := pharmacyinfra.NewPostgresPartnerDirectory(pool.Pool)
+	pharmacyQuotaChecker := pharmacyinfra.NewPostgresQuotaChecker(pool.Pool)
+	pharmacyEquivalence := pharmacyinfra.NewPostgresCatalogEquivalence(pool.Pool)
+	pharmacyDispenser := prescriptionDispenserAdapter{rxSvc: rxSvc}
+	pharmacyPetReader := postgresPetReader{pool: pool.Pool}
+
+	pharmacySvc := pharmacyapp.NewService(pharmacyapp.Options{
+		QuoteRequests:         pharmacyQRRepo,
+		Orders:                pharmacyOrderRepo,
+		UoW:                   unit,
+		Projects:              pharmacyinfra.NewSyncProjector(runner),
+		Gateway:               pharmacyGateway,
+		Prescriptions:         pharmacyinfra.NewPostgresPrescriptionReader(pool.Pool),
+		PrescriptionDispenser: pharmacyDispenser,
+		Catalogs:              pharmacyEquivalence,
+		Directory:             pharmacyDirectory,
+		QuotaChecker:          pharmacyQuotaChecker,
+		PetReader:             pharmacyPetReader,
+		UserReader:            postgresUserReader{pool: pool.Pool},
+		Logger:                logger,
+	})
+	pharmacyHandlers := pharmacyhttp.NewPharmacyHandlers(pharmacySvc, pharmacyQueries, logger)
+
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
@@ -463,6 +500,7 @@ func run() error {
 			SchedulingHandlers:   schedulingHandlers,
 			NotificationHandlers: notificationHandlers,
 			PrescriptionHandlers: prescriptionHandlers,
+			PharmacyHandlers:     pharmacyHandlers,
 		},
 		Guard: guard.Middleware,
 		Mount: func(r chi.Router) {
@@ -516,4 +554,65 @@ func newVerifierWithRetry(ctx context.Context, logger *slog.Logger, cfg auth.Ver
 		}
 	}
 	return nil, lastErr
+}
+
+type prescriptionDispenserAdapter struct {
+	rxSvc *prescriptionapp.Service
+}
+
+func (a prescriptionDispenserAdapter) RecordDispensation(ctx context.Context, prescriptionID uuid.UUID, orderID uuid.UUID, pharmacyOrgID uuid.UUID, lines []pharmacyordersdomain.DispensationLine) error {
+	rxLines := make([]prescriptiondomain.DispensationLine, 0, len(lines))
+	for _, l := range lines {
+		rxLines = append(rxLines, prescriptiondomain.DispensationLine{
+			ItemID: l.ItemID,
+			Qty:    l.Qty,
+		})
+	}
+	cmd := prescriptionapp.RecordDispensationCmd{
+		PrescriptionID:       prescriptionID,
+		PartnerIntegrationID: &orderID,
+		PharmacyName:         pharmacyOrgID.String(),
+		Lines:                rxLines,
+	}
+	return a.rxSvc.RecordDispensation(ctx, cmd, pharmacyOrgID)
+}
+
+type postgresPetReader struct {
+	pool *pgxpool.Pool
+}
+
+func (r postgresPetReader) GetAnimalSnapshot(ctx context.Context, petID uuid.UUID) (pharmacyordersdomain.AnimalSnapshot, error) {
+	var species string
+	var weightKg *float64
+	var dob *time.Time
+	err := r.pool.QueryRow(ctx, "SELECT species, weight_kg, date_of_birth FROM read_petregistry.pets WHERE id = $1", petID).Scan(&species, &weightKg, &dob)
+	if err != nil {
+		return pharmacyordersdomain.AnimalSnapshot{Species: "canine"}, nil
+	}
+	var ageMonths *int
+	if dob != nil {
+		months := int(time.Since(*dob).Hours() / (24 * 30))
+		ageMonths = &months
+	}
+	return pharmacyordersdomain.AnimalSnapshot{
+		Species:   species,
+		WeightKg:  weightKg,
+		AgeMonths: ageMonths,
+	}, nil
+}
+
+type postgresUserReader struct {
+	pool *pgxpool.Pool
+}
+
+func (r postgresUserReader) GetUserName(ctx context.Context, userID uuid.UUID) (string, error) {
+	var name string
+	err := r.pool.QueryRow(ctx, "SELECT COALESCE(display_name, '') FROM read_identity.users WHERE id = $1", userID).Scan(&name)
+	return name, err
+}
+
+func (r postgresUserReader) GetUserEmail(ctx context.Context, userID uuid.UUID) (string, error) {
+	var email string
+	err := r.pool.QueryRow(ctx, "SELECT COALESCE(email, '') FROM read_identity.users WHERE id = $1", userID).Scan(&email)
+	return email, err
 }

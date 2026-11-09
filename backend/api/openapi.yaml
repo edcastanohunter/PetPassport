@@ -51,6 +51,10 @@ tags:
     description: Credenciales profesionales veterinarias (F4 M4.0)
   - name: prescriptions
     description: Recetas médicas veterinarias y verificación pública (F4 M4.0)
+  - name: pharmacy-orders
+    description: Solicitudes de cotización, pedidos de farmacia y ciclo de vida de pedidos para tutores (F4 M4.2)
+  - name: pharmacy-portal
+    description: Operaciones del portal farmacéutico, cotización, dispensación y configuración (F4 M4.2)
 security:
   - bearerAuth: []
 paths:
@@ -4811,6 +4815,659 @@ paths:
                   value: { status: ok }
         default:
           $ref: "#/components/responses/Problem"
+  /prescriptions/{prescriptionId}/quote-options:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    get:
+      operationId: getPrescriptionQuoteOptions
+      summary: Obtener opciones para cotizar receta
+      description: Retorna las opciones de cotización disponibles, modalidades de entrega y farmacias elegibles para una receta médica.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:read
+      responses:
+        "200":
+          description: Opciones de cotización y farmacias disponibles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteOptionsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-requests:
+    post:
+      operationId: createQuoteRequest
+      summary: Crear solicitud de cotización para una receta
+      description: Inicia una saga de cotización multi-farmacia para una receta seleccionada por el tutor.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteRequestPayload"
+      responses:
+        "201":
+          description: Solicitud de cotización creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+    get:
+      operationId: listQuoteRequests
+      summary: Listar solicitudes de cotización del tutor
+      description: Consulta las solicitudes de cotización activas o pasadas del tutor autenticado con filtros por estado.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:read
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-requests/{quoteRequestId}:
+    parameters:
+      - $ref: "#/components/parameters/QuoteRequestId"
+    get:
+      operationId: getQuoteRequest
+      summary: Detalle de solicitud de cotización
+      description: Obtiene la información completa de una solicitud de cotización y todas las ofertas recibidas.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:read
+      responses:
+        "200":
+          description: Detalle de solicitud
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-requests/{quoteRequestId}/select:
+    parameters:
+      - $ref: "#/components/parameters/QuoteRequestId"
+    post:
+      operationId: selectQuote
+      summary: Seleccionar cotización y generar pedido
+      description: Acepta una oferta de cotización seleccionada por el tutor, confirmando decisiones de sustitución y generando el pedido.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectQuotePayload"
+      responses:
+        "200":
+          description: Cotización seleccionada y pedido generado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelectQuoteResult"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-requests/{quoteRequestId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/QuoteRequestId"
+    post:
+      operationId: cancelQuoteRequest
+      summary: Cancelar solicitud de cotización
+      description: Cancela una solicitud de cotización abierta antes de que expire o se seleccione una oferta.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelQuoteRequestPayload"
+      responses:
+        "200":
+          description: Solicitud cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-requests/{quoteRequestId}/events:
+    parameters:
+      - $ref: "#/components/parameters/QuoteRequestId"
+    get:
+      operationId: streamQuoteRequestEvents
+      summary: Stream SSE de eventos de la solicitud de cotización
+      description: Abre un canal Server-Sent Events (SSE) para recibir actualizaciones de ofertas en tiempo real.
+      tags: [pharmacy-orders]
+      x-pp-action: quote:read
+      responses:
+        "200":
+          description: Flujo SSE de eventos
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Problem"
+  /orders:
+    get:
+      operationId: listOrders
+      summary: Listar pedidos del tutor
+      description: Retorna la lista de pedidos de medicamentos realizados por el tutor autenticado.
+      tags: [pharmacy-orders]
+      x-pp-action: order:read
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /orders/{orderId}:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    get:
+      operationId: getOrder
+      summary: Detalle de pedido para tutor
+      description: Consulta el detalle completo, timeline y trazabilidad de un pedido del tutor.
+      tags: [pharmacy-orders]
+      x-pp-action: order:read
+      responses:
+        "200":
+          description: Detalle de pedido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /orders/{orderId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: cancelOrder
+      summary: Cancelar pedido por el tutor
+      description: Permite al tutor cancelar un pedido antes de que la farmacia inicie su preparación.
+      tags: [pharmacy-orders]
+      x-pp-action: order:cancel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelOrderPayload"
+      responses:
+        "200":
+          description: Pedido cancelado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /orders/{orderId}/events:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    get:
+      operationId: streamOrderEvents
+      summary: Stream SSE de eventos del pedido
+      description: Canal Server-Sent Events (SSE) para recibir transiciones y actualizaciones de estado del pedido en tiempo real.
+      tags: [pharmacy-orders]
+      x-pp-action: order:read
+      responses:
+        "200":
+          description: Flujo SSE de eventos
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/inbox:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getPharmacyInbox
+      summary: Bandeja de cotizaciones de la farmacia
+      description: Consulta las solicitudes de cotización recibidas por la farmacia organizadas por pestañas de estado.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, quoted, declined, expired]
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Bandeja de cotizaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyInboxResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/quote-requests/{quoteRequestId}/quotes:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/QuoteRequestId"
+    post:
+      operationId: submitPharmacyQuote
+      summary: Enviar cotización para una solicitud
+      description: Registra la oferta de precios, disponibilidad, costos de despacho y posibles propuestas de sustitución de la farmacia.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitPharmacyQuotePayload"
+      responses:
+        "201":
+          description: Cotización enviada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyQuoteSubmittedResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/quote-requests/{quoteRequestId}/decline:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/QuoteRequestId"
+    post:
+      operationId: declinePharmacyQuoteRequest
+      summary: Rechazar cotizar una solicitud
+      description: Notifica que la farmacia declina cotizar la solicitud recibida indicando el motivo.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclinePharmacyQuotePayload"
+      responses:
+        "200":
+          description: Solicitud rechazada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericSuccessResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/prescriptions/{prescriptionId}/validate:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: validatePharmacyPrescription
+      summary: Validar receta externa por farmacéutico
+      description: Registra la verificación profesional de una receta externa por parte del farmacéutico antes de dispensar.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:validate
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidatePrescriptionPayload"
+      responses:
+        "200":
+          description: Receta validada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericSuccessResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listPharmacyOrders
+      summary: Listar pedidos de la farmacia
+      description: Consulta los pedidos adjudicados a la farmacia filtrados por estado operativo.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Lista de pedidos de la farmacia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    get:
+      operationId: getPharmacyOrder
+      summary: Detalle de pedido para la farmacia
+      description: Obtiene la información completa del pedido para la farmacia, incluyendo datos de despacho y contacto una vez confirmado.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      responses:
+        "200":
+          description: Detalle del pedido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/confirm:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: confirmPharmacyOrder
+      summary: Confirmar aceptación del pedido por la farmacia
+      description: Confirma la recepción y aceptación de preparación de un pedido asignado a la farmacia.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmPharmacyOrderPayload"
+      responses:
+        "200":
+          description: Pedido confirmado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/reject:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: rejectPharmacyOrder
+      summary: Rechazar pedido por la farmacia
+      description: Notifica el rechazo de un pedido adjudicado indicando el motivo operativo o de inventario.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectPharmacyOrderPayload"
+      responses:
+        "200":
+          description: Pedido rechazado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/preparing:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: markPharmacyOrderPreparing
+      summary: Marcar pedido en preparación
+      description: Actualiza el estado del pedido a preparación en el laboratorio o farmacia.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      responses:
+        "200":
+          description: Pedido marcado en preparación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/ready:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: markPharmacyOrderReady
+      summary: Marcar pedido listo para retiro o despacho
+      description: Notifica que el pedido está empacado y listo para retiro en farmacia o recogida por transportadora.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      responses:
+        "200":
+          description: Pedido marcado listo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/out-for-delivery:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: markPharmacyOrderOutForDelivery
+      summary: Marcar pedido en camino
+      description: Registra la salida a reparto del pedido con información opcional de guía de despacho.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutForDeliveryPayload"
+      responses:
+        "200":
+          description: Pedido marcado en camino
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/deliver:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: deliverPharmacyOrder
+      summary: Entregar pedido y registrar dispensación
+      description: Completa la entrega del pedido registrando los lotes y fechas de vencimiento dispensados para trazabilidad regulatoria.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliverPharmacyOrderPayload"
+      responses:
+        "200":
+          description: Pedido entregado y dispensación registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/orders/{orderId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: cancelPharmacyOrder
+      summary: Cancelar pedido por la farmacia
+      description: Cancela operativamente un pedido por parte de la farmacia justificando la razón.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelPharmacyOrderPayload"
+      responses:
+        "200":
+          description: Pedido cancelado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyOrderDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/integration:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getPharmacyIntegration
+      summary: Obtener configuración de integración de la farmacia
+      description: Consulta el modo de integración técnica (portal o API directa), zonas de cobertura y capacidades operativas.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Configuración de integración
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyIntegrationSettings"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: updatePharmacyIntegration
+      summary: Actualizar configuración de integración de la farmacia
+      description: Actualiza el modo de operación, cobertura de entrega y capacidades del partner farmacéutico.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePharmacyIntegrationPayload"
+      responses:
+        "200":
+          description: Configuración actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyIntegrationSettings"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/product-mappings:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listPharmacyProductMappings
+      summary: Listar mapeos de catálogo de la farmacia
+      description: Consulta las equivalencias configuradas entre el catálogo central de PetPassport y el SKU interno de la farmacia.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Lista de mapeos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyProductMappingListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/product-mappings/{catalogId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - $ref: "#/components/parameters/CatalogId"
+    put:
+      operationId: upsertPharmacyProductMapping
+      summary: Crear o actualizar mapeo de producto
+      description: Registra o actualiza el código SKU interno y factor de empaque para un producto del catálogo central.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertProductMappingPayload"
+      responses:
+        "200":
+          description: Mapeo guardado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyProductMappingItem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deletePharmacyProductMapping
+      summary: Eliminar mapeo de producto
+      description: Elimina la equivalencia de catálogo configurada para un producto específico.
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "204":
+          description: Mapeo eliminado exitosamente
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -4821,6 +5478,27 @@ components:
   parameters:
     PrescriptionId:
       name: prescriptionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    QuoteRequestId:
+      name: quoteRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CatalogId:
+      name: catalogId
       in: path
       required: true
       schema:
@@ -5018,6 +5696,828 @@ components:
         consent_outdated: false
         status: active
   schemas:
+    GenericSuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+    QuoteOptionsResponse:
+      type: object
+      required: [prescription_id, items, pharmacies]
+      properties:
+        prescription_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            required: [prescription_item_id, medication_name, dose, quantity, unit, is_controlled]
+            properties:
+              prescription_item_id:
+                type: string
+                format: uuid
+              medication_name:
+                type: string
+              dose:
+                type: string
+              quantity:
+                type: number
+              unit:
+                type: string
+              is_controlled:
+                type: boolean
+        pharmacies:
+          type: array
+          items:
+            type: object
+            required: [pharmacy_id, name, address, rating, active, fulfillment_types, average_quote_time_seconds, on_time_delivery_rate]
+            properties:
+              pharmacy_id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              address:
+                type: string
+              rating:
+                type: number
+              active:
+                type: boolean
+              fulfillment_types:
+                type: array
+                items:
+                  type: string
+              average_quote_time_seconds:
+                type: integer
+              on_time_delivery_rate:
+                type: number
+    CreateQuoteRequestPayload:
+      type: object
+      required: [prescription_id, items, fulfillment_type]
+      properties:
+        prescription_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            required: [prescription_item_id, quantity, unit, substitution_allowed]
+            properties:
+              prescription_item_id:
+                type: string
+                format: uuid
+              catalog_item_id:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+              unit:
+                type: string
+              substitution_allowed:
+                type: boolean
+        fulfillment_type:
+          type: string
+          enum: [delivery, pickup]
+        delivery_address:
+          type: object
+          properties:
+            street:
+              type: string
+            number:
+              type: string
+            complement:
+              type: string
+            neighborhood:
+              type: string
+            city:
+              type: string
+            postal_code:
+              type: string
+            lat:
+              type: number
+            lng:
+              type: number
+        pharmacy_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    QuoteRequestSummary:
+      type: object
+      required: [id, prescription_id, status, fulfillment_type, items_count, quotes_count, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        items_count:
+          type: integer
+        quotes_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+    QuoteRequestDetail:
+      type: object
+      required: [id, prescription_id, status, fulfillment_type, items, quotes, invitations, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        delivery_address:
+          type: object
+          properties:
+            street:
+              type: string
+            number:
+              type: string
+            complement:
+              type: string
+            neighborhood:
+              type: string
+            city:
+              type: string
+            postal_code:
+              type: string
+            lat:
+              type: number
+            lng:
+              type: number
+        items:
+          type: array
+          items:
+            type: object
+            required: [item_id, prescription_item_id, medication_name, dose, quantity, unit, substitution_allowed]
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              prescription_item_id:
+                type: string
+                format: uuid
+              catalog_item_id:
+                type: string
+                format: uuid
+              medication_name:
+                type: string
+              dose:
+                type: string
+              quantity:
+                type: number
+              unit:
+                type: string
+              substitution_allowed:
+                type: boolean
+        invitations:
+          type: array
+          items:
+            type: object
+            required: [pharmacy_id, pharmacy_name, status, sent_at]
+            properties:
+              pharmacy_id:
+                type: string
+                format: uuid
+              pharmacy_name:
+                type: string
+              status:
+                type: string
+              sent_at:
+                type: string
+                format: date-time
+              responded_at:
+                type: string
+                format: date-time
+        quotes:
+          type: array
+          items:
+            type: object
+            required: [quote_id, pharmacy_id, pharmacy_name, lines, total_cents, delivery_fee_cents, expires_at, created_at]
+            properties:
+              quote_id:
+                type: string
+                format: uuid
+              pharmacy_id:
+                type: string
+                format: uuid
+              pharmacy_name:
+                type: string
+              lines:
+                type: array
+                items:
+                  type: object
+                  required: [item_id, product_name, substitution, quantity, unit_price_cents, total_price_cents]
+                  properties:
+                    item_id:
+                      type: string
+                      format: uuid
+                    product_name:
+                      type: string
+                    substitution:
+                      type: boolean
+                    substituted_item_id:
+                      type: string
+                      format: uuid
+                    quantity:
+                      type: number
+                    unit_price_cents:
+                      type: integer
+                    total_price_cents:
+                      type: integer
+              delivery_fee_cents:
+                type: integer
+              total_cents:
+                type: integer
+              estimated_ready_at:
+                type: string
+                format: date-time
+              estimated_delivery_at:
+                type: string
+                format: date-time
+              payment_on_delivery_only:
+                type: boolean
+              created_at:
+                type: string
+                format: date-time
+              expires_at:
+                type: string
+                format: date-time
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+    QuoteRequestListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteRequestSummary"
+        total:
+          type: integer
+    SelectQuotePayload:
+      type: object
+      required: [pharmacy_id, quote_id, consent_to_share_details]
+      properties:
+        pharmacy_id:
+          type: string
+          format: uuid
+        quote_id:
+          type: string
+          format: uuid
+        accepted_substitutions:
+          type: array
+          items:
+            type: string
+            format: uuid
+        consent_to_share_details:
+          type: boolean
+    SelectQuoteResult:
+      type: object
+      required: [quote_request_id, order_id, status]
+      properties:
+        quote_request_id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+    CancelQuoteRequestPayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    OrderSummary:
+      type: object
+      required: [id, quote_request_id, prescription_id, pharmacy_id, pharmacy_name, status, total_cents, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        pharmacy_id:
+          type: string
+          format: uuid
+        pharmacy_name:
+          type: string
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        total_cents:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    OrderDetail:
+      type: object
+      required: [id, quote_request_id, prescription_id, pharmacy_id, pharmacy_name, pharmacy_phone, status, fulfillment_type, lines, total_cents, created_at, status_history]
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        guardian_id:
+          type: string
+          format: uuid
+        pharmacy_id:
+          type: string
+          format: uuid
+        pharmacy_name:
+          type: string
+        pharmacy_phone:
+          type: string
+        pharmacy_address:
+          type: string
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        delivery_address:
+          type: object
+          properties:
+            street:
+              type: string
+            number:
+              type: string
+            complement:
+              type: string
+            neighborhood:
+              type: string
+            city:
+              type: string
+            postal_code:
+              type: string
+        lines:
+          type: array
+          items:
+            type: object
+            required: [item_id, product_name, substitution, quantity, unit_price_cents, total_price_cents]
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              product_name:
+                type: string
+              substitution:
+                type: boolean
+              quantity:
+                type: number
+              unit_price_cents:
+                type: integer
+              total_price_cents:
+                type: integer
+        delivery_fee_cents:
+          type: integer
+        total_cents:
+          type: integer
+        payment_method:
+          type: string
+        payment_status:
+          type: string
+        tracking_code:
+          type: string
+        courier_name:
+          type: string
+        cancellation_reason:
+          type: string
+        status_history:
+          type: array
+          items:
+            type: object
+            required: [status, changed_at]
+            properties:
+              status:
+                type: string
+              changed_at:
+                type: string
+                format: date-time
+              note:
+                type: string
+        shared_data_with_pharmacy:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OrderListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSummary"
+        total:
+          type: integer
+    CancelOrderPayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    PharmacyInboxItem:
+      type: object
+      required: [quote_request_id, prescription_id, pet_name, pet_species, status, fulfillment_type, items_count, invited_at, expires_at]
+      properties:
+        quote_request_id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        pet_name:
+          type: string
+        pet_species:
+          type: string
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        delivery_city:
+          type: string
+        items_count:
+          type: integer
+        invited_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        quoted_at:
+          type: string
+          format: date-time
+        declined_at:
+          type: string
+          format: date-time
+    PharmacyInboxResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PharmacyInboxItem"
+        total:
+          type: integer
+    SubmitPharmacyQuotePayload:
+      type: object
+      required: [lines, total_cents, delivery_fee_cents]
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            required: [item_id, product_name, substitution, quantity, unit_price_cents, total_price_cents]
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              catalog_item_id:
+                type: string
+                format: uuid
+              product_name:
+                type: string
+              substitution:
+                type: boolean
+              substituted_item_id:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+              unit_price_cents:
+                type: integer
+              total_price_cents:
+                type: integer
+        delivery_fee_cents:
+          type: integer
+        total_cents:
+          type: integer
+        estimated_ready_at:
+          type: string
+          format: date-time
+        estimated_delivery_at:
+          type: string
+          format: date-time
+        payment_on_delivery_only:
+          type: boolean
+    PharmacyQuoteSubmittedResponse:
+      type: object
+      required: [quote_id, quote_request_id, created_at]
+      properties:
+        quote_id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+    DeclinePharmacyQuotePayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    ValidatePrescriptionPayload:
+      type: object
+      properties:
+        notes:
+          type: string
+    PharmacyOrderDetail:
+      type: object
+      required: [id, quote_request_id, prescription_id, status, fulfillment_type, lines, total_cents, created_at, status_history]
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        tutor_name:
+          type: string
+        tutor_phone:
+          type: string
+        pet_name:
+          type: string
+        pet_species:
+          type: string
+        status:
+          type: string
+        fulfillment_type:
+          type: string
+        delivery_address:
+          type: object
+          properties:
+            street:
+              type: string
+            number:
+              type: string
+            complement:
+              type: string
+            neighborhood:
+              type: string
+            city:
+              type: string
+            postal_code:
+              type: string
+        lines:
+          type: array
+          items:
+            type: object
+            required: [item_id, product_name, substitution, quantity, unit_price_cents, total_price_cents]
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              prescription_item_id:
+                type: string
+                format: uuid
+              product_name:
+                type: string
+              substitution:
+                type: boolean
+              quantity:
+                type: number
+              unit_price_cents:
+                type: integer
+              total_price_cents:
+                type: integer
+        delivery_fee_cents:
+          type: integer
+        total_cents:
+          type: integer
+        tracking_code:
+          type: string
+        courier_name:
+          type: string
+        cancellation_reason:
+          type: string
+        status_history:
+          type: array
+          items:
+            type: object
+            required: [status, changed_at]
+            properties:
+              status:
+                type: string
+              changed_at:
+                type: string
+                format: date-time
+              note:
+                type: string
+        dispensation_records:
+          type: array
+          items:
+            type: object
+            required: [prescription_item_id, batch_number, expiry_date, quantity_dispensed]
+            properties:
+              prescription_item_id:
+                type: string
+                format: uuid
+              batch_number:
+                type: string
+              expiry_date:
+                type: string
+              quantity_dispensed:
+                type: number
+              notes:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PharmacyOrderListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PharmacyOrderDetail"
+        total:
+          type: integer
+    ConfirmPharmacyOrderPayload:
+      type: object
+      properties:
+        estimated_ready_at:
+          type: string
+          format: date-time
+    RejectPharmacyOrderPayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    OutForDeliveryPayload:
+      type: object
+      properties:
+        tracking_code:
+          type: string
+        courier_name:
+          type: string
+    DeliverPharmacyOrderPayload:
+      type: object
+      required: [dispensation_records]
+      properties:
+        dispensation_records:
+          type: array
+          items:
+            type: object
+            required: [prescription_item_id, batch_number, expiry_date, quantity_dispensed]
+            properties:
+              prescription_item_id:
+                type: string
+                format: uuid
+              batch_number:
+                type: string
+              expiry_date:
+                type: string
+              quantity_dispensed:
+                type: number
+              notes:
+                type: string
+    CancelPharmacyOrderPayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    PharmacyIntegrationSettings:
+      type: object
+      required: [level, delivery_areas, catalog_mapping_enabled]
+      properties:
+        level:
+          type: string
+          enum: [portal, direct_integration]
+        webhook_url:
+          type: string
+        catalog_mapping_enabled:
+          type: boolean
+        delivery_areas:
+          type: array
+          items:
+            type: object
+            required: [city, postal_codes]
+            properties:
+              city:
+                type: string
+              postal_codes:
+                type: array
+                items:
+                  type: string
+    UpdatePharmacyIntegrationPayload:
+      type: object
+      required: [level, delivery_areas, catalog_mapping_enabled]
+      properties:
+        level:
+          type: string
+          enum: [portal, direct_integration]
+        webhook_url:
+          type: string
+        catalog_mapping_enabled:
+          type: boolean
+        delivery_areas:
+          type: array
+          items:
+            type: object
+            required: [city, postal_codes]
+            properties:
+              city:
+                type: string
+              postal_codes:
+                type: array
+                items:
+                  type: string
+    PharmacyProductMappingItem:
+      type: object
+      required: [catalog_id, standard_name, pharmacy_sku, pharmacy_name, price_cents, in_stock]
+      properties:
+        catalog_id:
+          type: string
+          format: uuid
+        standard_name:
+          type: string
+        pharmacy_sku:
+          type: string
+        pharmacy_name:
+          type: string
+        price_cents:
+          type: integer
+        in_stock:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+    PharmacyProductMappingListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PharmacyProductMappingItem"
+        total:
+          type: integer
+    UpsertProductMappingPayload:
+      type: object
+      required: [pharmacy_sku, pharmacy_name, price_cents, in_stock]
+      properties:
+        pharmacy_sku:
+          type: string
+        pharmacy_name:
+          type: string
+        price_cents:
+          type: integer
+        in_stock:
+          type: boolean
     DisplayName:
       type: string
       minLength: 1

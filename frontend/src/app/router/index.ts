@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ADMIN_ROLES, CLINIC_ROLES } from '@/shared/validation/schemas'
+import { ADMIN_ROLES, CLINIC_ROLES, PHARMACY_ROLES } from '@/shared/validation/schemas'
 import { authGuard } from './guards'
 
 // Code splitting por ruta y feature (PP-F3-FE-010) para cumplir el presupuesto de bundle
@@ -60,6 +60,18 @@ const UploadExternalPrescriptionPage = () =>
   import('@/features/prescriptions/views/UploadExternalPrescriptionPage.vue')
 const GuardianPrescriptionsPage = () =>
   import('@/features/prescriptions/views/GuardianPrescriptionsPage.vue')
+
+// Pharmacy Orders F4 M4.2 (FE-004 to FE-009)
+const QuoteWizardView = () => import('@/features/quotes/views/QuoteWizardView.vue')
+const QuoteBoardView = () => import('@/features/quotes/views/QuoteBoardView.vue')
+const QuoteRequestListView = () => import('@/features/quotes/views/QuoteRequestListView.vue')
+const OrderListView = () => import('@/features/orders/views/OrderListView.vue')
+const OrderDetailView = () => import('@/features/orders/views/OrderDetailView.vue')
+const PharmacyInboxView = () => import('@/features/pharmacy/views/PharmacyInboxView.vue')
+const PharmacyOrdersView = () => import('@/features/pharmacy/views/PharmacyOrdersView.vue')
+const PharmacyOrderDetailView = () =>
+  import('@/features/pharmacy/views/PharmacyOrderDetailView.vue')
+const PharmacySettingsView = () => import('@/features/pharmacy/views/PharmacySettingsView.vue')
 
 const orgMeta = {
   layout: 'org',
@@ -183,6 +195,36 @@ export function createAppRouter() {
         meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
       },
       {
+        path: '/app/prescriptions/:id/quote',
+        name: 'prescription-quote',
+        component: QuoteWizardView,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/quote-requests',
+        name: 'quote-requests',
+        component: QuoteRequestListView,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/quote-requests/:id',
+        name: 'quote-request-board',
+        component: QuoteBoardView,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/orders',
+        name: 'orders',
+        component: OrderListView,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
+        path: '/app/orders/:id',
+        name: 'order-detail',
+        component: OrderDetailView,
+        meta: { layout: 'owner', requiresAuth: true, requiresOnboarding: true },
+      },
+      {
         path: '/app/appointments',
         name: 'appointments',
         component: GuardianAppointmentsPage,
@@ -302,6 +344,30 @@ export function createAppRouter() {
         name: 'org-cohorts',
         component: OrgCohortsPage,
         meta: { ...orgMeta, requiresOrgType: 'clinic', requiresOrgRole: CLINIC_ROLES },
+      },
+      {
+        path: '/pharmacy/:orgId/inbox',
+        name: 'pharmacy-inbox',
+        component: PharmacyInboxView,
+        meta: { ...orgMeta, requiresOrgType: 'pharmacy', requiresOrgRole: PHARMACY_ROLES },
+      },
+      {
+        path: '/pharmacy/:orgId/orders',
+        name: 'pharmacy-orders',
+        component: PharmacyOrdersView,
+        meta: { ...orgMeta, requiresOrgType: 'pharmacy', requiresOrgRole: PHARMACY_ROLES },
+      },
+      {
+        path: '/pharmacy/:orgId/orders/:orderId',
+        name: 'pharmacy-order-detail',
+        component: PharmacyOrderDetailView,
+        meta: { ...orgMeta, requiresOrgType: 'pharmacy', requiresOrgRole: PHARMACY_ROLES },
+      },
+      {
+        path: '/pharmacy/:orgId/settings',
+        name: 'pharmacy-settings',
+        component: PharmacySettingsView,
+        meta: { ...orgMeta, requiresOrgType: 'pharmacy', requiresOrgRole: ['pharmacy_admin'] },
       },
       { path: '/admin', redirect: { name: 'admin-organizations' } },
       {

@@ -2866,10 +2866,1027 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prescriptions/{prescriptionId}/quote-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener opciones para cotizar receta
+         * @description Retorna las opciones de cotización disponibles, modalidades de entrega y farmacias elegibles para una receta médica.
+         */
+        get: operations["getPrescriptionQuoteOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar solicitudes de cotización del tutor
+         * @description Consulta las solicitudes de cotización activas o pasadas del tutor autenticado con filtros por estado.
+         */
+        get: operations["listQuoteRequests"];
+        put?: never;
+        /**
+         * Crear solicitud de cotización para una receta
+         * @description Inicia una saga de cotización multi-farmacia para una receta seleccionada por el tutor.
+         */
+        post: operations["createQuoteRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-requests/{quoteRequestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de solicitud de cotización
+         * @description Obtiene la información completa de una solicitud de cotización y todas las ofertas recibidas.
+         */
+        get: operations["getQuoteRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-requests/{quoteRequestId}/select": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Seleccionar cotización y generar pedido
+         * @description Acepta una oferta de cotización seleccionada por el tutor, confirmando decisiones de sustitución y generando el pedido.
+         */
+        post: operations["selectQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-requests/{quoteRequestId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar solicitud de cotización
+         * @description Cancela una solicitud de cotización abierta antes de que expire o se seleccione una oferta.
+         */
+        post: operations["cancelQuoteRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-requests/{quoteRequestId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Stream SSE de eventos de la solicitud de cotización
+         * @description Abre un canal Server-Sent Events (SSE) para recibir actualizaciones de ofertas en tiempo real.
+         */
+        get: operations["streamQuoteRequestEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar pedidos del tutor
+         * @description Retorna la lista de pedidos de medicamentos realizados por el tutor autenticado.
+         */
+        get: operations["listOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{orderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de pedido para tutor
+         * @description Consulta el detalle completo, timeline y trazabilidad de un pedido del tutor.
+         */
+        get: operations["getOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{orderId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar pedido por el tutor
+         * @description Permite al tutor cancelar un pedido antes de que la farmacia inicie su preparación.
+         */
+        post: operations["cancelOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{orderId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Stream SSE de eventos del pedido
+         * @description Canal Server-Sent Events (SSE) para recibir transiciones y actualizaciones de estado del pedido en tiempo real.
+         */
+        get: operations["streamOrderEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Bandeja de cotizaciones de la farmacia
+         * @description Consulta las solicitudes de cotización recibidas por la farmacia organizadas por pestañas de estado.
+         */
+        get: operations["getPharmacyInbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/quote-requests/{quoteRequestId}/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enviar cotización para una solicitud
+         * @description Registra la oferta de precios, disponibilidad, costos de despacho y posibles propuestas de sustitución de la farmacia.
+         */
+        post: operations["submitPharmacyQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/quote-requests/{quoteRequestId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechazar cotizar una solicitud
+         * @description Notifica que la farmacia declina cotizar la solicitud recibida indicando el motivo.
+         */
+        post: operations["declinePharmacyQuoteRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/prescriptions/{prescriptionId}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validar receta externa por farmacéutico
+         * @description Registra la verificación profesional de una receta externa por parte del farmacéutico antes de dispensar.
+         */
+        post: operations["validatePharmacyPrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar pedidos de la farmacia
+         * @description Consulta los pedidos adjudicados a la farmacia filtrados por estado operativo.
+         */
+        get: operations["listPharmacyOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de pedido para la farmacia
+         * @description Obtiene la información completa del pedido para la farmacia, incluyendo datos de despacho y contacto una vez confirmado.
+         */
+        get: operations["getPharmacyOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar aceptación del pedido por la farmacia
+         * @description Confirma la recepción y aceptación de preparación de un pedido asignado a la farmacia.
+         */
+        post: operations["confirmPharmacyOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechazar pedido por la farmacia
+         * @description Notifica el rechazo de un pedido adjudicado indicando el motivo operativo o de inventario.
+         */
+        post: operations["rejectPharmacyOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/preparing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar pedido en preparación
+         * @description Actualiza el estado del pedido a preparación en el laboratorio o farmacia.
+         */
+        post: operations["markPharmacyOrderPreparing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar pedido listo para retiro o despacho
+         * @description Notifica que el pedido está empacado y listo para retiro en farmacia o recogida por transportadora.
+         */
+        post: operations["markPharmacyOrderReady"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/out-for-delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar pedido en camino
+         * @description Registra la salida a reparto del pedido con información opcional de guía de despacho.
+         */
+        post: operations["markPharmacyOrderOutForDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entregar pedido y registrar dispensación
+         * @description Completa la entrega del pedido registrando los lotes y fechas de vencimiento dispensados para trazabilidad regulatoria.
+         */
+        post: operations["deliverPharmacyOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/orders/{orderId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar pedido por la farmacia
+         * @description Cancela operativamente un pedido por parte de la farmacia justificando la razón.
+         */
+        post: operations["cancelPharmacyOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/integration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener configuración de integración de la farmacia
+         * @description Consulta el modo de integración técnica (portal o API directa), zonas de cobertura y capacidades operativas.
+         */
+        get: operations["getPharmacyIntegration"];
+        /**
+         * Actualizar configuración de integración de la farmacia
+         * @description Actualiza el modo de operación, cobertura de entrega y capacidades del partner farmacéutico.
+         */
+        put: operations["updatePharmacyIntegration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/product-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar mapeos de catálogo de la farmacia
+         * @description Consulta las equivalencias configuradas entre el catálogo central de PetPassport y el SKU interno de la farmacia.
+         */
+        get: operations["listPharmacyProductMappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/product-mappings/{catalogId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                catalogId: components["parameters"]["CatalogId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Crear o actualizar mapeo de producto
+         * @description Registra o actualiza el código SKU interno y factor de empaque para un producto del catálogo central.
+         */
+        put: operations["upsertPharmacyProductMapping"];
+        post?: never;
+        /**
+         * Eliminar mapeo de producto
+         * @description Elimina la equivalencia de catálogo configurada para un producto específico.
+         */
+        delete: operations["deletePharmacyProductMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        GenericSuccessResponse: {
+            success: boolean;
+        };
+        QuoteOptionsResponse: {
+            /** Format: uuid */
+            prescription_id: string;
+            items: {
+                /** Format: uuid */
+                prescription_item_id: string;
+                medication_name: string;
+                dose: string;
+                quantity: number;
+                unit: string;
+                is_controlled: boolean;
+            }[];
+            pharmacies: {
+                /** Format: uuid */
+                pharmacy_id: string;
+                name: string;
+                address: string;
+                rating: number;
+                active: boolean;
+                fulfillment_types: string[];
+                average_quote_time_seconds: number;
+                on_time_delivery_rate: number;
+            }[];
+        };
+        CreateQuoteRequestPayload: {
+            /** Format: uuid */
+            prescription_id: string;
+            items: {
+                /** Format: uuid */
+                prescription_item_id: string;
+                /** Format: uuid */
+                catalog_item_id?: string;
+                quantity: number;
+                unit: string;
+                substitution_allowed: boolean;
+            }[];
+            /** @enum {string} */
+            fulfillment_type: "delivery" | "pickup";
+            delivery_address?: {
+                street?: string;
+                number?: string;
+                complement?: string;
+                neighborhood?: string;
+                city?: string;
+                postal_code?: string;
+                lat?: number;
+                lng?: number;
+            };
+            pharmacy_ids?: string[];
+        };
+        QuoteRequestSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            status: string;
+            fulfillment_type: string;
+            items_count: number;
+            quotes_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        QuoteRequestDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            /** Format: uuid */
+            guardian_id?: string;
+            status: string;
+            fulfillment_type: string;
+            delivery_address?: {
+                street?: string;
+                number?: string;
+                complement?: string;
+                neighborhood?: string;
+                city?: string;
+                postal_code?: string;
+                lat?: number;
+                lng?: number;
+            };
+            items: {
+                /** Format: uuid */
+                item_id: string;
+                /** Format: uuid */
+                prescription_item_id: string;
+                /** Format: uuid */
+                catalog_item_id?: string;
+                medication_name: string;
+                dose: string;
+                quantity: number;
+                unit: string;
+                substitution_allowed: boolean;
+            }[];
+            invitations: {
+                /** Format: uuid */
+                pharmacy_id: string;
+                pharmacy_name: string;
+                status: string;
+                /** Format: date-time */
+                sent_at: string;
+                /** Format: date-time */
+                responded_at?: string;
+            }[];
+            quotes: {
+                /** Format: uuid */
+                quote_id: string;
+                /** Format: uuid */
+                pharmacy_id: string;
+                pharmacy_name: string;
+                lines: {
+                    /** Format: uuid */
+                    item_id: string;
+                    product_name: string;
+                    substitution: boolean;
+                    /** Format: uuid */
+                    substituted_item_id?: string;
+                    quantity: number;
+                    unit_price_cents: number;
+                    total_price_cents: number;
+                }[];
+                delivery_fee_cents: number;
+                total_cents: number;
+                /** Format: date-time */
+                estimated_ready_at?: string;
+                /** Format: date-time */
+                estimated_delivery_at?: string;
+                payment_on_delivery_only?: boolean;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                expires_at: string;
+            }[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        QuoteRequestListResponse: {
+            items: components["schemas"]["QuoteRequestSummary"][];
+            total: number;
+        };
+        SelectQuotePayload: {
+            /** Format: uuid */
+            pharmacy_id: string;
+            /** Format: uuid */
+            quote_id: string;
+            accepted_substitutions?: string[];
+            consent_to_share_details: boolean;
+        };
+        SelectQuoteResult: {
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: uuid */
+            order_id: string;
+            status: string;
+        };
+        CancelQuoteRequestPayload: {
+            reason: string;
+        };
+        OrderSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            /** Format: uuid */
+            pharmacy_id: string;
+            pharmacy_name: string;
+            status: string;
+            fulfillment_type?: string;
+            total_cents: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        OrderDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            /** Format: uuid */
+            guardian_id?: string;
+            /** Format: uuid */
+            pharmacy_id: string;
+            pharmacy_name: string;
+            pharmacy_phone: string;
+            pharmacy_address?: string;
+            status: string;
+            fulfillment_type: string;
+            delivery_address?: {
+                street?: string;
+                number?: string;
+                complement?: string;
+                neighborhood?: string;
+                city?: string;
+                postal_code?: string;
+            };
+            lines: {
+                /** Format: uuid */
+                item_id: string;
+                product_name: string;
+                substitution: boolean;
+                quantity: number;
+                unit_price_cents: number;
+                total_price_cents: number;
+            }[];
+            delivery_fee_cents?: number;
+            total_cents: number;
+            payment_method?: string;
+            payment_status?: string;
+            tracking_code?: string;
+            courier_name?: string;
+            cancellation_reason?: string;
+            status_history: {
+                status: string;
+                /** Format: date-time */
+                changed_at: string;
+                note?: string;
+            }[];
+            shared_data_with_pharmacy?: string[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        OrderListResponse: {
+            items: components["schemas"]["OrderSummary"][];
+            total: number;
+        };
+        CancelOrderPayload: {
+            reason: string;
+        };
+        PharmacyInboxItem: {
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            pet_name: string;
+            pet_species: string;
+            status: string;
+            fulfillment_type: string;
+            delivery_city?: string;
+            items_count: number;
+            /** Format: date-time */
+            invited_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            quoted_at?: string;
+            /** Format: date-time */
+            declined_at?: string;
+        };
+        PharmacyInboxResponse: {
+            items: components["schemas"]["PharmacyInboxItem"][];
+            total: number;
+        };
+        SubmitPharmacyQuotePayload: {
+            lines: {
+                /** Format: uuid */
+                item_id: string;
+                /** Format: uuid */
+                catalog_item_id?: string;
+                product_name: string;
+                substitution: boolean;
+                /** Format: uuid */
+                substituted_item_id?: string;
+                quantity: number;
+                unit_price_cents: number;
+                total_price_cents: number;
+            }[];
+            delivery_fee_cents: number;
+            total_cents: number;
+            /** Format: date-time */
+            estimated_ready_at?: string;
+            /** Format: date-time */
+            estimated_delivery_at?: string;
+            payment_on_delivery_only?: boolean;
+        };
+        PharmacyQuoteSubmittedResponse: {
+            /** Format: uuid */
+            quote_id: string;
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        DeclinePharmacyQuotePayload: {
+            reason: string;
+        };
+        ValidatePrescriptionPayload: {
+            notes?: string;
+        };
+        PharmacyOrderDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            quote_request_id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            tutor_name?: string;
+            tutor_phone?: string;
+            pet_name?: string;
+            pet_species?: string;
+            status: string;
+            fulfillment_type: string;
+            delivery_address?: {
+                street?: string;
+                number?: string;
+                complement?: string;
+                neighborhood?: string;
+                city?: string;
+                postal_code?: string;
+            };
+            lines: {
+                /** Format: uuid */
+                item_id: string;
+                /** Format: uuid */
+                prescription_item_id?: string;
+                product_name: string;
+                substitution: boolean;
+                quantity: number;
+                unit_price_cents: number;
+                total_price_cents: number;
+            }[];
+            delivery_fee_cents?: number;
+            total_cents: number;
+            tracking_code?: string;
+            courier_name?: string;
+            cancellation_reason?: string;
+            status_history: {
+                status: string;
+                /** Format: date-time */
+                changed_at: string;
+                note?: string;
+            }[];
+            dispensation_records?: {
+                /** Format: uuid */
+                prescription_item_id: string;
+                batch_number: string;
+                expiry_date: string;
+                quantity_dispensed: number;
+                notes?: string;
+            }[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        PharmacyOrderListResponse: {
+            items: components["schemas"]["PharmacyOrderDetail"][];
+            total: number;
+        };
+        ConfirmPharmacyOrderPayload: {
+            /** Format: date-time */
+            estimated_ready_at?: string;
+        };
+        RejectPharmacyOrderPayload: {
+            reason: string;
+        };
+        OutForDeliveryPayload: {
+            tracking_code?: string;
+            courier_name?: string;
+        };
+        DeliverPharmacyOrderPayload: {
+            dispensation_records: {
+                /** Format: uuid */
+                prescription_item_id: string;
+                batch_number: string;
+                expiry_date: string;
+                quantity_dispensed: number;
+                notes?: string;
+            }[];
+        };
+        CancelPharmacyOrderPayload: {
+            reason: string;
+        };
+        PharmacyIntegrationSettings: {
+            /** @enum {string} */
+            level: "portal" | "direct_integration";
+            webhook_url?: string;
+            catalog_mapping_enabled: boolean;
+            delivery_areas: {
+                city: string;
+                postal_codes: string[];
+            }[];
+        };
+        UpdatePharmacyIntegrationPayload: {
+            /** @enum {string} */
+            level: "portal" | "direct_integration";
+            webhook_url?: string;
+            catalog_mapping_enabled: boolean;
+            delivery_areas: {
+                city: string;
+                postal_codes: string[];
+            }[];
+        };
+        PharmacyProductMappingItem: {
+            /** Format: uuid */
+            catalog_id: string;
+            standard_name: string;
+            pharmacy_sku: string;
+            pharmacy_name: string;
+            price_cents: number;
+            in_stock: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        PharmacyProductMappingListResponse: {
+            items: components["schemas"]["PharmacyProductMappingItem"][];
+            total: number;
+        };
+        UpsertProductMappingPayload: {
+            pharmacy_sku: string;
+            pharmacy_name: string;
+            price_cents: number;
+            in_stock: boolean;
+        };
         DisplayName: string;
         /** @description ISO 3166-1 alpha-2. */
         CountryCode: string;
@@ -4508,6 +5525,9 @@ export interface components {
     };
     parameters: {
         PrescriptionId: string;
+        QuoteRequestId: string;
+        OrderId: string;
+        CatalogId: string;
         CredentialId: string;
         EncounterId: string;
         AttachmentId: string;
@@ -8878,6 +9898,753 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HealthStatus"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPrescriptionQuoteOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Opciones de cotización y farmacias disponibles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteOptionsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listQuoteRequests: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de solicitudes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRequestListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createQuoteRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuoteRequestPayload"];
+            };
+        };
+        responses: {
+            /** @description Solicitud de cotización creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRequestDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getQuoteRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle de solicitud */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRequestDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    selectQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectQuotePayload"];
+            };
+        };
+        responses: {
+            /** @description Cotización seleccionada y pedido generado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectQuoteResult"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelQuoteRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelQuoteRequestPayload"];
+            };
+        };
+        responses: {
+            /** @description Solicitud cancelada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteRequestDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    streamQuoteRequestEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Flujo SSE de eventos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrders: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de pedidos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle de pedido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelOrderPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido cancelado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    streamOrderEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Flujo SSE de eventos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyInbox: {
+        parameters: {
+            query?: {
+                status?: "pending" | "quoted" | "declined" | "expired";
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bandeja de cotizaciones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyInboxResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    submitPharmacyQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitPharmacyQuotePayload"];
+            };
+        };
+        responses: {
+            /** @description Cotización enviada exitosamente */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyQuoteSubmittedResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    declinePharmacyQuoteRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                quoteRequestId: components["parameters"]["QuoteRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclinePharmacyQuotePayload"];
+            };
+        };
+        responses: {
+            /** @description Solicitud rechazada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenericSuccessResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    validatePharmacyPrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ValidatePrescriptionPayload"];
+            };
+        };
+        responses: {
+            /** @description Receta validada exitosamente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenericSuccessResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPharmacyOrders: {
+        parameters: {
+            query?: {
+                status?: string;
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de pedidos de la farmacia */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle del pedido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    confirmPharmacyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPharmacyOrderPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido confirmado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    rejectPharmacyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectPharmacyOrderPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido rechazado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    markPharmacyOrderPreparing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido marcado en preparación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    markPharmacyOrderReady: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido marcado listo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    markPharmacyOrderOutForDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OutForDeliveryPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido marcado en camino */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    deliverPharmacyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliverPharmacyOrderPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido entregado y dispensación registrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelPharmacyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelPharmacyOrderPayload"];
+            };
+        };
+        responses: {
+            /** @description Pedido cancelado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuración de integración */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyIntegrationSettings"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updatePharmacyIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePharmacyIntegrationPayload"];
+            };
+        };
+        responses: {
+            /** @description Configuración actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyIntegrationSettings"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPharmacyProductMappings: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de mapeos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyProductMappingListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    upsertPharmacyProductMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                catalogId: components["parameters"]["CatalogId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertProductMappingPayload"];
+            };
+        };
+        responses: {
+            /** @description Mapeo guardado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyProductMappingItem"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    deletePharmacyProductMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                catalogId: components["parameters"]["CatalogId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mapeo eliminado exitosamente */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };

@@ -30,7 +30,7 @@ Pre-commit: `gofmt`/`goimports`, `golangci-lint` (rápido), `eslint --fix`, `pre
 | `mailpit` | `axllent/mailpit` | 8025 | SMTP 1025. |
 | `otel-collector` + `tempo` + `prometheus` + `grafana` + `loki` | perfil `observability` | 3000 | Opcional: `docker compose --profile observability up`. |
 | `api` | build local (`air` hot reload) | — | Depende de `postgres`, `keycloak-config`. |
-| `frontend` | `node:22` + Vite dev server | 5173 (también vía Traefik) | |
+| `frontend` | `node:26` + Vite dev server | 5173 (también vía Traefik) | |
 | `migrate` | build local | — | *One-shot* al levantar. |
 
 Seeds de desarrollo (`make dev-seed`): usuarios `owner@dev.local`, `vet@dev.local`, `admin@dev.local` (super_admin), una clínica verificada y una pendiente, tres mascotas. Los seeds pasan por la API (no por SQL) para ejercitar los eventos.
@@ -56,7 +56,7 @@ Caché de módulos Go y `node_modules`; tiempo objetivo del pipeline de PR < 10 
 **[PP-F1-INF-004] (MUST)**
 
 - `api`: multi-stage `golang:1.25` → `gcr.io/distroless/static-debian12:nonroot`; binario estático (`CGO_ENABLED=0`), `-trimpath -ldflags "-s -w -X main.version=…"`; `USER nonroot`; `HEALTHCHECK` no (lo hace Traefik/compose vía `/readyz`).
-- `frontend`: `node:22` build → `nginxinc/nginx-unprivileged:alpine` con `nginx.conf` que sirve `index.html` con `no-cache` y assets con `immutable`; `/config.json` montado por entorno.
+- `frontend`: `node:26` build → `nginxinc/nginx-unprivileged:alpine` con `nginx.conf` que sirve `index.html` con `no-cache` y assets con `immutable`; `/config.json` montado por entorno.
 - Etiquetas OCI (`org.opencontainers.image.*`), tamaño objetivo `api` < 40 MB.
 
 ## 5. Entornos y configuración

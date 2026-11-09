@@ -150,6 +150,7 @@ export const ROLES_BY_TYPE: Record<OrgType, readonly string[]> = {
 }
 export const ADMIN_ROLES: readonly string[] = ['clinic_admin', 'pharmacy_admin']
 export const CLINIC_ROLES: readonly string[] = ['clinic_admin', 'veterinarian', 'receptionist']
+export const PHARMACY_ROLES: readonly string[] = ['pharmacy_admin', 'pharmacist']
 
 /** Formulario de organización (registro y ajustes). */
 export function organizationFormSchema() {
