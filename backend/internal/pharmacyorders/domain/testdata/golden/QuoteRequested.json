@@ -1,0 +1,31 @@
+{
+  "quote_request_id": "01930000-0000-7000-8000-000000000001",
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "pet_id": "01930000-0000-7000-8000-000000000001",
+  "guardian_id": "01930000-0000-7000-8000-000000000001",
+  "country": "CO",
+  "items": [
+    {
+      "item_id": "item-001",
+      "catalog_id": "01930000-0000-7000-8000-000000000001",
+      "name_snapshot": "Amoxicilina 500mg",
+      "form": "tableta",
+      "concentration": "500mg",
+      "dose": "1 tableta",
+      "frequency": "every_12_hours",
+      "quantity": 2,
+      "unit": "pack",
+      "substitution_allowed": true,
+      "controlled": false
+    }
+  ],
+  "mode": "delivery",
+  "area": {
+    "city": "Bogota",
+    "zone": "Chapinero"
+  },
+  "invited_org_ids": [
+    "01930000-0000-7000-8000-000000000001"
+  ],
+  "expires_at": "2026-11-09T12:00:00Z"
+}

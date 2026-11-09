@@ -136,6 +136,25 @@ func rxRes(s suitePersona) Resource {
 	}
 }
 
+func quoteReqRes(s suitePersona) Resource {
+	return QuoteRequestResource{
+		ID:         uuid.MustParse("01930000-0000-7000-8000-00000000d001"),
+		GuardianID: sTutor,
+	}
+}
+
+func orderRes(s suitePersona) Resource {
+	return OrderResource{
+		ID:            uuid.MustParse("01930000-0000-7000-8000-00000000d002"),
+		GuardianID:    sTutor,
+		PharmacyOrgID: sPharma,
+	}
+}
+
+func pharmacyOrgRes(s suitePersona) Resource {
+	return OrgResource{ID: sPharma}
+}
+
 var suite = map[Action][]suiteRow{
 	//                                tutor vetL admL recL vetU vetS phAd phar pend  str  sup
 	MeRead:                 {{noRes, [11]bool{Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y}}},
@@ -252,6 +271,16 @@ var suite = map[Action][]suiteRow{
 	PrescriptionList:   {{orgRes, [11]bool{N, Y, Y, Y, N, N, N, N, N, N, Y}}},
 	PrescriptionRead:   {{rxRes, [11]bool{Y, Y, Y, Y, N, N, N, N, N, N, Y}}},
 	PrescriptionUpload: {{petRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
+
+	// Cotizaciones y pedidos de farmacia (PP-F4-SEC-001, API-005, API-006, API-007)
+	QuoteRequest:     {{quoteReqRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
+	QuoteRead:        {{quoteReqRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
+	PharmacyQuote:    {{pharmacyOrgRes, [11]bool{N, N, N, N, N, N, Y, Y, N, N, N}}},
+	PharmacyValidate: {{pharmacyOrgRes, [11]bool{N, N, N, N, N, N, Y, Y, N, N, N}}},
+	PharmacyOrders:   {{pharmacyOrgRes, [11]bool{N, N, N, N, N, N, Y, Y, N, N, N}}},
+	PharmacyAdmin:    {{pharmacyOrgRes, [11]bool{N, N, N, N, N, N, Y, N, N, N, N}}},
+	OrderRead:        {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
+	OrderCancel:      {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

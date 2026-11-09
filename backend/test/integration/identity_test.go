@@ -28,6 +28,7 @@ import (
 	notificationshttp "github.com/edcastanohunter/petpassport/backend/internal/notifications/http"
 	orghttp "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/http"
 	pethttp "github.com/edcastanohunter/petpassport/backend/internal/petregistry/http"
+	pharmacyhttp "github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/http"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
@@ -50,6 +51,7 @@ type handlers struct {
 	*schedulinghttp.SchedulingHandlers
 	*notificationshttp.NotificationHandlers
 	*prescriptionhttp.PrescriptionHandlers
+	*pharmacyhttp.PharmacyHandlers
 }
 
 type nopWriter struct{}

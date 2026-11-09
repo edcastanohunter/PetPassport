@@ -259,6 +259,7 @@ func newSuiteHandlers() apiHandlers {
 		NotificationHandlers: notificationshttp.NewNotificationHandlers(fakePreferences{}, nil, nil, logger),
 		CredentialHandlers:   newSuiteCredentialHandlers(identityHandlers, logger),
 		PrescriptionHandlers: newSuitePrescriptionHandlers(logger),
+		PharmacyHandlers:     newSuitePharmacyHandlers(logger),
 	}
 }
 
@@ -374,7 +375,7 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(attID).Convert(f.Type))
 		case f.Name == "JobId":
 			field.Set(reflect.ValueOf(jobID).Convert(f.Type))
-		case f.Name == "Id", f.Name == "PrescriptionId", f.Name == "CredentialId":
+		case f.Name == "Id", f.Name == "PrescriptionId", f.Name == "CredentialId", f.Name == "QuoteRequestId", f.Name == "OrderId", f.Name == "CatalogId":
 			field.Set(reflect.ValueOf(rxID).Convert(f.Type))
 		case f.Name == "Token":
 			field.SetString("tok_tok_tok_tok_tok_tok_tok")
@@ -383,6 +384,15 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.New(f.Type.Elem()))
 			if pf := field.Elem().FieldByName("PetId"); pf.IsValid() && pf.CanSet() && pf.Kind() == reflect.Array {
 				pf.Set(reflect.ValueOf(petID).Convert(pf.Type())) // abrir consulta sobre la mascota del fixture
+			}
+			if rf := field.Elem().FieldByName("PrescriptionId"); rf.IsValid() && rf.CanSet() && rf.Kind() == reflect.Array {
+				rf.Set(reflect.ValueOf(rxID).Convert(rf.Type()))
+			}
+			if qf := field.Elem().FieldByName("QuoteId"); qf.IsValid() && qf.CanSet() && qf.Kind() == reflect.Array {
+				qf.Set(reflect.ValueOf(rxID).Convert(qf.Type()))
+			}
+			if pf := field.Elem().FieldByName("PharmacyId"); pf.IsValid() && pf.CanSet() && pf.Kind() == reflect.Array {
+				pf.Set(reflect.ValueOf(orgActive).Convert(pf.Type()))
 			}
 		}
 	}
@@ -520,6 +530,7 @@ var accountOps = map[string]bool{
 	"getNotificationPreferences": true, "putNotificationPreferences": true, "getInbox": true,
 	"listMyCredentials": true, "submitCredential": true, "deleteMyCredential": true,
 	"listMyPrescriptions": true, "archivePrescription": true,
+	"listQuoteRequests": true, "listOrders": true,
 }
 
 func TestRoutes_AuthzMatrix(t *testing.T) {

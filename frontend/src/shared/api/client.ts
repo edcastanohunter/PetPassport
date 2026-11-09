@@ -87,6 +87,41 @@ export type ConfirmExternalPrescriptionRequest =
   components['schemas']['ConfirmExternalPrescriptionRequest']
 export type PrescriptionImageDTO = components['schemas']['PrescriptionImageDTO']
 
+// Pharmacy Orders F4 M4.2 (API-005, API-006, API-007, FE-004 to FE-009)
+export type QuoteOptionsResponse = components['schemas']['QuoteOptionsResponse']
+export type PrescriptionQuoteOptions = QuoteOptionsResponse
+export type CreateQuoteRequestPayload = components['schemas']['CreateQuoteRequestPayload']
+export type QuoteRequestSummary = components['schemas']['QuoteRequestSummary']
+export type QuoteRequestDetail = components['schemas']['QuoteRequestDetail']
+export type QuoteRequestListResponse = components['schemas']['QuoteRequestListResponse']
+export type SelectQuotePayload = components['schemas']['SelectQuotePayload']
+export type SelectQuoteResult = components['schemas']['SelectQuoteResult']
+export type CancelQuoteRequestPayload = components['schemas']['CancelQuoteRequestPayload']
+export type OrderSummary = components['schemas']['OrderSummary']
+export type OrderDetail = components['schemas']['OrderDetail']
+export type OrderListResponse = components['schemas']['OrderListResponse']
+export type CancelOrderPayload = components['schemas']['CancelOrderPayload']
+export type PharmacyInboxItem = components['schemas']['PharmacyInboxItem']
+export type PharmacyInboxResponse = components['schemas']['PharmacyInboxResponse']
+export type SubmitPharmacyQuotePayload = components['schemas']['SubmitPharmacyQuotePayload']
+export type PharmacyQuoteSubmittedResponse = components['schemas']['PharmacyQuoteSubmittedResponse']
+export type DeclinePharmacyQuotePayload = components['schemas']['DeclinePharmacyQuotePayload']
+export type ValidatePrescriptionPayload = components['schemas']['ValidatePrescriptionPayload']
+export type PharmacyOrderDetail = components['schemas']['PharmacyOrderDetail']
+export type PharmacyOrderListResponse = components['schemas']['PharmacyOrderListResponse']
+export type ConfirmPharmacyOrderPayload = components['schemas']['ConfirmPharmacyOrderPayload']
+export type RejectPharmacyOrderPayload = components['schemas']['RejectPharmacyOrderPayload']
+export type OutForDeliveryPayload = components['schemas']['OutForDeliveryPayload']
+export type DeliverPharmacyOrderPayload = components['schemas']['DeliverPharmacyOrderPayload']
+export type CancelPharmacyOrderPayload = components['schemas']['CancelPharmacyOrderPayload']
+export type PharmacyIntegrationSettings = components['schemas']['PharmacyIntegrationSettings']
+export type UpdatePharmacyIntegrationPayload =
+  components['schemas']['UpdatePharmacyIntegrationPayload']
+export type PharmacyProductMappingItem = components['schemas']['PharmacyProductMappingItem']
+export type PharmacyProductMappingListResponse =
+  components['schemas']['PharmacyProductMappingListResponse']
+export type UpsertProductMappingPayload = components['schemas']['UpsertProductMappingPayload']
+
 // ApiError envuelve un application/problem+json (docs/phase-1/07 §3, FE-003).
 export class ApiError extends Error {
   readonly code: string

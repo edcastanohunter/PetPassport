@@ -1,0 +1,36 @@
+{
+  "quote_request_id": "01930000-0000-7000-8000-000000000001",
+  "organization_id": "01930000-0000-7000-8000-000000000001",
+  "quote": {
+    "id": "01930000-0000-7000-8000-000000000001",
+    "organization_id": "01930000-0000-7000-8000-000000000001",
+    "lines": [
+      {
+        "item_id": "item-001",
+        "unit_price": 15000,
+        "qty": 2,
+        "available": "full",
+        "substitution": {
+          "catalog_id": "01930000-0000-7000-8000-000000000001",
+          "name": "Amoxicilina Bioequivalente",
+          "unit_price": 14000,
+          "reason": "Disponibilidad de laboratorio"
+        }
+      }
+    ],
+    "subtotal": 30000,
+    "delivery_fee": 5000,
+    "total": 35000,
+    "currency": "COP",
+    "eta": "2 horas",
+    "pickup": {
+      "address": "Carrera 7 # 12-34",
+      "hours": "8:00 - 18:00"
+    },
+    "valid_until": "2026-11-09T12:00:00Z",
+    "notes": "Oferta preferencial",
+    "completeness": "full",
+    "received_at": "2026-11-08T12:00:00Z",
+    "superseded": false
+  }
+}

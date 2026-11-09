@@ -1,0 +1,34 @@
+{
+  "order_id": "01930000-0000-7000-8000-000000000001",
+  "quote_request_id": "01930000-0000-7000-8000-000000000001",
+  "quote_id": "01930000-0000-7000-8000-000000000001",
+  "prescription_id": "01930000-0000-7000-8000-000000000001",
+  "pet_id": "01930000-0000-7000-8000-000000000001",
+  "guardian_id": "01930000-0000-7000-8000-000000000001",
+  "pharmacy_org_id": "01930000-0000-7000-8000-000000000001",
+  "mode": "delivery",
+  "lines": [
+    {
+      "item_id": "item-001",
+      "catalog_id": "01930000-0000-7000-8000-000000000001",
+      "qty": 2,
+      "unit_price": 14000,
+      "substituted": "01930000-0000-7000-8000-000000000001",
+      "substituted_name": "Amoxicilina Bioequivalente"
+    }
+  ],
+  "totals": {
+    "subtotal": 28000,
+    "delivery_fee": 5000,
+    "total": 33000,
+    "currency": "COP"
+  },
+  "delivery_address": {
+    "street": "Calle 100 # 15-20",
+    "city": "Bogota",
+    "postal_code": "110111",
+    "country": "CO"
+  },
+  "contact_phone": "+573001234567",
+  "at": "2026-11-08T12:00:00Z"
+}
