@@ -57,6 +57,14 @@ func (f *fakeKeycloak) handler(t *testing.T) http.Handler {
 		body, _ := io.ReadAll(r.Body)
 		f.calls = append(f.calls, r.Method+" "+r.URL.Path+" "+r.URL.RawQuery+" "+string(body))
 		f.mu.Unlock()
+		if strings.Contains(r.URL.Path, "/clients") {
+			if r.Method == http.MethodGet {
+				_ = json.NewEncoder(w).Encode([]map[string]string{{"id": "client-uuid-1", "clientId": r.URL.Query().Get("clientId")}})
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		if !strings.Contains(r.URL.Path, f.known.String()) && r.URL.Query().Get("email") == "" {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -159,5 +167,38 @@ func TestClient_UnknownUserAndErrors(t *testing.T) {
 	}
 	if _, err := New(Options{BaseURL: "", Realm: "r", ClientID: "c", ClientSecret: "s"}); err == nil {
 		t.Fatal("configuración incompleta debe fallar")
+	}
+}
+
+func TestClient_PartnerClientOperations(t *testing.T) {
+	f := &fakeKeycloak{expiresIn: 300, known: uuid.New()}
+	c := newClient(t, f, time.Now)
+	ctx := context.Background()
+
+	orgID := uuid.MustParse("01930000-0000-7000-8000-00000000b001")
+
+	// 1. Prefijo inválido debe fallar
+	if err := c.CreatePartnerClient(ctx, "invalid-slug", "sec123", orgID); err == nil {
+		t.Fatalf("expected error for non partner- prefix")
+	}
+
+	// 2. Crear partner client válido
+	if err := c.CreatePartnerClient(ctx, "partner-pharmacy-a", "sec123456789012345678901234567890", orgID); err != nil {
+		t.Fatalf("CreatePartnerClient() error: %v", err)
+	}
+
+	// 3. Rotar secreto
+	if err := c.RotatePartnerClientSecret(ctx, "partner-pharmacy-a", "newsec123456789012345678901234567890"); err != nil {
+		t.Fatalf("RotatePartnerClientSecret() error: %v", err)
+	}
+
+	// 4. Habilitar/Deshabilitar
+	if err := c.SetPartnerClientEnabled(ctx, "partner-pharmacy-a", false); err != nil {
+		t.Fatalf("SetPartnerClientEnabled() error: %v", err)
+	}
+
+	// 5. Eliminar
+	if err := c.DeletePartnerClient(ctx, "partner-pharmacy-a"); err != nil {
+		t.Fatalf("DeletePartnerClient() error: %v", err)
 	}
 }

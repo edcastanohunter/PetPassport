@@ -53,6 +53,10 @@ const AdminPlatformPage = () => import('@/features/admin/AdminPlatformPage.vue')
 const PetClaimPage = () => import('@/features/pets/PetClaimPage.vue')
 const CredentialsPage = () => import('@/features/profile/CredentialsPage.vue')
 const AdminCredentialsPage = () => import('@/features/admin/AdminCredentialsPage.vue')
+const AdminPartnersPage = () => import('@/features/admin/AdminPartnersPage.vue')
+const AdminRegulatoryPage = () => import('@/features/admin/AdminRegulatoryPage.vue')
+const AdminAIPage = () => import('@/features/admin/AdminAIPage.vue')
+const AdminOCRPage = () => import('@/features/admin/AdminOCRPage.vue')
 const OrgPrescriptionsPage = () => import('@/features/prescriptions/views/OrgPrescriptionsPage.vue')
 const VerifyPrescriptionPage = () =>
   import('@/features/prescriptions/views/VerifyPrescriptionPage.vue')
@@ -394,6 +398,30 @@ export function createAppRouter() {
         path: '/admin/credentials',
         name: 'admin-credentials',
         component: AdminCredentialsPage,
+        meta: adminMeta,
+      },
+      {
+        path: '/admin/partners',
+        name: 'admin-partners',
+        component: AdminPartnersPage,
+        meta: adminMeta,
+      },
+      {
+        path: '/admin/regulatory',
+        name: 'admin-regulatory',
+        component: AdminRegulatoryPage,
+        meta: adminMeta,
+      },
+      {
+        path: '/admin/ai',
+        name: 'admin-ai',
+        component: AdminAIPage,
+        meta: adminMeta,
+      },
+      {
+        path: '/admin/ocr',
+        name: 'admin-ocr',
+        component: AdminOCRPage,
         meta: adminMeta,
       },
       {

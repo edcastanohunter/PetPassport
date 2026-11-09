@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
 	"github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/app"
@@ -15,6 +16,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/pharmacyorders/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/auth"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/authz"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/webhooks"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -34,11 +36,13 @@ type QueriesProvider interface {
 	DeleteProductMapping(ctx context.Context, orgID, catalogID uuid.UUID) error
 }
 
-// PharmacyHandlers implementa los endpoints de cotizaciones y pedidos de farmacia (API-005, API-006, API-007).
+// PharmacyHandlers implementa los endpoints de cotizaciones y pedidos de farmacia (API-005, API-006, API-007, API-008).
 type PharmacyHandlers struct {
-	svc     *app.Service
-	queries QueriesProvider
-	logger  *slog.Logger
+	svc        *app.Service
+	queries    QueriesProvider
+	logger     *slog.Logger
+	pool       *pgxpool.Pool
+	dispatcher *webhooks.Dispatcher
 }
 
 // NewPharmacyHandlers crea una nueva instancia de PharmacyHandlers.

@@ -1,0 +1,24 @@
+# Allowlist de destinos salientes para PetPassport Egress Proxy (PP-F4-INF-002, ARQ-006, SEC-004)
+# Mantenido y sincronizado automáticamente hacia el proxy saliente (Squid / Envoy).
+version: "1.0"
+updated_at: "2026-11-09T00:00:00Z"
+
+# Proveedores de IA y servicios centrales
+core_services:
+  - host: "api.anthropic.com"
+    description: "API de Claude (OCR y extracción de recetas médicas)"
+    ports: [443]
+    allowed_methods: ["POST"]
+  - host: "auth.petpassport.local"
+    description: "Keycloak IAM interno"
+    ports: [8080, 8443]
+    allowed_methods: ["GET", "POST"]
+
+# Dominios autorizados para webhooks salientes hacia partners (sincronizados desde read_partnernetwork.partner_integrations)
+partner_webhooks:
+  - domain: "*.petpassport.local"
+    description: "Entornos locales y simuladores de partner para CI/CD y Sandbox"
+    ports: [443, 8443]
+  - domain: "sandbox.partner-pharmacy.example.com"
+    description: "Farmacia piloto de prueba para entorno sandbox"
+    ports: [443]

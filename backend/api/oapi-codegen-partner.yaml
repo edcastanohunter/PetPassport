@@ -1,0 +1,10 @@
+# Configuración de oapi-codegen para Partner API. `make gen` regenera api/genpartner.
+package: genpartner
+output: genpartner/partner.gen.go
+generate:
+  models: true
+  chi-server: true
+  strict-server: true
+  embedded-spec: true
+output-options:
+  skip-prune: false

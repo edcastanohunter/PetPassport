@@ -101,6 +101,107 @@ func (c *Client) adminBase() string {
 	return c.opts.BaseURL + "/admin/realms/" + url.PathEscape(c.opts.Realm)
 }
 
+// CreatePartnerClient aprovisiona un client confidencial en Keycloak con prefijo partner- (ARQ-005, SEC-002).
+func (c *Client) CreatePartnerClient(ctx context.Context, clientID, clientSecret string, orgID uuid.UUID) error {
+	if !strings.HasPrefix(clientID, "partner-") {
+		return errors.New("keycloakadmin: clientId debe iniciar con prefijo partner-")
+	}
+
+	payload := map[string]any{
+		"clientId":                  clientID,
+		"name":                      "Partner " + strings.TrimPrefix(clientID, "partner-"),
+		"enabled":                   true,
+		"clientAuthenticatorType":   "client-secret",
+		"secret":                    clientSecret,
+		"serviceAccountsEnabled":    true,
+		"standardFlowEnabled":       false,
+		"directAccessGrantsEnabled": false,
+		"publicClient":              false,
+		"protocol":                  "openid-connect",
+		"attributes": map[string]string{
+			"partner_org_id": orgID.String(),
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	return c.do(ctx, http.MethodPost, c.adminBase()+"/clients", body, nil)
+}
+
+// FindClientByClientID localiza el ID interno (UUID) de un client en Keycloak por su clientId.
+func (c *Client) FindClientByClientID(ctx context.Context, clientID string) (string, error) {
+	q := url.Values{"clientId": {clientID}}
+	var clients []struct {
+		ID       string `json:"id"`
+		ClientID string `json:"clientId"`
+	}
+	if err := c.do(ctx, http.MethodGet, c.adminBase()+"/clients?"+q.Encode(), nil, &clients); err != nil {
+		return "", err
+	}
+	if len(clients) == 0 {
+		return "", fmt.Errorf("client %s no encontrado", clientID)
+	}
+	return clients[0].ID, nil
+}
+
+// RotatePartnerClientSecret rota el secreto del client en Keycloak (SEC-002, INF-006).
+func (c *Client) RotatePartnerClientSecret(ctx context.Context, clientID, newSecret string) error {
+	if !strings.HasPrefix(clientID, "partner-") {
+		return errors.New("keycloakadmin: clientId debe iniciar con prefijo partner-")
+	}
+	internalID, err := c.FindClientByClientID(ctx, clientID)
+	if err != nil {
+		return err
+	}
+
+	payload := map[string]any{
+		"type":  "secret",
+		"value": newSecret,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	return c.do(ctx, http.MethodPost, c.adminBase()+"/clients/"+internalID+"/client-secret", body, nil)
+}
+
+// SetPartnerClientEnabled habilita o deshabilita el client en Keycloak.
+func (c *Client) SetPartnerClientEnabled(ctx context.Context, clientID string, enabled bool) error {
+	if !strings.HasPrefix(clientID, "partner-") {
+		return errors.New("keycloakadmin: clientId debe iniciar con prefijo partner-")
+	}
+	internalID, err := c.FindClientByClientID(ctx, clientID)
+	if err != nil {
+		return err
+	}
+
+	payload := map[string]any{
+		"enabled": enabled,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	return c.do(ctx, http.MethodPut, c.adminBase()+"/clients/"+internalID, body, nil)
+}
+
+// DeletePartnerClient elimina el client en Keycloak.
+func (c *Client) DeletePartnerClient(ctx context.Context, clientID string) error {
+	if !strings.HasPrefix(clientID, "partner-") {
+		return errors.New("keycloakadmin: clientId debe iniciar con prefijo partner-")
+	}
+	internalID, err := c.FindClientByClientID(ctx, clientID)
+	if err != nil {
+		return err
+	}
+	return c.do(ctx, http.MethodDelete, c.adminBase()+"/clients/"+internalID, nil, nil)
+}
+
 func (c *Client) userPath(id uuid.UUID) string { return c.adminBase() + "/users/" + id.String() }
 
 // do ejecuta la llamada con el token de la service account; ante 401

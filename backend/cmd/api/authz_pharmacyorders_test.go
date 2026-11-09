@@ -402,11 +402,21 @@ var pharmacyMatrix = map[string][9]int{
 	"validatePharmacyPrescription": {403, 403, 403, 403, 403, 403, ok, 403, 403},
 
 	// pharmacy:admin (administrador de farmacia activa)
-	"getPharmacyIntegration":       {403, 403, 403, 403, 403, 403, ok, 403, 403},
-	"updatePharmacyIntegration":    {403, 403, 403, 403, 403, 403, ok, 403, 403},
-	"listPharmacyProductMappings":  {403, 403, 403, 403, 403, 403, ok, 403, 403},
-	"upsertPharmacyProductMapping": {403, 403, 403, 403, 403, 403, ok, 403, 403},
-	"deletePharmacyProductMapping": {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"getPharmacyIntegration":           {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"updatePharmacyIntegration":        {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"listPharmacyProductMappings":      {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"upsertPharmacyProductMapping":     {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"deletePharmacyProductMapping":     {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"importPharmacyProductMappings":    {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"getPharmacyApiCredentials":        {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"rotatePharmacyApiCredentials":     {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"createPharmacySandboxCredentials": {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"getPharmacyWebhook":               {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"updatePharmacyWebhook":            {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"testPharmacyWebhook":              {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"listPharmacyWebhookDeliveries":    {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"retryPharmacyWebhookDelivery":     {403, 403, 403, 403, 403, 403, ok, 403, 403},
+	"getPharmacyStats":                 {403, 403, 403, 403, 403, 403, ok, 403, 403},
 }
 
 func init() {

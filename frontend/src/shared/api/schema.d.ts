@@ -1053,6 +1053,202 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar partners farmacéuticos y distribuidores
+         * @description Consulta partners con estado de integración, modo y estadísticas (PRD-018, PTN-001).
+         */
+        get: operations["adminListPartners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/partners/{orgId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspender partner comercial
+         * @description Suspende temporalmente el acceso del partner a la API y la recepción de cotizaciones (SEC-002, PTN-002).
+         */
+        post: operations["adminSuspendPartner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/partners/{orgId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar partner comercial
+         * @description Restablece el acceso y operatividad del partner comercial (PTN-002).
+         */
+        post: operations["adminReactivatePartner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/regulatory-rules/{country}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener reglas regulatorias de prescripción por país
+         * @description Consulta vigencia máxima, requisitos de sustancias controladas y retención documental por país (PRD-018, SEC-007).
+         */
+        get: operations["adminGetRegulatoryRules"];
+        /**
+         * Actualizar reglas regulatorias de prescripción
+         * @description Actualiza los parámetros normativos de recetas para una jurisdicción (PRD-018).
+         */
+        put: operations["adminUpdateRegulatoryRules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ai/budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Obtener presupuesto y consumo de IA
+         * @description Consulta el presupuesto mensual de LLM/OCR, consumo acumulado y alertas de costo (ARQ-011, INF-001).
+         */
+        get: operations["adminGetAIBudget"];
+        /**
+         * Actualizar presupuesto mensual de IA
+         * @description Modifica el techo presupuestario y umbrales de alerta para llamadas de IA (INF-001).
+         */
+        put: operations["adminUpdateAIBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estadísticas de uso de IA
+         * @description Detalle de llamadas por modelo, tokens consumidos y costos acumulados (ARQ-011).
+         */
+        get: operations["adminGetAIUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ocr/monitor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monitor de salud del pipeline OCR
+         * @description Monitoreo en tiempo real de tasa de acierto, latencia y cola de extracción OCR (QA-006, INF-001).
+         */
+        get: operations["adminGetOCRMonitor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ocr/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Muestras de extracción OCR para auditoría
+         * @description Listado de extracciones OCR para control de calidad y revisión médica ciega (QA-006).
+         */
+        get: operations["adminGetOCRSamples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/prescriptions/{prescriptionId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revocar receta médica por administrador
+         * @description Anulación regulatoria de una receta emitida por orden médica o de autoridad sanitaria (PRD-018, SEC-007).
+         */
+        post: operations["adminRevokePrescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{orgId}/encounters": {
         parameters: {
             query?: never;
@@ -3458,6 +3654,209 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pharmacies/{orgId}/product-mappings/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importar mapeos de producto vía CSV
+         * @description Importa en lote equivalencias de códigos SKU y catálogo desde archivo CSV o payload estructurado (PTN-003).
+         */
+        post: operations["importPharmacyProductMappings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/api-credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener credenciales API del partner
+         * @description Consulta el identificador de cliente y estado de credenciales OAuth2 de la farmacia (PTN-002).
+         */
+        get: operations["getPharmacyApiCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/api-credentials/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotar secreto de credenciales API
+         * @description Rota inmediatamente el client_secret de la farmacia en Keycloak (PTN-002, SEC-002).
+         */
+        post: operations["rotatePharmacyApiCredentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/api-credentials/sandbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generar credenciales de entorno sandbox
+         * @description Genera credenciales de prueba en el realm sandbox para pruebas automatizadas (PTN-005, ARQ-008).
+         */
+        post: operations["createPharmacySandboxCredentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Obtener configuración del webhook de la farmacia
+         * @description Consulta el endpoint URL y eventos suscritos de webhooks salientes (PTN-004).
+         */
+        get: operations["getPharmacyWebhook"];
+        /**
+         * Actualizar webhook de la farmacia
+         * @description Configura el endpoint URL (con validación anti-SSRF) y eventos del webhook saliente (PTN-004, SEC-003).
+         */
+        put: operations["updatePharmacyWebhook"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/webhook/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enviar ping de prueba a webhook
+         * @description Despacha un evento de prueba con firma HMAC-SHA256 para verificar la conectividad (PTN-004, ARQ-004).
+         */
+        post: operations["testPharmacyWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/webhook/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar entregas de webhook
+         * @description Consulta el historial de eventos despachados, estados de entrega y latencias (PTN-004).
+         */
+        get: operations["listPharmacyWebhookDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/webhook/deliveries/{deliveryId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                deliveryId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reintentar entrega fallida de webhook
+         * @description Reintenta inmediatamente un webhook fallido o encolado (PTN-004).
+         */
+        post: operations["retryPharmacyWebhookDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pharmacies/{orgId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Métricas y estadísticas de la farmacia
+         * @description Consulta volumen de cotizaciones, pedidos procesados, tiempos de respuesta y tasa de conversión (PRD-015, PTN-001).
+         */
+        get: operations["getPharmacyStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3886,6 +4285,169 @@ export interface components {
             pharmacy_name: string;
             price_cents: number;
             in_stock: boolean;
+        };
+        PharmacyImportMappingsPayload: {
+            /** @description Contenido CSV con columnas catalog_id, pharmacy_sku, pharmacy_name, price_cents, in_stock. */
+            csv_content: string;
+        };
+        PharmacyImportMappingsResponse: {
+            processed: number;
+            created: number;
+            updated: number;
+            errors: string[];
+        };
+        PharmacyApiCredentialsResponse: {
+            has_credentials: boolean;
+            client_id?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            last_used_at?: string;
+            rate_limit_rpm?: number;
+            scopes: string[];
+        };
+        PharmacyRotatedCredentialsResponse: {
+            client_id: string;
+            client_secret: string;
+            /** Format: date-time */
+            rotated_at: string;
+        };
+        PharmacySandboxCredentialsResponse: {
+            client_id: string;
+            client_secret: string;
+            token_endpoint: string;
+            api_base_url: string;
+        };
+        PharmacyWebhookConfigResponse: {
+            configured: boolean;
+            url?: string;
+            events: string[];
+            has_secret: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        UpdatePharmacyWebhookPayload: {
+            url: string;
+            events: string[];
+            secret?: string;
+        };
+        PharmacyWebhookTestResponse: {
+            /** Format: uuid */
+            delivery_id: string;
+            status: string;
+            status_code?: number;
+            error?: string;
+        };
+        PharmacyWebhookDeliveryItem: {
+            /** Format: uuid */
+            id: string;
+            event_type: string;
+            status: string;
+            status_code?: number;
+            error?: string;
+            attempts: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            delivered_at?: string;
+        };
+        PharmacyWebhookDeliveriesResponse: {
+            items: components["schemas"]["PharmacyWebhookDeliveryItem"][];
+            total: number;
+        };
+        PharmacyStatsResponse: {
+            quotes_received: number;
+            quotes_submitted: number;
+            orders_placed: number;
+            orders_completed: number;
+            /** Format: float */
+            avg_response_minutes: number;
+            /** Format: float */
+            conversion_rate_percent: number;
+        };
+        AdminPartnerSummary: {
+            /** Format: uuid */
+            organization_id: string;
+            display_name: string;
+            legal_name?: string;
+            /** @enum {string} */
+            mode: "portal" | "api";
+            /** @enum {string} */
+            status: "active" | "suspended" | "onboarding";
+            webhook_configured?: boolean;
+            total_quotes?: number;
+            total_orders?: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminPartnerListResponse: {
+            items: components["schemas"]["AdminPartnerSummary"][];
+            total: number;
+        };
+        AdminRegulatoryRulesResponse: {
+            country: string;
+            retention_years: number;
+            requires_controlled_registry: boolean;
+            max_validity_days: number;
+            allowed_substitutions: boolean;
+        };
+        AdminAIBudgetResponse: {
+            /** Format: float */
+            monthly_budget_usd: number;
+            /** Format: float */
+            current_spend_usd: number;
+            alert_threshold_percent: number;
+            status: string;
+        };
+        AdminUpdateAIBudgetPayload: {
+            /** Format: float */
+            monthly_budget_usd: number;
+            alert_threshold_percent: number;
+        };
+        AdminAIModelUsage: {
+            model: string;
+            calls: number;
+            total_tokens: number;
+            /** Format: float */
+            cost_usd: number;
+        };
+        AdminAIUsageResponse: {
+            month: string;
+            total_calls: number;
+            /** Format: float */
+            total_cost_usd: number;
+            by_model: components["schemas"]["AdminAIModelUsage"][];
+        };
+        AdminOCRMonitorResponse: {
+            total_24h: number;
+            /** Format: float */
+            success_rate_percent: number;
+            avg_latency_ms: number;
+            queue_depth: number;
+        };
+        AdminOCRSampleItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            prescription_id: string;
+            status: string;
+            /** Format: float */
+            confidence: number;
+            latency_ms: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminOCRSamplesResponse: {
+            items: components["schemas"]["AdminOCRSampleItem"][];
+            total: number;
+        };
+        AdminRevokePrescriptionResponse: {
+            /** Format: uuid */
+            prescription_id: string;
+            status: string;
+            /** Format: date-time */
+            revoked_at: string;
+            reason: string;
         };
         DisplayName: string;
         /** @description ISO 3166-1 alpha-2. */
@@ -7253,6 +7815,274 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListPartners: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "active" | "suspended" | "onboarding";
+                mode?: "portal" | "api";
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de partners */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPartnerListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminSuspendPartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Partner suspendido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPartnerSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminReactivatePartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partner reactivado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPartnerSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetRegulatoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reglas regulatorias */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRegulatoryRulesResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminUpdateRegulatoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRegulatoryRulesResponse"];
+            };
+        };
+        responses: {
+            /** @description Reglas regulatorias actualizadas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRegulatoryRulesResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetAIBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado del presupuesto de IA */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAIBudgetResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminUpdateAIBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateAIBudgetPayload"];
+            };
+        };
+        responses: {
+            /** @description Presupuesto actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAIBudgetResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetAIUsage: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estadísticas de uso de IA */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAIUsageResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetOCRMonitor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Métricas del pipeline OCR */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOCRMonitorResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetOCRSamples: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Muestras de auditoría OCR */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOCRSamplesResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminRevokePrescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prescriptionId: components["parameters"]["PrescriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Receta revocada exitosamente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRevokePrescriptionResponse"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };
@@ -10645,6 +11475,248 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    importPharmacyProductMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PharmacyImportMappingsPayload"];
+            };
+        };
+        responses: {
+            /** @description Resultado de la importación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyImportMappingsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyApiCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credenciales de la farmacia */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyApiCredentialsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    rotatePharmacyApiCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nuevas credenciales con secreto */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyRotatedCredentialsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPharmacySandboxCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credenciales de sandbox */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacySandboxCredentialsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuración del webhook */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyWebhookConfigResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updatePharmacyWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePharmacyWebhookPayload"];
+            };
+        };
+        responses: {
+            /** @description Webhook actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyWebhookConfigResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    testPharmacyWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado del envío de prueba */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyWebhookTestResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPharmacyWebhookDeliveries: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Historial de entregas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyWebhookDeliveriesResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    retryPharmacyWebhookDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+                deliveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado del reintento */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyWebhookTestResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPharmacyStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estadísticas operativas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyStatsResponse"];
+                };
             };
             default: components["responses"]["Problem"];
         };

@@ -300,3 +300,86 @@ func isAllowlisted(allowlist []string, ip string, p auth.Principal, hasP bool) b
 	}
 	return false
 }
+
+// PartnerLimits define los límites de tasa para la Partner API (PTN-006, ARQ-005):
+// 600 lecturas/min, 120 escrituras/min por partner_org_id.
+type PartnerLimits struct {
+	ReadLimit  int64         // defecto: 600
+	WriteLimit int64         // defecto: 120
+	Window     time.Duration // defecto: 1 minuto
+}
+
+// DefaultPartnerLimits devuelve los límites normativos de PTN-006.
+func DefaultPartnerLimits() PartnerLimits {
+	return PartnerLimits{
+		ReadLimit:  600,
+		WriteLimit: 120,
+		Window:     time.Minute,
+	}
+}
+
+// PartnerMiddleware aplica rate limiting específico a partners B2B (PTN-006, ARQ-005).
+func PartnerMiddleware(limiter *Limiter, limits PartnerLimits) func(http.Handler) http.Handler {
+	if limits.ReadLimit == 0 {
+		limits.ReadLimit = 600
+	}
+	if limits.WriteLimit == 0 {
+		limits.WriteLimit = 120
+	}
+	if limits.Window == 0 {
+		limits.Window = time.Minute
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if limiter == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			partner, ok := auth.PartnerPrincipalFrom(r.Context())
+			if !ok || partner.OrgID == uuid.Nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			var limit int64
+			var key string
+			routeGroup := "partner_write"
+
+			method := strings.ToUpper(r.Method)
+			if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+				limit = limits.ReadLimit
+				key = fmt.Sprintf("rl:ptn:read:%s", partner.OrgID)
+				routeGroup = "partner_read"
+			} else {
+				limit = limits.WriteLimit
+				key = fmt.Sprintf("rl:ptn:write:%s", partner.OrgID)
+			}
+
+			res, err := limiter.Check(r.Context(), key, routeGroup, limit, limits.Window)
+			if err != nil {
+				// Fallback fail-open con log para no bloquear tráfico por fallos transitorios de Redis
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			w.Header().Set("RateLimit-Limit", strconv.FormatInt(res.Limit, 10))
+			w.Header().Set("RateLimit-Remaining", strconv.FormatInt(res.Remaining, 10))
+			w.Header().Set("RateLimit-Reset", strconv.FormatInt(res.ResetSeconds, 10))
+
+			if !res.Allowed {
+				w.Header().Set("Retry-After", strconv.FormatInt(res.RetryAfterSeconds, 10))
+				prob := problem.New(
+					problem.RateLimited,
+					"Límite de peticiones excedido",
+					fmt.Sprintf("Ha superado la cuota de operaciones permitidas (%d peticiones por minuto). Intente nuevamente en %d segundos.", limit, res.RetryAfterSeconds),
+				)
+				problem.Write(w, r, prob)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

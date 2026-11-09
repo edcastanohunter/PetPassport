@@ -15,6 +15,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
@@ -43,6 +44,7 @@ type OrgHandlers struct {
 	me          MeRenderer
 	directory   *app.DirectoryService
 	logger      *slog.Logger
+	pool        *pgxpool.Pool
 	ipHashSalt  string // ip_hash del audit log en acciones admin
 }
 

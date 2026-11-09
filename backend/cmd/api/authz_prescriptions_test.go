@@ -306,6 +306,25 @@ var prescriptionsMatrix = map[string][9]int{
 	// prescription:read (tutor de la mascota, miembros vinculados o super_admin) (PP-F4-API-003)
 	"getPrescriptionExtraction": {ok, ok, ok, ok, 403, 403, 403, 403, ok},
 	"getPrescriptionImage":      {ok, ok, ok, ok, 403, 403, 403, 403, ok},
+
+	// regulatory:admin (solo super_admin) (PP-F4-API-009)
+	"adminGetRegulatoryRules":    {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminUpdateRegulatoryRules": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+
+	// partner:admin (solo super_admin) (PP-F4-API-009)
+	"adminListPartners":      {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminSuspendPartner":    {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminReactivatePartner": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+
+	// ai:admin (solo super_admin) (PP-F4-API-009)
+	"adminGetAIBudget":    {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminUpdateAIBudget": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminGetAIUsage":     {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminGetOCRMonitor":  {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminGetOCRSamples":  {403, 403, 403, 403, 403, 403, 403, 403, ok},
+
+	// prescription:revoke administrativa
+	"adminRevokePrescription": {403, ok, ok, 403, 403, 403, 403, 403, ok},
 }
 
 func init() {

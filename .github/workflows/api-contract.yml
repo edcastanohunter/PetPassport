@@ -2,7 +2,7 @@ name: api-contract
 
 on:
   pull_request:
-    paths: ["backend/api/openapi.yaml", "backend/api/.spectral.yaml"]
+    paths: ["backend/api/openapi.yaml", "backend/api/partner-v1.yaml", "backend/api/.spectral.yaml"]
 
 permissions:
   contents: read
@@ -15,8 +15,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 26.13.0
-      - name: spectral
+      - name: spectral openapi
         run: npx --yes @stoplight/spectral-cli lint backend/api/openapi.yaml --ruleset backend/api/.spectral.yaml --fail-severity=warn
+      - name: spectral partner-v1
+        run: npx --yes @stoplight/spectral-cli lint backend/api/partner-v1.yaml --ruleset backend/api/.spectral.yaml --fail-severity=warn
 
   breaking-changes:
     # Bloquea cambios incompatibles en /v1 (ADR-005).
@@ -36,4 +38,9 @@ jobs:
             go run github.com/oasdiff/oasdiff@latest breaking --fail-on ERR /tmp/base-openapi.yaml backend/api/openapi.yaml
           else
             echo "No hay backend/api/openapi.yaml en origin/$BASE_REF: primera versión del contrato, se omite."
+          fi
+          if git show "origin/$BASE_REF:backend/api/partner-v1.yaml" > /tmp/base-partner.yaml 2>/dev/null; then
+            go run github.com/oasdiff/oasdiff@latest breaking --fail-on ERR /tmp/base-partner.yaml backend/api/partner-v1.yaml
+          else
+            echo "No hay backend/api/partner-v1.yaml en origin/$BASE_REF: primera versión del contrato, se omite."
           fi

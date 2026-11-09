@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	"github.com/edcastanohunter/petpassport/backend/api/genpartner"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/problem"
 )
 
@@ -56,6 +57,30 @@ func mountGenerated(api chi.Router, handlers gen.StrictServerInterface, perOpera
 		Middlewares: mws,
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, _ error) {
 			problem.Write(w, r, problem.New(problem.ValidationFailed, "Solicitud inválida", "Parámetros inválidos."))
+		},
+	})
+}
+
+// mountPartnerGenerated registra las rutas generadas de Partner API bajo /partner/v1 (ARQ-005, PTN-001).
+func mountPartnerGenerated(ptn chi.Router, handlers genpartner.StrictServerInterface, perOperation []func(http.Handler) http.Handler) {
+	strict := genpartner.NewStrictHandlerWithOptions(handlers, nil, genpartner.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, _ error) {
+			p := problem.New(problem.ValidationFailed, "Solicitud inválida", "La solicitud no cumple el contrato de Partner API.")
+			problem.Write(w, r, p)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			problem.Write(w, r, problem.From(err))
+		},
+	})
+	mws := make([]genpartner.MiddlewareFunc, 0, len(perOperation))
+	for i := len(perOperation) - 1; i >= 0; i-- {
+		mws = append(mws, perOperation[i])
+	}
+	genpartner.HandlerWithOptions(strict, genpartner.ChiServerOptions{
+		BaseRouter:  ptn,
+		Middlewares: mws,
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, _ error) {
+			problem.Write(w, r, problem.New(problem.ValidationFailed, "Solicitud inválida", "Parámetros inválidos en Partner API."))
 		},
 	})
 }

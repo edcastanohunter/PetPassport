@@ -20,6 +20,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	"github.com/edcastanohunter/petpassport/backend/api/genpartner"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/problem"
 )
 
@@ -45,6 +46,12 @@ type Options struct {
 	// Maintenance responde 503 en /api/v1 durante el modo mantenimiento
 	// (maintenance.Gate.Middleware, PP-F2-ARQ-006). nil = sin modo mantenimiento.
 	Maintenance func(http.Handler) http.Handler
+	// PartnerHandlers implementa el contrato de Partner API (/partner/v1) (PP-F4-PTN-001).
+	PartnerHandlers genpartner.StrictServerInterface
+	// PartnerGuard valida autenticación client_credentials de partners (PP-F4-PTN-002, SEC-002).
+	PartnerGuard func(http.Handler) http.Handler
+	// PartnerRateLimit aplica los límites de tasa normativos de partners (PP-F4-PTN-006).
+	PartnerRateLimit func(http.Handler) http.Handler
 }
 
 // Servers agrupa el servidor público y el interno.
@@ -119,6 +126,25 @@ func New(publicAddr, internalAddr string, o Options) *Servers {
 			o.Mount(api)
 		}
 	})
+
+	if o.PartnerHandlers != nil {
+		r.Route("/partner/v1", func(ptn chi.Router) {
+			if o.Maintenance != nil {
+				ptn.Use(o.Maintenance)
+			}
+			ptn.Use(middleware.RequestSize(MaxJSONBody))
+			perOp := []func(http.Handler) http.Handler{captureBody}
+			if o.PartnerGuard != nil {
+				perOp = append(perOp, o.PartnerGuard)
+			} else {
+				perOp = append(perOp, unavailableUnlessPublic)
+			}
+			if o.PartnerRateLimit != nil {
+				perOp = append(perOp, o.PartnerRateLimit)
+			}
+			mountPartnerGenerated(ptn, o.PartnerHandlers, perOp)
+		})
+	}
 
 	r.Post("/client-events", clientEventsHandler(rum))
 
