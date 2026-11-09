@@ -2875,7 +2875,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Obtener opciones para cotizar receta */
+        /**
+         * Obtener opciones para cotizar receta
+         * @description Retorna las opciones de cotización disponibles, modalidades de entrega y farmacias elegibles para una receta médica.
+         */
         get: operations["getPrescriptionQuoteOptions"];
         put?: never;
         post?: never;
@@ -2892,10 +2895,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar solicitudes de cotización del tutor */
+        /**
+         * Listar solicitudes de cotización del tutor
+         * @description Consulta las solicitudes de cotización activas o pasadas del tutor autenticado con filtros por estado.
+         */
         get: operations["listQuoteRequests"];
         put?: never;
-        /** Crear solicitud de cotización para una receta */
+        /**
+         * Crear solicitud de cotización para una receta
+         * @description Inicia una saga de cotización multi-farmacia para una receta seleccionada por el tutor.
+         */
         post: operations["createQuoteRequest"];
         delete?: never;
         options?: never;
@@ -2912,7 +2921,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Detalle de solicitud de cotización */
+        /**
+         * Detalle de solicitud de cotización
+         * @description Obtiene la información completa de una solicitud de cotización y todas las ofertas recibidas.
+         */
         get: operations["getQuoteRequest"];
         put?: never;
         post?: never;
@@ -2933,7 +2945,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Seleccionar cotización y generar pedido */
+        /**
+         * Seleccionar cotización y generar pedido
+         * @description Acepta una oferta de cotización seleccionada por el tutor, confirmando decisiones de sustitución y generando el pedido.
+         */
         post: operations["selectQuote"];
         delete?: never;
         options?: never;
@@ -2952,7 +2967,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancelar solicitud de cotización */
+        /**
+         * Cancelar solicitud de cotización
+         * @description Cancela una solicitud de cotización abierta antes de que expire o se seleccione una oferta.
+         */
         post: operations["cancelQuoteRequest"];
         delete?: never;
         options?: never;
@@ -2969,7 +2987,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Stream SSE de eventos de la solicitud de cotización */
+        /**
+         * Stream SSE de eventos de la solicitud de cotización
+         * @description Abre un canal Server-Sent Events (SSE) para recibir actualizaciones de ofertas en tiempo real.
+         */
         get: operations["streamQuoteRequestEvents"];
         put?: never;
         post?: never;
@@ -2986,7 +3007,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar pedidos del tutor */
+        /**
+         * Listar pedidos del tutor
+         * @description Retorna la lista de pedidos de medicamentos realizados por el tutor autenticado.
+         */
         get: operations["listOrders"];
         put?: never;
         post?: never;
@@ -3005,7 +3029,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Detalle de pedido para tutor */
+        /**
+         * Detalle de pedido para tutor
+         * @description Consulta el detalle completo, timeline y trazabilidad de un pedido del tutor.
+         */
         get: operations["getOrder"];
         put?: never;
         post?: never;
@@ -3026,7 +3053,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancelar pedido por el tutor */
+        /**
+         * Cancelar pedido por el tutor
+         * @description Permite al tutor cancelar un pedido antes de que la farmacia inicie su preparación.
+         */
         post: operations["cancelOrder"];
         delete?: never;
         options?: never;
@@ -3043,7 +3073,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Stream SSE de eventos del pedido */
+        /**
+         * Stream SSE de eventos del pedido
+         * @description Canal Server-Sent Events (SSE) para recibir transiciones y actualizaciones de estado del pedido en tiempo real.
+         */
         get: operations["streamOrderEvents"];
         put?: never;
         post?: never;
@@ -3062,7 +3095,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Bandeja de cotizaciones de la farmacia */
+        /**
+         * Bandeja de cotizaciones de la farmacia
+         * @description Consulta las solicitudes de cotización recibidas por la farmacia organizadas por pestañas de estado.
+         */
         get: operations["getPharmacyInbox"];
         put?: never;
         post?: never;
@@ -3084,7 +3120,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Enviar cotización para una solicitud */
+        /**
+         * Enviar cotización para una solicitud
+         * @description Registra la oferta de precios, disponibilidad, costos de despacho y posibles propuestas de sustitución de la farmacia.
+         */
         post: operations["submitPharmacyQuote"];
         delete?: never;
         options?: never;
@@ -3104,7 +3143,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rechazar cotizar una solicitud */
+        /**
+         * Rechazar cotizar una solicitud
+         * @description Notifica que la farmacia declina cotizar la solicitud recibida indicando el motivo.
+         */
         post: operations["declinePharmacyQuoteRequest"];
         delete?: never;
         options?: never;
@@ -3124,7 +3166,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Validar receta externa por farmacéutico */
+        /**
+         * Validar receta externa por farmacéutico
+         * @description Registra la verificación profesional de una receta externa por parte del farmacéutico antes de dispensar.
+         */
         post: operations["validatePharmacyPrescription"];
         delete?: never;
         options?: never;
@@ -3141,7 +3186,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Listar pedidos de la farmacia */
+        /**
+         * Listar pedidos de la farmacia
+         * @description Consulta los pedidos adjudicados a la farmacia filtrados por estado operativo.
+         */
         get: operations["listPharmacyOrders"];
         put?: never;
         post?: never;
@@ -3161,7 +3209,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Detalle de pedido para la farmacia */
+        /**
+         * Detalle de pedido para la farmacia
+         * @description Obtiene la información completa del pedido para la farmacia, incluyendo datos de despacho y contacto una vez confirmado.
+         */
         get: operations["getPharmacyOrder"];
         put?: never;
         post?: never;
@@ -3183,7 +3234,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirmar aceptación del pedido por la farmacia */
+        /**
+         * Confirmar aceptación del pedido por la farmacia
+         * @description Confirma la recepción y aceptación de preparación de un pedido asignado a la farmacia.
+         */
         post: operations["confirmPharmacyOrder"];
         delete?: never;
         options?: never;
@@ -3203,7 +3257,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Rechazar pedido por la farmacia */
+        /**
+         * Rechazar pedido por la farmacia
+         * @description Notifica el rechazo de un pedido adjudicado indicando el motivo operativo o de inventario.
+         */
         post: operations["rejectPharmacyOrder"];
         delete?: never;
         options?: never;
@@ -3223,7 +3280,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marcar pedido en preparación */
+        /**
+         * Marcar pedido en preparación
+         * @description Actualiza el estado del pedido a preparación en el laboratorio o farmacia.
+         */
         post: operations["markPharmacyOrderPreparing"];
         delete?: never;
         options?: never;
@@ -3243,7 +3303,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marcar pedido listo para retiro o despacho */
+        /**
+         * Marcar pedido listo para retiro o despacho
+         * @description Notifica que el pedido está empacado y listo para retiro en farmacia o recogida por transportadora.
+         */
         post: operations["markPharmacyOrderReady"];
         delete?: never;
         options?: never;
@@ -3263,7 +3326,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marcar pedido en camino */
+        /**
+         * Marcar pedido en camino
+         * @description Registra la salida a reparto del pedido con información opcional de guía de despacho.
+         */
         post: operations["markPharmacyOrderOutForDelivery"];
         delete?: never;
         options?: never;
@@ -3283,7 +3349,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Entregar pedido y registrar dispensación */
+        /**
+         * Entregar pedido y registrar dispensación
+         * @description Completa la entrega del pedido registrando los lotes y fechas de vencimiento dispensados para trazabilidad regulatoria.
+         */
         post: operations["deliverPharmacyOrder"];
         delete?: never;
         options?: never;
@@ -3303,7 +3372,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancelar pedido por la farmacia */
+        /**
+         * Cancelar pedido por la farmacia
+         * @description Cancela operativamente un pedido por parte de la farmacia justificando la razón.
+         */
         post: operations["cancelPharmacyOrder"];
         delete?: never;
         options?: never;
@@ -3320,9 +3392,15 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Obtener configuración de integración de la farmacia */
+        /**
+         * Obtener configuración de integración de la farmacia
+         * @description Consulta el modo de integración técnica (portal o API directa), zonas de cobertura y capacidades operativas.
+         */
         get: operations["getPharmacyIntegration"];
-        /** Actualizar configuración de integración de la farmacia */
+        /**
+         * Actualizar configuración de integración de la farmacia
+         * @description Actualiza el modo de operación, cobertura de entrega y capacidades del partner farmacéutico.
+         */
         put: operations["updatePharmacyIntegration"];
         post?: never;
         delete?: never;
@@ -3340,7 +3418,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Listar mapeos de catálogo de la farmacia */
+        /**
+         * Listar mapeos de catálogo de la farmacia
+         * @description Consulta las equivalencias configuradas entre el catálogo central de PetPassport y el SKU interno de la farmacia.
+         */
         get: operations["listPharmacyProductMappings"];
         put?: never;
         post?: never;
@@ -3361,10 +3442,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Crear o actualizar mapeo de producto */
+        /**
+         * Crear o actualizar mapeo de producto
+         * @description Registra o actualiza el código SKU interno y factor de empaque para un producto del catálogo central.
+         */
         put: operations["upsertPharmacyProductMapping"];
         post?: never;
-        /** Eliminar mapeo de producto */
+        /**
+         * Eliminar mapeo de producto
+         * @description Elimina la equivalencia de catálogo configurada para un producto específico.
+         */
         delete: operations["deletePharmacyProductMapping"];
         options?: never;
         head?: never;

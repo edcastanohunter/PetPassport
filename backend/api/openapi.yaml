@@ -51,6 +51,10 @@ tags:
     description: Credenciales profesionales veterinarias (F4 M4.0)
   - name: prescriptions
     description: Recetas médicas veterinarias y verificación pública (F4 M4.0)
+  - name: pharmacy-orders
+    description: Solicitudes de cotización, pedidos de farmacia y ciclo de vida de pedidos para tutores (F4 M4.2)
+  - name: pharmacy-portal
+    description: Operaciones del portal farmacéutico, cotización, dispensación y configuración (F4 M4.2)
 security:
   - bearerAuth: []
 paths:
@@ -4817,6 +4821,7 @@ paths:
     get:
       operationId: getPrescriptionQuoteOptions
       summary: Obtener opciones para cotizar receta
+      description: Retorna las opciones de cotización disponibles, modalidades de entrega y farmacias elegibles para una receta médica.
       tags: [pharmacy-orders]
       x-pp-action: quote:read
       responses:
@@ -4832,6 +4837,7 @@ paths:
     post:
       operationId: createQuoteRequest
       summary: Crear solicitud de cotización para una receta
+      description: Inicia una saga de cotización multi-farmacia para una receta seleccionada por el tutor.
       tags: [pharmacy-orders]
       x-pp-action: quote:request
       requestBody:
@@ -4852,6 +4858,7 @@ paths:
     get:
       operationId: listQuoteRequests
       summary: Listar solicitudes de cotización del tutor
+      description: Consulta las solicitudes de cotización activas o pasadas del tutor autenticado con filtros por estado.
       tags: [pharmacy-orders]
       x-pp-action: quote:read
       parameters:
@@ -4880,6 +4887,7 @@ paths:
     get:
       operationId: getQuoteRequest
       summary: Detalle de solicitud de cotización
+      description: Obtiene la información completa de una solicitud de cotización y todas las ofertas recibidas.
       tags: [pharmacy-orders]
       x-pp-action: quote:read
       responses:
@@ -4897,6 +4905,7 @@ paths:
     post:
       operationId: selectQuote
       summary: Seleccionar cotización y generar pedido
+      description: Acepta una oferta de cotización seleccionada por el tutor, confirmando decisiones de sustitución y generando el pedido.
       tags: [pharmacy-orders]
       x-pp-action: quote:request
       requestBody:
@@ -4920,6 +4929,7 @@ paths:
     post:
       operationId: cancelQuoteRequest
       summary: Cancelar solicitud de cotización
+      description: Cancela una solicitud de cotización abierta antes de que expire o se seleccione una oferta.
       tags: [pharmacy-orders]
       x-pp-action: quote:request
       requestBody:
@@ -4943,6 +4953,7 @@ paths:
     get:
       operationId: streamQuoteRequestEvents
       summary: Stream SSE de eventos de la solicitud de cotización
+      description: Abre un canal Server-Sent Events (SSE) para recibir actualizaciones de ofertas en tiempo real.
       tags: [pharmacy-orders]
       x-pp-action: quote:read
       responses:
@@ -4958,6 +4969,7 @@ paths:
     get:
       operationId: listOrders
       summary: Listar pedidos del tutor
+      description: Retorna la lista de pedidos de medicamentos realizados por el tutor autenticado.
       tags: [pharmacy-orders]
       x-pp-action: order:read
       parameters:
@@ -4986,6 +4998,7 @@ paths:
     get:
       operationId: getOrder
       summary: Detalle de pedido para tutor
+      description: Consulta el detalle completo, timeline y trazabilidad de un pedido del tutor.
       tags: [pharmacy-orders]
       x-pp-action: order:read
       responses:
@@ -5003,6 +5016,7 @@ paths:
     post:
       operationId: cancelOrder
       summary: Cancelar pedido por el tutor
+      description: Permite al tutor cancelar un pedido antes de que la farmacia inicie su preparación.
       tags: [pharmacy-orders]
       x-pp-action: order:cancel
       requestBody:
@@ -5026,6 +5040,7 @@ paths:
     get:
       operationId: streamOrderEvents
       summary: Stream SSE de eventos del pedido
+      description: Canal Server-Sent Events (SSE) para recibir transiciones y actualizaciones de estado del pedido en tiempo real.
       tags: [pharmacy-orders]
       x-pp-action: order:read
       responses:
@@ -5043,6 +5058,7 @@ paths:
     get:
       operationId: getPharmacyInbox
       summary: Bandeja de cotizaciones de la farmacia
+      description: Consulta las solicitudes de cotización recibidas por la farmacia organizadas por pestañas de estado.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       parameters:
@@ -5073,6 +5089,7 @@ paths:
     post:
       operationId: submitPharmacyQuote
       summary: Enviar cotización para una solicitud
+      description: Registra la oferta de precios, disponibilidad, costos de despacho y posibles propuestas de sustitución de la farmacia.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:quote
       requestBody:
@@ -5097,6 +5114,7 @@ paths:
     post:
       operationId: declinePharmacyQuoteRequest
       summary: Rechazar cotizar una solicitud
+      description: Notifica que la farmacia declina cotizar la solicitud recibida indicando el motivo.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:quote
       requestBody:
@@ -5121,6 +5139,7 @@ paths:
     post:
       operationId: validatePharmacyPrescription
       summary: Validar receta externa por farmacéutico
+      description: Registra la verificación profesional de una receta externa por parte del farmacéutico antes de dispensar.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:validate
       requestBody:
@@ -5144,6 +5163,7 @@ paths:
     get:
       operationId: listPharmacyOrders
       summary: Listar pedidos de la farmacia
+      description: Consulta los pedidos adjudicados a la farmacia filtrados por estado operativo.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       parameters:
@@ -5173,6 +5193,7 @@ paths:
     get:
       operationId: getPharmacyOrder
       summary: Detalle de pedido para la farmacia
+      description: Obtiene la información completa del pedido para la farmacia, incluyendo datos de despacho y contacto una vez confirmado.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       responses:
@@ -5191,6 +5212,7 @@ paths:
     post:
       operationId: confirmPharmacyOrder
       summary: Confirmar aceptación del pedido por la farmacia
+      description: Confirma la recepción y aceptación de preparación de un pedido asignado a la farmacia.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       requestBody:
@@ -5215,6 +5237,7 @@ paths:
     post:
       operationId: rejectPharmacyOrder
       summary: Rechazar pedido por la farmacia
+      description: Notifica el rechazo de un pedido adjudicado indicando el motivo operativo o de inventario.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       requestBody:
@@ -5239,6 +5262,7 @@ paths:
     post:
       operationId: markPharmacyOrderPreparing
       summary: Marcar pedido en preparación
+      description: Actualiza el estado del pedido a preparación en el laboratorio o farmacia.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       responses:
@@ -5257,6 +5281,7 @@ paths:
     post:
       operationId: markPharmacyOrderReady
       summary: Marcar pedido listo para retiro o despacho
+      description: Notifica que el pedido está empacado y listo para retiro en farmacia o recogida por transportadora.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       responses:
@@ -5275,6 +5300,7 @@ paths:
     post:
       operationId: markPharmacyOrderOutForDelivery
       summary: Marcar pedido en camino
+      description: Registra la salida a reparto del pedido con información opcional de guía de despacho.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       requestBody:
@@ -5299,6 +5325,7 @@ paths:
     post:
       operationId: deliverPharmacyOrder
       summary: Entregar pedido y registrar dispensación
+      description: Completa la entrega del pedido registrando los lotes y fechas de vencimiento dispensados para trazabilidad regulatoria.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       requestBody:
@@ -5323,6 +5350,7 @@ paths:
     post:
       operationId: cancelPharmacyOrder
       summary: Cancelar pedido por la farmacia
+      description: Cancela operativamente un pedido por parte de la farmacia justificando la razón.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:orders
       requestBody:
@@ -5346,6 +5374,7 @@ paths:
     get:
       operationId: getPharmacyIntegration
       summary: Obtener configuración de integración de la farmacia
+      description: Consulta el modo de integración técnica (portal o API directa), zonas de cobertura y capacidades operativas.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:admin
       responses:
@@ -5360,6 +5389,7 @@ paths:
     put:
       operationId: updatePharmacyIntegration
       summary: Actualizar configuración de integración de la farmacia
+      description: Actualiza el modo de operación, cobertura de entrega y capacidades del partner farmacéutico.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:admin
       requestBody:
@@ -5383,6 +5413,7 @@ paths:
     get:
       operationId: listPharmacyProductMappings
       summary: Listar mapeos de catálogo de la farmacia
+      description: Consulta las equivalencias configuradas entre el catálogo central de PetPassport y el SKU interno de la farmacia.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:admin
       parameters:
@@ -5408,6 +5439,7 @@ paths:
     put:
       operationId: upsertPharmacyProductMapping
       summary: Crear o actualizar mapeo de producto
+      description: Registra o actualiza el código SKU interno y factor de empaque para un producto del catálogo central.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:admin
       requestBody:
@@ -5428,6 +5460,7 @@ paths:
     delete:
       operationId: deletePharmacyProductMapping
       summary: Eliminar mapeo de producto
+      description: Elimina la equivalencia de catálogo configurada para un producto específico.
       tags: [pharmacy-portal]
       x-pp-action: pharmacy:admin
       responses:
