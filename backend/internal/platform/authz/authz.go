@@ -70,6 +70,9 @@ const (
 	AdminUserReactivate Action = "admin:user:reactivate"
 	AdminAuditRead      Action = "admin:audit:read"
 	AdminCatalogWrite   Action = "admin:catalog:write"
+	PartnerAdmin        Action = "partner:admin"
+	RegulatoryAdmin     Action = "regulatory:admin"
+	AIAdmin             Action = "ai:admin"
 )
 
 // Acciones de Clinical Records F2 (SEC-001, docs/phase-2/08 §2).
@@ -710,6 +713,10 @@ var policies = map[Action]Policy{
 	SearchPatients: orgPatientsList,
 	SearchClinical: orgPatientsList,
 	AdminSearch:    superAdminOnly,
+
+	PartnerAdmin:    superAdminOnly,
+	RegulatoryAdmin: superAdminOnly,
+	AIAdmin:         superAdminOnly,
 }
 
 // Can evalúa la política de la acción. Acciones sin política → deny.

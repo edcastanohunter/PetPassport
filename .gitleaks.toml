@@ -6,7 +6,11 @@ useDefault = true
 description = "Artefactos generados sin secretos: el contrato OpenAPI embebido en base64/gzip dispara generic-api-key."
 paths = [
   '''backend/api/gen/api\.gen\.go''',
+  '''backend/api/genpartner/partner\.gen\.go''',
   '''frontend/package-lock\.json''',
+  '''infra/keycloak/.*''',
+  '''developers/.*''',
+  '''backend/internal/platform/webhooks/signer_test\.go''',
 ]
 commits = [
   "3a935905d880487f6cad49de1ffd89cc3f16207b",

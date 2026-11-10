@@ -2,7 +2,7 @@ name: docs
 
 on:
   pull_request:
-    paths: ["docs/**", "scripts/**", ".github/workflows/docs.yml"]
+    paths: ["docs/**", "developers/**", "scripts/**", ".github/workflows/docs.yml"]
 
 permissions:
   contents: read
@@ -27,3 +27,17 @@ jobs:
         with:
           args: --offline --no-progress "docs/**/*.md"
           fail: false
+
+  developers-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate developer docs and artifacts
+        run: |
+          test -f developers/index.html
+          test -f developers/partner-v1.yaml
+          test -f developers/auth.md
+          test -f developers/webhooks.md
+          test -f developers/signature-vectors.md
+          test -f developers/go-live-checklist.md
+          test -f developers/changelog.md

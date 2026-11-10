@@ -1,0 +1,1198 @@
+openapi: 3.1.0
+info:
+  title: PetPassport Partner API
+  version: 1.0.0
+  description: |
+    API pública para partners farmacéuticos y de distribución (PP-F4-PTN-001, ADR-017, ADR-021).
+    Permite a farmacias nivel 2 recibir cotizaciones, enviar ofertas de precios, consultar pedidos adjudicados,
+    gestionar estados de entrega y configurar webhooks salientes.
+  contact:
+    name: Soporte API PetPassport
+    email: api-partners@petpassport.app
+    url: https://developers.petpassport.app
+servers:
+  - url: https://partners.petpassport.local/partner/v1
+    description: Entorno local / desarrollo
+  - url: https://partners-sandbox.petpassport.app/partner/v1
+    description: Entorno Sandbox de integración y homologación (ARQ-008, PTN-005)
+  - url: https://partners.petpassport.app/partner/v1
+    description: Entorno de producción (borde Traefik dedicado)
+
+tags:
+  - name: quotes
+    description: Gestión de solicitudes de cotización y ofertas (PP-F4-PTN-001)
+  - name: orders
+    description: Pedidos adjudicados, seguimiento de despacho y dispensación (PP-F4-PTN-001)
+  - name: catalog
+    description: Catálogo farmacéutico y mapeos de códigos SKU internos (PP-F4-PTN-001)
+  - name: prescriptions
+    description: Verificación y consulta autenticada de recetas médicas veterinarias
+  - name: profile
+    description: Información y estado del partner comercial autenticado
+  - name: webhooks
+    description: Configuración y prueba de endpoints de webhooks salientes (ADR-021)
+
+security:
+  - oauth2ClientCredentials:
+      - partner-api
+
+paths:
+  /quote-requests:
+    get:
+      operationId: partnerListQuoteRequests
+      summary: Listar solicitudes de cotización donde el partner está invitado
+      description: Retorna el listado paginado de solicitudes de cotización donde el partner ha sido invitado a cotizar medicamentos.
+      tags: [quotes]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, quoted, declined, expired]
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Lista de solicitudes disponibles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /quote-requests/{id}:
+    get:
+      operationId: partnerGetQuoteRequest
+      summary: Detalle de una solicitud de cotización (minimización etapa 1)
+      description: Obtiene el detalle de una solicitud de cotización aplicando minimización de datos en etapa de cotización (sin PII de tutor ni paciente).
+      tags: [quotes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detalle de la solicitud
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerQuoteRequestDetail"
+        "404":
+          $ref: "#/components/responses/NotFoundProblem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /quote-requests/{id}/quotes:
+    post:
+      operationId: partnerSubmitQuote
+      summary: Enviar oferta de cotización para una solicitud
+      description: Envía una oferta formal de precio, disponibilidad y tiempos de entrega para una solicitud de cotización antes de su expiración.
+      tags: [quotes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerSubmitQuotePayload"
+      responses:
+        "201":
+          description: Cotización enviada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerQuoteCreatedResponse"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /quote-requests/{id}/decline:
+    post:
+      operationId: partnerDeclineQuoteRequest
+      summary: Declinar una solicitud de cotización
+      description: Registra el rechazo explícito por parte del partner para participar en una solicitud de cotización con motivo opcional.
+      tags: [quotes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerDeclinePayload"
+      responses:
+        "200":
+          description: Solicitud declinada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerActionSuccessResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /orders:
+    get:
+      operationId: partnerListOrders
+      summary: Listar pedidos adjudicados al partner
+      description: Retorna la lista paginada de pedidos adjudicados al partner, con filtro opcional por estado operativo.
+      tags: [orders]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [confirmed, rejected, preparing, ready, out_for_delivery, delivered, cancelled]
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerOrderListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /orders/{id}:
+    get:
+      operationId: partnerGetOrder
+      summary: Detalle de pedido con datos del tutor y receta (minimización etapa 2)
+      description: Obtiene el detalle completo del pedido adjudicado, incluyendo datos de entrega del tutor e identificador de receta (desbloqueo de datos etapa 2).
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detalle del pedido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerOrderDetail"
+        "404":
+          $ref: "#/components/responses/NotFoundProblem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /orders/{id}/status:
+    post:
+      operationId: partnerUpdateOrderStatus
+      summary: Actualizar estado operativo del pedido y dispensación
+      description: Actualiza el estado del pedido a lo largo del ciclo de vida (preparing, ready, out_for_delivery, delivered, cancelled) con información de tracking o dispensación.
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerUpdateOrderStatusPayload"
+      responses:
+        "200":
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerOrderDetail"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /catalog/medications:
+    get:
+      operationId: partnerListMedicationsCatalog
+      summary: Consultar catálogo de medicamentos de PetPassport para homologación
+      description: Consulta el catálogo maestro de medicamentos veterinarios y humanos autorizados para facilitar la homologación de productos.
+      tags: [catalog]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        "200":
+          description: Catálogo de medicamentos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerCatalogMedicationListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /catalog/medications/{catalog_id}:
+    get:
+      operationId: partnerGetCatalogMedication
+      summary: Detalle de un medicamento del catálogo
+      description: Obtiene el detalle de un producto o medicamento del catálogo maestro por su identificador único.
+      tags: [catalog]
+      parameters:
+        - name: catalog_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Medicamento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerCatalogMedicationItem"
+        "404":
+          $ref: "#/components/responses/NotFoundProblem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /product-mappings:
+    get:
+      operationId: partnerListProductMappings
+      summary: Listar mapeos internos SKU <-> CatalogId de la farmacia
+      description: Retorna la lista paginada de homologaciones entre códigos SKU internos del partner y medicamentos del catálogo PetPassport.
+      tags: [catalog]
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Mapeos registrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerProductMappingListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /product-mappings/{catalog_id}:
+    put:
+      operationId: partnerUpsertProductMapping
+      summary: Crear o actualizar mapeo para un producto
+      description: Registra o actualiza la relación de equivalencia entre un medicamento del catálogo y el código SKU/código de barras interno del partner.
+      tags: [catalog]
+      parameters:
+        - name: catalog_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerUpsertMappingPayload"
+      responses:
+        "200":
+          description: Mapeo guardado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerProductMappingItem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: partnerDeleteProductMapping
+      summary: Eliminar mapeo de producto
+      description: Elimina una homologación de producto previamente registrada para el medicamento especificado.
+      tags: [catalog]
+      parameters:
+        - name: catalog_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Mapeo eliminado exitosamente
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /product-mappings/bulk:
+    post:
+      operationId: partnerBulkProductMappings
+      summary: Actualización masiva de mapeos de producto
+      description: Procesa una lista de homologaciones de SKU en lote de manera atómica o por ítem.
+      tags: [catalog]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerBulkMappingsPayload"
+      responses:
+        "200":
+          description: Resultado de la importación masiva
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerBulkMappingsResult"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /prescriptions/{id}/verify:
+    get:
+      operationId: partnerVerifyPrescription
+      summary: Verificación autenticada de validez de receta médica
+      description: Permite al partner validar la firma criptográfica y vigencia de una receta médica asociada a un pedido.
+      tags: [prescriptions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: h
+          in: query
+          required: false
+          description: Hash de verificación RFC 8785
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultado de verificación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerPrescriptionVerificationResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /me:
+    get:
+      operationId: partnerGetMe
+      summary: Consultar perfil y configuración del partner autenticado
+      description: Obtiene los datos del partner autenticado, cuotas de API asignadas y configuración actual.
+      tags: [profile]
+      responses:
+        "200":
+          description: Perfil del partner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerProfileResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /me/webhook:
+    put:
+      operationId: partnerConfigureWebhook
+      summary: Configurar endpoint de webhook y eventos suscritos
+      description: Registra o actualiza la URL receptora de webhooks, secreto de firma HMAC-SHA256 y eventos a los que se suscribe el partner.
+      tags: [webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerConfigureWebhookPayload"
+      responses:
+        "200":
+          description: Webhook configurado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerConfigureWebhookResponse"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /webhook/test:
+    post:
+      operationId: partnerTestWebhook
+      summary: Enviar evento ping de prueba al webhook configurado
+      description: Envía de inmediato un evento sintético de prueba 'ping' a la URL configurada para validar conectividad y verificación de firma.
+      tags: [webhooks]
+      responses:
+        "200":
+          description: Resultado del test
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerTestWebhookResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      description: Flujo OAuth2 client_credentials en Keycloak (aud petpassport-partner-api, scope partner-api).
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.petpassport.local/realms/petpassport/protocol/openid-connect/token
+          scopes:
+            partner-api: Acceso integral a la Partner API v1
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Identificador único de idempotencia para mutaciones POST (UUIDv4/v7)
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+
+  responses:
+    Problem:
+      description: Error estándar RFC 9457 application/problem+json
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFoundProblem:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+  schemas:
+    ProblemDetails:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        instance:
+          type: string
+
+    QuoteRequestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerQuoteRequestSummary"
+        cursor:
+          type: string
+
+    PartnerQuoteRequestSummary:
+      type: object
+      required: [id, status, mode, items_count, expires_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, quoted, declined, expired]
+        mode:
+          type: string
+          enum: [pickup, delivery]
+        area:
+          type: string
+        items_count:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    PartnerQuoteRequestDetail:
+      type: object
+      required: [id, status, mode, items, expires_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, quoted, declined, expired]
+        mode:
+          type: string
+          enum: [pickup, delivery]
+        area:
+          type: string
+        pet:
+          type: object
+          properties:
+            species:
+              type: string
+            weight_kg:
+              type: number
+            age_months:
+              type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerQuoteItem"
+        prescription:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [issued, external]
+            verification_url:
+              type: string
+            is_verified:
+              type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        my_quote:
+          $ref: "#/components/schemas/PartnerSubmittedQuoteSummary"
+
+    PartnerQuoteItem:
+      type: object
+      required: [item_id, name, quantity, substitution_allowed]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        catalog_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        dose:
+          type: object
+          properties:
+            value:
+              type: number
+            unit:
+              type: string
+        route:
+          type: string
+        frequency:
+          type: string
+        quantity:
+          type: object
+          properties:
+            value:
+              type: number
+            unit:
+              type: string
+        substitution_allowed:
+          type: boolean
+        instructions:
+          type: string
+        my_sku:
+          type: string
+        my_base_price:
+          type: number
+
+    PartnerSubmitQuotePayload:
+      type: object
+      required: [lines, valid_until]
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerQuoteLinePayload"
+        delivery_fee:
+          type: number
+          default: 0
+        eta:
+          type: string
+        pickup_address_ref:
+          type: string
+        valid_until:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    PartnerQuoteLinePayload:
+      type: object
+      required: [item_id, unit_price, qty, available]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        unit_price:
+          type: number
+        qty:
+          type: number
+        available:
+          type: string
+          enum: [full, partial, none]
+        substitution:
+          type: object
+          properties:
+            catalog_id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            unit_price:
+              type: number
+            reason:
+              type: string
+
+    PartnerQuoteCreatedResponse:
+      type: object
+      required: [quote_id, status]
+      properties:
+        quote_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: submitted
+
+    PartnerSubmittedQuoteSummary:
+      type: object
+      properties:
+        quote_id:
+          type: string
+          format: uuid
+        subtotal:
+          type: number
+        delivery_fee:
+          type: number
+        total:
+          type: number
+        valid_until:
+          type: string
+          format: date-time
+        submitted_at:
+          type: string
+          format: date-time
+
+    PartnerDeclinePayload:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          example: out_of_stock
+
+    PartnerActionSuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    PartnerOrderListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerOrderSummary"
+        cursor:
+          type: string
+
+    PartnerOrderSummary:
+      type: object
+      required: [id, quote_request_id, status, mode, total, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [confirmed, rejected, preparing, ready, out_for_delivery, delivered, cancelled]
+        mode:
+          type: string
+          enum: [pickup, delivery]
+        total:
+          type: number
+        partner_ref:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    PartnerOrderDetail:
+      type: object
+      required: [id, quote_request_id, status, mode, guardian, lines, total, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_request_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [confirmed, rejected, preparing, ready, out_for_delivery, delivered, cancelled]
+        mode:
+          type: string
+          enum: [pickup, delivery]
+        guardian:
+          type: object
+          required: [name, phone]
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
+            delivery_address:
+              type: string
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              unit_price:
+                type: number
+              qty:
+                type: number
+              substitution:
+                type: boolean
+        subtotal:
+          type: number
+        delivery_fee:
+          type: number
+        total:
+          type: number
+        currency:
+          type: string
+          default: COP
+        prescription:
+          type: object
+          properties:
+            prescription_id:
+              type: string
+              format: uuid
+            type:
+              type: string
+              enum: [issued, external]
+            document_url:
+              type: string
+        partner_ref:
+          type: string
+        eta:
+          type: string
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PartnerUpdateOrderStatusPayload:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [confirmed, rejected, preparing, ready, out_for_delivery, delivered, cancelled]
+        partner_ref:
+          type: string
+        eta:
+          type: string
+        reason:
+          type: string
+        dispensation:
+          type: object
+          properties:
+            lines:
+              type: array
+              items:
+                type: object
+                required: [item_id, qty]
+                properties:
+                  item_id:
+                    type: string
+                    format: uuid
+                  qty:
+                    type: number
+                  batch_number:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date
+
+    PartnerCatalogMedicationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerCatalogMedicationItem"
+        cursor:
+          type: string
+
+    PartnerCatalogMedicationItem:
+      type: object
+      required: [id, name, species, controlled]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        active_ingredient:
+          type: string
+        concentration:
+          type: string
+        pharmaceutical_form:
+          type: string
+        species:
+          type: array
+          items:
+            type: string
+        controlled:
+          type: boolean
+
+    PartnerProductMappingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartnerProductMappingItem"
+        cursor:
+          type: string
+
+    PartnerProductMappingItem:
+      type: object
+      required: [catalog_id, sku, active]
+      properties:
+        catalog_id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        base_price:
+          type: number
+        active:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+
+    PartnerUpsertMappingPayload:
+      type: object
+      required: [sku]
+      properties:
+        sku:
+          type: string
+        name:
+          type: string
+        base_price:
+          type: number
+        active:
+          type: boolean
+          default: true
+
+    PartnerBulkMappingsPayload:
+      type: object
+      required: [mappings]
+      properties:
+        mappings:
+          type: array
+          items:
+            type: object
+            required: [catalog_id, sku]
+            properties:
+              catalog_id:
+                type: string
+                format: uuid
+              sku:
+                type: string
+              name:
+                type: string
+              base_price:
+                type: number
+              active:
+                type: boolean
+                default: true
+
+    PartnerBulkMappingsResult:
+      type: object
+      required: [processed, created, updated]
+      properties:
+        processed:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+
+    PartnerPrescriptionVerificationResponse:
+      type: object
+      required: [valid, status, items]
+      properties:
+        valid:
+          type: boolean
+        status:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+        issuer:
+          type: object
+          properties:
+            display_name:
+              type: string
+            credential:
+              type: object
+              properties:
+                country:
+                  type: string
+                registry_number:
+                  type: string
+        organization:
+          type: object
+          properties:
+            display_name:
+              type: string
+        pet:
+          type: object
+          properties:
+            name:
+              type: string
+            species:
+              type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              quantity:
+                type: object
+                properties:
+                  value:
+                    type: number
+                  unit:
+                    type: string
+              dose:
+                type: object
+                properties:
+                  value:
+                    type: number
+                  unit:
+                    type: string
+              controlled:
+                type: boolean
+        dispensations:
+          type: array
+          items:
+            type: object
+            properties:
+              at:
+                type: string
+                format: date-time
+              lines:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    item_id:
+                      type: string
+                      format: uuid
+                    qty:
+                      type: number
+
+    PartnerProfileResponse:
+      type: object
+      required: [organization_id, display_name, mode, capabilities, webhook, rate_limits]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        mode:
+          type: string
+          enum: [portal, api, adapter]
+        capabilities:
+          type: object
+          properties:
+            pickup:
+              type: boolean
+            delivery:
+              type: boolean
+            substitutions:
+              type: boolean
+        webhook:
+          type: object
+          properties:
+            configured:
+              type: boolean
+            url:
+              type: string
+            events:
+              type: array
+              items:
+                type: string
+        rate_limits:
+          type: object
+          properties:
+            read_per_minute:
+              type: integer
+            write_per_minute:
+              type: integer
+
+    PartnerConfigureWebhookPayload:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+          description: Secreto opcional (si se omite, el sistema genera uno nuevo)
+
+    PartnerConfigureWebhookResponse:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+          description: Secreto generado o actualizado (mostrado una única vez)
+
+    PartnerTestWebhookResponse:
+      type: object
+      required: [delivery_id, status]
+      properties:
+        delivery_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        status_code:
+          type: integer
+        error:
+          type: string

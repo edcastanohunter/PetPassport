@@ -7,16 +7,27 @@ import {
   type PharmacyIntegrationSettings,
   type PharmacyProductMappingItem,
 } from '@/shared/api/client'
+import type { components } from '@/shared/api/schema'
+
+type PharmacyApiCredentials = components['schemas']['PharmacyApiCredentialsResponse']
+type PharmacyRotatedCredentials = components['schemas']['PharmacyRotatedCredentialsResponse']
+type PharmacySandboxCredentials = components['schemas']['PharmacySandboxCredentialsResponse']
+type PharmacyWebhookConfig = components['schemas']['PharmacyWebhookConfigResponse']
+type PharmacyWebhookDeliveryItem = components['schemas']['PharmacyWebhookDeliveryItem']
+type PharmacyStats = components['schemas']['PharmacyStatsResponse']
 
 const route = useRoute()
 const orgId = route.params.orgId as string
+
+type ActiveTab = 'general' | 'catalog' | 'credentials' | 'webhooks' | 'stats'
+const activeTab = ref<ActiveTab>('general')
 
 const loading = ref(false)
 const savingSettings = ref(false)
 const error = ref<string | null>(null)
 const successMsg = ref<string | null>(null)
 
-// Configuración técnica
+// 1. Configuración de Integración General y Áreas
 const integration = ref<PharmacyIntegrationSettings>({
   level: 'portal',
   webhook_url: '',
@@ -24,7 +35,7 @@ const integration = ref<PharmacyIntegrationSettings>({
   delivery_areas: [{ city: 'Bogotá', postal_codes: ['110111', '110221'] }],
 })
 
-// Mapeos de catálogo
+// 2. Mapeos de catálogo
 const mappings = ref<PharmacyProductMappingItem[]>([])
 const loadingMappings = ref(false)
 const showMappingModal = ref(false)
@@ -38,6 +49,35 @@ const mappingForm = ref({
 })
 const savingMapping = ref(false)
 const mappingError = ref<string | null>(null)
+
+// 3. Credenciales API & Sandbox (FE-010, PTN-002, PTN-005)
+const credentials = ref<PharmacyApiCredentials | null>(null)
+const loadingCredentials = ref(false)
+const rotatingCredentials = ref(false)
+const rotatedSecretData = ref<PharmacyRotatedCredentials | null>(null)
+const generatingSandbox = ref(false)
+const sandboxData = ref<PharmacySandboxCredentials | null>(null)
+const copiedSecret = ref(false)
+const copiedSandbox = ref(false)
+
+// 4. Webhooks y Registro de Entregas (FE-010, PTN-004, SEC-003)
+const webhookConfig = ref<PharmacyWebhookConfig | null>(null)
+const webhookForm = ref({
+  url: '',
+  events: ['quote_request.created', 'order.placed', 'order.updated', 'order.cancelled'],
+  secret: '',
+})
+const loadingWebhook = ref(false)
+const savingWebhook = ref(false)
+const testingWebhook = ref(false)
+const testWebhookResult = ref<{ status: string; status_code?: number; error?: string } | null>(null)
+const deliveries = ref<PharmacyWebhookDeliveryItem[]>([])
+const loadingDeliveries = ref(false)
+const retryingDeliveryId = ref<string | null>(null)
+
+// 5. Métricas y SLA (FE-010, PRD-016, PTN-008)
+const stats = ref<PharmacyStats | null>(null)
+const loadingStats = ref(false)
 
 async function loadSettings() {
   loading.value = true
@@ -72,8 +112,181 @@ async function loadMappings() {
   }
 }
 
+async function loadCredentials() {
+  loadingCredentials.value = true
+  try {
+    const res = await api().GET('/pharmacies/{orgId}/api-credentials', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    credentials.value = res.data ?? null
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al cargar credenciales API'
+  } finally {
+    loadingCredentials.value = false
+  }
+}
+
+async function rotateCredentials() {
+  if (
+    !confirm(
+      '¿Rotar el secreto de API? La credencial anterior dejará de ser válida tras el período de gracia.',
+    )
+  )
+    return
+  rotatingCredentials.value = true
+  error.value = null
+  try {
+    const res = await api().POST('/pharmacies/{orgId}/api-credentials/rotate', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    rotatedSecretData.value = res.data ?? null
+    await loadCredentials()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al rotar credenciales API'
+  } finally {
+    rotatingCredentials.value = false
+  }
+}
+
+async function generateSandboxCredentials() {
+  generatingSandbox.value = true
+  error.value = null
+  try {
+    const res = await api().POST('/pharmacies/{orgId}/api-credentials/sandbox', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    sandboxData.value = res.data ?? null
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al generar credenciales sandbox'
+  } finally {
+    generatingSandbox.value = false
+  }
+}
+
+async function loadWebhookConfig() {
+  loadingWebhook.value = true
+  try {
+    const res = await api().GET('/pharmacies/{orgId}/webhook', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    webhookConfig.value = res.data ?? null
+    if (res.data) {
+      webhookForm.value.url = res.data.url ?? ''
+      webhookForm.value.events = res.data.events ?? [
+        'quote_request.created',
+        'order.placed',
+        'order.updated',
+        'order.cancelled',
+      ]
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al cargar configuración de webhook'
+  } finally {
+    loadingWebhook.value = false
+  }
+}
+
+async function saveWebhook() {
+  savingWebhook.value = true
+  error.value = null
+  successMsg.value = null
+  try {
+    const res = await api().PUT('/pharmacies/{orgId}/webhook', {
+      params: { path: { orgId } },
+      body: {
+        url: webhookForm.value.url,
+        events: webhookForm.value.events,
+        secret: webhookForm.value.secret ? webhookForm.value.secret : undefined,
+      },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    webhookConfig.value = res.data ?? null
+    successMsg.value = 'Configuración de webhook actualizada exitosamente.'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al guardar webhook'
+  } finally {
+    savingWebhook.value = false
+  }
+}
+
+async function testWebhook() {
+  testingWebhook.value = true
+  testWebhookResult.value = null
+  try {
+    const res = await api().POST('/pharmacies/{orgId}/webhook/test', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    testWebhookResult.value = res.data ?? null
+    await loadDeliveries()
+  } catch (e) {
+    testWebhookResult.value = {
+      status: 'failed',
+      error: e instanceof Error ? e.message : 'Error al enviar webhook de prueba',
+    }
+  } finally {
+    testingWebhook.value = false
+  }
+}
+
+async function loadDeliveries() {
+  loadingDeliveries.value = true
+  try {
+    const res = await api().GET('/pharmacies/{orgId}/webhook/deliveries', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    deliveries.value = res.data?.items ?? []
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al cargar historial de entregas'
+  } finally {
+    loadingDeliveries.value = false
+  }
+}
+
+async function retryDelivery(deliveryId: string) {
+  retryingDeliveryId.value = deliveryId
+  try {
+    const res = await api().POST('/pharmacies/{orgId}/webhook/deliveries/{deliveryId}/retry', {
+      params: { path: { orgId, deliveryId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    await loadDeliveries()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al reintentar entrega'
+  } finally {
+    retryingDeliveryId.value = null
+  }
+}
+
+async function loadStats() {
+  loadingStats.value = true
+  try {
+    const res = await api().GET('/pharmacies/{orgId}/stats', {
+      params: { path: { orgId } },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    stats.value = res.data ?? null
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al cargar métricas de farmacia'
+  } finally {
+    loadingStats.value = false
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([loadSettings(), loadMappings()])
+  await Promise.all([
+    loadSettings(),
+    loadMappings(),
+    loadCredentials(),
+    loadWebhookConfig(),
+    loadDeliveries(),
+    loadStats(),
+  ])
 })
 
 async function saveSettings() {
@@ -182,6 +395,21 @@ function removeDeliveryArea(idx: number) {
     integration.value.delivery_areas.splice(idx, 1)
   }
 }
+
+function copyToClipboard(text: string, isSandbox = false) {
+  navigator.clipboard.writeText(text)
+  if (isSandbox) {
+    copiedSandbox.value = true
+    setTimeout(() => {
+      copiedSandbox.value = false
+    }, 2500)
+  } else {
+    copiedSecret.value = true
+    setTimeout(() => {
+      copiedSecret.value = false
+    }, 2500)
+  }
+}
 </script>
 
 <template>
@@ -197,21 +425,92 @@ function removeDeliveryArea(idx: number) {
           Configuración Técnica de Farmacia
         </h1>
         <p class="mt-1 text-sm text-slate-500">
-          Modalidades de integración, áreas de despacho y catálogo de productos (FE-009).
+          Modalidades de integración, credenciales API, webhooks y métricas (FE-009, FE-010).
         </p>
       </div>
 
       <div class="flex items-center gap-2">
+        <a
+          href="/developers/index.html"
+          target="_blank"
+          class="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100"
+        >
+          📘 Portal Desarrolladores
+        </a>
         <router-link
           :to="`/pharmacy/${orgId}/orders`"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
         >
           Ver Pedidos
         </router-link>
       </div>
     </div>
 
-    <!-- Mensajes -->
+    <!-- Pestañas de Navegación -->
+    <div class="mb-6 flex space-x-2 border-b border-slate-200">
+      <button
+        type="button"
+        @click="activeTab = 'general'"
+        class="border-b-2 py-2 px-4 text-xs font-bold transition"
+        :class="
+          activeTab === 'general'
+            ? 'border-emerald-600 text-emerald-700'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+        "
+      >
+        Modalidad y Cobertura
+      </button>
+      <button
+        type="button"
+        @click="activeTab = 'catalog'"
+        class="border-b-2 py-2 px-4 text-xs font-bold transition"
+        :class="
+          activeTab === 'catalog'
+            ? 'border-emerald-600 text-emerald-700'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+        "
+      >
+        Mapeo de Productos
+      </button>
+      <button
+        type="button"
+        @click="activeTab = 'credentials'"
+        class="border-b-2 py-2 px-4 text-xs font-bold transition"
+        :class="
+          activeTab === 'credentials'
+            ? 'border-emerald-600 text-emerald-700'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+        "
+      >
+        Credenciales API & Sandbox
+      </button>
+      <button
+        type="button"
+        @click="activeTab = 'webhooks'"
+        class="border-b-2 py-2 px-4 text-xs font-bold transition"
+        :class="
+          activeTab === 'webhooks'
+            ? 'border-emerald-600 text-emerald-700'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+        "
+      >
+        Webhooks y Entregas
+      </button>
+      <button
+        type="button"
+        @click="activeTab = 'stats'"
+        class="border-b-2 py-2 px-4 text-xs font-bold transition"
+        :class="
+          activeTab === 'stats'
+            ? 'border-emerald-600 text-emerald-700'
+            : 'border-transparent text-slate-500 hover:text-slate-800'
+        "
+      >
+        Métricas y SLA
+      </button>
+    </div>
+
+    <!-- Mensajes Globales -->
     <div
       v-if="error"
       class="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
@@ -226,8 +525,8 @@ function removeDeliveryArea(idx: number) {
       {{ successMsg }}
     </div>
 
-    <!-- SECCIÓN 1: Modalidad de Integración -->
-    <div class="space-y-6">
+    <!-- TAB 1: Modalidad de Integración y Cobertura -->
+    <div v-show="activeTab === 'general'" class="space-y-6">
       <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-base font-bold text-slate-900">Nivel de Integración Técnica (ARQ-003)</h2>
         <p class="mt-1 text-xs text-slate-500">
@@ -281,23 +580,6 @@ function removeDeliveryArea(idx: number) {
           </label>
         </div>
 
-        <!-- Webhook URL si es nivel 2 -->
-        <div v-if="integration.level === 'direct_integration'" class="mt-6 border-t pt-4">
-          <label class="block text-xs font-semibold text-slate-700"
-            >Webhook URL (HTTPS obligatorio, anti-SSRF)</label
-          >
-          <input
-            type="url"
-            v-model="integration.webhook_url"
-            placeholder="https://api.tu-farmacia.com/v1/inbound-webhook"
-            class="mt-1 block w-full rounded-md border border-slate-300 p-2 text-xs font-mono focus:border-emerald-500 focus:outline-none"
-          />
-          <span class="text-[11px] text-slate-400">
-            Debe ser una URL pública HTTPS válida para recibir notificaciones automáticas de
-            pedidos.
-          </span>
-        </div>
-
         <!-- Áreas de Entrega -->
         <div class="mt-6 border-t pt-4">
           <div class="flex items-center justify-between">
@@ -342,7 +624,6 @@ function removeDeliveryArea(idx: number) {
           </div>
         </div>
 
-        <!-- Guardar Configuración -->
         <div class="mt-6 flex justify-end border-t pt-4">
           <button
             type="button"
@@ -354,8 +635,10 @@ function removeDeliveryArea(idx: number) {
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- SECCIÓN 2: Catálogo y Mapeo de Productos (PRD-021) -->
+    <!-- TAB 2: Catálogo y Mapeo de Productos -->
+    <div v-show="activeTab === 'catalog'" class="space-y-6">
       <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
@@ -374,7 +657,6 @@ function removeDeliveryArea(idx: number) {
           </button>
         </div>
 
-        <!-- Tabla de Mapeos -->
         <div class="mt-6 overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="border-b border-slate-200 bg-slate-50 text-slate-600">
@@ -429,6 +711,367 @@ function removeDeliveryArea(idx: number) {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Credenciales API y Sandbox (FE-010, PTN-002, PTN-005) -->
+    <div v-show="activeTab === 'credentials'" class="space-y-6">
+      <!-- Credenciales de Producción -->
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Credenciales OAuth2 (Producción)</h2>
+            <p class="mt-1 text-xs text-slate-500">
+              Autenticación machine-to-machine mediante Client Credentials con audiencia exclusiva
+              `petpassport-partner-api`.
+            </p>
+          </div>
+          <button
+            type="button"
+            :disabled="rotatingCredentials"
+            @click="rotateCredentials"
+            class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800 shadow-sm hover:bg-amber-100 disabled:opacity-50"
+          >
+            {{ rotatingCredentials ? 'Rotando Secreto...' : '🔄 Rotar Secreto API' }}
+          </button>
+        </div>
+
+        <!-- Banner de secreto rotado recién generado -->
+        <div
+          v-if="rotatedSecretData"
+          class="mt-4 rounded-lg border border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-900"
+        >
+          <div class="flex items-center justify-between">
+            <span class="font-bold">⚠️ ¡Atención! Nuevo client_secret generado</span>
+            <button
+              type="button"
+              @click="copyToClipboard(rotatedSecretData.client_secret)"
+              class="rounded bg-amber-200 px-2.5 py-1 text-[11px] font-bold text-amber-900 hover:bg-amber-300"
+            >
+              {{ copiedSecret ? '✓ Copiado' : 'Copiar Secreto' }}
+            </button>
+          </div>
+          <p class="mt-1 text-slate-600">
+            Copie y guarde este secreto en su gestor seguro inmediatamente. Por seguridad, no
+            volverá a ser mostrado.
+          </p>
+          <div
+            class="mt-2 font-mono text-[11px] bg-white p-2 rounded border border-amber-200 break-all"
+          >
+            {{ rotatedSecretData.client_secret }}
+          </div>
+        </div>
+
+        <div v-if="credentials" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <span class="text-slate-500 block font-medium">Client ID</span>
+            <span class="mt-1 font-mono font-semibold text-slate-800 block break-all">
+              {{ credentials.client_id ?? 'No generado' }}
+            </span>
+          </div>
+
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <span class="text-slate-500 block font-medium">Límite de Tasa (Rate Limit)</span>
+            <span class="mt-1 font-semibold text-slate-800 block">
+              {{ credentials.rate_limit_rpm ?? 600 }} req/min (lectura), 120 req/min (escritura)
+            </span>
+          </div>
+
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <span class="text-slate-500 block font-medium">Scopes Autorizados</span>
+            <div class="mt-1 flex flex-wrap gap-1">
+              <span
+                v-for="sc in credentials.scopes ?? [
+                  'quotes:read',
+                  'quotes:submit',
+                  'orders:manage',
+                ]"
+                :key="sc"
+                class="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-mono text-slate-700"
+              >
+                {{ sc }}
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <span class="text-slate-500 block font-medium">Token Endpoint</span>
+            <span class="mt-1 font-mono text-slate-700 text-[11px] block">
+              POST /realms/petpassport/protocol/openid-connect/token
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Entorno Sandbox (ARQ-008, PTN-005) -->
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Entorno Sandbox Hermético (ARQ-008)</h2>
+            <p class="mt-1 text-xs text-slate-500">
+              Genere credenciales de prueba en el realm `petpassport-sandbox` para ejecutar la suite
+              de certificación con `partner-sim`.
+            </p>
+          </div>
+          <button
+            type="button"
+            :disabled="generatingSandbox"
+            @click="generateSandboxCredentials"
+            class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {{ generatingSandbox ? 'Generando...' : '🧪 Generar Credenciales Sandbox' }}
+          </button>
+        </div>
+
+        <div
+          v-if="sandboxData"
+          class="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 text-xs text-indigo-950"
+        >
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-indigo-900">Credenciales de Pruebas Sandbox Emitidas</span>
+            <button
+              type="button"
+              @click="copyToClipboard(JSON.stringify(sandboxData, null, 2), true)"
+              class="rounded bg-indigo-200 px-2.5 py-1 text-[11px] font-bold text-indigo-900 hover:bg-indigo-300"
+            >
+              {{ copiedSandbox ? '✓ Copiado' : 'Copiar Configuración' }}
+            </button>
+          </div>
+
+          <div class="mt-3 space-y-2 font-mono text-[11px]">
+            <div>
+              <span class="text-indigo-700 font-semibold">Client ID:</span>
+              {{ sandboxData.client_id }}
+            </div>
+            <div>
+              <span class="text-indigo-700 font-semibold">Client Secret:</span>
+              {{ sandboxData.client_secret }}
+            </div>
+            <div>
+              <span class="text-indigo-700 font-semibold">Token Endpoint:</span>
+              {{ sandboxData.token_endpoint }}
+            </div>
+            <div>
+              <span class="text-indigo-700 font-semibold">API Base URL:</span>
+              {{ sandboxData.api_base_url }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: Webhooks y Entregas (FE-010, PTN-004, SEC-003) -->
+    <div v-show="activeTab === 'webhooks'" class="space-y-6">
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900">
+          Configuración de Webhooks Salientes (PTN-004)
+        </h2>
+        <p class="mt-1 text-xs text-slate-500">
+          Notificaciones HTTP salientes firmadas con HMAC-SHA256 (`X-PP-Signature`) y ventana
+          anti-replay de 300 segundos.
+        </p>
+
+        <div class="mt-4 space-y-4 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-700">URL del Endpoint HTTPS *</label>
+            <input
+              type="url"
+              v-model="webhookForm.url"
+              placeholder="https://api.tu-farmacia.com/webhooks/petpassport"
+              class="mt-1 w-full rounded border border-slate-300 p-2 font-mono text-xs"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700"
+              >Secreto de Firma HMAC (Opcional para actualizar)</label
+            >
+            <input
+              type="text"
+              v-model="webhookForm.secret"
+              placeholder="whsec_dejar_vacio_para_mantener_el_actual"
+              class="mt-1 w-full rounded border border-slate-300 p-2 font-mono text-xs"
+            />
+            <span class="text-[11px] text-slate-400">
+              Estado:
+              {{
+                webhookConfig?.has_secret
+                  ? '🔒 Secreto activo configurado'
+                  : 'Sin secreto configurado'
+              }}
+            </span>
+          </div>
+
+          <div class="pt-2 flex justify-between items-center border-t">
+            <button
+              type="button"
+              :disabled="testingWebhook"
+              @click="testWebhook"
+              class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {{ testingWebhook ? 'Enviando Ping...' : '🔔 Probar Webhook (Ping Test)' }}
+            </button>
+
+            <button
+              type="button"
+              :disabled="savingWebhook"
+              @click="saveWebhook"
+              class="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {{ savingWebhook ? 'Guardando...' : 'Guardar Webhook' }}
+            </button>
+          </div>
+
+          <!-- Resultado del Test -->
+          <div
+            v-if="testWebhookResult"
+            class="rounded-lg p-3 text-xs"
+            :class="
+              testWebhookResult.status === 'delivered'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border border-rose-200'
+            "
+          >
+            <span class="font-bold">Resultado de Prueba:</span> Estado
+            {{ testWebhookResult.status }}
+            <span v-if="testWebhookResult.status_code">
+              (HTTP {{ testWebhookResult.status_code }})</span
+            >
+            <span v-if="testWebhookResult.error"> - {{ testWebhookResult.error }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registro de Entregas -->
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-900">Historial de Entregas y Reintentos</h3>
+          <button
+            type="button"
+            @click="loadDeliveries"
+            class="text-xs font-semibold text-slate-600 hover:text-slate-900"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-slate-200 bg-slate-50 text-slate-600">
+              <tr>
+                <th class="py-2.5 px-3">Evento</th>
+                <th class="py-2.5 px-3">Estado</th>
+                <th class="py-2.5 px-3">Código HTTP</th>
+                <th class="py-2.5 px-3">Intentos</th>
+                <th class="py-2.5 px-3">Fecha</th>
+                <th class="py-2.5 px-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-if="deliveries.length === 0">
+                <td colspan="6" class="py-6 text-center text-slate-400">
+                  No se registran entregas de webhooks aún.
+                </td>
+              </tr>
+              <tr v-for="d in deliveries" :key="d.id" class="hover:bg-slate-50">
+                <td class="py-2.5 px-3 font-mono font-medium text-slate-800">{{ d.event_type }}</td>
+                <td class="py-2.5 px-3">
+                  <span
+                    class="rounded px-2 py-0.5 text-[10px] font-bold"
+                    :class="
+                      d.status === 'delivered'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-rose-100 text-rose-800'
+                    "
+                  >
+                    {{ d.status }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 font-mono text-slate-600">{{ d.status_code ?? '—' }}</td>
+                <td class="py-2.5 px-3 text-slate-600">{{ d.attempts }}</td>
+                <td class="py-2.5 px-3 text-slate-500">
+                  {{ new Date(d.created_at).toLocaleString('es-CO') }}
+                </td>
+                <td class="py-2.5 px-3 text-right">
+                  <button
+                    v-if="d.status !== 'delivered'"
+                    type="button"
+                    :disabled="retryingDeliveryId === d.id"
+                    @click="retryDelivery(d.id)"
+                    class="text-xs font-semibold text-indigo-600 hover:underline disabled:opacity-50"
+                  >
+                    {{ retryingDeliveryId === d.id ? 'Reintentando...' : 'Reintentar' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Métricas y SLA (FE-010, PRD-016, PTN-008) -->
+    <div v-show="activeTab === 'stats'" class="space-y-6">
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900">
+          Panel de Rendimiento y Cumplimiento de SLA (PTN-008)
+        </h2>
+        <p class="mt-1 text-xs text-slate-500">
+          Supervisión operativa conforme al acuerdo de nivel de servicio (meta: tasa de respuesta ≥
+          70%, respuesta media ≤ 6 h laborables).
+        </p>
+
+        <div v-if="stats" class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Cotizaciones Recibidas</span>
+            <span class="mt-1 block text-2xl font-bold text-slate-900">{{
+              stats.quotes_received
+            }}</span>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Cotizaciones Emitidas</span>
+            <span class="mt-1 block text-2xl font-bold text-emerald-700">{{
+              stats.quotes_submitted
+            }}</span>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Pedidos Confirmados</span>
+            <span class="mt-1 block text-2xl font-bold text-indigo-700">{{
+              stats.orders_placed
+            }}</span>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Pedidos Entregados</span>
+            <span class="mt-1 block text-2xl font-bold text-slate-900">{{
+              stats.orders_completed
+            }}</span>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Tiempo Medio Respuesta</span>
+            <span class="mt-1 block text-2xl font-bold text-slate-900"
+              >{{ stats.avg_response_minutes }} min</span
+            >
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Tasa de Conversión</span>
+            <span class="mt-1 block text-2xl font-bold text-emerald-700"
+              >{{ stats.conversion_rate_percent }}%</span
+            >
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 text-xs">
+          <span class="font-bold text-emerald-900">Estado de SLA: Óptimo</span>
+          <p class="mt-1 text-slate-600">
+            La farmacia cumple todos los parámetros de calidad del acuerdo B2B para mantener su
+            asignación automática de cotizaciones.
+          </p>
         </div>
       </div>
     </div>

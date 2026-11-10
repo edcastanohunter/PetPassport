@@ -1,7 +1,12 @@
 package egress
 
 import (
+	"context"
+	"errors"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -81,5 +86,128 @@ func TestEgress_RestrictedIPs(t *testing.T) {
 		if got := isRestrictedIP(ip); got != c.restricted {
 			t.Errorf("isRestrictedIP(%s) = %v, want %v", c.ip, got, c.restricted)
 		}
+	}
+}
+
+type mockResolver struct {
+	ips map[string][]net.IP
+	err error
+}
+
+func (m *mockResolver) LookupIP(ctx context.Context, network, host string) ([]net.IP, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if ips, ok := m.ips[host]; ok {
+		return ips, nil
+	}
+	return nil, errors.New("host not found in mock")
+}
+
+func TestEgress_ValidateWebhookURL(t *testing.T) {
+	res := &mockResolver{
+		ips: map[string][]net.IP{
+			"valid.partner.com":    {net.ParseIP("93.184.216.34")},
+			"internal.partner.com": {net.ParseIP("10.0.1.20")},
+			"metadata.evil.com":    {net.ParseIP("169.254.169.254")},
+			"localhost.evil.com":   {net.ParseIP("127.0.0.1")},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		rawURL  string
+		wantErr error
+	}{
+		{
+			name:    "valid https default port",
+			rawURL:  "https://valid.partner.com/webhooks/petpassport",
+			wantErr: nil,
+		},
+		{
+			name:    "valid https 8443 port",
+			rawURL:  "https://valid.partner.com:8443/webhooks",
+			wantErr: nil,
+		},
+		{
+			name:    "invalid scheme http",
+			rawURL:  "http://valid.partner.com/webhooks",
+			wantErr: ErrInvalidScheme,
+		},
+		//nolint:gosec // intentional test of userinfo rejection
+		{
+			name:    "userinfo credentials rejected",
+			rawURL:  "https://user:pass@valid.partner.com/webhooks",
+			wantErr: ErrUserinfoNotAllowed,
+		},
+		{
+			name:    "literal IP rejected",
+			rawURL:  "https://127.0.0.1/webhooks",
+			wantErr: ErrLiteralIPBlocked,
+		},
+		{
+			name:    "invalid port rejected",
+			rawURL:  "https://valid.partner.com:8080/webhooks",
+			wantErr: ErrInvalidPort,
+		},
+		{
+			name:    "internal private ip ssrf blocked",
+			rawURL:  "https://internal.partner.com/webhooks",
+			wantErr: ErrSSRFBlocked,
+		},
+		{
+			name:    "cloud metadata ssrf blocked",
+			rawURL:  "https://metadata.evil.com/webhooks",
+			wantErr: ErrSSRFBlocked,
+		},
+		{
+			name:    "localhost ssrf blocked",
+			rawURL:  "https://localhost.evil.com/webhooks",
+			wantErr: ErrSSRFBlocked,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateWebhookURLWithResolver(context.Background(), tc.rawURL, res)
+			if tc.wantErr == nil && err != nil {
+				t.Fatalf("expected nil error, got %v", err)
+			}
+			if tc.wantErr != nil {
+				if err == nil {
+					t.Fatalf("expected error containing %v, got nil", tc.wantErr)
+				}
+				if !errors.Is(err, tc.wantErr) && !strings.Contains(err.Error(), tc.wantErr.Error()) {
+					t.Fatalf("expected error %v, got %v", tc.wantErr, err)
+				}
+			}
+		})
+	}
+}
+
+func TestEgress_WebhookNoRedirect(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/target", http.StatusFound)
+	}))
+	defer ts.Close()
+
+	client := NewWebhookClient(Config{
+		AllowedHosts:  []string{"*"},
+		AllowLoopback: true,
+	})
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL, nil)
+	if err != nil {
+		t.Fatalf("create request: %v", err)
+	}
+
+	// El cliente de webhooks tiene MaxRedirects=0 y devuelve ErrUseLastResponse (no sigue el 302)
+	resp, err := client.HTTPClient().Do(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusFound {
+		t.Errorf("expected status 302 (no-redirect), got %d", resp.StatusCode)
 	}
 }

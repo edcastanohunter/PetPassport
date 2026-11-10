@@ -560,7 +560,11 @@
       "users": "Usuarios",
       "audit": "Auditoría",
       "medications": "Medicamentos",
-      "platform": "Plataforma"
+      "platform": "Plataforma",
+      "partners": "Partners B2B",
+      "regulatory": "Reglas Regulatorias",
+      "ai": "Presupuesto IA",
+      "ocr": "Monitor OCR"
     },
     "medications": {
       "title": "Catálogo de medicamentos",

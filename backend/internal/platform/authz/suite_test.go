@@ -200,6 +200,9 @@ var suite = map[Action][]suiteRow{
 	AdminUserReactivate: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminAuditRead:      {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 	AdminCatalogWrite:   {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	PartnerAdmin:        {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	RegulatoryAdmin:     {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AIAdmin:             {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 
 	// Clinical Records (SEC-001, docs/phase-2/08 §2). tutor, vetL, admL,
 	// recL, vetU, vetS, phAd, phar, pend, stranger, super.

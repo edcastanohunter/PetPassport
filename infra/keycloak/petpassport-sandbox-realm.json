@@ -1,0 +1,131 @@
+{
+  "id": "petpassport-sandbox",
+  "realm": "petpassport-sandbox",
+  "displayName": "PetPassport B2B Partner Sandbox",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "clientScopes": [
+    {
+      "name": "petpassport-partner-api-audience",
+      "description": "Añade audiencia petpassport-partner-api",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "partner-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "petpassport-partner-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "partner:read",
+      "description": "Lectura en Partner API",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "partner:write",
+      "description": "Escritura en Partner API",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "petpassport-partner-api",
+      "name": "PetPassport Partner API Resource Server",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "partner-sim",
+      "name": "Partner Simulator Client",
+      "description": "Cliente automatizado para checklist go-live de partners (ARQ-007, PTN-005)",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${env.PARTNER_SIM_SECRET:-placeholder}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "attributes": {
+        "access.token.lifespan": "300",
+        "partner_org_id": "00000000-0000-0000-0000-000000000001"
+      },
+      "defaultClientScopes": [
+        "petpassport-partner-api-audience",
+        "partner:read",
+        "partner:write"
+      ]
+    },
+    {
+      "clientId": "partner-sandbox-demo",
+      "name": "Partner Sandbox Demo",
+      "description": "Credenciales de prueba para documentación y portal (PTN-005)",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "demo-secret-9876543210fedcba",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "attributes": {
+        "access.token.lifespan": "300",
+        "partner_org_id": "00000000-0000-0000-0000-000000000002"
+      },
+      "defaultClientScopes": [
+        "petpassport-partner-api-audience",
+        "partner:read",
+        "partner:write"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-partner-sim",
+      "enabled": true,
+      "serviceAccountClientId": "partner-sim",
+      "attributes": {
+        "partner_org_id": ["00000000-0000-0000-0000-000000000001"]
+      }
+    },
+    {
+      "username": "service-account-partner-sandbox-demo",
+      "enabled": true,
+      "serviceAccountClientId": "partner-sandbox-demo",
+      "attributes": {
+        "partner_org_id": ["00000000-0000-0000-0000-000000000002"]
+      }
+    }
+  ]
+}

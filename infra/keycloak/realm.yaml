@@ -212,6 +212,22 @@ clientScopes:
           id.token.claim: "false"
           access.token.claim: "true"
 
+  - name: petpassport-partner-api-audience
+    description: Añade la audiencia petpassport-partner-api al access token B2B (ARQ-005, SEC-002).
+    protocol: openid-connect
+    attributes:
+      include.in.token.scope: "false"
+      display.on.consent.screen: "false"
+    protocolMappers:
+      - name: partner-api-audience
+        protocol: openid-connect
+        protocolMapper: oidc-audience-mapper
+        consentRequired: false
+        config:
+          included.client.audience: petpassport-partner-api
+          id.token.claim: "false"
+          access.token.claim: "true"
+
 # --- Clients (IAM-002) ---
 clients:
   - clientId: petpassport-web
@@ -245,6 +261,18 @@ clients:
   - clientId: petpassport-api
     name: PetPassport API
     description: Existe solo como audiencia. Sin flujos habilitados (bearer-only).
+    enabled: true
+    publicClient: false
+    bearerOnly: true
+    protocol: openid-connect
+    standardFlowEnabled: false
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+
+  - clientId: petpassport-partner-api
+    name: PetPassport Partner API
+    description: Existe solo como audiencia para integración B2B (ARQ-005, SEC-002). Bearer-only.
     enabled: true
     publicClient: false
     bearerOnly: true

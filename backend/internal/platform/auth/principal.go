@@ -24,6 +24,8 @@ type Claims struct {
 	AuthorizedParty   string   `json:"azp"`
 	Type              string   `json:"typ"`
 	SessionID         string   `json:"sid"`
+	PartnerOrgID      string   `json:"partner_org_id,omitempty"`
+	Scope             string   `json:"scope,omitempty"`
 	IssuedAt          int64    `json:"iat"`
 	NotBefore         int64    `json:"nbf"`
 	RealmAccess       struct { //nolint:revive // forma del token de Keycloak
@@ -99,6 +101,30 @@ type Principal struct {
 func (p Principal) HasRole(role string) bool { return slices.Contains(p.GlobalRoles, role) }
 
 type principalKey struct{}
+type partnerPrincipalKey struct{}
+
+// PartnerClaims son los claims esperados en el access token de partner OAuth2 (ARQ-005, PTN-002).
+type PartnerClaims struct {
+	Subject         string `json:"sub"`
+	AuthorizedParty string `json:"azp"`
+	PartnerOrgID    string `json:"partner_org_id"`
+	Scope           string `json:"scope"`
+	Type            string `json:"typ"`
+	IssuedAt        int64  `json:"iat"`
+	NotBefore       int64  `json:"nbf"`
+}
+
+// PartnerPrincipal representa la identidad autenticada de un partner B2B (ARQ-005, SEC-002).
+type PartnerPrincipal struct {
+	OrgID    uuid.UUID
+	ClientID string
+	Scopes   []string
+}
+
+// HasScope verifica si el principal de partner posee un scope específico.
+func (p PartnerPrincipal) HasScope(scope string) bool {
+	return slices.Contains(p.Scopes, scope)
+}
 
 // WithPrincipal guarda el principal en el contexto.
 func WithPrincipal(ctx context.Context, p Principal) context.Context {
@@ -108,5 +134,16 @@ func WithPrincipal(ctx context.Context, p Principal) context.Context {
 // PrincipalFrom recupera el principal; ok=false si el request no está autenticado.
 func PrincipalFrom(ctx context.Context) (Principal, bool) {
 	p, ok := ctx.Value(principalKey{}).(Principal)
+	return p, ok
+}
+
+// WithPartnerPrincipal guarda el principal de partner en el contexto.
+func WithPartnerPrincipal(ctx context.Context, p PartnerPrincipal) context.Context {
+	return context.WithValue(ctx, partnerPrincipalKey{}, p)
+}
+
+// PartnerPrincipalFrom recupera el principal de partner; ok=false si no está autenticado como partner.
+func PartnerPrincipalFrom(ctx context.Context) (PartnerPrincipal, bool) {
+	p, ok := ctx.Value(partnerPrincipalKey{}).(PartnerPrincipal)
 	return p, ok
 }

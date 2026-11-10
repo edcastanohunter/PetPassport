@@ -1934,6 +1934,252 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /admin/partners:
+    get:
+      operationId: adminListPartners
+      summary: Listar partners farmacéuticos y distribuidores
+      description: Consulta partners con estado de integración, modo y estadísticas (PRD-018, PTN-001).
+      tags: [admin]
+      x-pp-action: partner:admin
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended, onboarding]
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [portal, api]
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Lista de partners
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPartnerListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/partners/{orgId}/suspend:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminSuspendPartner
+      summary: Suspender partner comercial
+      description: Suspende temporalmente el acceso del partner a la API y la recepción de cotizaciones (SEC-002, PTN-002).
+      tags: [admin]
+      x-pp-action: partner:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Partner suspendido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPartnerSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/partners/{orgId}/reactivate:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: adminReactivatePartner
+      summary: Reactivar partner comercial
+      description: Restablece el acceso y operatividad del partner comercial (PTN-002).
+      tags: [admin]
+      x-pp-action: partner:admin
+      responses:
+        "200":
+          description: Partner reactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPartnerSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/regulatory-rules/{country}:
+    parameters:
+      - name: country
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[A-Za-z]{2}$"
+    get:
+      operationId: adminGetRegulatoryRules
+      summary: Obtener reglas regulatorias de prescripción por país
+      description: Consulta vigencia máxima, requisitos de sustancias controladas y retención documental por país (PRD-018, SEC-007).
+      tags: [admin]
+      x-pp-action: regulatory:admin
+      responses:
+        "200":
+          description: Reglas regulatorias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRegulatoryRulesResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: adminUpdateRegulatoryRules
+      summary: Actualizar reglas regulatorias de prescripción
+      description: Actualiza los parámetros normativos de recetas para una jurisdicción (PRD-018).
+      tags: [admin]
+      x-pp-action: regulatory:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRegulatoryRulesResponse"
+      responses:
+        "200":
+          description: Reglas regulatorias actualizadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRegulatoryRulesResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/ai/budget:
+    get:
+      operationId: adminGetAIBudget
+      summary: Obtener presupuesto y consumo de IA
+      description: Consulta el presupuesto mensual de LLM/OCR, consumo acumulado y alertas de costo (ARQ-011, INF-001).
+      tags: [admin]
+      x-pp-action: ai:admin
+      responses:
+        "200":
+          description: Estado del presupuesto de IA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAIBudgetResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: adminUpdateAIBudget
+      summary: Actualizar presupuesto mensual de IA
+      description: Modifica el techo presupuestario y umbrales de alerta para llamadas de IA (INF-001).
+      tags: [admin]
+      x-pp-action: ai:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateAIBudgetPayload"
+      responses:
+        "200":
+          description: Presupuesto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAIBudgetResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/ai/usage:
+    get:
+      operationId: adminGetAIUsage
+      summary: Estadísticas de uso de IA
+      description: Detalle de llamadas por modelo, tokens consumidos y costos acumulados (ARQ-011).
+      tags: [admin]
+      x-pp-action: ai:admin
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}$"
+      responses:
+        "200":
+          description: Estadísticas de uso de IA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAIUsageResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/ocr/monitor:
+    get:
+      operationId: adminGetOCRMonitor
+      summary: Monitor de salud del pipeline OCR
+      description: Monitoreo en tiempo real de tasa de acierto, latencia y cola de extracción OCR (QA-006, INF-001).
+      tags: [admin]
+      x-pp-action: ai:admin
+      responses:
+        "200":
+          description: Métricas del pipeline OCR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOCRMonitorResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/ocr/samples:
+    get:
+      operationId: adminGetOCRSamples
+      summary: Muestras de extracción OCR para auditoría
+      description: Listado de extracciones OCR para control de calidad y revisión médica ciega (QA-006).
+      tags: [admin]
+      x-pp-action: ai:admin
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Muestras de auditoría OCR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOCRSamplesResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /admin/prescriptions/{prescriptionId}/revoke:
+    parameters:
+      - $ref: "#/components/parameters/PrescriptionId"
+    post:
+      operationId: adminRevokePrescription
+      summary: Revocar receta médica por administrador
+      description: Anulación regulatoria de una receta emitida por orden médica o de autoridad sanitaria (PRD-018, SEC-007).
+      tags: [admin]
+      x-pp-action: prescription:revoke
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Receta revocada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRevokePrescriptionResponse"
+        default:
+          $ref: "#/components/responses/Problem"
   /organizations/{orgId}/encounters:
     parameters:
       - $ref: "#/components/parameters/OrgId"
@@ -5468,6 +5714,208 @@ paths:
           description: Mapeo eliminado exitosamente
         default:
           $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/product-mappings/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: importPharmacyProductMappings
+      summary: Importar mapeos de producto vía CSV
+      description: Importa en lote equivalencias de códigos SKU y catálogo desde archivo CSV o payload estructurado (PTN-003).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PharmacyImportMappingsPayload"
+      responses:
+        "200":
+          description: Resultado de la importación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyImportMappingsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/api-credentials:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getPharmacyApiCredentials
+      summary: Obtener credenciales API del partner
+      description: Consulta el identificador de cliente y estado de credenciales OAuth2 de la farmacia (PTN-002).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Credenciales de la farmacia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyApiCredentialsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/api-credentials/rotate:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: rotatePharmacyApiCredentials
+      summary: Rotar secreto de credenciales API
+      description: Rota inmediatamente el client_secret de la farmacia en Keycloak (PTN-002, SEC-002).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Nuevas credenciales con secreto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyRotatedCredentialsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/api-credentials/sandbox:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: createPharmacySandboxCredentials
+      summary: Generar credenciales de entorno sandbox
+      description: Genera credenciales de prueba en el realm sandbox para pruebas automatizadas (PTN-005, ARQ-008).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Credenciales de sandbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacySandboxCredentialsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/webhook:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getPharmacyWebhook
+      summary: Obtener configuración del webhook de la farmacia
+      description: Consulta el endpoint URL y eventos suscritos de webhooks salientes (PTN-004).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Configuración del webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyWebhookConfigResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: updatePharmacyWebhook
+      summary: Actualizar webhook de la farmacia
+      description: Configura el endpoint URL (con validación anti-SSRF) y eventos del webhook saliente (PTN-004, SEC-003).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePharmacyWebhookPayload"
+      responses:
+        "200":
+          description: Webhook actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyWebhookConfigResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/webhook/test:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    post:
+      operationId: testPharmacyWebhook
+      summary: Enviar ping de prueba a webhook
+      description: Despacha un evento de prueba con firma HMAC-SHA256 para verificar la conectividad (PTN-004, ARQ-004).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Resultado del envío de prueba
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyWebhookTestResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/webhook/deliveries:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listPharmacyWebhookDeliveries
+      summary: Listar entregas de webhook
+      description: Consulta el historial de eventos despachados, estados de entrega y latencias (PTN-004).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Historial de entregas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyWebhookDeliveriesResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/webhook/deliveries/{deliveryId}/retry:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+      - name: deliveryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: retryPharmacyWebhookDelivery
+      summary: Reintentar entrega fallida de webhook
+      description: Reintenta inmediatamente un webhook fallido o encolado (PTN-004).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Resultado del reintento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyWebhookTestResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /pharmacies/{orgId}/stats:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getPharmacyStats
+      summary: Métricas y estadísticas de la farmacia
+      description: Consulta volumen de cotizaciones, pedidos procesados, tiempos de respuesta y tasa de conversión (PRD-015, PTN-001).
+      tags: [pharmacy-portal]
+      x-pp-action: pharmacy:admin
+      responses:
+        "200":
+          description: Estadísticas operativas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyStatsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -6518,6 +6966,321 @@ components:
           type: integer
         in_stock:
           type: boolean
+    PharmacyImportMappingsPayload:
+      type: object
+      required: [csv_content]
+      properties:
+        csv_content:
+          type: string
+          description: Contenido CSV con columnas catalog_id, pharmacy_sku, pharmacy_name, price_cents, in_stock.
+    PharmacyImportMappingsResponse:
+      type: object
+      required: [processed, created, updated, errors]
+      properties:
+        processed:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+    PharmacyApiCredentialsResponse:
+      type: object
+      required: [has_credentials, scopes]
+      properties:
+        has_credentials:
+          type: boolean
+        client_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+        rate_limit_rpm:
+          type: integer
+        scopes:
+          type: array
+          items:
+            type: string
+    PharmacyRotatedCredentialsResponse:
+      type: object
+      required: [client_id, client_secret, rotated_at]
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        rotated_at:
+          type: string
+          format: date-time
+    PharmacySandboxCredentialsResponse:
+      type: object
+      required: [client_id, client_secret, token_endpoint, api_base_url]
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        token_endpoint:
+          type: string
+        api_base_url:
+          type: string
+    PharmacyWebhookConfigResponse:
+      type: object
+      required: [configured, events, has_secret]
+      properties:
+        configured:
+          type: boolean
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        has_secret:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+    UpdatePharmacyWebhookPayload:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+    PharmacyWebhookTestResponse:
+      type: object
+      required: [delivery_id, status]
+      properties:
+        delivery_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        status_code:
+          type: integer
+        error:
+          type: string
+    PharmacyWebhookDeliveryItem:
+      type: object
+      required: [id, event_type, status, attempts, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        status:
+          type: string
+        status_code:
+          type: integer
+        error:
+          type: string
+        attempts:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        delivered_at:
+          type: string
+          format: date-time
+    PharmacyWebhookDeliveriesResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PharmacyWebhookDeliveryItem"
+        total:
+          type: integer
+    PharmacyStatsResponse:
+      type: object
+      required: [quotes_received, quotes_submitted, orders_placed, orders_completed, avg_response_minutes, conversion_rate_percent]
+      properties:
+        quotes_received:
+          type: integer
+        quotes_submitted:
+          type: integer
+        orders_placed:
+          type: integer
+        orders_completed:
+          type: integer
+        avg_response_minutes:
+          type: number
+          format: float
+        conversion_rate_percent:
+          type: number
+          format: float
+    AdminPartnerSummary:
+      type: object
+      required: [organization_id, display_name, mode, status, created_at]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        legal_name:
+          type: string
+        mode:
+          type: string
+          enum: [portal, api]
+        status:
+          type: string
+          enum: [active, suspended, onboarding]
+        webhook_configured:
+          type: boolean
+        total_quotes:
+          type: integer
+        total_orders:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    AdminPartnerListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminPartnerSummary"
+        total:
+          type: integer
+    AdminRegulatoryRulesResponse:
+      type: object
+      required: [country, retention_years, requires_controlled_registry, max_validity_days, allowed_substitutions]
+      properties:
+        country:
+          type: string
+        retention_years:
+          type: integer
+        requires_controlled_registry:
+          type: boolean
+        max_validity_days:
+          type: integer
+        allowed_substitutions:
+          type: boolean
+    AdminAIBudgetResponse:
+      type: object
+      required: [monthly_budget_usd, current_spend_usd, alert_threshold_percent, status]
+      properties:
+        monthly_budget_usd:
+          type: number
+          format: float
+        current_spend_usd:
+          type: number
+          format: float
+        alert_threshold_percent:
+          type: integer
+        status:
+          type: string
+    AdminUpdateAIBudgetPayload:
+      type: object
+      required: [monthly_budget_usd, alert_threshold_percent]
+      properties:
+        monthly_budget_usd:
+          type: number
+          format: float
+        alert_threshold_percent:
+          type: integer
+    AdminAIModelUsage:
+      type: object
+      required: [model, calls, total_tokens, cost_usd]
+      properties:
+        model:
+          type: string
+        calls:
+          type: integer
+        total_tokens:
+          type: integer
+        cost_usd:
+          type: number
+          format: float
+    AdminAIUsageResponse:
+      type: object
+      required: [month, total_calls, total_cost_usd, by_model]
+      properties:
+        month:
+          type: string
+        total_calls:
+          type: integer
+        total_cost_usd:
+          type: number
+          format: float
+        by_model:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAIModelUsage"
+    AdminOCRMonitorResponse:
+      type: object
+      required: [total_24h, success_rate_percent, avg_latency_ms, queue_depth]
+      properties:
+        total_24h:
+          type: integer
+        success_rate_percent:
+          type: number
+          format: float
+        avg_latency_ms:
+          type: integer
+        queue_depth:
+          type: integer
+    AdminOCRSampleItem:
+      type: object
+      required: [id, prescription_id, status, confidence, latency_ms, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        prescription_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        confidence:
+          type: number
+          format: float
+        latency_ms:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    AdminOCRSamplesResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOCRSampleItem"
+        total:
+          type: integer
+    AdminRevokePrescriptionResponse:
+      type: object
+      required: [prescription_id, status, revoked_at, reason]
+      properties:
+        prescription_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        revoked_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
     DisplayName:
       type: string
       minLength: 1

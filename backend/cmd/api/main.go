@@ -46,6 +46,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/cache"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/config"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/egress"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
@@ -58,6 +59,7 @@ import (
 	ppredis "github.com/edcastanohunter/petpassport/backend/internal/platform/redis"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/webhooks"
 	prescriptionapp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/app"
 	prescriptiondomain "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/domain"
 	prescriptionhttp "github.com/edcastanohunter/petpassport/backend/internal/prescriptions/http"
@@ -484,7 +486,27 @@ func run() error {
 		UserReader:            postgresUserReader{pool: pool.Pool},
 		Logger:                logger,
 	})
-	pharmacyHandlers := pharmacyhttp.NewPharmacyHandlers(pharmacySvc, pharmacyQueries, logger)
+	egressWebhookClient := egress.NewWebhookClient(egress.Config{})
+	partnerDispatcher := webhooks.NewDispatcher(pool.Pool, egressWebhookClient)
+	partnerHandlers := pharmacyhttp.NewPartnerHandlers(pool.Pool, pharmacySvc, partnerDispatcher, logger)
+
+	var partnerVerifier *auth.Verifier
+	if cfg.OIDC.Issuer != "" {
+		partnerVerifier, _ = newVerifierWithRetry(ctx, logger, auth.VerifierConfig{
+			Issuer: cfg.OIDC.Issuer, DiscoveryURL: cfg.OIDC.DiscoveryURL,
+			Audience: "petpassport-partner-api", AllowedAZP: cfg.OIDC.AllowedAZP,
+		})
+	}
+	partnerGuard := auth.NewPartnerGuard(auth.PartnerGuardOptions{
+		Verifier: partnerVerifier,
+		Loader:   postgresPartnerStatusLoader{pool: pool.Pool},
+		Logger:   logger,
+	})
+
+	pharmacyHandlers := pharmacyhttp.NewPharmacyHandlers(pharmacySvc, pharmacyQueries, logger).
+		WithPool(pool.Pool).
+		WithDispatcher(partnerDispatcher)
+	orgHandlers.WithPool(pool.Pool)
 
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
@@ -502,7 +524,10 @@ func run() error {
 			PrescriptionHandlers: prescriptionHandlers,
 			PharmacyHandlers:     pharmacyHandlers,
 		},
-		Guard: guard.Middleware,
+		Guard:            guard.Middleware,
+		PartnerGuard:     partnerGuard.Middleware,
+		PartnerRateLimit: ratelimit.PartnerMiddleware(limiter, ratelimit.PartnerLimits{ReadLimit: 600, WriteLimit: 120}),
+		PartnerHandlers:  partnerHandlers,
 		Mount: func(r chi.Router) {
 			searchHandler.MountRoutes(r)
 			medHandler.MountRoutes(r)
@@ -615,4 +640,20 @@ func (r postgresUserReader) GetUserEmail(ctx context.Context, userID uuid.UUID) 
 	var email string
 	err := r.pool.QueryRow(ctx, "SELECT COALESCE(email, '') FROM read_identity.users WHERE id = $1", userID).Scan(&email)
 	return email, err
+}
+
+type postgresPartnerStatusLoader struct {
+	pool *pgxpool.Pool
+}
+
+func (l postgresPartnerStatusLoader) IsPartnerActive(ctx context.Context, orgID uuid.UUID) (bool, error) {
+	if l.pool == nil {
+		return true, nil
+	}
+	var status string
+	err := l.pool.QueryRow(ctx, "SELECT status FROM read_partnernetwork.organizations WHERE id = $1", orgID).Scan(&status)
+	if err != nil {
+		return false, err
+	}
+	return status == "active", nil
 }
