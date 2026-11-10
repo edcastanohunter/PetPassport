@@ -971,6 +971,7 @@ async function confirmPrescription() {
               >
               <input
                 v-model="it.name"
+                :data-testid="'item-name-' + idx"
                 type="text"
                 placeholder="Nombre comercial o genérico"
                 class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium focus:border-emerald-500 focus:outline-none"
