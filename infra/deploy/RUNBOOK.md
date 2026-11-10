@@ -16,7 +16,8 @@ son `app.`, `api.` y `auth.` bajo ese dominio.
 
 Contenido: §1 VM y host-setup · §2 Secretos · §3 Despliegue · §4 Rollback · §5 Rotación · §6 WAF ·
 §7 Alertas · §8 Observabilidad · §9 Backups · §10 Keycloak · §11 Incidentes · §12 Contacto ·
-§13 Correo · §14 Operación con systemd.
+§13 Correo · §14 Operación con systemd · §15 Worker y proyecciones · §16 Exportación de datos ·
+§17 Resiliencia F3 · §18 Operación B2B, partners y OCR/IA F4.
 
 ## 1. Preparación de la VM (una vez)
 
@@ -852,4 +853,281 @@ Cloudflare opera como capa de borde y CDN delante del gateway Traefik.
      -H "Content-Type: application/json" \
      -d '{"purge_everything": true}'
    ```
+
+## 18. Operación de B2B, integración de partners y OCR/IA F4 (PP-F4-INF-005)
+
+Este apartado detalla los procedimientos operativos para la gestión de la red de partners de farmacia, la capa de integración de recetas externas asistida por OCR/IA, la monitorización de SLAs y la resolución de incidentes B2B.
+
+---
+
+### 18.1 Alta de partner y onboarding
+
+El proceso de alta de una organización de farmacia comprende cuatro etapas: provisión en Keycloak, asignación de nivel técnico, generación de secretos y validación con la suite de checklist go-live.
+
+#### Pasos de aprovisionamiento:
+1. **Creación de la organización y usuario administrador**:
+   - En el panel de superadministrador o mediante migración de datos, registrar la organización con `type = 'pharmacy'` y estado `pending_verification`.
+   - En Keycloak (realm `petpassport`), crear la cuenta de usuario para el farmacéutico responsable y asignarle el rol `pharmacy_admin` asociado al `org_id` correspondiente en sus atributos/grupos.
+2. **Definición del nivel de integración técnica**:
+   - **Nivel 1 (Portal Web)**: Opera exclusivamente mediante la interfaz web (`/pharmacy`). No requiere credenciales API ni webhooks.
+   - **Nivel 2 (Partner API + Webhooks)**: Automatiza cotizaciones y pedidos mediante la API REST (`/partner/v1`) y escucha eventos vía HTTP POST firmados con HMAC-SHA256.
+   - **Nivel 3 (Adaptador PMS/ERP)**: Integración bidireccional propietaria gestionada con drivers específicos.
+3. **Generación de credenciales y configuración de webhook (Nivel ≥ 2)**:
+   - Configurar la URL de destino del partner (debe resolver por HTTPS con certificado válido público, sin IPs privadas ni loopback — validado por `egress` y SSRF protection).
+   - Generar el secreto compartido de webhook (mínimo 32 bytes en base64) y la API Key de partner:
+     ```bash
+     podman exec pp-api /api admin partners create-credentials \
+       --org-id "<partner-org-uuid>" \
+       --webhook-url "https://partner.farmacia-ejemplo.es/api/petpassport-events"
+     ```
+   - Las claves se persisten cifradas en Vault / Secret Manager bajo la ruta `partners/<org_id>/`.
+4. **Ejecución de la checklist go-live (QA-002)**:
+   - El partner ejecuta los 10 escenarios canónicos contra el entorno sandbox (`partners-sandbox.<dominio>`):
+     1. Autenticación con token de partner.
+     2. Lectura y pull de solicitudes disponibles (`GET /partner/v1/quote-requests`).
+     3. Envío de cotización con precios e impuestos (`POST /partner/v1/quote-requests/{id}/quotes`).
+     4. Declinación motivada de cotización (`POST /partner/v1/quote-requests/{id}/decline`).
+     5. Cotización con sustitución farmacéutica informada y justificada.
+     6. Consulta y confirmación de pedido (`GET /partner/v1/orders/{id}`).
+     7. Transiciones de estado de pedido (`in_preparation` → `ready_for_pickup` / `in_transit` → `delivered`).
+     8. Registro de dispensación parcial o total vinculada al pedido.
+     9. Recepción y verificación exitosa de la firma HMAC-SHA256 (`X-Signature`) del webhook.
+     10. Tolerancia a reintentos (idempotencia en `Idempotency-Key`).
+5. **Activación definitiva**:
+   - Una vez superada la checklist al 100%, promover el estado del partner a activo:
+     ```bash
+     podman exec pp-api /api admin partners activate --org-id "<partner-org-uuid>"
+     ```
+
+---
+
+### 18.2 Rotación de secretos
+
+#### A. Rotación de credenciales de Partner API y Webhooks (Zero-Downtime)
+Para evitar la interrupción del servicio durante la rotación del secreto de firma HMAC de webhooks, el sistema soporta verificación dual con `webhook_current` y `webhook_previous`:
+1. **Generar nuevo secreto en el gestor**:
+   ```bash
+   podman exec pp-api /api admin partners rotate-webhook-secret --org-id "<partner-org-uuid>"
+   ```
+   - El valor anterior pasa a `webhook_previous` con un tiempo de vida (TTL) de 7 días.
+   - El nuevo valor pasa a `webhook_current`. Durante la ventana de gracia, el sistema firma con `webhook_current`, pero si el partner realiza callbacks o pruebas se aceptan ambos identificadores.
+2. **Entrega segura**:
+   - El administrador de la farmacia visualiza el nuevo secreto una sola vez en el portal `/pharmacy/settings` con autenticación reforzada MFA.
+
+#### B. Rotación de credenciales del proveedor de IA (Claude / Anthropic)
+1. **Frecuencia**: Rotación semestral obligatoria (INF-006).
+2. **Procedimiento**:
+   - Generar nueva API key en la consola del proveedor de IA asignándole el límite de gasto mensual presupuestado.
+   - Actualizar la variable en `/etc/petpassport/staging.env`:
+     ```bash
+     sed -i 's/^PP_ANTHROPIC_API_KEY=.*/PP_ANTHROPIC_API_KEY="sk-ant-api03-...nuevo..."/' /etc/petpassport/staging.env
+     ```
+   - Recargar los servicios sin caída:
+     ```bash
+     systemctl --user restart pp-worker pp-api
+     ```
+   - Verificar la salud del pipeline OCR:
+     ```bash
+     curl -s -f "http://localhost:9090/healthz" && journalctl --user -u pp-worker --since "1 minute ago" | grep -i ocr
+     ```
+   - Revocar la API key anterior en la consola del proveedor una vez verificadas las métricas sin errores 401.
+
+---
+
+### 18.3 Webhook en fallo persistente
+
+#### Detección y diagnóstico:
+- **Alerta**: `WebhookFailuresHigh` (> 20% de entregas fallidas en 15 minutos para una farmacia).
+- **Métrica**: `rate(webhook_deliveries_total{status="failed"}[5m])`.
+- **Inspección de la cola de reintentos**:
+  ```sql
+  SELECT id, partner_id, event_type, status, attempts, next_retry_at, last_error_code, last_error_message
+  FROM platform.partner_deliveries
+  WHERE status = 'pending_retry' OR status = 'dead_letter'
+  ORDER BY next_retry_at DESC LIMIT 20;
+  ```
+
+#### Protocolo de resolución:
+1. **Diagnóstico del motivo**:
+   - `HTTP 5xx` o timeout: El endpoint del partner está caído o saturado.
+   - `HTTP 401/403`: Firma incorrecta o secreto desincronizado en el partner.
+   - `TLS handshake error`: Certificado del servidor partner expirado o no de confianza.
+2. **Reintento forzado tras resolución del problema**:
+   ```bash
+   podman exec pp-api /api admin webhooks retry-partner --org-id "<partner-org-uuid>"
+   ```
+3. **Suspensión preventiva del webhook**:
+   Si el fallo persiste tras 10 intentos automáticos con backoff exponencial, la entrega se mueve a `dead_letter` y la integración se marca temporalmente como `degraded`:
+   - El sistema conmuta las notificaciones del partner a fallback por correo electrónico transaccional.
+   - El partner continúa recibiendo pedidos que puede gestionar mediante el Portal Web (`Nivel 1`).
+
+---
+
+### 18.4 Circuito abierto hacia un partner (Circuit Breaker)
+
+#### Detección:
+- **Alerta**: `PartnerCircuitOpen`.
+- **Comportamiento**: La librería de circuit breaker en `internal/pharmacyorders/infra/adapters` abre el circuito si la tasa de fallos de red hacia el partner supera el 50% en una ventana de 1 minuto o tras 5 fallos consecutivos.
+
+#### Protocolo de contingencia:
+1. **Degradación automática**:
+   - Las nuevas solicitudes de cotización (`QuoteInvitation`) hacia este partner no se envían por API para evitar latencias en la saga.
+   - El sistema asigna a la farmacia el modo temporal `portal_only`.
+   - Se emite una notificación de advertencia en el canal operativo y se notifica al partner de la desconexión temporal.
+2. **Comprobación manual de estado**:
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" -m 5 "https://partner.farmacia.es/healthz"
+   ```
+3. **Reinicio de circuito (Reset)**:
+   Cuando el partner notifique que su servicio está restablecido, resetear el breaker sin reiniciar el proceso:
+   ```bash
+   podman exec pp-api /api admin partners reset-circuit --org-id "<partner-org-uuid>"
+   ```
+
+---
+
+### 18.5 Proveedor de IA caído (Degradación a captura manual)
+
+#### Detección:
+- **Alerta**: `OCRFailureRateHigh` (> 10% fallos en 1 hora) o `OCRProviderUnreachable`.
+- **Síntoma**: Errores 502/503/504 en las llamadas salientes hacia la API de Anthropic/Claude o agotamiento de reintentos en `worker`.
+
+#### Procedimiento de degradación a captura manual (`PP_OCR_PROVIDER=manual`):
+1. **Conmutación inmediata de modo**:
+   - Editar `/etc/petpassport/staging.env`:
+     ```bash
+     sed -i 's/^PP_OCR_PROVIDER=.*/PP_OCR_PROVIDER=manual/' /etc/petpassport/staging.env
+     ```
+   - Reiniciar el worker:
+     ```bash
+     systemctl --user restart pp-worker
+     ```
+2. **Efecto operativo**:
+   - La subida de recetas externas sigue funcionando normalmente y no se rechaza ningún archivo de los tutores.
+   - El trabajo de extracción no llama a la IA: guarda el documento, pre-procesa la imagen para visor web y transiciona el trabajo a `status = 'review_pending'` con campos en blanco o valores inferidos de los metadatos.
+   - El personal de la clínica o el tutor rellenan los campos en el formulario de confirmación asistido.
+3. **Restablecimiento**:
+   - Una vez superada la caída del proveedor de IA, volver a establecer `PP_OCR_PROVIDER=claude` y reiniciar `pp-worker`.
+
+---
+
+### 18.6 Presupuesto de IA agotado
+
+#### Detección:
+- **Alertas**:
+  - `AIBudget80`: Gasto acumulado al 80% del límite mensual presupuestado.
+  - `AIBudget100`: Gasto acumulado al 100% de la cuota mensual (`PP_AI_BUDGET_USD_LIMIT`).
+- **Métricas**: `ai_cost_usd_total`, `ai_budget_used_ratio`.
+
+#### Protocolo de actuación:
+1. **Opción A — Ampliación autorizada de presupuesto**:
+   Si la dirección aprueba una partida presupuestaria adicional por pico legítimo de demanda:
+   ```bash
+   # Incrementar en staging.env el límite (ej. de 100 a 200 USD)
+   sed -i 's/^PP_AI_BUDGET_USD_LIMIT=.*/PP_AI_BUDGET_USD_LIMIT=200.00/' /etc/petpassport/staging.env
+   systemctl --user restart pp-worker pp-api
+   ```
+2. **Opción B — Cambio dinámico a modelo ligero (Claude Haiku)**:
+   Si se requiere mantener el procesamiento OCR reduciendo el coste por token en un 80%:
+   ```bash
+   sed -i 's/^PP_OCR_MODEL=.*/PP_OCR_MODEL=claude-3-5-haiku-20241022/' /etc/petpassport/staging.env
+   systemctl --user restart pp-worker
+   ```
+3. **Opción C — Corte preventivo / Captura manual**:
+   Al alcanzar el 100%, el sistema bloquea automáticamente nuevas invocaciones a la API externa de IA y degrada las solicitudes entrantes a captura manual para evitar sobrecostes no autorizados.
+
+---
+
+### 18.7 Revocación masiva de recetas de un veterinario (Credencial fraudulenta)
+
+#### Escenario:
+Un colegio oficial de veterinarios o una auditoría legal detecta que un profesional registrado carece de título habilitante, tiene la colegiación suspendida o sus credenciales fueron comprometidas para emitir prescripciones ilícitas.
+
+#### Procedimiento de contención y cascada:
+1. **Revocación de la credencial profesional**:
+   ```sql
+   UPDATE identity.veterinarian_credentials
+   SET verification_status = 'revoked',
+       rejection_reason = 'Credencial inhabilitada por resolución colegial de urgencia',
+       updated_at = NOW()
+   WHERE veterinarian_id = '<vet-user-uuid>';
+   ```
+2. **Bloqueo del usuario en Keycloak**:
+   - Deshabilitar el acceso para invalidar sesiones activas y emisión de tokens:
+     ```bash
+     podman exec pp-api /api admin users disable --user-id "<vet-user-uuid>"
+     ```
+3. **Ejecución del comando de anulación en cascada**:
+   ```bash
+   podman exec pp-api /api admin prescriptions revoke-by-vet \
+     --vet-id "<vet-user-uuid>" \
+     --reason "Inhabilitación legal del prescriptor"
+   ```
+4. **Comportamiento reactivo de la saga**:
+   - Cada receta activa emite el evento de dominio `PrescriptionRevoked`.
+   - Las solicitudes de cotización asociadas que no hayan finalizado se cancelan (`QuoteRequestClosed`).
+   - Los pedidos en preparación se cancelan (`OrderCancelled`) y se emite notificación de alerta inmediata a las farmacias asignadas.
+   - Se congelan los despachos no completados en los sistemas de las farmacias vía webhook de prioridad alta.
+5. **Auditoría e informe legal**:
+   Generar el registro completo de prescripciones y medicamentos afectados para el informe a la Agencia del Medicamento y Colegio Oficial.
+
+---
+
+### 18.8 Incidente de seguridad / fuga de datos con partner
+
+#### Procedimiento de respuesta ante compromiso de un partner:
+1. **Revocación fulminante de accesos B2B**:
+   ```bash
+   podman exec pp-api /api admin partners isolate --org-id "<partner-org-uuid>"
+   ```
+   - Invalida inmediatamente todas las API Keys activas del partner en Redis y en base de datos.
+   - Suspende todos los webhooks salientes hacia sus servidores.
+   - Bloquea cualquier petición HTTP entrante desde sus IPs en Traefik / nftables.
+2. **Auditoría forense en `read_partnernetwork.partner_calls`**:
+   Ejecutar la consulta forense para delimitar la ventana de compromiso y los identificadores de recursos expuestos:
+   ```sql
+   SELECT called_at, client_ip, route, method, response_code, request_payload, query_params
+   FROM read_partnernetwork.partner_calls
+   WHERE partner_id = '<partner-org-uuid>'
+     AND called_at >= NOW() - INTERVAL '7 days'
+   ORDER BY called_at DESC;
+   ```
+3. **Evaluación de impacto RGPD/LOPD**:
+   - Identificar las recetas, pedidos, datos de tutores (nombre, teléfono, dirección de entrega) y datos veterinarios consultados durante el intervalo del incidente.
+4. **Notificación de brecha**:
+   - Notificar a la Agencia Española de Protección de Datos (AEPD) en el plazo legal estricto de ≤ 72 horas si se constata riesgo para los derechos y libertades de los interesados.
+   - Notificar a los tutores y veterinarios afectados con recomendaciones claras de seguridad.
+
+---
+
+### 18.9 Regeneración del entorno sandbox
+
+El entorno sandbox permite a integradores de software farmacéutico y nuevos partners certificar sus conectores sin manipular información clínica real.
+
+#### Pasos para la regeneración limpia:
+1. **Detener temporalmente el simulador y servicios de sandbox**:
+   ```bash
+   systemctl --user stop pp-partner-sim pp-api-sandbox
+   ```
+2. **Reinicializar la base de datos sandbox**:
+   ```bash
+   podman exec -it pp-postgres-sandbox psql -U petpassport -d postgres -c "DROP DATABASE petpassport_sandbox;"
+   podman exec -it pp-postgres-sandbox psql -U petpassport -d postgres -c "CREATE DATABASE petpassport_sandbox OWNER petpassport;"
+   podman exec pp-migrate-sandbox /migrate up
+   podman exec pp-api-sandbox /api seeds run --profile sandbox
+   ```
+3. **Re-importación del realm de Keycloak sandbox**:
+   ```bash
+   podman exec pp-keycloak /opt/keycloak/bin/kc.sh import --file /opt/petpassport/infra/keycloak/realm-sandbox.json --override true
+   ```
+4. **Reinicio de `partner-sim`**:
+   - El simulador inicializa farmacias virtuales predefinidas con distintos perfiles de latencia, rechazo y sustitución:
+     ```bash
+     systemctl --user start pp-api-sandbox pp-partner-sim
+     ```
+5. **Verificación de disponibilidad**:
+   ```bash
+   curl -s -f "https://partners-sandbox.${PP_DOMAIN}/readyz" | grep -q "ready" && echo "Sandbox OK"
+   ```
+
 

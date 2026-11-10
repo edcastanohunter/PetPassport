@@ -284,6 +284,7 @@ var suite = map[Action][]suiteRow{
 	PharmacyAdmin:    {{pharmacyOrgRes, [11]bool{N, N, N, N, N, N, Y, N, N, N, N}}},
 	OrderRead:        {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
 	OrderCancel:      {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
+	OrderRate:        {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

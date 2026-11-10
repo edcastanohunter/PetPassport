@@ -359,6 +359,7 @@ async function cancelRequest() {
           <div
             v-for="q in quoteRequest.quotes"
             :key="q.quote_id"
+            data-testid="quote-card"
             class="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
           >
             <div>
@@ -425,6 +426,7 @@ async function cancelRequest() {
               <button
                 v-if="q.lines.some((l) => l.substitution)"
                 type="button"
+                data-testid="btn-view-subs"
                 @click="openSubstitutionsModal(q)"
                 class="w-full rounded-md border border-purple-200 bg-purple-50 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100"
               >
@@ -434,6 +436,7 @@ async function cancelRequest() {
               <button
                 v-if="quoteRequest.status === 'open'"
                 type="button"
+                data-testid="btn-select-quote"
                 @click="openSelectModal(q)"
                 class="w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700 transition"
               >
@@ -481,6 +484,7 @@ async function cancelRequest() {
           <input
             type="checkbox"
             v-model="consentGranted"
+            data-testid="consent-checkbox"
             class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
           />
           <span>
@@ -502,6 +506,7 @@ async function cancelRequest() {
           <button
             type="button"
             :disabled="!consentGranted || selectingBusy"
+            data-testid="btn-confirm-order"
             @click="confirmSelectQuote"
             class="rounded-lg bg-emerald-600 px-6 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
           >

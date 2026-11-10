@@ -208,3 +208,16 @@ type OrderCancelled struct {
 
 func (OrderCancelled) EventName() string  { return "OrderCancelled" }
 func (OrderCancelled) SchemaVersion() int { return 1 }
+
+// OrderRated registra la valoración y comentario del tutor tras completarse la entrega (PP-F4-PRD-022).
+type OrderRated struct {
+	OrderID       uuid.UUID `json:"order_id"`
+	PharmacyOrgID uuid.UUID `json:"pharmacy_org_id"`
+	GuardianID    uuid.UUID `json:"guardian_id"`
+	Score         int       `json:"score"`
+	Comment       string    `json:"comment"`
+	At            time.Time `json:"at"`
+}
+
+func (OrderRated) EventName() string  { return "OrderRated" }
+func (OrderRated) SchemaVersion() int { return 1 }

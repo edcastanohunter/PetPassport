@@ -70,9 +70,17 @@ type OrderDetailView struct {
 	Timeline        []domain.OrderTimelineEntry `json:"timeline"`
 	Dispensation    *domain.DispensationRecord  `json:"dispensation,omitempty"`
 	PartnerRef      *string                     `json:"partner_ref,omitempty"`
+	Rating          *OrderRatingView            `json:"rating,omitempty"`
 	PaymentNotice   string                      `json:"payment_notice"`
 	CreatedAt       time.Time                   `json:"created_at"`
 	UpdatedAt       time.Time                   `json:"updated_at"`
+}
+
+// OrderRatingView modela la valoración del pedido (PP-F4-PRD-022).
+type OrderRatingView struct {
+	Score   int       `json:"score"`
+	Comment string    `json:"comment,omitempty"`
+	RatedAt time.Time `json:"rated_at"`
 }
 
 // PharmacyInboxItem modela una solicitud recibida en la bandeja del portal de farmacia (FE-007, API-007).
@@ -276,27 +284,27 @@ func (q *Queries) ListGuardianQuoteRequests(ctx context.Context, guardianID uuid
 // GetOrder consulta el detalle de un pedido.
 func (q *Queries) GetOrder(ctx context.Context, id uuid.UUID) (*OrderDetailView, error) {
 	var (
-		rxID, quoteID, qrID, petID, guardianID, orgID           uuid.UUID
-		mode, status, phone                                     string
-		vInt                                                    int64
-		linesJSON, totalsJSON, addrJSON, timelineJSON, dispJSON []byte
-		partnerRef                                              *string
-		createdAt, updatedAt                                    time.Time
-		orgName, orgPhone, orgCity                              string
+		rxID, quoteID, qrID, petID, guardianID, orgID                       uuid.UUID
+		mode, status, phone                                                 string
+		vInt                                                                int64
+		linesJSON, totalsJSON, addrJSON, timelineJSON, dispJSON, ratingJSON []byte
+		partnerRef                                                          *string
+		createdAt, updatedAt                                                time.Time
+		orgName, orgPhone, orgCity                                          string
 	)
 
 	err := q.pool.QueryRow(ctx, `
 		SELECT o.version, o.quote_request_id, o.quote_id, o.prescription_id, o.pet_id,
 		       o.guardian_id, o.pharmacy_org_id, o.mode, o.delivery_address, o.contact_phone,
 		       o.lines, o.totals, o.status, o.timeline, o.dispensation, o.partner_ref,
-		       o.created_at, o.updated_at,
+		       o.rating, o.created_at, o.updated_at,
 		       p.display_name, COALESCE(p.phone, ''), COALESCE(p.city, '')
 		FROM read_pharmacyorders.orders o
 		JOIN read_partnernetwork.organizations p ON p.id = o.pharmacy_org_id
 		WHERE o.id = $1`, id).Scan(
 		&vInt, &qrID, &quoteID, &rxID, &petID, &guardianID, &orgID,
 		&mode, &addrJSON, &phone, &linesJSON, &totalsJSON, &status,
-		&timelineJSON, &dispJSON, &partnerRef, &createdAt, &updatedAt,
+		&timelineJSON, &dispJSON, &partnerRef, &ratingJSON, &createdAt, &updatedAt,
 		&orgName, &orgPhone, &orgCity,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -320,6 +328,10 @@ func (q *Queries) GetOrder(ctx context.Context, id uuid.UUID) (*OrderDetailView,
 	if len(dispJSON) > 0 {
 		_ = json.Unmarshal(dispJSON, &disp)
 	}
+	var rating *OrderRatingView
+	if len(ratingJSON) > 0 && string(ratingJSON) != "null" {
+		_ = json.Unmarshal(ratingJSON, &rating)
+	}
 
 	return &OrderDetailView{
 		ID:              id,
@@ -342,6 +354,7 @@ func (q *Queries) GetOrder(ctx context.Context, id uuid.UUID) (*OrderDetailView,
 		Timeline:        timeline,
 		Dispensation:    disp,
 		PartnerRef:      partnerRef,
+		Rating:          rating,
 		PaymentNotice:   "El pago se realiza en la farmacia",
 		CreatedAt:       createdAt,
 		UpdatedAt:       updatedAt,

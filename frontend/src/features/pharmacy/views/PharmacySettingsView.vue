@@ -878,6 +878,7 @@ function copyToClipboard(text: string, isSandbox = false) {
             <input
               type="url"
               v-model="webhookForm.url"
+              data-testid="input-webhook-url"
               placeholder="https://api.tu-farmacia.com/webhooks/petpassport"
               class="mt-1 w-full rounded border border-slate-300 p-2 font-mono text-xs"
             />
@@ -890,6 +891,7 @@ function copyToClipboard(text: string, isSandbox = false) {
             <input
               type="text"
               v-model="webhookForm.secret"
+              data-testid="input-webhook-secret"
               placeholder="whsec_dejar_vacio_para_mantener_el_actual"
               class="mt-1 w-full rounded border border-slate-300 p-2 font-mono text-xs"
             />
@@ -907,6 +909,7 @@ function copyToClipboard(text: string, isSandbox = false) {
             <button
               type="button"
               :disabled="testingWebhook"
+              data-testid="btn-test-webhook"
               @click="testWebhook"
               class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
@@ -916,6 +919,7 @@ function copyToClipboard(text: string, isSandbox = false) {
             <button
               type="button"
               :disabled="savingWebhook"
+              data-testid="btn-save-webhook"
               @click="saveWebhook"
               class="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50"
             >
@@ -926,6 +930,7 @@ function copyToClipboard(text: string, isSandbox = false) {
           <!-- Resultado del Test -->
           <div
             v-if="testWebhookResult"
+            data-testid="test-webhook-result"
             class="rounded-lg p-3 text-xs"
             :class="
               testWebhookResult.status === 'delivered'
@@ -1064,13 +1069,66 @@ function copyToClipboard(text: string, isSandbox = false) {
               >{{ stats.conversion_rate_percent }}%</span
             >
           </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Ingresos Estimados</span>
+            <span class="mt-1 block text-2xl font-bold text-emerald-800"
+              >${{ Number(stats.estimated_revenue ?? 0).toLocaleString() }}</span
+            >
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <span class="text-xs text-slate-500">Valoración de Clientes</span>
+            <span class="mt-1 block text-2xl font-bold text-amber-500"
+              >★ {{ Number(stats.rating_avg ?? 5.0).toFixed(1) }}
+              <span class="text-xs font-normal text-slate-500"
+                >({{ stats.rating_count ?? 0 }} valoraciones)</span
+              ></span
+            >
+          </div>
         </div>
 
-        <div class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 text-xs">
-          <span class="font-bold text-emerald-900">Estado de SLA: Óptimo</span>
+        <!-- Desglose de pedidos por estado -->
+        <div v-if="stats && stats.orders_by_status" class="mt-6 border-t pt-4">
+          <h4 class="text-xs font-bold uppercase text-slate-600">Desglose de Pedidos por Estado</h4>
+          <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 text-xs">
+            <div
+              v-for="(count, st) in stats.orders_by_status"
+              :key="st"
+              class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2.5"
+            >
+              <span class="capitalize text-slate-600">{{ st }}</span>
+              <span class="font-bold text-slate-900">{{ count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="stats"
+          class="mt-6 rounded-lg border p-4 text-xs"
+          :class="
+            stats.avg_response_minutes <= 360
+              ? 'border-emerald-200 bg-emerald-50/50'
+              : 'border-amber-200 bg-amber-50/50'
+          "
+        >
+          <span
+            class="font-bold"
+            :class="stats.avg_response_minutes <= 360 ? 'text-emerald-900' : 'text-amber-900'"
+          >
+            Estado de SLA:
+            {{
+              stats.avg_response_minutes <= 360
+                ? 'Óptimo'
+                : 'Atención Requerida (Tiempo de Respuesta Alto)'
+            }}
+          </span>
           <p class="mt-1 text-slate-600">
-            La farmacia cumple todos los parámetros de calidad del acuerdo B2B para mantener su
-            asignación automática de cotizaciones.
+            {{
+              stats.avg_response_minutes <= 360
+                ? 'La farmacia cumple todos los parámetros de calidad del acuerdo B2B para mantener su asignación automática de cotizaciones.'
+                : 'El tiempo promedio de respuesta excede el umbral objetivo de 6 horas.'
+            }}
           </p>
         </div>
       </div>

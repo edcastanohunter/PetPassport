@@ -423,7 +423,7 @@ func (h *PharmacyHandlers) RetryPharmacyWebhookDelivery(ctx context.Context, req
 	}, nil
 }
 
-// GetPharmacyStats devuelve métricas de cotizaciones, pedidos y SLA para el portal (PRD-015, API-008).
+// GetPharmacyStats devuelve métricas de cotizaciones, pedidos y SLA para el portal (PRD-016, API-008).
 func (h *PharmacyHandlers) GetPharmacyStats(ctx context.Context, req gen.GetPharmacyStatsRequestObject) (gen.GetPharmacyStatsResponseObject, error) {
 	p, err := h.principal(ctx)
 	if err != nil {
@@ -439,12 +439,48 @@ func (h *PharmacyHandlers) GetPharmacyStats(ctx context.Context, req gen.GetPhar
 	ordersComp := 0
 	avgMins := float32(18.5)
 	convRate := float32(0.0)
+	ratingAvg := float32(5.0)
+	ratingCount := 0
+	estimatedRevenue := float32(0.0)
+	ordersByStatus := make(map[string]int)
 
 	if h.pool != nil {
+		var avgResp, rAvg *float64
 		_ = h.pool.QueryRow(ctx, `
-			SELECT count(*) FROM read_pharmacyorders.orders WHERE pharmacy_org_id = $1`, req.OrgId).Scan(&ordersPlaced)
-		_ = h.pool.QueryRow(ctx, `
-			SELECT count(*) FROM read_pharmacyorders.orders WHERE pharmacy_org_id = $1 AND status = 'delivered'`, req.OrgId).Scan(&ordersComp)
+			SELECT invitations, quoted, avg_response_minutes,
+			       orders_placed, orders_completed, rating_avg, rating_count
+			FROM read_pharmacyorders.partner_sla
+			WHERE organization_id = $1`, req.OrgId).Scan(
+			&quotesRecv, &quotesSub, &avgResp,
+			&ordersPlaced, &ordersComp, &rAvg, &ratingCount,
+		)
+		if avgResp != nil {
+			avgMins = float32(*avgResp)
+		}
+		if rAvg != nil {
+			ratingAvg = float32(*rAvg)
+		}
+
+		// Desglose por estado e ingresos estimados de delivered
+		rows, err := h.pool.Query(ctx, `
+			SELECT status, count(*), COALESCE(SUM((totals->>'total')::numeric), 0)
+			FROM read_pharmacyorders.orders
+			WHERE pharmacy_org_id = $1
+			GROUP BY status`, req.OrgId)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var st string
+				var cnt int
+				var revenue float64
+				if err := rows.Scan(&st, &cnt, &revenue); err == nil {
+					ordersByStatus[st] = cnt
+					if st == "delivered" {
+						estimatedRevenue = float32(revenue)
+					}
+				}
+			}
+		}
 	}
 
 	if quotesSub > 0 {
@@ -458,5 +494,9 @@ func (h *PharmacyHandlers) GetPharmacyStats(ctx context.Context, req gen.GetPhar
 		OrdersCompleted:       ordersComp,
 		AvgResponseMinutes:    avgMins,
 		ConversionRatePercent: convRate,
+		RatingAvg:             &ratingAvg,
+		RatingCount:           &ratingCount,
+		EstimatedRevenue:      &estimatedRevenue,
+		OrdersByStatus:        &ordersByStatus,
 	}, nil
 }

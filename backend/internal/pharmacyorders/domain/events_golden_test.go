@@ -257,6 +257,17 @@ func TestEvents_Golden(t *testing.T) {
 				At:      fixedTime,
 			},
 		},
+		{
+			name: "OrderRated",
+			data: OrderRated{
+				OrderID:       fixedUUID,
+				PharmacyOrgID: fixedUUID,
+				GuardianID:    fixedUUID,
+				Score:         5,
+				Comment:       "Excelente atención y despacho rápido",
+				At:            fixedTime,
+			},
+		},
 	}
 
 	goldenDir := filepath.Clean(filepath.Join("testdata", "golden"))
@@ -324,6 +335,7 @@ func TestEvents_EventNameAndSchemaVersion(t *testing.T) {
 		{OrderOutForDelivery{}, "OrderOutForDelivery"},
 		{OrderDelivered{}, "OrderDelivered"},
 		{OrderCancelled{}, "OrderCancelled"},
+		{OrderRated{}, "OrderRated"},
 	}
 
 	for _, tc := range tests {

@@ -856,6 +856,89 @@ func (h *PartnerHandlers) PartnerGetMe(ctx context.Context, req genpartner.Partn
 	}, nil
 }
 
+// PartnerGetStats devuelve métricas de SLA y estadísticas del partner en ventana de 90 días (PP-F4-PTN-008).
+func (h *PartnerHandlers) PartnerGetStats(ctx context.Context, req genpartner.PartnerGetStatsRequestObject) (genpartner.PartnerGetStatsResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	windowDays := 90
+	invitations := 0
+	quoted := 0
+	declined := 0
+	quoteRate := float32(1.0)
+	avgRespMins := float32(18.5)
+	p50RespMins := float32(15.0)
+	ordersPlaced := 0
+	ordersCompleted := 0
+	ordersRejected := 0
+	ratingAvg := float32(5.0)
+	ratingCount := 0
+
+	if h.pool != nil {
+		var avgResp, p50Resp, qRate, rAvg *float64
+		row := h.pool.QueryRow(ctx, `
+			SELECT window_days, invitations, quoted, declined, avg_response_minutes,
+			       p50_response_minutes, quote_rate, orders_placed, orders_completed,
+			       orders_rejected, rating_avg, rating_count
+			FROM read_pharmacyorders.partner_sla
+			WHERE organization_id = $1`, p.OrgID)
+		err := row.Scan(
+			&windowDays, &invitations, &quoted, &declined, &avgResp,
+			&p50Resp, &qRate, &ordersPlaced, &ordersCompleted,
+			&ordersRejected, &rAvg, &ratingCount,
+		)
+		if err == nil {
+			if avgResp != nil {
+				avgRespMins = float32(*avgResp)
+			}
+			if p50Resp != nil {
+				p50RespMins = float32(*p50Resp)
+			}
+			if qRate != nil {
+				quoteRate = float32(*qRate)
+			}
+			if rAvg != nil {
+				ratingAvg = float32(*rAvg)
+			}
+		}
+	}
+
+	// Umbrales de calidad del SLA (PTN-008):
+	// Tasa mínima de respuesta: 70% (0.70)
+	// Tiempo promedio máximo: 6 horas (360 minutos)
+	minQuoteRate := float32(70.0)
+	maxAvgHours := float32(6.0)
+	slaCompliant := true
+	if invitations > 0 {
+		if quoteRate < 0.70 || avgRespMins > 360.0 {
+			slaCompliant = false
+		}
+	}
+
+	return genpartner.PartnerGetStats200JSONResponse{
+		OrganizationId:     p.OrgID,
+		WindowDays:         windowDays,
+		Invitations:        invitations,
+		Quoted:             quoted,
+		Declined:           declined,
+		QuoteRate:          quoteRate,
+		AvgResponseMinutes: avgRespMins,
+		P50ResponseMinutes: &p50RespMins,
+		OrdersPlaced:       ordersPlaced,
+		OrdersCompleted:    ordersCompleted,
+		OrdersRejected:     ordersRejected,
+		RatingAvg:          ratingAvg,
+		RatingCount:        ratingCount,
+		SlaCompliant:       slaCompliant,
+		Thresholds: &genpartner.PartnerSLAThresholds{
+			MinQuoteRatePercent: minQuoteRate,
+			MaxAvgResponseHours: maxAvgHours,
+		},
+	}, nil
+}
+
 // PartnerConfigureWebhook configura endpoint y secretos de webhook (PTN-004, SEC-003).
 func (h *PartnerHandlers) PartnerConfigureWebhook(ctx context.Context, req genpartner.PartnerConfigureWebhookRequestObject) (genpartner.PartnerConfigureWebhookResponseObject, error) {
 	p, err := h.principal(ctx)

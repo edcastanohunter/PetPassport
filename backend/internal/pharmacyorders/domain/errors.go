@@ -34,4 +34,10 @@ var (
 	ErrDispensationExceeds     = kernel.NewDomainError("DISPENSATION_EXCEEDS", "La cantidad dispensada supera la cantidad del pedido.")
 	ErrOrderNotCancellable     = kernel.NewDomainError("ORDER_NOT_CANCELLABLE", "El pedido no se puede cancelar en su estado actual.")
 	ErrCancellationTimeout     = kernel.NewDomainError("ORDER_CANCELLATION_TIMEOUT", "No se puede cancelar por el tutor tras más de 1 hora en preparación.")
+
+	// Invariante de Valoración (PP-F4-PRD-022)
+	ErrOrderNotDelivered    = kernel.NewDomainError("ORDER_NOT_DELIVERED", "Solo se pueden valorar pedidos que hayan sido entregados.")
+	ErrOrderAlreadyRated    = kernel.NewDomainError("ORDER_ALREADY_RATED", "Este pedido ya ha sido valorado.")
+	ErrInvalidRatingScore   = kernel.NewDomainError("INVALID_RATING_SCORE", "La puntuación de valoración debe estar entre 1 y 5.")
+	ErrRatingCommentTooLong = kernel.NewDomainError("RATING_COMMENT_TOO_LONG", "El comentario de valoración no puede superar los 500 caracteres.")
 )

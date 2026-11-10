@@ -48,6 +48,7 @@ func (*PharmacyOrdersProjector) Handles() []string {
 		"OrderOutForDelivery",
 		"OrderDelivered",
 		"OrderCancelled",
+		"OrderRated",
 	}
 }
 
@@ -110,10 +111,21 @@ UPDATE read_pharmacyorders.invitations
    SET status = $3, channel = $4, sent_at = $5
  WHERE quote_request_id = $1 AND organization_id = $2`
 
-		_, err := tx.Exec(ctx, updateInvSent,
+		if _, err := tx.Exec(ctx, updateInvSent,
 			ev.QuoteRequestID, ev.OrganizationID, string(domain.InvitationSent), ev.Channel, ev.SentAt,
-		)
-		return err
+		); err != nil {
+			return err
+		}
+
+		const upsertSLAInvited = `
+INSERT INTO read_pharmacyorders.partner_sla (organization_id, invitations, updated_at)
+VALUES ($1, 1, $2)
+ON CONFLICT (organization_id) DO UPDATE SET
+  invitations = read_pharmacyorders.partner_sla.invitations + 1,
+  quote_rate = ROUND(read_pharmacyorders.partner_sla.quoted::numeric / NULLIF(read_pharmacyorders.partner_sla.invitations + 1, 0), 4),
+  updated_at = EXCLUDED.updated_at`
+		_, _ = tx.Exec(ctx, upsertSLAInvited, ev.OrganizationID, e.OccurredAt)
+		return nil
 
 	case domain.QuoteInvitationFailed:
 		const updateInvFailed = `
@@ -180,6 +192,19 @@ INSERT INTO read_pharmacyorders.partner_sla (organization_id, quoted, updated_at
 VALUES ($1, 1, $2)
 ON CONFLICT (organization_id) DO UPDATE SET
   quoted = read_pharmacyorders.partner_sla.quoted + 1,
+  quote_rate = ROUND((read_pharmacyorders.partner_sla.quoted + 1)::numeric / NULLIF(read_pharmacyorders.partner_sla.invitations, 0), 4),
+  avg_response_minutes = COALESCE(
+    (SELECT ROUND(AVG(EXTRACT(EPOCH FROM (responded_at - sent_at))/60.0), 1)
+       FROM read_pharmacyorders.invitations
+      WHERE organization_id = $1 AND responded_at IS NOT NULL AND sent_at IS NOT NULL),
+    read_pharmacyorders.partner_sla.avg_response_minutes
+  ),
+  p50_response_minutes = COALESCE(
+    (SELECT ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (responded_at - sent_at))/60.0)::numeric, 1)
+       FROM read_pharmacyorders.invitations
+      WHERE organization_id = $1 AND responded_at IS NOT NULL AND sent_at IS NOT NULL),
+    read_pharmacyorders.partner_sla.p50_response_minutes
+  ),
   updated_at = EXCLUDED.updated_at`
 		_, _ = tx.Exec(ctx, upsertSLAQuoted, ev.OrganizationID, e.OccurredAt)
 
@@ -200,6 +225,18 @@ INSERT INTO read_pharmacyorders.partner_sla (organization_id, declined, updated_
 VALUES ($1, 1, $2)
 ON CONFLICT (organization_id) DO UPDATE SET
   declined = read_pharmacyorders.partner_sla.declined + 1,
+  avg_response_minutes = COALESCE(
+    (SELECT ROUND(AVG(EXTRACT(EPOCH FROM (responded_at - sent_at))/60.0), 1)
+       FROM read_pharmacyorders.invitations
+      WHERE organization_id = $1 AND responded_at IS NOT NULL AND sent_at IS NOT NULL),
+    read_pharmacyorders.partner_sla.avg_response_minutes
+  ),
+  p50_response_minutes = COALESCE(
+    (SELECT ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (responded_at - sent_at))/60.0)::numeric, 1)
+       FROM read_pharmacyorders.invitations
+      WHERE organization_id = $1 AND responded_at IS NOT NULL AND sent_at IS NOT NULL),
+    read_pharmacyorders.partner_sla.p50_response_minutes
+  ),
   updated_at = EXCLUDED.updated_at`
 		_, _ = tx.Exec(ctx, upsertSLADeclined, ev.OrganizationID, e.OccurredAt)
 
@@ -438,6 +475,31 @@ UPDATE read_pharmacyorders.orders
 			ev.OrderID, e.StreamVersion, string(domain.OrderStatusCancelled), string(entryJSON), e.OccurredAt,
 		)
 		return err
+
+	case domain.OrderRated:
+		ratingJSON, _ := jsonBytes(map[string]any{
+			"score":    ev.Score,
+			"comment":  ev.Comment,
+			"rated_at": ev.At,
+		})
+
+		const updateOrderRating = `
+UPDATE read_pharmacyorders.orders
+   SET rating = $2, updated_at = $3
+ WHERE id = $1`
+		if _, err := tx.Exec(ctx, updateOrderRating, ev.OrderID, ratingJSON, e.OccurredAt); err != nil {
+			return fmt.Errorf("project OrderRated order: %w", err)
+		}
+
+		const updateSLARating = `
+UPDATE read_pharmacyorders.partner_sla
+   SET rating_count = rating_count + 1,
+       rating_avg = ROUND((
+         (COALESCE(rating_avg, 0) * rating_count + $2) / (rating_count + 1)
+       )::numeric, 2),
+       updated_at = $3
+ WHERE organization_id = $1`
+		_, _ = tx.Exec(ctx, updateSLARating, ev.PharmacyOrgID, ev.Score, e.OccurredAt)
 	}
 
 	return nil

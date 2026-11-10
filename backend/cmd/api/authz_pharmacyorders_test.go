@@ -382,6 +382,9 @@ var pharmacyMatrix = map[string][9]int{
 	// order:cancel (tutor o super_admin)
 	"cancelOrder": {ok, 403, 403, 403, 403, 403, 403, 403, ok},
 
+	// order:rate (solo tutor)
+	"rateOrder": {ok, 403, 403, 403, 403, 403, 403, 403, 403},
+
 	// pharmacy:orders (personal de farmacia activa)
 	"getPharmacyInbox":                {403, 403, 403, 403, 403, 403, ok, 403, 403},
 	"listPharmacyOrders":              {403, 403, 403, 403, 403, 403, ok, 403, 403},

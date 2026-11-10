@@ -469,6 +469,22 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /me/stats:
+    get:
+      operationId: partnerGetStats
+      summary: Consultar métricas de SLA y rendimiento del partner
+      description: Devuelve el resumen de SLA de la farmacia en la ventana móvil de 90 días, tiempos de respuesta, tasa de cotización y cumplimiento de umbrales (PP-F4-PTN-008).
+      tags: [profile]
+      responses:
+        "200":
+          description: Estadísticas de SLA del partner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerStatsResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /me/webhook:
     put:
       operationId: partnerConfigureWebhook
@@ -1196,3 +1212,57 @@ components:
           type: integer
         error:
           type: string
+
+    PartnerStatsResponse:
+      type: object
+      required: [organization_id, window_days, invitations, quoted, declined, avg_response_minutes, quote_rate, orders_placed, orders_completed, orders_rejected, rating_avg, rating_count, sla_compliant]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        window_days:
+          type: integer
+        invitations:
+          type: integer
+        quoted:
+          type: integer
+        declined:
+          type: integer
+        quote_rate:
+          type: number
+          format: float
+        avg_response_minutes:
+          type: number
+          format: float
+        p50_response_minutes:
+          type: number
+          format: float
+        orders_placed:
+          type: integer
+        orders_completed:
+          type: integer
+        orders_rejected:
+          type: integer
+        rating_avg:
+          type: number
+          format: float
+        rating_count:
+          type: integer
+        sla_compliant:
+          type: boolean
+        thresholds:
+          $ref: "#/components/schemas/PartnerSLAThresholds"
+
+    PartnerSLAThresholds:
+      type: object
+      required: [min_quote_rate_percent, max_avg_response_hours]
+      properties:
+        min_quote_rate_percent:
+          type: number
+          format: float
+          description: Tasa mínima de respuesta esperada (70%)
+        max_avg_response_hours:
+          type: number
+          format: float
+          description: Tiempo máximo promedio de respuesta en horas laborables (6h)
+

@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -657,5 +658,79 @@ func TestCoverage_OrderModesAndReadyTransitions(t *testing.T) {
 	err = orderPickup.OutForDelivery(nil, now)
 	if !errors.Is(err, ErrInvalidTransition) {
 		t.Fatalf("expected ErrInvalidTransition for OutForDelivery on pickup mode, got %v", err)
+	}
+}
+
+func TestOrder_PRD022_Rating(t *testing.T) {
+	qr, quote := sampleQuoteRequestAndQuote()
+	now := time.Now()
+	addr := &Address{Street: "Calle 1", City: "Bogota"}
+
+	order := NewOrder()
+	orderID := uuid.New()
+	_ = order.Place(orderID, qr, quote, ModeDelivery, addr, "+573001234567", nil, now)
+
+	// Intento de valorar antes de estar entregado -> ErrOrderNotDelivered
+	if err := order.Rate(5, "Excelente servicio", now); !errors.Is(err, ErrOrderNotDelivered) {
+		t.Fatalf("expected ErrOrderNotDelivered, got %v", err)
+	}
+
+	_ = order.Confirm(nil, nil, now)
+	_ = order.Prepare(now)
+	_ = order.OutForDelivery(nil, now)
+
+	// Deliver
+	disp := DispensationRecord{
+		Lines: []DispensationLine{
+			{ItemID: "item-1", Qty: 2},
+		},
+		At: now,
+	}
+	if err := order.Deliver(disp, now); err != nil {
+		t.Fatalf("unexpected deliver error: %v", err)
+	}
+
+	// Score inválido (< 1 o > 5)
+	if err := order.Rate(0, "Malo", now); !errors.Is(err, ErrInvalidRatingScore) {
+		t.Fatalf("expected ErrInvalidRatingScore for 0, got %v", err)
+	}
+	if err := order.Rate(6, "Genial", now); !errors.Is(err, ErrInvalidRatingScore) {
+		t.Fatalf("expected ErrInvalidRatingScore for 6, got %v", err)
+	}
+
+	// Comentario demasiado largo (> 500 caracteres)
+	longComment := strings.Repeat("A", 501)
+	if err := order.Rate(4, longComment, now); !errors.Is(err, ErrRatingCommentTooLong) {
+		t.Fatalf("expected ErrRatingCommentTooLong, got %v", err)
+	}
+
+	// Valoración válida
+	if err := order.Rate(5, "Muy rápida la entrega y medicamentos en perfecto estado.", now); err != nil {
+		t.Fatalf("unexpected rate error: %v", err)
+	}
+
+	if order.Rating == nil || order.Rating.Score != 5 {
+		t.Fatalf("expected order.Rating to be set with score 5, got %v", order.Rating)
+	}
+
+	// Intento de valorar dos veces -> ErrOrderAlreadyRated
+	if err := order.Rate(4, "Otro comentario", now); !errors.Is(err, ErrOrderAlreadyRated) {
+		t.Fatalf("expected ErrOrderAlreadyRated, got %v", err)
+	}
+
+	// Verificar evento emitido
+	uncommitted := order.UncommittedEvents()
+	var ratedEvent *OrderRated
+	for _, ev := range uncommitted {
+		if re, ok := ev.(OrderRated); ok {
+			ratedEvent = &re
+			break
+		}
+	}
+	if ratedEvent == nil {
+		t.Fatalf("expected OrderRated event in uncommitted events")
+	}
+	if ratedEvent.Score != 5 || ratedEvent.OrderID != orderID {
+		t.Fatalf("invalid OrderRated event data: %+v", ratedEvent)
 	}
 }

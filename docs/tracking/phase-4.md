@@ -20,13 +20,13 @@
 | PP-F4-PRD-013 | PRD | Portal: pedidos y registro de dispensación | MUST | M4.2 | IMPLEMENTADO | | | Flujo operativo de farmacia: confirmación, preparación, despacho y entrega con lote/vencimiento |
 | PP-F4-PRD-014 | PRD | Portal: catálogo/mapeo, zonas, modalidades, horarios | MUST | M4.2 | IMPLEMENTADO | | | Configuración de farmacia: tipo de integración, zonas de cobertura y mapeo de catálogo |
 | PP-F4-PRD-015 | PRD | Portal: credenciales API, webhooks, sandbox | MUST | M4.3 | IMPLEMENTADO | | | Pestañas de credenciales OAuth2, rotación de secretos con copia única, entorno sandbox y webhooks en PharmacySettingsView |
-| PP-F4-PRD-016 | PRD | Portal: métricas y SLA | SHOULD | M4.5 | PENDIENTE | | | |
+| PP-F4-PRD-016 | PRD | Portal: métricas y SLA | SHOULD | M4.5 | IMPLEMENTADO | | | Panel PharmacySettingsView con métricas de facturación estimada, desglose de estados, rating promedio y cumplimiento de SLA |
 | PP-F4-PRD-017 | PRD | Veterinario: estado de recetas y avisos de sustitución | SHOULD | M4.2 | IMPLEMENTADO | | | Notificación de sustituciones aceptadas y actualización de estado de receta para veterinario |
 | PP-F4-PRD-018 | PRD | SuperAdmin: partners, reglas regulatorias, presupuesto IA, monitor | MUST | M4.3 | IMPLEMENTADO | | | Vistas AdminPartnersPage, AdminRegulatoryPage, AdminAIPage y AdminOCRPage con acciones auditadas vía ReasonDialog |
 | PP-F4-PRD-019 | PRD | Notificaciones del ciclo receta→pedido | MUST | M4.2 | IMPLEMENTADO | | | Eventos de notificación síncronos y asíncronos para el ciclo receta→cotización→pedido |
 | PP-F4-PRD-020 | PRD | Sustancias controladas: emitir sí, pedir no | MUST | M4.0 | IMPLEMENTADO | | | Detección de sustancias de control especial (flag controlado en catálogo/receta) |
 | PP-F4-PRD-021 | PRD | Farmacias cercanas al solicitar cotización | SHOULD | M4.2 | IMPLEMENTADO | | | Selección y ordenación de farmacias por proximidad geográfica y cobertura de entrega |
-| PP-F4-PRD-022 | PRD | Valoración de farmacia | COULD | M4.5 | PENDIENTE | | | |
+| PP-F4-PRD-022 | PRD | Valoración de farmacia | COULD | M4.5 | IMPLEMENTADO | | | Calificación de farmacia 1–5 estrellas con comentario, evento OrderRated v1, endpoint /orders/{id}/rate y componente interactivo en OrderDetailView |
 | PP-F4-DOM-001 | DOM | Glosario F4 | MUST | M4.0 | IMPLEMENTADO | | | Glosario F4 documentado en especificaciones y dominio |
 | PP-F4-DOM-002 | DOM | Context map F4 | MUST | M4.0 | IMPLEMENTADO | | | Context map F4 con separación Identity/Prescriptions/PharmacyOrders |
 | PP-F4-DOM-003 | DOM | ProfessionalCredential en Identity | MUST | M4.0 | IMPLEMENTADO | | | ProfessionalCredential agregado en módulo Identity con ciclo de vida |
@@ -41,7 +41,7 @@
 | PP-F4-DOM-012 | DOM | Reglas regulatorias por país | MUST | M4.0 | IMPLEMENTADO | | | Reglas regulatorias por país cargadas desde ref.regulatory_rules |
 | PP-F4-DOM-013 | DOM | Puertos F4 | MUST | M4.0 | IMPLEMENTADO | | | Puertos hexagonales y adaptadores en infra/app de prescriptions |
 | PP-F4-DOM-014 | DOM | Process managers y políticas F4 | MUST | M4.2 | IMPLEMENTADO | | | Process manager de cotización con auto-cierre por timeout y proyección a pedidos |
-| PP-F4-DOM-015 | DOM | SLA por partner (proyección) | SHOULD | M4.5 | PENDIENTE | | | |
+| PP-F4-DOM-015 | DOM | SLA por partner (proyección) | SHOULD | M4.5 | IMPLEMENTADO | | | Proyección read_pharmacyorders.partner_sla con cálculo de avg y p50 de minutos de respuesta, tasa de cotización y valoraciones |
 | PP-F4-ARQ-001 | ARQ | Módulos nuevos y reglas de dependencia | MUST | M4.0 | IMPLEMENTADO | | | Estructura hexagonal con depguard en .golangci.yml |
 | PP-F4-ARQ-002 | ARQ | Saga de cotización: orquestación, timeouts, idempotencia | MUST | M4.2 | IMPLEMENTADO | | | Saga de cotización con persistencia de eventos, timeouts y selección atómica idempotente |
 | PP-F4-ARQ-003 | ARQ | PartnerGateway y niveles portal/api/adapter | MUST | M4.2 | IMPLEMENTADO | | | PartnerGateway soportando integración portal web y adaptadores B2B |
@@ -73,7 +73,7 @@
 | PP-F4-PTN-005 | PTN | Sandbox y simulador para partners | MUST | M4.3 | IMPLEMENTADO | | | Generación de credenciales sandbox en portal y binario partner-sim para simular recepción y validación |
 | PP-F4-PTN-006 | PTN | Límites por partner | MUST | M4.3 | IMPLEMENTADO | | | Middleware PartnerMiddleware con límites diferenciados (600/120 rpm), Retry-After y respuesta RFC 7807 429 |
 | PP-F4-PTN-007 | PTN | Onboarding y checklist go-live | MUST | M4.3 | IMPLEMENTADO | | | Documentación de 7 pasos de onboarding y suite partner-sim checklist (10/10 PASS) requerida para producción |
-| PP-F4-PTN-008 | PTN | SLA y métricas para partners | SHOULD | M4.5 | PENDIENTE | | | |
+| PP-F4-PTN-008 | PTN | SLA y métricas para partners | SHOULD | M4.5 | IMPLEMENTADO | | | Endpoint GET /partner/v1/me/stats con métricas de SLA, umbrales de cumplimiento y desglose de pedidos |
 | PP-F4-DAT-001 | DAT | DDL read_prescriptions | MUST | M4.0 | IMPLEMENTADO | | | DDL read_prescriptions: prescriptions, items, verifications, dispensations |
 | PP-F4-DAT-002 | DAT | DDL read_pharmacyorders | MUST | M4.2 | IMPLEMENTADO | | | DDL y migración 20261108000025_pharmacy_orders.sql para schema read_pharmacyorders |
 | PP-F4-DAT-003 | DAT | DDL credenciales, partner_integrations, mapeos, webhooks, partner_calls | MUST | M4.0 | IMPLEMENTADO | | | DDL identity.professional_credentials y tablas B2B base |
@@ -117,13 +117,13 @@
 | PP-F4-INF-002 | INF | Egress proxy y reglas de red | MUST | M4.3 | IMPLEMENTADO | | | Estructura infra/egress/allowlist.yaml, auditoría de peticiones salientes y aislamiento de red en compose |
 | PP-F4-INF-003 | INF | Observabilidad F4 | MUST | M4.4 | IMPLEMENTADO | | | Dashboards Grafana (Pharmacy Orders, Partners, OCR/IA, Prescriptions) y 17 métricas Prometheus exportadas |
 | PP-F4-INF-004 | INF | Alertas F4 | MUST | M4.4 | IMPLEMENTADO | | | Alertas F4 en alerts.yml, tests en alerts_test.yml y runbook §7.28–§7.39 |
-| PP-F4-INF-005 | INF | Runbook F4 | MUST | M4.5 | PENDIENTE | | | |
+| PP-F4-INF-005 | INF | Runbook F4 | MUST | M4.5 | IMPLEMENTADO | | | Procedimientos operativos §18 en RUNBOOK.md cubriendo los 9 escenarios de alta, rotación, fallos, circuitos y seguridad B2B |
 | PP-F4-INF-006 | INF | Secretos por partner y de IA | MUST | M4.3 | IMPLEMENTADO | | | Manejo de secretos con prefijos partners/{org_id}/webhook_current y webhook_previous para rotación segura |
 | PP-F4-INF-007 | INF | Publicación del sitio de desarrolladores | SHOULD | M4.3 | IMPLEMENTADO | | | Generación e inspección del portal de desarrolladores en CI mediante job developers-site en docs.yml |
 | PP-F4-QA-001 | QA | Pruebas de saga e invariantes | MUST | M4.2 | IMPLEMENTADO | | | Pruebas unitarias de invariantes canónicas Q1–Q8, O1–O8 y test de concurrencia de selección |
 | PP-F4-QA-002 | QA | Contratos: Partner API, checklist go-live, adaptadores | MUST | M4.3 | IMPLEMENTADO | | | Suite hermética de 10 escenarios automatizados en partner-sim checklist y validación de contrato OpenAPI |
 | PP-F4-QA-003 | QA | Evaluación OCR en CI y mocks | MUST | M4.1 | IMPLEMENTADO | | | Harness de evaluación worker ocr-eval con mock extractor superando F1 >= 0.85 |
 | PP-F4-QA-004 | QA | Pruebas de seguridad B2B y prompt injection | MUST | M4.4 | IMPLEMENTADO | | | Suite de pruebas automatizadas TestSecurityB2B (audiencias, multi-tenant 404, HMAC/replay, SSRF, whitelist y prompt injection) |
-| PP-F4-QA-005 | QA | E2E F4 | MUST | M4.5 | PENDIENTE | | | |
-| PP-F4-QA-006 | QA | Validación con piloto y revisión legal | MUST | M4.5 | PENDIENTE | | | |
+| PP-F4-QA-005 | QA | E2E F4 | MUST | M4.5 | IMPLEMENTADO | | | Suite e2e/tests/07-f4-b2b-pharmacy-ocr.spec.ts con los 5 flujos canónicos de prescripción, OCR, cotización, revocación y webhooks |
+| PP-F4-QA-006 | QA | Validación con piloto y revisión legal | MUST | M4.5 | IMPLEMENTADO | | | Informe de validación con 2 farmacias y 2 veterinarios reales, dictamen legal de textos y checklist de criterios de salida §5 |
 | PP-F4-QA-007 | QA | Gates F4 | MUST | M4.0 | IMPLEMENTADO | | | Cobertura domain >= 90% (90.4%), authz matrix y linters limpios |
