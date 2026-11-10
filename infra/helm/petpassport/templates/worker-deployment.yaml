@@ -25,6 +25,14 @@ spec:
         app.kubernetes.io/component: worker
     spec:
       terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "petpassport.name" . }}
+              app.kubernetes.io/component: worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -65,13 +73,13 @@ spec:
             httpGet:
               path: /healthz
               port: internal
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /readyz
               port: internal
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}

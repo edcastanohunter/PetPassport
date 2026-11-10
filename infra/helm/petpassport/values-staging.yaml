@@ -1,0 +1,111 @@
+# Staging values for PetPassport Helm chart (PP-F5-INF-001, INF-002, OPS-001, OPS-002)
+
+global:
+  env: staging
+  domain: staging.petpassport.app
+
+image:
+  repository: ghcr.io/edcastanohunter/petpassport
+  tag: "0.5.0-rc1"
+  pullPolicy: Always
+
+api:
+  replicaCount: 2
+  port: 8080
+  internalPort: 9090
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  pdb:
+    enabled: true
+    minAvailable: 1
+
+worker:
+  replicaCount: 2
+  internalPort: 9090
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  pdb:
+    enabled: true
+    minAvailable: 1
+
+frontend:
+  replicaCount: 2
+  port: 80
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: app.staging.petpassport.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+    - host: api.staging.petpassport.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+
+redis:
+  addr: "pp-staging-redis.internal:6379"
+  useTLS: true
+
+database:
+  host: "petpassport-staging-pgbouncer"
+  maxConns: 20
+
+oidc:
+  issuer: "https://auth.staging.petpassport.app/realms/petpassport"
+  audience: "petpassport-api"
+  allowedAZP: "petpassport-web"
+
+networkPolicy:
+  enabled: true
+
+externalSecrets:
+  enabled: true
+  awsRegion: us-east-1
+  refreshInterval: 1h
+  remoteKey: "petpassport/staging"
+
+admissionPolicy:
+  enabled: true
+  cosignPublicKey: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEstagingKeyPetPassportCosignSignature
+    VerificationKey1234567890abcdefghijklmnopqrstuvwxyzABCDEF==
+    -----END PUBLIC KEY-----
+
+canary:
+  enabled: false
+
+pgbouncer:
+  enabled: true
+  replicaCount: 1
+  image: "edoburu/pgbouncer:v1.23.1"

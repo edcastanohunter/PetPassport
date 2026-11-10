@@ -1,0 +1,28 @@
+{{- if .Values.admissionPolicy.enabled }}
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: {{ include "petpassport.fullname" . }}-verify-image-signatures
+  labels:
+    {{- include "petpassport.labels" . | nindent 4 }}
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-cosign-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - {{ .Release.Namespace }}
+      verifyImages:
+        - imageReferences:
+            - "{{ .Values.image.repository }}*"
+          attestors:
+            - entries:
+                - keys:
+                    publicKeys: |-
+                      {{ .Values.admissionPolicy.cosignPublicKey | indent 22 }}
+{{- end }}

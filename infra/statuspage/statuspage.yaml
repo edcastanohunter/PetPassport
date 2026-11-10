@@ -1,0 +1,69 @@
+# Configuración de Status Page Externa (PP-F5-OPS-007, ARQ-012)
+# Proveedor externo independiente (Better Uptime / Instatus / Statuspage.io)
+# Hospedado fuera de la infraestructura propia para garantizar disponibilidad durante caídas.
+
+name: PetPassport Status
+url: https://status.petpassport.app
+status_json_url: https://status.petpassport.app/status.json
+polling_interval_seconds: 60
+notification_channels:
+  - email
+  - rss
+  - webhook
+
+components:
+  - id: web-app
+    name: "Aplicación Web (SPA)"
+    description: "Portal de tutores, clínicas y farmacias (app.petpassport.app)"
+    group: "Core Services"
+    show_uptime: true
+
+  - id: api
+    name: "API REST"
+    description: "Backend principal de PetPassport (api.petpassport.app)"
+    group: "Core Services"
+    show_uptime: true
+
+  - id: partner-api
+    name: "Partner API & Gateway B2B"
+    description: "Integración B2B para farmacias y aliados (partners.petpassport.app)"
+    group: "B2B Integrations"
+    show_uptime: true
+
+  - id: auth
+    name: "Autenticación (Keycloak IAM)"
+    description: "Servicio de identidad, tokens OIDC y sesiones (auth.petpassport.app)"
+    group: "Core Services"
+    show_uptime: true
+
+  - id: notifications
+    name: "Notificaciones (Email / Push / SMS)"
+    description: "Servicio de entrega de alertas, recordatorios y OTP"
+    group: "Communications"
+    show_uptime: true
+
+  - id: payments
+    name: "Integraciones de Pago y Facturación"
+    description: "Wompi, PSE, Stripe y facturación electrónica DIAN"
+    group: "Billing & Finance"
+    show_uptime: true
+
+uptime_history_days: 90
+
+incident_severities:
+  - level: S1
+    name: "Interrupción Crítica"
+    color: "#EF4444"
+    update_frequency_minutes: 30
+  - level: S2
+    name: "Degradación Mayor"
+    color: "#F97316"
+    update_frequency_minutes: 30
+  - level: S3
+    name: "Degradación Menor"
+    color: "#F59E0B"
+    update_frequency_minutes: 60
+  - level: S4
+    name: "Informativo / Mantenimiento"
+    color: "#3B82F6"
+    advance_notice_hours: 72

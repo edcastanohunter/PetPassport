@@ -1,0 +1,44 @@
+{
+  "status": "operational",
+  "updated_at": "2026-11-10T12:00:00Z",
+  "components": [
+    {
+      "id": "web-app",
+      "name": "Aplicación Web (SPA)",
+      "status": "operational",
+      "uptime_percentage_90d": 99.98
+    },
+    {
+      "id": "api",
+      "name": "API REST",
+      "status": "operational",
+      "uptime_percentage_90d": 99.95
+    },
+    {
+      "id": "partner-api",
+      "name": "Partner API & Gateway B2B",
+      "status": "operational",
+      "uptime_percentage_90d": 99.94
+    },
+    {
+      "id": "auth",
+      "name": "Autenticación (Keycloak IAM)",
+      "status": "operational",
+      "uptime_percentage_90d": 99.99
+    },
+    {
+      "id": "notifications",
+      "name": "Notificaciones (Email / Push / SMS)",
+      "status": "operational",
+      "uptime_percentage_90d": 99.9
+    },
+    {
+      "id": "payments",
+      "name": "Integraciones de Pago y Facturación",
+      "status": "operational",
+      "uptime_percentage_90d": 99.92
+    }
+  ],
+  "active_incidents": [],
+  "scheduled_maintenances": []
+}
