@@ -1,0 +1,22 @@
+{
+  "charge_id": "01930000-0000-7000-8000-000000000001",
+  "subscription_id": "01930000-0000-7000-8000-000000000001",
+  "account_id": "01930000-0000-7000-8000-000000000001",
+  "reason": "Suscripción pro (monthly)",
+  "amount": 225000,
+  "tax": 42750,
+  "total": 267750,
+  "currency": "COP",
+  "lines": [
+    {
+      "description": "Plan pro monthly x3 asientos",
+      "amount": 225000,
+      "quantity": 3
+    }
+  ],
+  "period": {
+    "start": "2026-11-10T12:00:00Z",
+    "end": "2026-12-10T12:00:00Z"
+  },
+  "scheduled_at": "2026-11-10T12:00:00Z"
+}

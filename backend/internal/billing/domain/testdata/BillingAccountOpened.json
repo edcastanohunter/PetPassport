@@ -1,0 +1,18 @@
+{
+  "account_id": "01930000-0000-7000-8000-000000000001",
+  "owner_user_id": "01930000-0000-7000-8000-000000000001",
+  "legal_entity": {
+    "kind": "company",
+    "legal_name": "Clínica Veterinaria San Martín S.A.S.",
+    "tax_id": {
+      "country": "CO",
+      "value": "901234567-1",
+      "kind": "NIT"
+    },
+    "address": "Calle 100 # 15-20, Bogotá",
+    "email": "facturacion@sanmartin.co"
+  },
+  "country": "CO",
+  "currency": "COP",
+  "at": "2026-11-10T12:00:00Z"
+}

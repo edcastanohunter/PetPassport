@@ -1,0 +1,10 @@
+{
+  "subscription_id": "01930000-0000-7000-8000-000000000001",
+  "plan_code": "enterprise",
+  "plan_version": 1,
+  "seats": {
+    "purchased": 5
+  },
+  "cycle": "monthly",
+  "at": "2026-11-10T12:00:00Z"
+}

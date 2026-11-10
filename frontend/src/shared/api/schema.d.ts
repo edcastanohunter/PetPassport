@@ -3879,6 +3879,400 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar planes de facturación
+         * @description Devuelve el catálogo de planes vigentes según tipo (clinic o pharmacy) y país (PP-F5-API-001).
+         */
+        get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plans/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de un plan de facturación
+         * @description Devuelve el plan vigente correspondiente al código indicado (PP-F5-API-001).
+         */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Crear un nuevo plan o versión (super_admin)
+         * @description Registra una nueva definición de plan (PP-F5-API-001).
+         */
+        post: operations["createPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Actualizar plan existente (super_admin)
+         * @description Actualiza la definición del plan (PP-F5-API-001).
+         */
+        put: operations["updatePlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Resumen de facturación de la organización
+         * @description Consulta el estado de cuenta, método de pago, suscripción y entitlements de la organización (PP-F5-API-002).
+         */
+        get: operations["getOrgBilling"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abrir cuenta de facturación
+         * @description Crea una cuenta de facturación vinculando la entidad legal y la organización inicial (PP-F5-API-002).
+         */
+        post: operations["openBillingAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Actualizar datos fiscales de cuenta de facturación
+         * @description Modifica los datos fiscales o entidad legal de la cuenta (PP-F5-API-002).
+         */
+        patch: operations["updateBillingAccount"];
+        trace?: never;
+    };
+    "/billing-accounts/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cerrar cuenta de facturación
+         * @description Cierra la cuenta de facturación si no tiene suscripciones activas (PP-F5-API-002).
+         */
+        post: operations["closeBillingAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Listar suscripciones de una cuenta
+         * @description Devuelve todas las suscripciones de la cuenta (PP-F5-API-003).
+         */
+        get: operations["listAccountSubscriptions"];
+        put?: never;
+        /**
+         * Crear suscripción
+         * @description Contrata un plan y emite el cargo inicial correspondiente (PP-F5-API-003).
+         */
+        post: operations["createSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/subscriptions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar cálculo de suscripción o prorrateo
+         * @description Calcula el subtotal, impuestos, prorrateo y total a cobrar sin persistir cambios (PP-F5-API-003).
+         */
+        post: operations["previewSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de suscripción
+         * @description Obtiene el estado actual de la suscripción con su periodo, dunning y cargos (PP-F5-API-003).
+         */
+        get: operations["getSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cambiar plan o ciclo de la suscripción
+         * @description Upgrade inmediato con prorrateo o downgrade programado al final del periodo (PP-F5-API-003).
+         */
+        post: operations["changeSubscriptionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajustar asientos de la suscripción
+         * @description Incrementa o reduce asientos validados contra el uso actual de profesionales (PP-F5-API-003).
+         */
+        post: operations["adjustSubscriptionSeats"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar suscripción
+         * @description Cancela la suscripción al final del ciclo o de forma inmediata (PP-F5-API-003).
+         */
+        post: operations["cancelSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reanudar suscripción cancelada
+         * @description Revierte la cancelación programada para fin de periodo (PP-F5-API-003).
+         */
+        post: operations["resumeSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}/retry-charge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reintentar cobro de suscripción
+         * @description Dispara un reintento manual inmediato del último cargo pendiente o fallido (PP-F5-API-003).
+         */
+        post: operations["retrySubscriptionCharge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultar entitlements de la organización
+         * @description Devuelve el conjunto de capacidades, cuotas, asientos y estado de suscripción de la organización (PP-F5-API-006).
+         */
+        get: operations["getOrgEntitlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultar contadores de uso del periodo
+         * @description Devuelve el consumo actual de cuotas y recursos de la organización contra sus límites (PP-F5-API-006).
+         */
+        get: operations["getOrgUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6072,6 +6466,297 @@ export interface components {
             notes?: string;
             attestation: boolean;
         };
+        VolumeTier: {
+            /** @description Volumen máximo incluido en este escalón */
+            up_to: number;
+            /** @description Precio mensual base para este escalón en centavos */
+            monthly_price: number;
+            /** @description Precio unitario por exceso en centavos */
+            overage_unit_price?: number;
+        };
+        PlanPricing: {
+            /** @enum {string} */
+            model: "per_seat" | "tiered_volume" | "flat";
+            /** @example COP */
+            currency: string;
+            /** @description Precio base mensual en centavos */
+            monthly?: number;
+            /** @description Precio base anual en centavos */
+            annual?: number;
+            tiers?: components["schemas"]["VolumeTier"][];
+        };
+        PlanSeats: {
+            min: number;
+            max: number;
+            included: number;
+        };
+        BillingPlan: {
+            /** @example clinic_standard */
+            code: string;
+            /** @example 1 */
+            version: number;
+            /** @enum {string} */
+            kind: "clinic" | "pharmacy";
+            /** @example Estándar */
+            name: string;
+            description?: string;
+            pricing: components["schemas"]["PlanPricing"];
+            /** @example 30 */
+            trial_days: number;
+            seats: components["schemas"]["PlanSeats"];
+            quotas: {
+                [key: string]: number;
+            };
+            features: string[];
+            /** Format: date-time */
+            effective_from: string;
+            /** @enum {string} */
+            status: "draft" | "published" | "retired";
+        };
+        PlanListResponse: {
+            data: components["schemas"]["BillingPlan"][];
+        };
+        PlanInput: {
+            code: string;
+            /** @enum {string} */
+            kind: "clinic" | "pharmacy";
+            name: string;
+            description?: string;
+            pricing: components["schemas"]["PlanPricing"];
+            trial_days: number;
+            seats: components["schemas"]["PlanSeats"];
+            quotas: {
+                [key: string]: number;
+            };
+            features: string[];
+            /** Format: date-time */
+            effective_from: string;
+        };
+        TaxID: {
+            /** @example CO */
+            country: string;
+            /** @example 901234567-1 */
+            value: string;
+            /** @example NIT */
+            kind: string;
+        };
+        LegalEntity: {
+            /** @enum {string} */
+            kind: "person" | "company";
+            legal_name: string;
+            tax_id: components["schemas"]["TaxID"];
+            address: string;
+            /** Format: email */
+            email: string;
+            phone?: string;
+            tax_regime?: string;
+        };
+        PaymentMethodSummary: {
+            /** @example card */
+            kind: string;
+            /** @example 4242 */
+            last4?: string;
+            /** @example 12/28 */
+            expires_at?: string;
+            /** @example visa */
+            brand?: string;
+        };
+        BillingAccount: {
+            /** Format: uuid */
+            id: string;
+            legal_entity: components["schemas"]["LegalEntity"];
+            /** @example CO */
+            country: string;
+            /** @example COP */
+            currency: string;
+            payment_method?: components["schemas"]["PaymentMethodSummary"];
+            organizations: string[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            closed_at?: string;
+        };
+        OpenBillingAccountRequest: {
+            /** Format: uuid */
+            organization_id: string;
+            legal_entity: components["schemas"]["LegalEntity"];
+        };
+        UpdateBillingAccountRequest: {
+            legal_entity?: components["schemas"]["LegalEntity"];
+        };
+        CloseBillingAccountRequest: {
+            reason?: string;
+        };
+        PlanRef: {
+            code: string;
+            version: number;
+            name: string;
+        };
+        SubscriptionSeats: {
+            purchased: number;
+            used: number;
+        };
+        SubscriptionPeriod: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+        };
+        PendingChange: {
+            plan_code?: string;
+            seats?: number;
+            tier?: number;
+            cycle?: string;
+            /** Format: date-time */
+            effective_at: string;
+        };
+        DunningInfo: {
+            /** Format: date-time */
+            grace_ends_at: string;
+            /** Format: date-time */
+            next_attempt_at?: string;
+        };
+        SubscriptionCharge: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            amount: number;
+            currency: string;
+            status: string;
+            /** Format: date-time */
+            due_at?: string;
+            /** Format: date-time */
+            paid_at?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Subscription: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            billing_account_id: string;
+            /** @enum {string} */
+            kind: "clinic" | "pharmacy";
+            plan: components["schemas"]["PlanRef"];
+            seats?: components["schemas"]["SubscriptionSeats"];
+            tier?: number;
+            /** @enum {string} */
+            cycle: "monthly" | "annual";
+            /** @enum {string} */
+            status: "trialing" | "active" | "past_due" | "grace_period" | "restricted" | "cancelled";
+            /** Format: date-time */
+            trial_ends_at?: string;
+            current_period: components["schemas"]["SubscriptionPeriod"];
+            pending_change?: components["schemas"]["PendingChange"];
+            dunning?: components["schemas"]["DunningInfo"];
+            cancel_at_period_end: boolean;
+            /** Format: date-time */
+            cancelled_at?: string;
+            cancel_reason?: string;
+            charges?: components["schemas"]["SubscriptionCharge"][];
+            /** Format: date-time */
+            created_at: string;
+        };
+        SubscriptionListResponse: {
+            data: components["schemas"]["Subscription"][];
+        };
+        PreviewLine: {
+            description: string;
+            amount: number;
+        };
+        SubscriptionPreviewRequest: {
+            /** @enum {string} */
+            kind: "clinic" | "pharmacy";
+            plan_code: string;
+            seats?: number;
+            tier?: number;
+            /** @enum {string} */
+            cycle: "monthly" | "annual";
+            coupon?: string;
+        };
+        SubscriptionPreviewResponse: {
+            currency: string;
+            subtotal: number;
+            tax: number;
+            total: number;
+            proration_credit?: number;
+            lines: components["schemas"]["PreviewLine"][];
+            /** Format: date-time */
+            next_charge_at: string;
+        };
+        CreateSubscriptionRequest: {
+            /** @enum {string} */
+            kind: "clinic" | "pharmacy";
+            plan_code: string;
+            seats?: number;
+            tier?: number;
+            /** @enum {string} */
+            cycle: "monthly" | "annual";
+            coupon?: string;
+        };
+        ChangeSubscriptionPlanRequest: {
+            plan_code?: string;
+            seats?: number;
+            tier?: number;
+            /** @enum {string} */
+            cycle?: "monthly" | "annual";
+        };
+        AdjustSubscriptionSeatsRequest: {
+            delta: number;
+        };
+        CancelSubscriptionRequest: {
+            at_period_end: boolean;
+            reason?: string;
+        };
+        QuotaItem: {
+            limit: number;
+            used: number;
+            soft_limit: number;
+            /** Format: date-time */
+            period_end: string;
+        };
+        EntitlementSet: {
+            /** Format: uuid */
+            organization_id: string;
+            plan_code: string;
+            status: string;
+            /** Format: date-time */
+            grace_period_until?: string;
+            /** Format: date-time */
+            trial_ends_at?: string;
+            seats: {
+                limit: number;
+                used: number;
+            };
+            quotas: {
+                [key: string]: components["schemas"]["QuotaItem"];
+            };
+            features: string[];
+        };
+        OrgBillingSummary: {
+            account?: components["schemas"]["BillingAccount"];
+            subscription?: components["schemas"]["Subscription"];
+            entitlements?: components["schemas"]["EntitlementSet"];
+        };
+        UsageCounterItem: {
+            counter_key: string;
+            used: number;
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+        };
+        UsageReportResponse: {
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            counters: {
+                [key: string]: components["schemas"]["UsageCounterItem"];
+            };
+        };
     };
     responses: {
         /** @description Consulta actualizada */
@@ -6164,6 +6849,9 @@ export interface components {
         UnsubscribeToken: string;
         AppointmentId: string;
         ProfessionalId: string;
+        BillingAccountId: string;
+        SubscriptionId: string;
+        PlanCode: string;
     };
     requestBodies: never;
     headers: {
@@ -11793,6 +12481,487 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PharmacyStatsResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: {
+                /** @description Tipo de organización (clinic o pharmacy) */
+                kind?: "clinic" | "pharmacy";
+                /** @description Código ISO de dos letras del país (p. ej. CO) */
+                country?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de planes disponibles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plan encontrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPlan"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanInput"];
+            };
+        };
+        responses: {
+            /** @description Plan creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPlan"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanInput"];
+            };
+        };
+        responses: {
+            /** @description Plan actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPlan"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrgBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumen de facturación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgBillingSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    openBillingAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenBillingAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Cuenta de facturación creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAccount"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateBillingAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBillingAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Cuenta de facturación actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAccount"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    closeBillingAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CloseBillingAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Cuenta de facturación cerrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAccount"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountSubscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de suscripciones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    previewSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Cálculo de cotización/prorrateo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPreviewResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suscripción */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    changeSubscriptionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeSubscriptionPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción modificada o cambio programado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adjustSubscriptionSeats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustSubscriptionSeatsRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción cancelada o programada para cancelación */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    resumeSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suscripción reanudada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    retrySubscriptionCharge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resultado de la suscripción tras el intento */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrgEntitlements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entitlements vigentes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementSet"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOrgUsage: {
+        parameters: {
+            query?: {
+                /** @description Fecha inicio de consulta */
+                from?: string;
+                /** @description Fecha fin de consulta */
+                to?: string;
+            };
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reporte de uso del periodo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReportResponse"];
                 };
             };
             default: components["responses"]["Problem"];

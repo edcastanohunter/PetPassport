@@ -68,6 +68,18 @@ const (
 	PushSubscriptionInvalid Code = "PUSH_SUBSCRIPTION_INVALID"
 	AttachmentScanPending   Code = "ATTACHMENT_SCAN_PENDING"
 	AttachmentQuarantined   Code = "ATTACHMENT_QUARANTINED"
+
+	// Billing (PP-F5-API-012, M5.1)
+	PlanLimitReached          Code = "PLAN_LIMIT_REACHED"
+	SubscriptionRestricted    Code = "SUBSCRIPTION_RESTRICTED"
+	PaymentMethodRequired     Code = "PAYMENT_METHOD_REQUIRED"
+	PaymentMethodInvalid      Code = "PAYMENT_METHOD_INVALID"
+	SeatsBelowUsage           Code = "SEATS_BELOW_USAGE"
+	PlanNotAvailable          Code = "PLAN_NOT_AVAILABLE"
+	PlanChangePending         Code = "PLAN_CHANGE_PENDING"
+	TaxIDInvalid              Code = "TAX_ID_INVALID"
+	LegalEntityIncomplete     Code = "LEGAL_ENTITY_INCOMPLETE"
+	OrganizationAlreadyBilled Code = "ORGANIZATION_ALREADY_BILLED"
 )
 
 var defaultStatus = map[Code]int{
@@ -120,6 +132,17 @@ var defaultStatus = map[Code]int{
 	PushSubscriptionInvalid: http.StatusUnprocessableEntity,
 	AttachmentScanPending:   http.StatusConflict,
 	AttachmentQuarantined:   http.StatusGone,
+
+	PlanLimitReached:          http.StatusUnprocessableEntity,
+	SubscriptionRestricted:    http.StatusPaymentRequired,
+	PaymentMethodRequired:     http.StatusPaymentRequired,
+	PaymentMethodInvalid:      http.StatusUnprocessableEntity,
+	SeatsBelowUsage:           http.StatusUnprocessableEntity,
+	PlanNotAvailable:          http.StatusUnprocessableEntity,
+	PlanChangePending:         http.StatusConflict,
+	TaxIDInvalid:              http.StatusUnprocessableEntity,
+	LegalEntityIncomplete:     http.StatusUnprocessableEntity,
+	OrganizationAlreadyBilled: http.StatusConflict,
 
 	Code("VOID_WINDOW_EXPIRED"):   http.StatusForbidden,
 	Code("VOID_NOT_ALLOWED"):      http.StatusForbidden,
