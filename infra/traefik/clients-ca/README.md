@@ -8,9 +8,15 @@ Este directorio contiene la Autoridad de Certificación (CA) de clientes utiliza
 - **Validación**: Traefik verifica criptográficamente que la conexión entrante presente un certificado de cliente válido firmado por la CA (`clientAuthType: RequireAndVerifyClientCert`).
 - **Archivo de CA**: `/etc/traefik/clients-ca/client-ca.pem`.
 
+## Material criptográfico: nunca en el repo
+
+`client-ca.pem` y `client-ca-key.pem` **no se versionan** (`.gitignore`; gitleaks bloquea cualquier clave
+privada). En desarrollo los genera `make dev-certs` (`infra/scripts/dev-certs.sh`). En staging/producción la CA
+se aprovisiona en la VM fuera del repo y su clave privada nunca sale del entorno de emisión.
+
 ## Generación de Certificados para Pruebas y Desarrollo
 
-Para generar la CA de desarrollo y un certificado de cliente para un partner:
+`make dev-certs` crea la CA de desarrollo. Para emitirla a mano y firmar un certificado de cliente para un partner:
 
 ```bash
 # 1. Generar clave privada y certificado de la CA raíz de clientes

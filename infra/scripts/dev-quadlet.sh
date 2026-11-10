@@ -64,6 +64,7 @@ install_units() {
   port=$(sysctl -n net.ipv4.ip_unprivileged_port_start)
   ((port <= 80)) || die "rootless no puede publicar 80/443: sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80 (y persístelo en /etc/sysctl.d; en la podman machine: podman machine ssh sudo …)"
   [[ -f $REPO_DIR/infra/traefik/certs/pp.localhost.pem ]] || die "faltan certificados locales: make dev-certs"
+  [[ -f $REPO_DIR/infra/traefik/clients-ca/client-ca.pem ]] || die "falta la CA de clientes mTLS: make dev-certs"
   mkdir -p "$UNIT_DIR"
   local f out
   for f in "$REPO_DIR"/infra/quadlet/dev/pp-dev*; do

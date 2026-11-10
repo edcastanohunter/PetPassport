@@ -258,7 +258,7 @@ tests:
       - eval_time: 4m
         alertname: PartnerCircuitOpen
         exp_alerts:
-          - exp_labels: { severity: page }
+          - exp_labels: { severity: page, dest: api.partner.example }
             exp_annotations:
               summary: "Circuit breaker de egress abierto hacia api.partner.example"
               runbook: "infra/deploy/RUNBOOK.md#734-partnercircuitopen"

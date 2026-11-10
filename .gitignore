@@ -13,6 +13,11 @@ frontend/coverage/
 .env.*
 !.env.example
 infra/traefik/certs/*.pem
+# CA de clientes mTLS: la genera `make dev-certs`; ninguna clave privada se versiona.
+infra/traefik/clients-ca/*.pem
+infra/traefik/clients-ca/*.srl
+*-key.pem
+*.key
 
 # SO / editores
 .DS_Store
