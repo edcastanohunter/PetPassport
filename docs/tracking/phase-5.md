@@ -19,7 +19,7 @@
 | PP-F5-PRD-012 | PRD | Exportación de datos (tutor y organización) | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-013 | PRD | Eliminación de cuenta con gracia y excepciones | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-014 | PRD | Centro de ayuda y tickets con SLA | MUST | M5.4 | PENDIENTE | | | |
-| PP-F5-PRD-015 | PRD | Status page y banner de incidentes | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-PRD-015 | PRD | Status page y banner de incidentes | MUST | M5.0 | IMPLEMENTADO | | | Status page externa, status.json y StatusBanner en app con enlace |
 | PP-F5-PRD-016 | PRD | SLA por plan y créditos | SHOULD | M5.4 | PENDIENTE | | | |
 | PP-F5-PRD-017 | PRD | SMS/WhatsApp con verificación de teléfono | SHOULD | M5.4 | PENDIENTE | | | |
 | PP-F5-PRD-018 | PRD | Impersonación de soporte con consentimiento | MUST | M5.4 | PENDIENTE | | | |
@@ -51,7 +51,7 @@
 | PP-F5-ARQ-009 | ARQ | Retención automática | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-ARQ-010 | ARQ | SMS y WhatsApp: proveedor, plantillas, OTP, inbound | SHOULD | M5.4 | PENDIENTE | | | |
 | PP-F5-ARQ-011 | ARQ | Soporte: tickets/helpdesk e impersonación con token interno | MUST | M5.4 | PENDIENTE | | | |
-| PP-F5-ARQ-012 | ARQ | Status page y comunicaciones | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-ARQ-012 | ARQ | Status page y comunicaciones | MUST | M5.0 | IMPLEMENTADO | | | Proveedor externo independiente, checks regionales e integración SPA |
 | PP-F5-ARQ-013 | ARQ | Métricas de negocio (proyección y definiciones) | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-ARQ-014 | ARQ | Revisiones pendientes de fases anteriores | MUST | M5.5 | PENDIENTE | | | |
 | PP-F5-API-001 | API | Planes (público y admin) | MUST | M5.1 | PENDIENTE | | | |
@@ -81,19 +81,19 @@
 | PP-F5-FE-006 | FE | Privacidad: exportar, eliminar, accesos | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-FE-007 | FE | Centro de ayuda y tickets | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-008 | FE | Impersonación: concesión y banner | MUST | M5.4 | PENDIENTE | | | |
-| PP-F5-FE-009 | FE | Estado del servicio en la app | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-FE-009 | FE | Estado del servicio en la app | MUST | M5.0 | IMPLEMENTADO | | | Banner global, /status embebida y detección de 5xx/503 persistentes |
 | PP-F5-FE-010 | FE | Teléfono y canales | SHOULD | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-011 | FE | Métricas de negocio | MUST | M5.4 | PENDIENTE | | | |
-| PP-F5-OPS-001 | OPS | Migración a Kubernetes multi-zona | MUST | M5.0 | PENDIENTE | | | |
-| PP-F5-OPS-002 | OPS | Datos multi-AZ y pooler | MUST | M5.0 | PENDIENTE | | | |
-| PP-F5-OPS-003 | OPS | Backups con copia cross-region y verificación | MUST | M5.0 | PENDIENTE | | | |
-| PP-F5-OPS-004 | OPS | Runbooks DR y simulacros con RTO/RPO medidos | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-OPS-001 | OPS | Migración a Kubernetes multi-zona | MUST | M5.0 | IMPLEMENTADO | | | Clúster EKS gestionado, nodepools general/jobs, plan de corte blue/green |
+| PP-F5-OPS-002 | OPS | Datos multi-AZ y pooler | MUST | M5.0 | IMPLEMENTADO | | | PostgreSQL multi-AZ con failover < 60s, PgBouncer, Redis y OpenSearch multi-AZ |
+| PP-F5-OPS-003 | OPS | Backups con copia cross-region y verificación | MUST | M5.0 | IMPLEMENTADO | | | S3 cross-region, retención 30d, backup separado de claves y verificación |
+| PP-F5-OPS-004 | OPS | Runbooks DR y simulacros con RTO/RPO medidos | MUST | M5.0 | IMPLEMENTADO | | | Runbooks 5 escenarios en DR-RUNBOOKS.md y simulacro registrado en RESTORE-LOG.md |
 | PP-F5-OPS-005 | OPS | On-call y escalado | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-OPS-006 | OPS | Gestión de incidentes y postmortems | MUST | M5.4 | PENDIENTE | | | |
-| PP-F5-OPS-007 | OPS | Status page externa | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-OPS-007 | OPS | Status page externa | MUST | M5.0 | IMPLEMENTADO | | | Configuración externa, checks cada 1m desde 3 regiones e historial 90d |
 | PP-F5-OPS-008 | OPS | SLA, medición y política de error budget | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-OPS-009 | OPS | Capacidad y FinOps | MUST | M5.5 | PENDIENTE | | | |
-| PP-F5-OPS-010 | OPS | Gestión de cambios: canary, flags, IaC, congelaciones | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-OPS-010 | OPS | Gestión de cambios: canary, flags, IaC, congelaciones | MUST | M5.0 | IMPLEMENTADO | | | Canary Argo Rollouts (10% 15m), tabla platform.feature_flags y motor de flags |
 | PP-F5-OPS-011 | OPS | Game days semestrales | SHOULD | M5.5 | PENDIENTE | | | |
 | PP-F5-CMP-001 | CMP | Registro de actividades de tratamiento | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-CMP-002 | CMP | DPIA de tratamientos de riesgo | MUST | M5.3 | PENDIENTE | | | |
@@ -112,14 +112,14 @@
 | PP-F5-SEC-004 | SEC | Impersonación segura | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-SEC-005 | SEC | Threat model F5 | MUST | M5.5 | PENDIENTE | | | |
 | PP-F5-SEC-006 | SEC | Pentest externo anual | MUST | M5.5 | PENDIENTE | | | |
-| PP-F5-INF-001 | INF | Helm de producción, canary e IaC | MUST | M5.0 | PENDIENTE | | | |
-| PP-F5-INF-002 | INF | Secretos y rotación programada | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-INF-001 | INF | Helm de producción, canary e IaC | MUST | M5.0 | IMPLEMENTADO | | | Terraform staging/prod multi-AZ, Helm prod con HPA, PDB, NetworkPolicy y admisión |
+| PP-F5-INF-002 | INF | Secretos y rotación programada | MUST | M5.0 | IMPLEMENTADO | | | External Secrets Operator y runbook de rotación dual-user programada |
 | PP-F5-INF-003 | INF | Observabilidad F5 | MUST | M5.2 | PENDIENTE | | | |
 | PP-F5-INF-004 | INF | Alertas F5 | MUST | M5.2 | PENDIENTE | | | |
 | PP-F5-INF-005 | INF | Runbook F5 | MUST | M5.5 | PENDIENTE | | | |
 | PP-F5-QA-001 | QA | Pruebas de billing con reloj simulado y property tests | MUST | M5.1 | PENDIENTE | | | |
 | PP-F5-QA-002 | QA | Contract tests de proveedores de pago y facturación | MUST | M5.2 | PENDIENTE | | | |
 | PP-F5-QA-003 | QA | Crypto-shredding end-to-end y ensayo de migración | MUST | M5.3 | PENDIENTE | | | |
-| PP-F5-QA-004 | QA | DR automatizado semanal | MUST | M5.0 | PENDIENTE | | | |
+| PP-F5-QA-004 | QA | DR automatizado semanal | MUST | M5.0 | IMPLEMENTADO | | | Pipeline semanal dr-verify.sh y test de umbrales RPO <= 5m y RTO <= 1h |
 | PP-F5-QA-005 | QA | E2E F5 | MUST | M5.5 | PENDIENTE | | | |
 | PP-F5-QA-006 | QA | Gates F5 | MUST | M5.1 | PENDIENTE | | | |

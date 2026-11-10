@@ -1,0 +1,53 @@
+# Health checks externos para Status Page (PP-F5-OPS-007, ARQ-012)
+# Intervalo de sondeo: 60 segundos desde 3 regiones geográficas independientes.
+
+regions:
+  - us-east (N. Virginia)
+  - us-west (Oregon)
+  - eu-central (Frankfurt)
+
+checks:
+  - id: check-web-app
+    name: "Web App Health"
+    target: "https://app.petpassport.app"
+    method: "GET"
+    interval: 60s
+    timeout: 10s
+    expected_status: 200
+    component_id: "web-app"
+
+  - id: check-api-health
+    name: "API Liveness & Health"
+    target: "https://api.petpassport.app/healthz"
+    method: "GET"
+    interval: 60s
+    timeout: 5s
+    expected_status: 200
+    component_id: "api"
+
+  - id: check-partner-api
+    name: "Partner API Gateway Health"
+    target: "https://partners.petpassport.app/healthz"
+    method: "GET"
+    interval: 60s
+    timeout: 5s
+    expected_status: 200
+    component_id: "partner-api"
+
+  - id: check-keycloak-auth
+    name: "Keycloak OIDC Health"
+    target: "https://auth.petpassport.app/realms/petpassport/.well-known/openid-configuration"
+    method: "GET"
+    interval: 60s
+    timeout: 5s
+    expected_status: 200
+    component_id: "auth"
+
+  - id: check-payment-webhook-gateway
+    name: "Payment Integration Gateway"
+    target: "https://api.petpassport.app/api/v1/billing/providers/health"
+    method: "GET"
+    interval: 60s
+    timeout: 5s
+    expected_status: 200
+    component_id: "payments"

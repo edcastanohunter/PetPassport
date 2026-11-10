@@ -76,6 +76,7 @@ const PharmacyOrdersView = () => import('@/features/pharmacy/views/PharmacyOrder
 const PharmacyOrderDetailView = () =>
   import('@/features/pharmacy/views/PharmacyOrderDetailView.vue')
 const PharmacySettingsView = () => import('@/features/pharmacy/views/PharmacySettingsView.vue')
+const StatusPage = () => import('@/features/status/StatusPage.vue')
 
 const orgMeta = {
   layout: 'org',
@@ -98,6 +99,12 @@ export function createAppRouter() {
         path: '/directory',
         name: 'directory',
         component: DirectoryPage,
+        meta: { layout: 'public' },
+      },
+      {
+        path: '/status',
+        name: 'status',
+        component: StatusPage,
         meta: { layout: 'public' },
       },
       {

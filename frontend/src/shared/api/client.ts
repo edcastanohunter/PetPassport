@@ -152,9 +152,19 @@ export function isApiError(e: unknown): e is ApiError {
   return e instanceof ApiError
 }
 
-// Hooks de la app para errores transversales (401, onboarding, consentimiento, 429).
+// Hooks de la app para errores transversales (401, onboarding, consentimiento, 429, 5xx persistente).
 export type ApiErrorHandler = (error: ApiError) => void
 const handlers: ApiErrorHandler[] = []
+let consecutiveServerErrors = 0
+
+export function persistentServerErrors(): boolean {
+  return consecutiveServerErrors >= 2
+}
+
+export function resetServerErrors(): void {
+  consecutiveServerErrors = 0
+}
+
 export function onApiError(handler: ApiErrorHandler) {
   handlers.push(handler)
   return () => handlers.splice(handlers.indexOf(handler), 1)
@@ -192,9 +202,13 @@ export function createApiClient(deps: ClientDeps) {
     },
     async onResponse({ response }) {
       if (response.ok) {
+        consecutiveServerErrors = 0
         const lagSeconds = freshnessOf(response)
         if (lagSeconds !== null) emitFreshness({ url: response.url, lagSeconds })
         return response
+      }
+      if (response.status >= 500) {
+        consecutiveServerErrors += 1
       }
       let problem: Partial<Problem> = {}
       const type = response.headers.get('Content-Type') ?? ''
@@ -234,5 +248,6 @@ export function api(): ApiClient {
 export function resetApiClient() {
   shared = null
   handlers.length = 0
+  consecutiveServerErrors = 0
   resetFreshnessListeners()
 }
