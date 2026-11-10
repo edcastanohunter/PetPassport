@@ -6,6 +6,10 @@ info:
     API pública para partners farmacéuticos y de distribución (PP-F4-PTN-001, ADR-017, ADR-021).
     Permite a farmacias nivel 2 recibir cotizaciones, enviar ofertas de precios, consultar pedidos adjudicados,
     gestionar estados de entrega y configurar webhooks salientes.
+  contact:
+    name: Soporte API PetPassport
+    email: api-partners@petpassport.app
+    url: https://developers.petpassport.app
 servers:
   - url: https://partners.petpassport.local/partner/v1
     description: Entorno local / desarrollo
@@ -13,6 +17,20 @@ servers:
     description: Entorno Sandbox de integración y homologación (ARQ-008, PTN-005)
   - url: https://partners.petpassport.app/partner/v1
     description: Entorno de producción (borde Traefik dedicado)
+
+tags:
+  - name: quotes
+    description: Gestión de solicitudes de cotización y ofertas (PP-F4-PTN-001)
+  - name: orders
+    description: Pedidos adjudicados, seguimiento de despacho y dispensación (PP-F4-PTN-001)
+  - name: catalog
+    description: Catálogo farmacéutico y mapeos de códigos SKU internos (PP-F4-PTN-001)
+  - name: prescriptions
+    description: Verificación y consulta autenticada de recetas médicas veterinarias
+  - name: profile
+    description: Información y estado del partner comercial autenticado
+  - name: webhooks
+    description: Configuración y prueba de endpoints de webhooks salientes (ADR-021)
 
 security:
   - oauth2ClientCredentials:
@@ -23,6 +41,7 @@ paths:
     get:
       operationId: partnerListQuoteRequests
       summary: Listar solicitudes de cotización donde el partner está invitado
+      description: Retorna el listado paginado de solicitudes de cotización donde el partner ha sido invitado a cotizar medicamentos.
       tags: [quotes]
       parameters:
         - name: status
@@ -63,6 +82,7 @@ paths:
     get:
       operationId: partnerGetQuoteRequest
       summary: Detalle de una solicitud de cotización (minimización etapa 1)
+      description: Obtiene el detalle de una solicitud de cotización aplicando minimización de datos en etapa de cotización (sin PII de tutor ni paciente).
       tags: [quotes]
       parameters:
         - name: id
@@ -87,6 +107,7 @@ paths:
     post:
       operationId: partnerSubmitQuote
       summary: Enviar oferta de cotización para una solicitud
+      description: Envía una oferta formal de precio, disponibilidad y tiempos de entrega para una solicitud de cotización antes de su expiración.
       tags: [quotes]
       parameters:
         - name: id
@@ -120,6 +141,7 @@ paths:
     post:
       operationId: partnerDeclineQuoteRequest
       summary: Declinar una solicitud de cotización
+      description: Registra el rechazo explícito por parte del partner para participar en una solicitud de cotización con motivo opcional.
       tags: [quotes]
       parameters:
         - name: id
@@ -149,6 +171,7 @@ paths:
     get:
       operationId: partnerListOrders
       summary: Listar pedidos adjudicados al partner
+      description: Retorna la lista paginada de pedidos adjudicados al partner, con filtro opcional por estado operativo.
       tags: [orders]
       parameters:
         - name: status
@@ -189,6 +212,7 @@ paths:
     get:
       operationId: partnerGetOrder
       summary: Detalle de pedido con datos del tutor y receta (minimización etapa 2)
+      description: Obtiene el detalle completo del pedido adjudicado, incluyendo datos de entrega del tutor e identificador de receta (desbloqueo de datos etapa 2).
       tags: [orders]
       parameters:
         - name: id
@@ -213,6 +237,7 @@ paths:
     post:
       operationId: partnerUpdateOrderStatus
       summary: Actualizar estado operativo del pedido y dispensación
+      description: Actualiza el estado del pedido a lo largo del ciclo de vida (preparing, ready, out_for_delivery, delivered, cancelled) con información de tracking o dispensación.
       tags: [orders]
       parameters:
         - name: id
@@ -246,6 +271,7 @@ paths:
     get:
       operationId: partnerListMedicationsCatalog
       summary: Consultar catálogo de medicamentos de PetPassport para homologación
+      description: Consulta el catálogo maestro de medicamentos veterinarios y humanos autorizados para facilitar la homologación de productos.
       tags: [catalog]
       parameters:
         - name: q
@@ -279,6 +305,7 @@ paths:
     get:
       operationId: partnerGetCatalogMedication
       summary: Detalle de un medicamento del catálogo
+      description: Obtiene el detalle de un producto o medicamento del catálogo maestro por su identificador único.
       tags: [catalog]
       parameters:
         - name: catalog_id
@@ -303,6 +330,7 @@ paths:
     get:
       operationId: partnerListProductMappings
       summary: Listar mapeos internos SKU <-> CatalogId de la farmacia
+      description: Retorna la lista paginada de homologaciones entre códigos SKU internos del partner y medicamentos del catálogo PetPassport.
       tags: [catalog]
       parameters:
         - name: cursor
@@ -330,6 +358,7 @@ paths:
     put:
       operationId: partnerUpsertProductMapping
       summary: Crear o actualizar mapeo para un producto
+      description: Registra o actualiza la relación de equivalencia entre un medicamento del catálogo y el código SKU/código de barras interno del partner.
       tags: [catalog]
       parameters:
         - name: catalog_id
@@ -356,6 +385,7 @@ paths:
     delete:
       operationId: partnerDeleteProductMapping
       summary: Eliminar mapeo de producto
+      description: Elimina una homologación de producto previamente registrada para el medicamento especificado.
       tags: [catalog]
       parameters:
         - name: catalog_id
@@ -374,6 +404,7 @@ paths:
     post:
       operationId: partnerBulkProductMappings
       summary: Actualización masiva de mapeos de producto
+      description: Procesa una lista de homologaciones de SKU en lote de manera atómica o por ítem.
       tags: [catalog]
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -397,6 +428,7 @@ paths:
     get:
       operationId: partnerVerifyPrescription
       summary: Verificación autenticada de validez de receta médica
+      description: Permite al partner validar la firma criptográfica y vigencia de una receta médica asociada a un pedido.
       tags: [prescriptions]
       parameters:
         - name: id
@@ -425,6 +457,7 @@ paths:
     get:
       operationId: partnerGetMe
       summary: Consultar perfil y configuración del partner autenticado
+      description: Obtiene los datos del partner autenticado, cuotas de API asignadas y configuración actual.
       tags: [profile]
       responses:
         "200":
@@ -440,6 +473,7 @@ paths:
     put:
       operationId: partnerConfigureWebhook
       summary: Configurar endpoint de webhook y eventos suscritos
+      description: Registra o actualiza la URL receptora de webhooks, secreto de firma HMAC-SHA256 y eventos a los que se suscribe el partner.
       tags: [webhooks]
       requestBody:
         required: true
@@ -463,6 +497,7 @@ paths:
     post:
       operationId: partnerTestWebhook
       summary: Enviar evento ping de prueba al webhook configurado
+      description: Envía de inmediato un evento sintético de prueba 'ping' a la URL configurada para validar conectividad y verificación de firma.
       tags: [webhooks]
       responses:
         "200":
