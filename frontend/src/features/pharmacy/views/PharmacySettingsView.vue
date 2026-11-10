@@ -1080,7 +1080,10 @@ function copyToClipboard(text: string, isSandbox = false) {
           <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
             <span class="text-xs text-slate-500">Valoración de Clientes</span>
             <span class="mt-1 block text-2xl font-bold text-amber-500"
-              >★ {{ Number(stats.rating_avg ?? 5.0).toFixed(1) }} <span class="text-xs font-normal text-slate-500">({{ stats.rating_count ?? 0 }} valoraciones)</span></span
+              >★ {{ Number(stats.rating_avg ?? 5.0).toFixed(1) }}
+              <span class="text-xs font-normal text-slate-500"
+                >({{ stats.rating_count ?? 0 }} valoraciones)</span
+              ></span
             >
           </div>
         </div>
@@ -1103,13 +1106,29 @@ function copyToClipboard(text: string, isSandbox = false) {
         <div
           v-if="stats"
           class="mt-6 rounded-lg border p-4 text-xs"
-          :class="stats.avg_response_minutes <= 360 ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50'"
+          :class="
+            stats.avg_response_minutes <= 360
+              ? 'border-emerald-200 bg-emerald-50/50'
+              : 'border-amber-200 bg-amber-50/50'
+          "
         >
-          <span class="font-bold" :class="stats.avg_response_minutes <= 360 ? 'text-emerald-900' : 'text-amber-900'">
-            Estado de SLA: {{ stats.avg_response_minutes <= 360 ? 'Óptimo' : 'Atención Requerida (Tiempo de Respuesta Alto)' }}
+          <span
+            class="font-bold"
+            :class="stats.avg_response_minutes <= 360 ? 'text-emerald-900' : 'text-amber-900'"
+          >
+            Estado de SLA:
+            {{
+              stats.avg_response_minutes <= 360
+                ? 'Óptimo'
+                : 'Atención Requerida (Tiempo de Respuesta Alto)'
+            }}
           </span>
           <p class="mt-1 text-slate-600">
-            {{ stats.avg_response_minutes <= 360 ? 'La farmacia cumple todos los parámetros de calidad del acuerdo B2B para mantener su asignación automática de cotizaciones.' : 'El tiempo promedio de respuesta excede el umbral objetivo de 6 horas.' }}
+            {{
+              stats.avg_response_minutes <= 360
+                ? 'La farmacia cumple todos los parámetros de calidad del acuerdo B2B para mantener su asignación automática de cotizaciones.'
+                : 'El tiempo promedio de respuesta excede el umbral objetivo de 6 horas.'
+            }}
           </p>
         </div>
       </div>

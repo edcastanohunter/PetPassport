@@ -134,7 +134,10 @@ onMounted(() => {
 
       <div v-else-if="verification" class="space-y-6" data-testid="verification-content">
         <!-- Big Status Card (FE-012) -->
-        <div :class="[statusConfig.class, 'rounded-2xl p-6 text-center shadow-lg transition-all']" data-testid="verification-status-banner">
+        <div
+          :class="[statusConfig.class, 'rounded-2xl p-6 text-center shadow-lg transition-all']"
+          data-testid="verification-status-banner"
+        >
           <div class="text-3xl font-black tracking-wide">{{ statusConfig.label }}</div>
           <p class="mt-2 text-sm opacity-90">{{ statusConfig.sub }}</p>
         </div>

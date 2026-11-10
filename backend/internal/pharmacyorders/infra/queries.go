@@ -284,7 +284,7 @@ func (q *Queries) ListGuardianQuoteRequests(ctx context.Context, guardianID uuid
 // GetOrder consulta el detalle de un pedido.
 func (q *Queries) GetOrder(ctx context.Context, id uuid.UUID) (*OrderDetailView, error) {
 	var (
-		rxID, quoteID, qrID, petID, guardianID, orgID           uuid.UUID
+		rxID, quoteID, qrID, petID, guardianID, orgID                       uuid.UUID
 		mode, status, phone                                                 string
 		vInt                                                                int64
 		linesJSON, totalsJSON, addrJSON, timelineJSON, dispJSON, ratingJSON []byte

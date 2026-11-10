@@ -221,4 +221,3 @@ type OrderRated struct {
 
 func (OrderRated) EventName() string  { return "OrderRated" }
 func (OrderRated) SchemaVersion() int { return 1 }
-

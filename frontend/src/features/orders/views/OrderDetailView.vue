@@ -344,8 +344,15 @@ async function confirmCancelOrder() {
       </div>
 
       <!-- Valoración de la Farmacia (PRD-022) -->
-      <div v-if="order.status === 'delivered'" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div v-if="order.rating" class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4" data-testid="order-rating-card">
+      <div
+        v-if="order.status === 'delivered'"
+        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <div
+          v-if="order.rating"
+          class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4"
+          data-testid="order-rating-card"
+        >
           <div class="flex items-center gap-2">
             <span class="text-amber-500 font-bold text-lg">★</span>
             <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-900">
