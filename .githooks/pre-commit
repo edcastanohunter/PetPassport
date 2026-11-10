@@ -1,0 +1,31 @@
+#!/bin/sh
+# Git pre-commit hook (PetPassport)
+# Formats staged Go files with gofmt and staged Frontend files with Prettier.
+
+set -e
+
+# 1. Format staged Go files
+GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^backend/.*\.go$' || true)
+if [ -n "$GO_FILES" ]; then
+  echo "==> [pre-commit] Formateando archivos Go con gofmt -s -w..."
+  echo "$GO_FILES" | while IFS= read -r file; do
+    if [ -f "$file" ]; then
+      gofmt -s -w "$file"
+      git add "$file"
+    fi
+  done
+fi
+
+# 2. Format staged Frontend files (.vue, .ts, .js, .json, .css)
+FE_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/.*\.\(vue\|ts\|js\|json\|css\)$' || true)
+if [ -n "$FE_FILES" ]; then
+  echo "==> [pre-commit] Formateando archivos frontend con Prettier..."
+  echo "$FE_FILES" | sed 's#^frontend/##' | while IFS= read -r rel_file; do
+    if [ -f "frontend/$rel_file" ]; then
+      (cd frontend && npx --no-install prettier --write "$rel_file" --log-level warn)
+      git add "frontend/$rel_file"
+    fi
+  done
+fi
+
+exit 0
