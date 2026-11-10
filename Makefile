@@ -11,7 +11,7 @@ DEV := infra/scripts/dev-quadlet.sh
 PODMAN_SOCKET := $(shell [ "$$($(ENGINE) info --format '{{.Host.ServiceIsRemote}}' 2>/dev/null)" = false ] && $(ENGINE) info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs dev-status dev-export migrate gen gen-check lint test test-integration e2e load-test load-test-f2 build images specs-status specs-check
+.PHONY: help dev-up dev-down dev-reset dev-seed dev-certs dev-logs dev-obs dev-status dev-export migrate gen gen-check lint test test-integration e2e load-test load-test-f2 build images specs-status specs-check hooks
 
 help: ## Lista los objetivos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -56,6 +56,10 @@ gen-check: gen ## Falla si la generación produce cambios no commiteados
 	git diff --exit-code -- backend/api/gen frontend/src/shared/api/schema.d.ts
 
 # --- Calidad ---
+hooks: ## Activa los git hooks locales (.githooks con auto-formato gofmt y prettier)
+	git config core.hooksPath .githooks
+	chmod +x .githooks/* 2>/dev/null || true
+
 lint: ## Lint backend y frontend
 	cd backend && golangci-lint run ./...
 	cd frontend && npm run lint
