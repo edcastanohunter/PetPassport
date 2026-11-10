@@ -16,6 +16,7 @@ const (
 	PharmacyAdmin    Action = "pharmacy:admin"
 	OrderRead        Action = "order:read"
 	OrderCancel      Action = "order:cancel"
+	OrderRate        Action = "order:rate"
 )
 
 // QuoteRequestResource es la vista de autorización de una solicitud de cotización.
@@ -45,6 +46,7 @@ func init() {
 	Register(PharmacyAdmin, pharmacyAdminPolicy)
 	Register(OrderRead, orderReadPolicy)
 	Register(OrderCancel, orderCancelPolicy)
+	Register(OrderRate, orderRatePolicy)
 }
 
 func checkPharmacyMembership(p auth.Principal, orgID uuid.UUID, allowedRoles map[string]bool) Decision {
@@ -182,6 +184,23 @@ func orderCancelPolicy(p auth.Principal, res Resource) Decision {
 	if ord, ok := res.(OrderResource); ok {
 		if ord.GuardianID != uuid.Nil && p.UserID != ord.GuardianID {
 			return deny("only guardian can cancel order")
+		}
+		return allow
+	}
+	return deny("invalid order resource")
+}
+
+// orderRatePolicy: tutor de la orden (G) exclusivamente.
+func orderRatePolicy(p auth.Principal, res Resource) Decision {
+	if d := authenticatedOnly(p, nil); !d.Allow {
+		return d
+	}
+	if isSuperAdmin(p) {
+		return deny("super_admin cannot rate orders")
+	}
+	if ord, ok := res.(OrderResource); ok {
+		if ord.GuardianID != uuid.Nil && p.UserID != ord.GuardianID {
+			return deny("only guardian can rate order")
 		}
 		return allow
 	}

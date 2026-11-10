@@ -539,6 +539,47 @@ func (h *PharmacyHandlers) CancelOrder(ctx context.Context, req gen.CancelOrderR
 	return gen.CancelOrder200JSONResponse(h.orderDetailViewToGen(updated)), nil
 }
 
+// RateOrder registra la valoración del tutor sobre un pedido entregado (PRD-022).
+func (h *PharmacyHandlers) RateOrder(ctx context.Context, req gen.RateOrderRequestObject) (gen.RateOrderResponseObject, error) {
+	p, err := h.principal(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := h.queries.GetOrder(ctx, req.OrderId)
+	if err != nil {
+		return nil, err
+	}
+	if order == nil {
+		return nil, &kernel.NotFoundError{Resource: "Order " + req.OrderId.String()}
+	}
+
+	if d := authz.Can(p, authz.OrderRate, authz.OrderResource{ID: order.ID, GuardianID: order.GuardianID, PharmacyOrgID: order.PharmacyOrgID}); !d.Allow {
+		return nil, &kernel.ForbiddenError{Reason: d.Reason}
+	}
+
+	if req.Body == nil {
+		return nil, &kernel.ValidationError{Fields: []kernel.FieldViolation{{Field: "body", Code: "REQUIRED"}}}
+	}
+
+	comment := ""
+	if req.Body.Comment != nil {
+		comment = *req.Body.Comment
+	}
+
+	if err := h.svc.RateOrder(ctx, req.OrderId, req.Body.Score, comment); err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	return gen.RateOrder200JSONResponse{
+		OrderId: req.OrderId,
+		Score:   req.Body.Score,
+		Comment: req.Body.Comment,
+		RatedAt: now,
+	}, nil
+}
+
 // StreamOrderEvents provee stream SSE de eventos de pedido.
 func (h *PharmacyHandlers) StreamOrderEvents(ctx context.Context, req gen.StreamOrderEventsRequestObject) (gen.StreamOrderEventsResponseObject, error) {
 	p, err := h.principal(ctx)
@@ -1459,6 +1500,23 @@ func (h *PharmacyHandlers) orderDetailViewToGen(o *infra.OrderDetailView) gen.Or
 	payMethod := "cash_on_delivery"
 	payStatus := "pending"
 
+	var rating *struct {
+		Comment *string    `json:"comment,omitempty"`
+		RatedAt *time.Time `json:"rated_at,omitempty"`
+		Score   *int       `json:"score,omitempty"`
+	}
+	if o.Rating != nil {
+		rating = &struct {
+			Comment *string    `json:"comment,omitempty"`
+			RatedAt *time.Time `json:"rated_at,omitempty"`
+			Score   *int       `json:"score,omitempty"`
+		}{
+			Score:   &o.Rating.Score,
+			Comment: &o.Rating.Comment,
+			RatedAt: &o.Rating.RatedAt,
+		}
+	}
+
 	return gen.OrderDetail{
 		Id:                     o.ID,
 		QuoteRequestId:         o.QuoteRequestID,
@@ -1475,6 +1533,7 @@ func (h *PharmacyHandlers) orderDetailViewToGen(o *infra.OrderDetailView) gen.Or
 		TotalCents:             int(o.Totals.Total * 100),
 		PaymentMethod:          &payMethod,
 		PaymentStatus:          &payStatus,
+		Rating:                 rating,
 		StatusHistory:          timeline,
 		SharedDataWithPharmacy: &shared,
 		CreatedAt:              o.CreatedAt,

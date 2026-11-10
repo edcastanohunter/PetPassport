@@ -37,6 +37,7 @@ func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.OrderOutForDelivery{} })
 	reg.Register(func() eventstore.Event { return domain.OrderDelivered{} })
 	reg.Register(func() eventstore.Event { return domain.OrderCancelled{} })
+	reg.Register(func() eventstore.Event { return domain.OrderRated{} })
 }
 
 // QuoteRequestRepository persiste y rehidrata agregados QuoteRequest sobre el Event Store (PP-F4-DOM-008).

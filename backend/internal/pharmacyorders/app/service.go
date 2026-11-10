@@ -834,3 +834,42 @@ func (s *Service) CancelOrder(ctx context.Context, orderID uuid.UUID, by string,
 	}
 	return nil
 }
+
+// RateOrder registra la valoración y comentario del tutor sobre un pedido entregado (Invariante O9 / PP-F4-PRD-022).
+func (s *Service) RateOrder(ctx context.Context, orderID uuid.UUID, score int, comment string) error {
+	now := s.clock()
+
+	if err := s.uow.Do(ctx, func(txCtx context.Context) error {
+		order, err := s.orderRepo.Load(txCtx, orderID)
+		if err != nil {
+			return err
+		}
+
+		if err := order.Rate(score, comment, now); err != nil {
+			return err
+		}
+
+		orderEvents, err := s.orderRepo.Save(txCtx, order)
+		if err != nil {
+			return err
+		}
+
+		if s.proj != nil {
+			if err := s.proj.Apply(txCtx, orderEvents); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if s.broadcaster != nil {
+		s.broadcaster.PublishOrderEvent(orderID, "OrderRated", map[string]any{
+			"score":    score,
+			"comment":  comment,
+			"rated_at": now,
+		})
+	}
+	return nil
+}

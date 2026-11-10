@@ -15,6 +15,32 @@ const showCancelModal = ref(false)
 const cancelReason = ref('')
 const cancellingBusy = ref(false)
 
+// Valoración de farmacia (PRD-022)
+const ratingScore = ref(5)
+const ratingComment = ref('')
+const submittingRating = ref(false)
+const ratingError = ref<string | null>(null)
+
+async function submitRating() {
+  submittingRating.value = true
+  ratingError.value = null
+  try {
+    const res = await api().POST('/orders/{orderId}/rate', {
+      params: { path: { orderId } },
+      body: {
+        score: ratingScore.value,
+        comment: ratingComment.value.trim() || undefined,
+      },
+    })
+    if (res.error) throw new ApiError(res.error, res.response.status)
+    await loadOrder()
+  } catch (e) {
+    ratingError.value = e instanceof Error ? e.message : 'Error al registrar valoración'
+  } finally {
+    submittingRating.value = false
+  }
+}
+
 // SSE & Polling
 let eventSource: EventSource | null = null
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -314,6 +340,82 @@ async function confirmCancelOrder() {
         <div class="mt-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
           💳 <strong>Recordatorio:</strong> El pago se efectúa contra entrega o directamente en la
           farmacia.
+        </div>
+      </div>
+
+      <!-- Valoración de la Farmacia (PRD-022) -->
+      <div v-if="order.status === 'delivered'" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div v-if="order.rating" class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4" data-testid="order-rating-card">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-500 font-bold text-lg">★</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-900">
+              Tu valoración de la farmacia: {{ order.rating.score }} / 5 estrellas
+            </h3>
+          </div>
+          <p v-if="order.rating.comment" class="mt-2 text-xs italic text-slate-700">
+            "{{ order.rating.comment }}"
+          </p>
+          <span v-if="order.rating.rated_at" class="mt-1 block text-[10px] text-slate-400">
+            Valorado el {{ new Date(order.rating.rated_at).toLocaleDateString() }}
+          </span>
+        </div>
+
+        <div v-else data-testid="order-rate-form">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-500 font-bold">⭐</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Valora tu experiencia con esta farmacia (PRD-022)
+            </h3>
+          </div>
+          <p class="mt-1 text-xs text-slate-500">
+            Tu opinión nos ayuda a medir el SLA de calidad y orientar a otros tutores de mascotas.
+          </p>
+
+          <div v-if="ratingError" class="mt-2 rounded bg-rose-50 p-2 text-xs text-rose-700">
+            {{ ratingError }}
+          </div>
+
+          <div class="mt-3 flex items-center gap-2">
+            <label class="text-xs font-medium text-slate-700">Puntuación:</label>
+            <div class="flex gap-1">
+              <button
+                v-for="star in 5"
+                :key="star"
+                type="button"
+                @click="ratingScore = star"
+                class="text-xl transition-transform hover:scale-110 focus:outline-none"
+                :class="star <= ratingScore ? 'text-amber-400' : 'text-slate-300'"
+                :data-testid="'star-' + star"
+              >
+                ★
+              </button>
+            </div>
+            <span class="text-xs font-bold text-slate-700 ml-2">{{ ratingScore }} / 5</span>
+          </div>
+
+          <div class="mt-3">
+            <label class="block text-xs font-medium text-slate-700">Comentario opcional:</label>
+            <textarea
+              v-model="ratingComment"
+              rows="2"
+              maxlength="500"
+              placeholder="¿Cómo fue la entrega, empaque y atención de la farmacia?"
+              class="mt-1 block w-full rounded-md border border-slate-300 p-2 text-xs focus:border-emerald-500 focus:outline-none"
+              data-testid="rating-comment-input"
+            ></textarea>
+          </div>
+
+          <div class="mt-3 flex justify-end">
+            <button
+              type="button"
+              :disabled="submittingRating"
+              @click="submitRating"
+              class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:bg-slate-300"
+              data-testid="submit-rating-btn"
+            >
+              {{ submittingRating ? 'Enviando...' : 'Enviar Valoración' }}
+            </button>
+          </div>
         </div>
       </div>
 

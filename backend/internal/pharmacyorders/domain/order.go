@@ -31,6 +31,7 @@ type Order struct {
 	Timeline        []OrderTimelineEntry
 	Dispensation    *DispensationRecord
 	PartnerRef      *string
+	Rating          *OrderRating
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 
@@ -313,6 +314,39 @@ func (o *Order) Cancel(by string, reason string, now time.Time) error {
 	return nil
 }
 
+// OrderRating contiene los datos de valoración del pedido por el tutor (PP-F4-PRD-022).
+type OrderRating struct {
+	Score   int       `json:"score"`
+	Comment string    `json:"comment,omitempty"`
+	RatedAt time.Time `json:"rated_at"`
+}
+
+// Rate registra la valoración del tutor (1 a 5) sobre el pedido entregado (Invariante O9 / PP-F4-PRD-022).
+func (o *Order) Rate(score int, comment string, now time.Time) error {
+	if o.Status != OrderStatusDelivered {
+		return ErrOrderNotDelivered
+	}
+	if o.Rating != nil {
+		return ErrOrderAlreadyRated
+	}
+	if score < 1 || score > 5 {
+		return ErrInvalidRatingScore
+	}
+	comment = strings.TrimSpace(comment)
+	if len(comment) > 500 {
+		return ErrRatingCommentTooLong
+	}
+	o.record(OrderRated{
+		OrderID:       o.ID,
+		PharmacyOrgID: o.PharmacyOrgID,
+		GuardianID:    o.GuardianID,
+		Score:         score,
+		Comment:       comment,
+		At:            now,
+	})
+	return nil
+}
+
 // Apply rehidrata el agregado Order según los eventos recibidos.
 func (o *Order) Apply(evt any) {
 	o.Version++
@@ -365,5 +399,12 @@ func (o *Order) Apply(evt any) {
 	case OrderCancelled:
 		o.Status = OrderStatusCancelled
 		o.Timeline = append(o.Timeline, OrderTimelineEntry{Status: OrderStatusCancelled, At: e.At, Reason: &e.Reason})
+
+	case OrderRated:
+		o.Rating = &OrderRating{
+			Score:   e.Score,
+			Comment: e.Comment,
+			RatedAt: e.At,
+		}
 	}
 }

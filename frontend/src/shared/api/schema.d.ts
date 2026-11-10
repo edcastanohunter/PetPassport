@@ -3260,6 +3260,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{orderId}/rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valorar farmacia por un pedido entregado
+         * @description Permite al tutor calificar (1 a 5 estrellas) y dejar un comentario sobre la atención y entrega de la farmacia (PRD-022).
+         */
+        post: operations["rateOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orders/{orderId}/events": {
         parameters: {
             query?: never;
@@ -4089,6 +4111,12 @@ export interface components {
                 note?: string;
             }[];
             shared_data_with_pharmacy?: string[];
+            rating?: {
+                score?: number;
+                comment?: string;
+                /** Format: date-time */
+                rated_at?: string;
+            };
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4364,6 +4392,28 @@ export interface components {
             avg_response_minutes: number;
             /** Format: float */
             conversion_rate_percent: number;
+            /** Format: float */
+            rating_avg?: number;
+            rating_count?: number;
+            /** Format: float */
+            estimated_revenue?: number;
+            orders_by_status?: {
+                [key: string]: number;
+            };
+        };
+        RateOrderRequest: {
+            /** @description Puntuación de 1 a 5 estrellas */
+            score: number;
+            /** @description Comentario opcional de retroalimentación */
+            comment?: string;
+        };
+        OrderRatingResponse: {
+            /** Format: uuid */
+            order_id: string;
+            score: number;
+            comment?: string;
+            /** Format: date-time */
+            rated_at: string;
         };
         AdminPartnerSummary: {
             /** Format: uuid */
@@ -10975,6 +11025,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderDetail"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    rateOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Valoración registrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRatingResponse"];
                 };
             };
             default: components["responses"]["Problem"];

@@ -370,3 +370,32 @@ func TestPartnerHandlers_BulkProductMappings_Validation(t *testing.T) {
 }
 
 func stringPtr(s string) *string { return &s }
+
+func TestPartnerHandlers_PartnerGetStats(t *testing.T) {
+	handlers := NewPartnerHandlers(nil, nil, nil, nil)
+	orgID := uuid.New()
+	ctx := withPartnerCtx(context.Background(), orgID)
+
+	resp, err := handlers.PartnerGetStats(ctx, genpartner.PartnerGetStatsRequestObject{})
+	if err != nil {
+		t.Fatalf("unexpected error calling PartnerGetStats: %v", err)
+	}
+
+	okResp, ok := resp.(genpartner.PartnerGetStats200JSONResponse)
+	if !ok {
+		t.Fatalf("expected PartnerGetStats200JSONResponse, got %T", resp)
+	}
+
+	if okResp.OrganizationId != orgID {
+		t.Errorf("expected org ID %s, got %s", orgID, okResp.OrganizationId)
+	}
+	if okResp.WindowDays != 90 {
+		t.Errorf("expected window days 90, got %d", okResp.WindowDays)
+	}
+	if !okResp.SlaCompliant {
+		t.Errorf("expected default SLA compliance true")
+	}
+	if okResp.Thresholds == nil || okResp.Thresholds.MinQuoteRatePercent != 70.0 || okResp.Thresholds.MaxAvgResponseHours != 6.0 {
+		t.Errorf("invalid SLA thresholds: %+v", okResp.Thresholds)
+	}
+}
