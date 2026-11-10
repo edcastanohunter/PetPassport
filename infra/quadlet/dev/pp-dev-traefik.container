@@ -15,6 +15,7 @@ Network=pp-dev.network
 NetworkAlias=traefik
 PublishPort=80:80
 PublishPort=443:443
+PublishPort=8443:8443
 # Dashboard (solo dev).
 PublishPort=8081:8080
 Exec=--providers.file.directory=/etc/traefik/dynamic \
@@ -26,6 +27,10 @@ Exec=--providers.file.directory=/etc/traefik/dynamic \
   --entrypoints.websecure.transport.respondingTimeouts.readTimeout=30s \
   --entrypoints.websecure.transport.respondingTimeouts.writeTimeout=60s \
   --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=180s \
+  --entrypoints.partners-mtls.address=:8443 \
+  --entrypoints.partners-mtls.transport.respondingTimeouts.readTimeout=30s \
+  --entrypoints.partners-mtls.transport.respondingTimeouts.writeTimeout=60s \
+  --entrypoints.partners-mtls.transport.respondingTimeouts.idleTimeout=180s \
   --api.dashboard=true \
   --api.insecure=true \
   --metrics.prometheus=true \
@@ -34,6 +39,7 @@ Exec=--providers.file.directory=/etc/traefik/dynamic \
   --accesslog.fields.headers.names.Authorization=drop
 Volume=@REPO_DIR@/infra/traefik/dynamic:/etc/traefik/dynamic:ro,z
 Volume=@REPO_DIR@/infra/traefik/certs:/etc/traefik/certs:ro,z
+Volume=@REPO_DIR@/infra/traefik/clients-ca:/etc/traefik/clients-ca:ro,z
 LogDriver=journald
 
 [Service]

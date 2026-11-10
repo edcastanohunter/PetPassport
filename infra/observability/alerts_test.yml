@@ -220,3 +220,70 @@ tests:
               summary: "Rate limiting operando en fail-open por indisponibilidad de Redis: 10"
               runbook: "infra/deploy/RUNBOOK.md#721-ratelimitfailopen"
 
+  # F4: AIBudget80 y AIBudget100
+  - interval: 1m
+    input_series:
+      - series: 'ai_budget_used_ratio'
+        values: "0.50 0.70 0.85 0.85 0.85 0.85 0.85 0.85 1.05 1.05"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: AIBudget80
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: AIBudget80
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: "Consumo de presupuesto de IA alcanza el 80%: 85%"
+              runbook: "infra/deploy/RUNBOOK.md#728-aibudget80"
+      - eval_time: 8m
+        alertname: AIBudget100
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Presupuesto mensual de IA agotado (100%): corte duro activado"
+              runbook: "infra/deploy/RUNBOOK.md#729-aibudget100"
+
+  # F4: PartnerCircuitOpen y EgressDenied
+  - interval: 1m
+    input_series:
+      - series: 'egress_circuit_state{dest="api.partner.example",state="open"}'
+        values: "0 0 1 1 1 1"
+      - series: 'egress_requests_total{dest="169.254.169.254",status="denied"}'
+        values: "0 0 2 4 6 8"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: PartnerCircuitOpen
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: PartnerCircuitOpen
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Circuit breaker de egress abierto hacia api.partner.example"
+              runbook: "infra/deploy/RUNBOOK.md#734-partnercircuitopen"
+      - eval_time: 3m
+        alertname: EgressDenied
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Petición saliente bloqueada hacia destino no permitido por anti-SSRF/allowlist"
+              runbook: "infra/deploy/RUNBOOK.md#735-egressdenied"
+
+  # F4: SandboxDown
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="sandbox",instance="https://partners-sandbox.staging.petpassport.example"}'
+        values: "1 1 0 0 0"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SandboxDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: SandboxDown
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: "Entorno Sandbox caído por más de 2 min"
+              runbook: "infra/deploy/RUNBOOK.md#739-sandboxdown"
+

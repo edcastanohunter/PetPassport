@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry/f4metrics"
 )
 
 // Options configura la telemetría del proceso.
@@ -47,6 +49,7 @@ func Init(ctx context.Context, o Options) (*Telemetry, error) {
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
+	f4metrics.NewMetrics(reg)
 
 	// NewSchemaless evita el conflicto de Schema URL con resource.Default().
 	res, err := resource.Merge(resource.Default(), resource.NewSchemaless(

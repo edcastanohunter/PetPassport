@@ -94,6 +94,12 @@ variable "rate_limits" {
       requests   = 20
       period     = 60
     },
+    {
+      name       = "partner-b2b"
+      expression = "(http.host eq \"partners.$${domain}\" and starts_with(http.request.uri.path, \"/partner/v1/\"))"
+      requests   = 100
+      period     = 60
+    },
   ]
 }
 

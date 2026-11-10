@@ -205,3 +205,94 @@ groups:
           summary: "Divergencia detectada entre mappings del repositorio y esquemas activos en OpenSearch"
           runbook: "infra/deploy/RUNBOOK.md#727-mappingdrift"
 
+  # F4 M4.4: Borde B2B, OCR, Webhooks, Egress y Sandbox (PP-F4-INF-004)
+  - name: petpassport-f4
+    rules:
+      - alert: AIBudget80
+        expr: ai_budget_used_ratio >= 0.80 and ai_budget_used_ratio < 1.0
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Consumo de presupuesto de IA alcanza el 80%: {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#728-aibudget80"
+      - alert: AIBudget100
+        expr: ai_budget_used_ratio >= 1.0
+        labels: { severity: page }
+        annotations:
+          summary: "Presupuesto mensual de IA agotado (100%): corte duro activado"
+          runbook: "infra/deploy/RUNBOOK.md#729-aibudget100"
+      - alert: OCRFailureRateHigh
+        expr: |
+          sum(rate(ocr_jobs_total{status="failed"}[1h]))
+            / (sum(rate(ocr_jobs_total[1h])) + 0.001) > 0.10
+        for: 15m
+        labels: { severity: page }
+        annotations:
+          summary: "Tasa de fallos en OCR > 10% en 1 h: {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#730-ocrfailureratehigh"
+      - alert: OCRRefusalsSpike
+        expr: sum(increase(ocr_refusals_total[1h])) > 5
+        labels: { severity: ticket }
+        annotations:
+          summary: "Más de 5 refusals del proveedor de IA en 1 h: {{ $value }}"
+          runbook: "infra/deploy/RUNBOOK.md#731-ocrrefusalsspike"
+      - alert: OCRLatencyHigh
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(ocr_stage_duration_seconds_bucket[10m]))) > 60
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "p95 de duración de etapas OCR > 60 s (10 min): {{ $value | humanizeDuration }}"
+          runbook: "infra/deploy/RUNBOOK.md#732-ocrlatencyhigh"
+      - alert: WebhookFailuresHigh
+        expr: |
+          sum by (org) (rate(webhook_deliveries_total{status="failed"}[15m]))
+            / (sum by (org) (rate(webhook_deliveries_total[15m])) + 0.001) > 0.20
+        for: 15m
+        labels: { severity: page }
+        annotations:
+          summary: "Tasa de fallos en webhooks > 20% en 15 min para partner {{ $labels.org }}"
+          runbook: "infra/deploy/RUNBOOK.md#733-webhookfailureshigh"
+      - alert: PartnerCircuitOpen
+        expr: max by (dest) (egress_circuit_state{state="open"}) == 1
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: "Circuit breaker de egress abierto hacia {{ $labels.dest }}"
+          runbook: "infra/deploy/RUNBOOK.md#734-partnercircuitopen"
+      - alert: EgressDenied
+        expr: sum(rate(egress_requests_total{status="denied"}[5m])) > 0
+        labels: { severity: page }
+        annotations:
+          summary: "Petición saliente bloqueada hacia destino no permitido por anti-SSRF/allowlist"
+          runbook: "infra/deploy/RUNBOOK.md#735-egressdenied"
+      - alert: QuoteFanoutStuck
+        expr: sum(partner_invitations_pending{age="gt10m"}) > 0
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Invitaciones de cotización atascadas en pending por más de 10 min"
+          runbook: "infra/deploy/RUNBOOK.md#736-quotefanoutstuck"
+      - alert: PrescriptionPDFFailures
+        expr: sum(increase(prescription_pdf_errors_total[1h])) > 5
+        labels: { severity: ticket }
+        annotations:
+          summary: "Más de 5 errores en generación de PDF de recetas en 1 h: {{ $value }}"
+          runbook: "infra/deploy/RUNBOOK.md#737-prescriptionpdffailures"
+      - alert: PartnerAPI5xx
+        expr: |
+          sum(rate(partner_api_requests_total{status=~"5.."}[5m]))
+            / (sum(rate(partner_api_requests_total[5m])) + 0.001) > 0.01
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Tasa de errores 5xx en Partner API > 1% (5 min): {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#738-partnerapi5xx"
+      - alert: SandboxDown
+        expr: min(probe_success{job="sandbox"}) == 0
+        for: 2m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Entorno Sandbox caído por más de 2 min"
+          runbook: "infra/deploy/RUNBOOK.md#739-sandboxdown"
+

@@ -1,0 +1,84 @@
+{
+  "uid": "pp-prescriptions",
+  "title": "PetPassport · Prescriptions",
+  "tags": ["petpassport", "prescriptions", "f4"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "timezone": "utc",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Recetas Emitidas (24h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "increase(prescriptions_issued_total[24h])",
+          "legendFormat": "emitidas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Verificaciones Públicas / Partner (24h)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (via) (increase(prescription_verifications_total[24h]))",
+          "legendFormat": "{{via}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Tasa de Verificación de Recetas por Canal",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum by (via) (rate(prescription_verifications_total[5m]))",
+          "legendFormat": "{{via}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Emisión de Recetas en el Tiempo",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(prescriptions_issued_total[1h])",
+          "legendFormat": "recetas/h"
+        }
+      ]
+    }
+  ]
+}

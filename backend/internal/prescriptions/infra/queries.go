@@ -480,3 +480,18 @@ func (q *Queries) AddImage(ctx context.Context, id uuid.UUID, img domain.ImageRe
 	_, err := q.pool.Exec(ctx, ins, id, img.Page, img.ObjectKey, img.ContentType, img.Width, img.Height, img.Sha256)
 	return err
 }
+
+// CountExternalPrescriptionsToday cuenta cuántas recetas externas ha subido el tutor desde una fecha dada (PP-F4-SEC-010).
+func (q *Queries) CountExternalPrescriptionsToday(ctx context.Context, guardianID uuid.UUID, since time.Time) (int, error) {
+	const countQuery = `
+		SELECT count(*)
+		  FROM read_prescriptions.prescriptions
+		 WHERE guardian_id = $1 AND source = 'external' AND created_at >= $2`
+
+	var count int
+	err := q.pool.QueryRow(ctx, countQuery, guardianID, since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count external prescriptions: %w", err)
+	}
+	return count, nil
+}

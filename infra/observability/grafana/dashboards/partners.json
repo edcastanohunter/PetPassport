@@ -1,0 +1,88 @@
+{
+  "uid": "pp-partners",
+  "title": "PetPassport · Partners B2B",
+  "tags": ["petpassport", "partners", "b2b", "f4"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "timezone": "utc",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Circuit Breakers Abiertos",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(egress_circuit_state{state=\"open\"}) or vector(0)",
+          "legendFormat": "circuitos abiertos"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Latencia p95 Webhooks (s)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(webhook_latency_seconds_bucket[10m])))",
+          "legendFormat": "p95 webhook"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Entregas de Webhooks por Partner y Estado",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum by (org, status) (rate(webhook_deliveries_total[5m]))",
+          "legendFormat": "{{org}} - {{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Peticiones Partner API por Partner y Estado HTTP",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum by (org, status) (rate(partner_api_requests_total[5m]))",
+          "legendFormat": "{{org}} - {{status}}"
+        }
+      ]
+    }
+  ]
+}
