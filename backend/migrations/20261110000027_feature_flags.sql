@@ -1,3 +1,4 @@
+-- +goose Up
 -- 20261110000027_feature_flags.sql: Feature flags for progressive delivery (PP-F5-OPS-010).
 
 CREATE TABLE IF NOT EXISTS platform.feature_flags (
@@ -18,5 +19,8 @@ VALUES
     ('f5_service_status_banner', true, 100, 'Banner global de estado del servicio')
 ON CONFLICT (key) DO NOTHING;
 
-GRANT SELECT ON platform.feature_flags TO pp_api;
-GRANT SELECT, INSERT, UPDATE ON platform.feature_flags TO pp_admin;
+GRANT SELECT, INSERT, UPDATE, DELETE ON platform.feature_flags TO pp_app_writer;
+GRANT SELECT ON platform.feature_flags TO pp_app_reader;
+
+-- +goose Down
+DROP TABLE IF EXISTS platform.feature_flags;
