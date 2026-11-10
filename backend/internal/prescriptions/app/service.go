@@ -526,6 +526,15 @@ func (s *Service) RevokePrescription(ctx context.Context, cmd RevokePrescription
 
 // UploadExternalPrescription registra la subida de una receta externa por el tutor (PP-F4-DOM-006).
 func (s *Service) UploadExternalPrescription(ctx context.Context, cmd UploadExternalPrescriptionCmd, guardianID uuid.UUID) (uuid.UUID, error) {
+	// Límite de abuso: máximo 20 recetas externas por día por tutor (PP-F4-SEC-010).
+	if s.queries != nil {
+		todayStart := s.clock.Now().UTC().Truncate(24 * time.Hour)
+		count, err := s.queries.CountExternalPrescriptionsToday(ctx, guardianID, todayStart)
+		if err == nil && count >= 20 {
+			return uuid.Nil, kernel.NewDomainError("DAILY_EXTERNAL_PRESCRIPTION_LIMIT_EXCEEDED", "Se ha superado el límite de 20 recetas externas por día.")
+		}
+	}
+
 	rxID := s.ids.NewID()
 	if cmd.ID != nil && *cmd.ID != uuid.Nil {
 		rxID = *cmd.ID

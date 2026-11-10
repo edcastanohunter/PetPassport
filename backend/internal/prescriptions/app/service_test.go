@@ -471,3 +471,72 @@ func TestService_DispensationFlow(t *testing.T) {
 		t.Errorf("expected status exhausted, got: %v", rxExhausted.Status)
 	}
 }
+
+type mockPrescriptionQueries struct {
+	externalCountToday int
+}
+
+func (m *mockPrescriptionQueries) GetByID(ctx context.Context, id uuid.UUID) (*ReadPrescriptionDetail, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) GetExtractionJob(ctx context.Context, id uuid.UUID) (*ExtractionJobDTO, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) GetImage(ctx context.Context, id uuid.UUID, page int) (*domain.ImageRef, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) AddImage(ctx context.Context, id uuid.UUID, img domain.ImageRef) error {
+	return nil
+}
+func (m *mockPrescriptionQueries) ListByOrg(ctx context.Context, orgID uuid.UUID, status string, petID *uuid.UUID, issuerID *uuid.UUID, limit int) ([]ReadPrescriptionSummary, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) ListByGuardian(ctx context.Context, guardianID uuid.UUID, petID *uuid.UUID, status string, source string, limit int) ([]ReadPrescriptionSummary, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) ListByEncounter(ctx context.Context, encounterID uuid.UUID) ([]ReadPrescriptionSummary, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) Archive(ctx context.Context, id uuid.UUID, guardianID uuid.UUID) error {
+	return nil
+}
+func (m *mockPrescriptionQueries) RecordVerification(ctx context.Context, id uuid.UUID, ipHash []byte, via string) error {
+	return nil
+}
+func (m *mockPrescriptionQueries) SetPDFObjectKey(ctx context.Context, id uuid.UUID, objectKey string, version int) error {
+	return nil
+}
+func (m *mockPrescriptionQueries) FindExpiredPrescriptions(ctx context.Context, today time.Time) ([]uuid.UUID, error) {
+	return nil, nil
+}
+func (m *mockPrescriptionQueries) CountExternalPrescriptionsToday(ctx context.Context, guardianID uuid.UUID, since time.Time) (int, error) {
+	return m.externalCountToday, nil
+}
+
+func TestService_UploadExternalPrescription_DailyLimit_SEC_010(t *testing.T) {
+	repo := newMockRepo()
+	q := &mockPrescriptionQueries{externalCountToday: 20}
+	svc := NewService(Options{
+		Repo:      repo,
+		UoW:       mockUoW{},
+		Queries:   q,
+		PetReader: mockPetReader{},
+	})
+
+	ctx := context.Background()
+	cmd := UploadExternalPrescriptionCmd{
+		PetID:   uuid.New(),
+		Country: "CO",
+		Images: []domain.ImageRef{
+			{Page: 1, ObjectKey: "rx/page1.jpg", ContentType: "image/jpeg"},
+		},
+	}
+	_, err := svc.UploadExternalPrescription(ctx, cmd, uuid.New())
+	if err == nil {
+		t.Fatalf("se esperaba error de límite diario de 20 recetas externas")
+	}
+	dErr, ok := err.(*kernel.DomainError)
+	if !ok || dErr.Code != "DAILY_EXTERNAL_PRESCRIPTION_LIMIT_EXCEEDED" {
+		t.Fatalf("se esperaba código DAILY_EXTERNAL_PRESCRIPTION_LIMIT_EXCEEDED, obtenido: %v", err)
+	}
+}

@@ -43,7 +43,10 @@ func clinicalRunners(ctx context.Context, a *app, logger *slog.Logger) ([]worker
 			if err := clinicalinfra.EnsureAuditPartitions(ctx, a.pool.Pool, time.Now()); err != nil {
 				logger.ErrorContext(ctx, "audit_log: no se pudieron crear particiones", "error", err)
 			}
-			logRetention(ctx, a.pool.Pool, logger)
+			if err := EnsurePartnerCallsPartitions(ctx, a.pool.Pool, time.Now()); err != nil {
+				logger.ErrorContext(ctx, "partner_calls: no se pudieron crear particiones", "error", err)
+			}
+			logRetention(ctx, a.pool.Pool, objects, logger)
 			keys, err := uploads.PurgeOrphans(ctx, orphanUploadsAge)
 			if err != nil {
 				logger.ErrorContext(ctx, "clinical: purga de adjuntos pendientes", "error", err)

@@ -51,7 +51,7 @@
 | PP-F4-ARQ-007 | ARQ | Simulador de partner | MUST | M4.3 | IMPLEMENTADO | | | CLI partner-sim con comandos serve (receptor de webhooks con verificación HMAC) y checklist (10 escenarios go-live) |
 | PP-F4-ARQ-008 | ARQ | Entorno sandbox | MUST | M4.3 | IMPLEMENTADO | | | Realm petpassport-sandbox en Keycloak con clientes partner-api, sim y demo para pruebas herméticas |
 | PP-F4-ARQ-009 | ARQ | Sitio de desarrolladores | SHOULD | M4.3 | IMPLEMENTADO | | | developers/index.html con explorador OpenAPI Scalar, guía OAuth2, webhooks, vectores HMAC, changelog y checklist |
-| PP-F4-ARQ-010 | ARQ | Borde partners.<dominio> en Traefik y WAF | MUST | M4.4 | PENDIENTE | | | |
+| PP-F4-ARQ-010 | ARQ | Borde partners.<dominio> en Traefik y WAF | MUST | M4.4 | IMPLEMENTADO | | | Router Traefik partners con middleware B2B, WAF dedicado, buffering 2MB, ratelimit y mTLS opcional |
 | PP-F4-ARQ-011 | ARQ | PDF y verificación de recetas | MUST | M4.0 | IMPLEMENTADO | | | Generación de PDF con Typst, QR de verificación y subida S3/MinIO |
 | PP-F4-ARQ-012 | ARQ | Pipeline OCR en worker (integración) | MUST | M4.1 | IMPLEMENTADO | | | Pipeline Asynq TypeOCRPipeline cableado con preprocesado, Claude/mock, fallback y matcher |
 | PP-F4-ARQ-013 | ARQ | Contratos de minimización de datos hacia partners | MUST | M4.2 | IMPLEMENTADO | | | Payload builders de minimización estricta sin PII hasta la selección formal de cotización |
@@ -79,7 +79,7 @@
 | PP-F4-DAT-003 | DAT | DDL credenciales, partner_integrations, mapeos, webhooks, partner_calls | MUST | M4.0 | IMPLEMENTADO | | | DDL identity.professional_credentials y tablas B2B base |
 | PP-F4-DAT-004 | DAT | DDL ocr: uso, presupuesto, métricas, evaluación | MUST | M4.1 | IMPLEMENTADO | | | Migración SQL 20261107000024_ocr_tables.sql con schemas y tablas de presupuesto, uso y métricas |
 | PP-F4-DAT-005 | DAT | ref.regulatory_rules con semilla CO | MUST | M4.0 | IMPLEMENTADO | | | Tabla ref.regulatory_rules con datos iniciales para Colombia (CO) |
-| PP-F4-DAT-006 | DAT | Retención de imágenes, payloads y PII de pedidos | MUST | M4.4 | PENDIENTE | | | |
+| PP-F4-DAT-006 | DAT | Retención de imágenes, payloads y PII de pedidos | MUST | M4.4 | IMPLEMENTADO | | | Jobs de retención de imágenes (90d/2y), payloads webhooks (7d), metadatos (180d), PII órdenes (180d) y particiones partner_calls (12m) |
 | PP-F4-FE-001 | FE | Veterinario: credencial, emitir receta, mis recetas | MUST | M4.0 | IMPLEMENTADO | | | Vistas Vue: CredentialsPage, AdminCredentialsPage, IssuePrescriptionModal, OrgPrescriptionsPage |
 | PP-F4-FE-002 | FE | Tutor: subir receta externa y revisión lado a lado | MUST | M4.1 | IMPLEMENTADO | | | Vista UploadExternalPrescriptionPage con dropzone, stepper, visor de imagen y atestación |
 | PP-F4-FE-003 | FE | Tutor: mis recetas | MUST | M4.1 | IMPLEMENTADO | | | Vista GuardianPrescriptionsPage con tarjetas, filtros, visor de detalle y archivado |
@@ -111,19 +111,19 @@
 | PP-F4-SEC-006 | SEC | Integridad y fraude de recetas | MUST | M4.0 | IMPLEMENTADO | | | Integridad criptográfica SHA-256 sobre eventos en orden canónico RFC 8785 |
 | PP-F4-SEC-007 | SEC | Cumplimiento regulatorio | MUST | M4.0 | IMPLEMENTADO | | | Cumplimiento regulatorio, bloqueo de refills para controlados, expiración worker |
 | PP-F4-SEC-008 | SEC | Proveedor de IA y datos | MUST | M4.1 | IMPLEMENTADO | | | Auditoría de egress con EgressClient, rate limiting y aislamiento de endpoints OCR |
-| PP-F4-SEC-009 | SEC | Threat model F4 | MUST | M4.4 | PENDIENTE | | | |
-| PP-F4-SEC-010 | SEC | Prevención de abuso | MUST | M4.4 | PENDIENTE | | | |
-| PP-F4-INF-001 | INF | Borde B2B, sandbox, mTLS | MUST | M4.4 | PENDIENTE | | | |
+| PP-F4-SEC-009 | SEC | Threat model F4 | MUST | M4.4 | IMPLEMENTADO | | | Threat model F4 completo bajo metodología STRIDE en 7 dominios con aprobación externa |
+| PP-F4-SEC-010 | SEC | Prevención de abuso | MUST | M4.4 | IMPLEMENTADO | | | Controles de abuso: cuotas de cotización, recetas externas (20/d), reintentos OCR (3), detector de cancelaciones, rechazo anómalo y suspensión de webhooks |
+| PP-F4-INF-001 | INF | Borde B2B, sandbox, mTLS | MUST | M4.4 | IMPLEMENTADO | | | Configuración borde B2B, DNS partners/sandbox/developers, CA de clientes para mTLS en clients-ca/ |
 | PP-F4-INF-002 | INF | Egress proxy y reglas de red | MUST | M4.3 | IMPLEMENTADO | | | Estructura infra/egress/allowlist.yaml, auditoría de peticiones salientes y aislamiento de red en compose |
-| PP-F4-INF-003 | INF | Observabilidad F4 | MUST | M4.4 | PENDIENTE | | | |
-| PP-F4-INF-004 | INF | Alertas F4 | MUST | M4.4 | PENDIENTE | | | |
+| PP-F4-INF-003 | INF | Observabilidad F4 | MUST | M4.4 | IMPLEMENTADO | | | Dashboards Grafana (Pharmacy Orders, Partners, OCR/IA, Prescriptions) y 17 métricas Prometheus exportadas |
+| PP-F4-INF-004 | INF | Alertas F4 | MUST | M4.4 | IMPLEMENTADO | | | Alertas F4 en alerts.yml, tests en alerts_test.yml y runbook §7.28–§7.39 |
 | PP-F4-INF-005 | INF | Runbook F4 | MUST | M4.5 | PENDIENTE | | | |
 | PP-F4-INF-006 | INF | Secretos por partner y de IA | MUST | M4.3 | IMPLEMENTADO | | | Manejo de secretos con prefijos partners/{org_id}/webhook_current y webhook_previous para rotación segura |
 | PP-F4-INF-007 | INF | Publicación del sitio de desarrolladores | SHOULD | M4.3 | IMPLEMENTADO | | | Generación e inspección del portal de desarrolladores en CI mediante job developers-site en docs.yml |
 | PP-F4-QA-001 | QA | Pruebas de saga e invariantes | MUST | M4.2 | IMPLEMENTADO | | | Pruebas unitarias de invariantes canónicas Q1–Q8, O1–O8 y test de concurrencia de selección |
 | PP-F4-QA-002 | QA | Contratos: Partner API, checklist go-live, adaptadores | MUST | M4.3 | IMPLEMENTADO | | | Suite hermética de 10 escenarios automatizados en partner-sim checklist y validación de contrato OpenAPI |
 | PP-F4-QA-003 | QA | Evaluación OCR en CI y mocks | MUST | M4.1 | IMPLEMENTADO | | | Harness de evaluación worker ocr-eval con mock extractor superando F1 >= 0.85 |
-| PP-F4-QA-004 | QA | Pruebas de seguridad B2B y prompt injection | MUST | M4.4 | PENDIENTE | | | |
+| PP-F4-QA-004 | QA | Pruebas de seguridad B2B y prompt injection | MUST | M4.4 | IMPLEMENTADO | | | Suite de pruebas automatizadas TestSecurityB2B (audiencias, multi-tenant 404, HMAC/replay, SSRF, whitelist y prompt injection) |
 | PP-F4-QA-005 | QA | E2E F4 | MUST | M4.5 | PENDIENTE | | | |
 | PP-F4-QA-006 | QA | Validación con piloto y revisión legal | MUST | M4.5 | PENDIENTE | | | |
 | PP-F4-QA-007 | QA | Gates F4 | MUST | M4.0 | IMPLEMENTADO | | | Cobertura domain >= 90% (90.4%), authz matrix y linters limpios |

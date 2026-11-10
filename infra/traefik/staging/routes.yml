@@ -42,6 +42,38 @@ http:
       middlewares: [strip-origin-auth, api-headers, rl-lookup, inflight, compress]
       tls: {}
 
+    partners:
+      rule: Host(`partners.{{ $domain }}`) && PathPrefix(`/partner/v1`) && {{ $origin }}
+      entryPoints: [websecure]
+      service: api
+      middlewares: [strip-origin-auth, b2b-headers, b2b-buffering, rl-b2b, inflight, compress]
+      tls: {}
+    partners-mtls:
+      rule: Host(`partners.{{ $domain }}`) && PathPrefix(`/partner/v1`) && {{ $origin }}
+      entryPoints: [partners-mtls]
+      service: api
+      middlewares: [strip-origin-auth, b2b-headers, b2b-buffering, rl-b2b, inflight, compress]
+      tls:
+        options: mtls-client
+    partners-sandbox:
+      rule: Host(`partners-sandbox.{{ $domain }}`) && PathPrefix(`/partner/v1`) && {{ $origin }}
+      entryPoints: [websecure]
+      service: api
+      middlewares: [strip-origin-auth, b2b-headers, b2b-buffering, rl-b2b, inflight, compress]
+      tls: {}
+    auth-sandbox:
+      rule: Host(`auth-sandbox.{{ $domain }}`) && (PathPrefix(`/realms/`) || PathPrefix(`/resources/`)) && {{ $origin }}
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [strip-origin-auth, compress]
+      tls: {}
+    developers:
+      rule: Host(`developers.{{ $domain }}`) && {{ $origin }}
+      entryPoints: [websecure]
+      service: frontend
+      middlewares: [strip-origin-auth, security-headers, compress]
+      tls: {}
+
     keycloak:
       rule: Host(`auth.{{ $domain }}`) && (PathPrefix(`/realms/petpassport/`) || PathPrefix(`/resources/`)) && {{ $origin }}
       entryPoints: [websecure]
@@ -147,6 +179,25 @@ http:
           requestHeaderName: CF-Connecting-IP
     compress:
       compress: {}
+    b2b-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        contentTypeNosniff: true
+        customResponseHeaders:
+          Cache-Control: no-store
+          X-Content-Type-Options: nosniff
+    b2b-buffering:
+      buffering:
+        maxRequestBodyBytes: 2097152
+        memRequestBodyBytes: 1048576
+    rl-b2b:
+      rateLimit:
+        average: 300
+        period: 1m
+        burst: 60
+        sourceCriterion:
+          requestHeaderName: CF-Connecting-IP
     team-allowlist:
       ipAllowList:
         sourceRange:
@@ -165,3 +216,9 @@ tls:
     default:
       minVersion: VersionTLS12
       sniStrict: true
+    mtls-client:
+      minVersion: VersionTLS12
+      clientAuth:
+        caFiles:
+          - /etc/traefik/clients-ca/client-ca.pem
+        clientAuthType: RequireAndVerifyClientCert

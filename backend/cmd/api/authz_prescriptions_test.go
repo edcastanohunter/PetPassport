@@ -136,6 +136,10 @@ func (fakePrescriptionQueries) FindExpiredPrescriptions(_ context.Context, _ tim
 	return nil, nil
 }
 
+func (fakePrescriptionQueries) CountExternalPrescriptionsToday(_ context.Context, _ uuid.UUID, _ time.Time) (int, error) {
+	return 0, nil
+}
+
 type fakeCredentialCheck struct{}
 
 func (fakeCredentialCheck) Verified(_ context.Context, _ uuid.UUID, country string) (*prescriptiondomain.CredentialRef, bool, error) {

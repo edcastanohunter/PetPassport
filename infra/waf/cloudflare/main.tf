@@ -19,7 +19,7 @@ terraform {
 provider "cloudflare" {}
 
 locals {
-  hosts      = ["app", "api", "auth"]
+  hosts      = ["app", "api", "auth", "partners", "partners-sandbox", "auth-sandbox", "developers"]
   fqdns      = [for h in local.hosts : "${h}.${var.domain}"]
   host_set   = join(" ", [for f in local.fqdns : "\"${f}\""])
   team_ips   = join(" ", var.team_ip_ranges)
@@ -141,6 +141,30 @@ resource "cloudflare_ruleset" "custom" {
   rules {
     description = "api.: solo /api/*"
     expression  = "(http.host eq \"${local.api_host}\" and not starts_with(http.request.uri.path, \"/api/\"))"
+    action      = "block"
+    enabled     = true
+  }
+
+  # En partners. solo /partner/v1/* (PP-F4-ARQ-010, PP-F4-INF-001).
+  rules {
+    description = "partners.: solo /partner/v1/*"
+    expression  = "(http.host eq \"partners.${var.domain}\" and not starts_with(http.request.uri.path, \"/partner/v1/\"))"
+    action      = "block"
+    enabled     = true
+  }
+
+  # partners.: requerir Content-Type JSON en escrituras B2B (ARQ-010).
+  rules {
+    description = "partners.: requerir Content-Type JSON en escrituras"
+    expression  = "(http.host eq \"partners.${var.domain}\" and http.request.method in {\"POST\" \"PUT\" \"PATCH\"} and not any(http.request.headers[\"content-type\"][*] contains \"application/json\"))"
+    action      = "block"
+    enabled     = true
+  }
+
+  # partners.: denegar cookies de navegador (ARQ-010).
+  rules {
+    description = "partners.: denegar cookies de navegador"
+    expression  = "(http.host eq \"partners.${var.domain}\" and len(http.request.headers[\"cookie\"][*]) gt 0)"
     action      = "block"
     enabled     = true
   }

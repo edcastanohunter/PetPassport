@@ -278,6 +278,42 @@ Firmas de antivirus ClamAV desactualizadas (> 48 h). Comprobar el servicio `fres
 ### 7.27 MappingDrift
 Divergencia entre los esquemas de mapeo versionados en el repositorio (`backend/internal/search/mappings/*.json`) y el índice activo en OpenSearch. Planificar reindexación sin downtime con `cmd/worker search reindex`.
 
+### 7.28 AIBudget80
+El consumo del presupuesto mensual de IA ha superado el 80 %. Revisar volumen diario en dashboard `OCR & IA`, considerar ajuste de cuota en `admin/ai` o cambiar al modelo de respaldo si la proyección mensual supera el límite.
+
+### 7.29 AIBudget100
+Presupuesto mensual de IA alcanzado al 100 %. El corte duro bloquea nuevas llamadas automáticas con error `503 AI_BUDGET_EXCEEDED` degradando a captura manual. Para restablecer, el SuperAdmin debe ampliar el presupuesto mensual en `admin/ai` o esperar al reinicio de mes.
+
+### 7.30 OCRFailureRateHigh
+Tasa de fallo en el pipeline OCR superior al 10 % en 1 h. Verificar disponibilidad y latencia del proveedor de IA, conectividad de egress (`api.anthropic.com`), o fallos en el worker Tesseract de respaldo.
+
+### 7.31 OCRRefusalsSpike
+Más de 5 respuestas de rechazo (refusal) del modelo en 1 h. Inspeccionar si hay un ataque de prompt injection o imágenes con contenido no apto en la cola de OCR. Revisar `read_prescriptions.extraction_jobs` para muestras afectadas.
+
+### 7.32 OCRLatencyHigh
+El percentil 95 de duración de las etapas de extracción OCR supera los 60 s. Comprobar concurrencia del worker asynq `ocr`, timeouts del proveedor de IA y cola de procesamiento.
+
+### 7.33 WebhookFailuresHigh
+Más del 20 % de entregas de webhooks hacia un partner específico están fallando en los últimos 15 min. Comprobar estado del endpoint del partner, circuit breaker, y verificar si requiere suspensión preventiva tras 7 días de fallos continuos.
+
+### 7.34 PartnerCircuitOpen
+Circuit breaker abierto hacia el host de un partner debido a 5 fallos consecutivos. El tráfico saliente hacia ese partner se encuentra pausado temporalmente (5 min) para evitar saturación.
+
+### 7.35 EgressDenied
+Intento de conexión saliente hacia una IP privada, link-local, loopback o host no incluido en allowlist bloqueado por anti-SSRF (`platform/egress`). Auditar inmediatamente los registros de auditoría y la URL de webhook o adaptador registrada por el partner.
+
+### 7.36 QuoteFanoutStuck
+Invitaciones de cotización atascadas en estado `pending` por más de 10 min. Verificar la cola asynq `critical` de webhooks y el despachador de fanout en el worker.
+
+### 7.37 PrescriptionPDFFailures
+Más de 5 errores en generación o firmado de PDFs de recetas en 1 h. Revisar disponibilidad de MinIO/S3, binario Typst y plantilla `prescription.typ`.
+
+### 7.38 PartnerAPI5xx
+Tasa de errores 5xx en la Partner API `/partner/v1` superior al 1 % en 5 min. Revisar `journalctl --user -u pp-api`, logs de Traefik para `partners.<dominio>` y estado de la base de datos PostgreSQL.
+
+### 7.39 SandboxDown
+El endpoint de healthcheck del entorno sandbox (`partners-sandbox.<dominio>`) no responde durante más de 2 min. Revisar contenedor `pp-sandbox-api` o máquina virtual aislada de sandbox.
+
 ## 8. Observabilidad
 
 Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con un túnel:

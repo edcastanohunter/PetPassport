@@ -4,3 +4,5 @@
 274c6742e6fd76e3631b43dd116a0dc616032d3f:developers/auth.md:curl-auth-header:50
 274c6742e6fd76e3631b43dd116a0dc616032d3f:infra/keycloak/petpassport-sandbox-realm.json:generic-api-key:74
 d4605ee1c98f79706536109d9f3a0f3bdab28ef8:backend/internal/platform/webhooks/signer_test.go:generic-api-key:15
+# Clave de CA mTLS de desarrollo versionada por error en f9994e5; retirada del repo y regenerada con make dev-certs.
+f9994e5e632d75648fb31fdb079337bb80d00acf:infra/traefik/clients-ca/client-ca-key.pem:private-key:1

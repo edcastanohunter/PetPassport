@@ -115,6 +115,7 @@ type PrescriptionQueries interface {
 	RecordVerification(ctx context.Context, id uuid.UUID, ipHash []byte, via string) error
 	SetPDFObjectKey(ctx context.Context, id uuid.UUID, objectKey string, version int) error
 	FindExpiredPrescriptions(ctx context.Context, today time.Time) ([]uuid.UUID, error)
+	CountExternalPrescriptionsToday(ctx context.Context, guardianID uuid.UUID, since time.Time) (int, error)
 }
 
 // Repository persiste y rehidrata el agregado Prescription (PP-F4-ARQ-001, ADR-018).

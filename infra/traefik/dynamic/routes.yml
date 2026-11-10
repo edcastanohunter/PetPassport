@@ -14,6 +14,37 @@ http:
       service: api
       middlewares: [api-headers, api-buffering, api-ratelimit, inflight, compress]
       tls: {}
+    partners:
+      rule: Host(`partners.pp.localhost`) && PathPrefix(`/partner/v1`)
+      entryPoints: [websecure]
+      service: api
+      middlewares: [b2b-headers, b2b-buffering, b2b-ratelimit, inflight, compress]
+      tls: {}
+    partners-mtls:
+      rule: Host(`partners.pp.localhost`) && PathPrefix(`/partner/v1`)
+      entryPoints: [partners-mtls]
+      service: api
+      middlewares: [b2b-headers, b2b-buffering, b2b-ratelimit, inflight, compress]
+      tls:
+        options: mtls-client
+    partners-sandbox:
+      rule: Host(`partners-sandbox.pp.localhost`) && PathPrefix(`/partner/v1`)
+      entryPoints: [websecure]
+      service: api
+      middlewares: [b2b-headers, b2b-buffering, b2b-ratelimit, inflight, compress]
+      tls: {}
+    auth-sandbox:
+      rule: Host(`auth-sandbox.pp.localhost`) && (PathPrefix(`/realms/`) || PathPrefix(`/resources/`) || PathPrefix(`/js/`))
+      entryPoints: [websecure]
+      service: keycloak
+      middlewares: [compress]
+      tls: {}
+    developers:
+      rule: Host(`developers.pp.localhost`)
+      entryPoints: [websecure]
+      service: developers
+      middlewares: [security-headers, compress]
+      tls: {}
     keycloak:
       rule: Host(`auth.pp.localhost`) && (PathPrefix(`/realms/`) || PathPrefix(`/resources/`) || PathPrefix(`/js/`))
       entryPoints: [websecure]
@@ -41,6 +72,9 @@ http:
     keycloak:
       loadBalancer:
         servers: [{ url: "http://keycloak:8080" }]
+    developers:
+      loadBalancer:
+        servers: [{ url: "http://frontend:5173" }]
 
   middlewares:
     security-headers:
@@ -78,6 +112,22 @@ http:
     admin-allowlist:
       ipAllowList:
         sourceRange: ["127.0.0.1/32", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    b2b-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        contentTypeNosniff: true
+        customResponseHeaders:
+          Cache-Control: no-store
+          X-Content-Type-Options: nosniff
+    b2b-buffering:
+      buffering:
+        maxRequestBodyBytes: 2097152
+        memRequestBodyBytes: 1048576
+    b2b-ratelimit:
+      rateLimit:
+        average: 200
+        burst: 50
 
 tls:
   certificates:
@@ -86,3 +136,9 @@ tls:
   options:
     default:
       minVersion: VersionTLS12
+    mtls-client:
+      minVersion: VersionTLS12
+      clientAuth:
+        caFiles:
+          - /etc/traefik/clients-ca/client-ca.pem
+        clientAuthType: RequireAndVerifyClientCert

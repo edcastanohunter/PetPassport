@@ -78,6 +78,30 @@ func (d *Detector) CheckAnomalies(ctx context.Context, now time.Time) ([]Alert, 
 		alerts = append(alerts, exportAlerts...)
 	}
 
+	// 4. Cancelaciones abusivas de pedidos por tutor (> 3 en 30 días, PP-F4-SEC-010)
+	cancellationAlerts, err := d.checkAbusiveOrderCancellations(ctx, now)
+	if err != nil {
+		d.logger.ErrorContext(ctx, "error checking abusive order cancellations", "error", err)
+	} else {
+		alerts = append(alerts, cancellationAlerts...)
+	}
+
+	// 5. Farmacias con tasa de rechazo anómala (> 50 %, PP-F4-SEC-010)
+	declineAlerts, err := d.checkHighPharmacyDeclineRate(ctx, now)
+	if err != nil {
+		d.logger.ErrorContext(ctx, "error checking high pharmacy decline rate", "error", err)
+	} else {
+		alerts = append(alerts, declineAlerts...)
+	}
+
+	// 6. Partners con webhooks en fallo sostenido > 7 días -> suspender integración (PP-F4-SEC-010)
+	webhookAlerts, err := d.checkFailingWebhooksSuspension(ctx, now)
+	if err != nil {
+		d.logger.ErrorContext(ctx, "error checking failing webhooks suspension", "error", err)
+	} else {
+		alerts = append(alerts, webhookAlerts...)
+	}
+
 	// Guardar y notificar
 	for _, a := range alerts {
 		if err := d.recordAndNotify(ctx, a); err != nil {
@@ -219,6 +243,135 @@ func (d *Detector) checkExportBurst(ctx context.Context, now time.Time) ([]Alert
 				CreatedAt: now,
 			})
 		}
+	}
+	return alerts, nil
+}
+
+func (d *Detector) checkAbusiveOrderCancellations(ctx context.Context, now time.Time) ([]Alert, error) {
+	windowStart := now.Add(-30 * 24 * time.Hour)
+	rows, err := d.pool.Query(ctx, `
+		SELECT guardian_id, count(*) as cancellations
+		  FROM read_pharmacyorders.orders
+		 WHERE status = 'cancelled' AND updated_at >= $1
+		 GROUP BY guardian_id
+		HAVING count(*) > 3
+	`, windowStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alerts []Alert
+	for rows.Next() {
+		var guardianID uuid.UUID
+		var count int64
+		if err := rows.Scan(&guardianID, &count); err != nil {
+			continue
+		}
+		alerts = append(alerts, Alert{
+			ID:      uuid.New(),
+			Rule:    "abusive_order_cancellations",
+			ActorID: &guardianID,
+			Details: map[string]any{
+				"cancellations": count,
+				"window":        "30d",
+				"action":        "review_required",
+			},
+			CreatedAt: now,
+		})
+	}
+	return alerts, nil
+}
+
+func (d *Detector) checkHighPharmacyDeclineRate(ctx context.Context, now time.Time) ([]Alert, error) {
+	windowStart := now.Add(-30 * 24 * time.Hour)
+	rows, err := d.pool.Query(ctx, `
+		SELECT organization_id,
+		       count(*) as total,
+		       count(*) FILTER (WHERE status = 'declined') as declined
+		  FROM read_pharmacyorders.invitations
+		 WHERE sent_at >= $1
+		 GROUP BY organization_id
+		HAVING count(*) >= 5
+		   AND (count(*) FILTER (WHERE status = 'declined')::float / count(*)) > 0.50
+	`, windowStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alerts []Alert
+	for rows.Next() {
+		var orgID uuid.UUID
+		var total, declined int64
+		if err := rows.Scan(&orgID, &total, &declined); err != nil {
+			continue
+		}
+		rate := float64(declined) / float64(total)
+		alerts = append(alerts, Alert{
+			ID:             uuid.New(),
+			Rule:           "high_pharmacy_decline_rate",
+			OrganizationID: &orgID,
+			Details: map[string]any{
+				"total":        total,
+				"declined":     declined,
+				"decline_rate": rate,
+				"threshold":    0.50,
+			},
+			CreatedAt: now,
+		})
+	}
+	return alerts, nil
+}
+
+func (d *Detector) checkFailingWebhooksSuspension(ctx context.Context, now time.Time) ([]Alert, error) {
+	windowStart := now.Add(-7 * 24 * time.Hour)
+	rows, err := d.pool.Query(ctx, `
+		SELECT pi.organization_id, min(wd.created_at) as first_failure
+		  FROM read_partnernetwork.partner_integrations pi
+		  JOIN read_partnernetwork.webhook_deliveries wd ON wd.organization_id = pi.organization_id
+		 WHERE pi.status = 'active'
+		   AND NOT EXISTS (
+		       SELECT 1 FROM read_partnernetwork.webhook_deliveries s
+		        WHERE s.organization_id = pi.organization_id
+		          AND s.status = 'sent'
+		          AND s.sent_at >= $1
+		   )
+		 GROUP BY pi.organization_id
+		HAVING min(wd.created_at) <= $1
+	`, windowStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var suspendedOrgs []uuid.UUID
+	for rows.Next() {
+		var orgID uuid.UUID
+		var firstFailure time.Time
+		if err := rows.Scan(&orgID, &firstFailure); err == nil {
+			suspendedOrgs = append(suspendedOrgs, orgID)
+		}
+	}
+
+	var alerts []Alert
+	for _, orgID := range suspendedOrgs {
+		_, _ = d.pool.Exec(ctx, `
+			UPDATE read_partnernetwork.partner_integrations
+			   SET status = 'suspended', updated_at = now()
+			 WHERE organization_id = $1 AND status = 'active'
+		`, orgID)
+
+		alerts = append(alerts, Alert{
+			ID:             uuid.New(),
+			Rule:           "partner_webhooks_failing_suspended",
+			OrganizationID: &orgID,
+			Details: map[string]any{
+				"status": "suspended",
+				"reason": "webhooks failing continuously for > 7 days",
+			},
+			CreatedAt: now,
+		})
 	}
 	return alerts, nil
 }
