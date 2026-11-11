@@ -1,0 +1,9 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ include "petpassport.fullname" . }}-high-priority
+  labels:
+    {{- include "petpassport.labels" . | nindent 4 }}
+value: 1000000
+globalDefault: false
+description: "High priority class for PetPassport API pods to prevent eviction during resource pressure"

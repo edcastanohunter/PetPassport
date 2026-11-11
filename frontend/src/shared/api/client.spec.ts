@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, createApiClient, onApiError, resetApiClient } from './client'
+import {
+  ApiError,
+  createApiClient,
+  onApiError,
+  resetApiClient,
+  persistentServerErrors,
+} from './client'
 
 const problem = {
   type: 'https://docs.petpassport.app/errors/VALIDATION_FAILED',
@@ -51,5 +57,26 @@ describe('api client', () => {
     const err = await client.GET('/me').catch((e: unknown) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect((err as ApiError).code).toBe('UNAUTHENTICATED')
+  })
+
+  it('detecta errores 5xx persistentes para enlazar a status page (PP-F5-FE-009)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 503 }))
+    const client = createApiClient({ getToken: () => undefined, baseUrl: 'http://api.test/api/v1' })
+
+    expect(persistentServerErrors()).toBe(false)
+    await client.GET('/me').catch(() => {})
+    expect(persistentServerErrors()).toBe(false)
+    await client.GET('/me').catch(() => {})
+    expect(persistentServerErrors()).toBe(true)
+
+    // Respuesta 200 reinicia el contador de errores persistentes
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await client.GET('/healthz')
+    expect(persistentServerErrors()).toBe(false)
   })
 })

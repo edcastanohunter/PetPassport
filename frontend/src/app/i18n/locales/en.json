@@ -37,12 +37,36 @@
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
     "refresh": "Refresh",
-    "retry": "Retry"
+    "retry": "Retry",
+    "close": "Close"
   },
   "home": {
     "title": "Your pet's health passport",
     "subtitle": "Vaccination card, medical history and appointments in one place, shared with your clinic.",
     "status": "API status"
+  },
+  "status": {
+    "pageTitle": "Service Status",
+    "lastUpdated": "Last updated",
+    "backToApp": "Back to application",
+    "allSystemsOperational": "All Systems Operational",
+    "allOperationalSubtitle": "All core services, APIs and integrations are functioning normally.",
+    "someSystemsDegraded": "Some services are experiencing degradation or outages",
+    "degradedSubtitle": "Our engineering team is actively working to restore full service.",
+    "activeIncidentsTitle": "Active Incidents",
+    "scheduledMaintenanceTitle": "Scheduled Maintenance",
+    "componentsTitle": "Service Components",
+    "uptime90d": "90-day uptime",
+    "operational": "Operational",
+    "degraded": "Degraded",
+    "partialOutage": "Partial outage",
+    "majorOutage": "Major outage",
+    "maintenance": "Maintenance",
+    "maintenanceTitle": "Maintenance",
+    "serviceDegraded": "Service incident",
+    "viewStatus": "View status",
+    "externalPageNote": "PetPassport operates an independent external status page for historical uptime and subscriptions.",
+    "openExternalPage": "Open external status page"
   },
   "legal": {
     "terms": "Terms of service",

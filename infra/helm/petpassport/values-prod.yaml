@@ -1,0 +1,111 @@
+# Production values for PetPassport Helm chart (PP-F5-INF-001, INF-002, OPS-001, OPS-002, OPS-010)
+
+global:
+  env: prod
+  domain: petpassport.app
+
+image:
+  repository: ghcr.io/edcastanohunter/petpassport
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+api:
+  replicaCount: 3 # >= 3 réplicas en prod (ADR-024, OPS-001)
+  port: 8080
+  internalPort: 9090
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60 # HPA CPU 60 % (OPS-001)
+  pdb:
+    enabled: true
+    minAvailable: 2 # PDB minAvailable: 2 para api (OPS-001)
+
+worker:
+  replicaCount: 2 # >= 2 réplicas en prod (ADR-024, OPS-001)
+  internalPort: 9090
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  pdb:
+    enabled: true
+    minAvailable: 1 # PDB minAvailable: 1 para worker (OPS-001)
+
+frontend:
+  replicaCount: 3
+  port: 80
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: app.petpassport.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+    - host: api.petpassport.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+
+redis:
+  addr: "pp-prod-redis.internal:6379"
+  useTLS: true
+
+database:
+  host: "petpassport-prod-pgbouncer"
+  maxConns: 50
+
+oidc:
+  issuer: "https://auth.petpassport.app/realms/petpassport"
+  audience: "petpassport-api"
+  allowedAZP: "petpassport-web"
+
+networkPolicy:
+  enabled: true # NetworkPolicy por defecto deny + reglas explícitas (OPS-001)
+
+externalSecrets:
+  enabled: true # External Secrets desde secret manager con rotación (INF-002)
+  awsRegion: us-east-1
+  refreshInterval: 1h
+  remoteKey: "petpassport/production"
+
+admissionPolicy:
+  enabled: true # Admisión de imágenes firmadas con Cosign (INF-001, ADR-024)
+  cosignPublicKey: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEprodKeyPetPassportCosignSignature
+    VerificationKey1234567890abcdefghijklmnopqrstuvwxyzABCDEF==
+    -----END PUBLIC KEY-----
+
+canary:
+  enabled: true # Canary con Argo Rollouts: 10 % 15m con análisis p95 y error rate (OPS-010)
+
+pgbouncer:
+  enabled: true # Connection pooler pgbouncer multi-AZ (OPS-002, PRF-005)
+  replicaCount: 2
+  image: "edoburu/pgbouncer:v1.23.1"

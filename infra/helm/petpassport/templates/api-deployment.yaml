@@ -1,3 +1,4 @@
+{{- if not .Values.canary.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,7 +25,16 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: api
     spec:
+      priorityClassName: {{ include "petpassport.fullname" . }}-high-priority
       terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "petpassport.name" . }}
+              app.kubernetes.io/component: api
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -70,3 +80,4 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
+{{- end }}

@@ -1,4 +1,4 @@
-# Default values for petpassport (PP-F3-ARQ-012, ARQ-013, INF-005).
+# Default values for petpassport (PP-F3-ARQ-012, ARQ-013, INF-005, F5 INF-001, INF-002, OPS-001, OPS-002, OPS-010).
 
 global:
   env: staging
@@ -9,7 +9,7 @@ existingSecret: ""
 
 image:
   repository: localhost/petpassport
-  tag: "0.3.0"
+  tag: "0.5.0"
   pullPolicy: IfNotPresent
 
 api:
@@ -80,9 +80,31 @@ redis:
   useTLS: false
 
 database:
+  host: "postgres"
   maxConns: 10
 
 oidc:
   issuer: "https://auth.staging.petpassport.app/realms/petpassport"
   audience: "petpassport-api"
   allowedAZP: "petpassport-web"
+
+networkPolicy:
+  enabled: false
+
+externalSecrets:
+  enabled: false
+  awsRegion: us-east-1
+  refreshInterval: 1h
+  remoteKey: "petpassport/staging"
+
+admissionPolicy:
+  enabled: false
+  cosignPublicKey: ""
+
+canary:
+  enabled: false
+
+pgbouncer:
+  enabled: false
+  replicaCount: 2
+  image: "edoburu/pgbouncer:v1.23.1"

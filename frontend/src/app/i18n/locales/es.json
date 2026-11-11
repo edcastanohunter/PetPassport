@@ -37,12 +37,36 @@
     "statusApproved": "Aprobado",
     "statusRejected": "Rechazado",
     "refresh": "Actualizar",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "close": "Cerrar"
   },
   "home": {
     "title": "El pasaporte de salud de tu mascota",
     "subtitle": "Carnet de vacunas, historial clínico y citas en un solo lugar, compartido con tu clínica.",
     "status": "Estado de la API"
+  },
+  "status": {
+    "pageTitle": "Estado del Servicio",
+    "lastUpdated": "Última actualización",
+    "backToApp": "Volver a la aplicación",
+    "allSystemsOperational": "Todos los sistemas operando con normalidad",
+    "allOperationalSubtitle": "Todos los servicios, APIs y pasarelas funcionan correctamente.",
+    "someSystemsDegraded": "Algunos servicios presentan interrupciones o degradación",
+    "degradedSubtitle": "Estamos trabajando activamente para restaurar el servicio al 100%.",
+    "activeIncidentsTitle": "Incidentes Activos",
+    "scheduledMaintenanceTitle": "Mantenimientos Programados",
+    "componentsTitle": "Componentes del Servicio",
+    "uptime90d": "Disponibilidad 90 días",
+    "operational": "Operacional",
+    "degraded": "Degradado",
+    "partialOutage": "Interrupción parcial",
+    "majorOutage": "Interrupción mayor",
+    "maintenance": "Mantenimiento",
+    "maintenanceTitle": "Mantenimiento",
+    "serviceDegraded": "Incidencia en el servicio",
+    "viewStatus": "Ver estado",
+    "externalPageNote": "PetPassport opera una página de estado externa independiente para consultar el histórico y recibir notificaciones.",
+    "openExternalPage": "Abrir Status Page externa"
   },
   "legal": {
     "terms": "Términos del servicio",
