@@ -47,7 +47,7 @@ jobs:
       - name: npm audit (incluye dev; informativo)
         continue-on-error: true
         run: npm audit --audit-level=high
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: backend/go.mod
       - name: osv-scanner (informativo)

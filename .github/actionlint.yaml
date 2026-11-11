@@ -1,0 +1,5 @@
+# actionlint aún no conoce la etiqueta hospedada ubuntu-26.04 (e2e.yml la fija
+# por Podman >= 5.4). Quitar cuando actionlint la incluya.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

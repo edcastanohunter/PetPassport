@@ -16,9 +16,9 @@ concurrency:
 
 jobs:
   e2e:
-    # Etiqueta fija: la imagen 24.04 trae Podman 5.8 (Quadlet .build, Notify=healthy);
-    # ubuntu-latest migra a 26.04 en oct–nov 2026.
-    runs-on: ubuntu-24.04
+    # Etiqueta fija: dev-quadlet exige Podman >= 5.4 (Quadlet .build, Notify=healthy);
+    # la imagen 24.04 trae 4.9.3 y la 26.04 trae 5.7.
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
@@ -84,7 +84,7 @@ jobs:
 
       - name: Publicar informe
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
