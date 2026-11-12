@@ -37,6 +37,8 @@ type SubscriptionStore interface {
 type BillingReader interface {
 	GetAccount(ctx context.Context, id uuid.UUID) (*infra.AccountView, error)
 	GetPlan(ctx context.Context, code string) (*domain.PlanDefinition, error)
+	// PlanVersion lee una versión concreta en cualquier estado (nil si no existe).
+	PlanVersion(ctx context.Context, code string, version int) (*domain.PlanDefinition, error)
 	ActiveProfessionals(ctx context.Context, orgID uuid.UUID) (int, error)
 }
 
@@ -700,6 +702,14 @@ func (s *PaymentService) RenewSubscription(ctx context.Context, subID uuid.UUID,
 			planCode = pc.PlanCode
 		}
 		plan, err := s.reader.GetPlan(ctx, planCode)
+		if errors.Is(err, infra.ErrPlanNotFound) && sub.PendingChange() == nil {
+			// Plan retirado del catálogo: la suscripción conserva la versión que
+			// fijó al contratar (B10).
+			plan, err = s.reader.PlanVersion(ctx, planCode, sub.PlanVersion())
+			if err == nil && plan == nil {
+				err = infra.ErrPlanNotFound
+			}
+		}
 		if err != nil {
 			return err
 		}

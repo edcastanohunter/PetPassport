@@ -352,6 +352,12 @@ func (h *BillingHandlers) CreatePlan(ctx context.Context, req gen.CreatePlanRequ
 	}
 
 	body := req.Body
+	// Un código existente no se sobrescribe: las versiones nuevas van por PUT.
+	if next, err := h.queries.NextPlanVersion(ctx, body.Code); err != nil {
+		return nil, err
+	} else if next != 1 {
+		return nil, kernel.NewDomainError("PLAN_EXISTS", "Ya existe un plan con ese código: crea una nueva versión.")
+	}
 	planDef := domain.PlanDefinition{
 		Code:          body.Code,
 		Version:       1,
@@ -361,7 +367,6 @@ func (h *BillingHandlers) CreatePlan(ctx context.Context, req gen.CreatePlanRequ
 		Features:      body.Features,
 		Status:        "draft",
 		EffectiveFrom: &body.EffectiveFrom,
-		PublishedAt:   &body.EffectiveFrom,
 	}
 
 	planDef.Pricing = domain.PlanPricing{
@@ -414,22 +419,26 @@ func (h *BillingHandlers) UpdatePlan(ctx context.Context, req gen.UpdatePlanRequ
 		return gen.UpdatePlan200JSONResponse{}, nil
 	}
 
-	existing, err := h.queries.GetPlan(ctx, req.Code)
+	// Nueva versión en draft (PP-F5-API-001): el catálogo no cambia hasta
+	// publicarla con el preaviso de RN-39.
+	next, err := h.queries.NextPlanVersion(ctx, req.Code)
 	if err != nil {
+		return nil, err
+	}
+	if next == 1 {
 		return nil, &kernel.NotFoundError{Resource: "Plan " + req.Code}
 	}
 
 	body := req.Body
 	planDef := domain.PlanDefinition{
 		Code:          req.Code,
-		Version:       existing.Version + 1,
+		Version:       next,
 		Kind:          string(body.Kind),
 		Name:          map[string]string{"es": body.Name},
 		TrialDays:     body.TrialDays,
 		Features:      body.Features,
-		Status:        "published",
+		Status:        "draft",
 		EffectiveFrom: &body.EffectiveFrom,
-		PublishedAt:   &body.EffectiveFrom,
 	}
 
 	planDef.Pricing = domain.PlanPricing{

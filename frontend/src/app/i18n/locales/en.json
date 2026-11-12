@@ -239,7 +239,10 @@
     "PAYMENT_REFERENCE_DUPLICATE": "That payment reference is already recorded.",
     "REFUND_EXCEEDS_BALANCE": "The refund exceeds the charge balance.",
     "REFUND_IN_PROGRESS": "A refund is already in progress for this charge.",
-    "SUBSCRIPTION_NOT_FOUND": "Subscription not found."
+    "SUBSCRIPTION_NOT_FOUND": "Subscription not found.",
+    "PLAN_NOTICE_TOO_SHORT": "There are subscriptions on another version of the plan: the new one must take effect with at least 30 days' notice.",
+    "PLAN_VERSION_STATE": "The plan version is not in the state this operation requires.",
+    "PLAN_EXISTS": "A plan with that code already exists: create a new version."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -803,7 +806,8 @@
         "seats": "Seats (empty = current)",
         "cycle": "Cycle",
         "reference": "Payment reference",
-        "resolution": "Resolution"
+        "resolution": "Resolution",
+        "effective_from": "Effective from"
       },
       "action": {
         "extend_trial": "Extend trial",
@@ -814,7 +818,9 @@
         "manual_payment": "Record manual payment",
         "refund": "Refund",
         "resolve": "Resolve",
-        "retry_invoice": "Reissue invoice"
+        "retry_invoice": "Reissue invoice",
+        "publish_plan": "Publish",
+        "retire_plan": "Retire from catalog"
       },
       "done": {
         "extend_trial": "Trial extended.",
@@ -825,7 +831,9 @@
         "manual_payment": "Manual payment recorded.",
         "refund": "Refund requested.",
         "resolve": "Discrepancy resolved.",
-        "retry_invoice": "Reissue scheduled."
+        "retry_invoice": "Reissue scheduled.",
+        "publish_plan": "Version published.",
+        "retire_plan": "Version retired from the catalog."
       },
       "couponCreated": "Coupon {code} created.",
       "coupon": {
@@ -843,12 +851,19 @@
         "usesOf": "{uses} of {max} uses",
         "months": "{n} months"
       },
-      "plansHelp": "A new version applies to subscriptions at renewal if it is published at least 30 days in advance (RN-39). Edit the JSON and save.",
+      "plansHelp": "Each change creates a draft version; publish it with an effective date. If there are subscriptions on another version, the minimum notice is 30 days (RN-39). Subscriptions keep the version they signed up for.",
       "newVersion": "New version",
       "newPlan": "New plan",
       "versionOf": "New version of {code}",
       "planJsonInvalid": "The plan JSON is not valid.",
-      "planSaved": "Plan {code} saved."
+      "planSaved": "Plan {code} saved.",
+      "planStatus": {
+        "draft": "Draft",
+        "published": "Published",
+        "retired": "Retired"
+      },
+      "audit": "Admin actions",
+      "noAudit": "No actions recorded."
     }
   },
   "freshness": {

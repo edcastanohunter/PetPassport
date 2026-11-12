@@ -145,3 +145,48 @@ func (l *Ledger) Audit(ctx context.Context, e audit.Entry) error {
 		return audit.Record(ctx, tx, e)
 	})
 }
+
+// AuditRow es una acción de SuperAdmin del audit log (PP-F5-API-007).
+type AuditRow struct {
+	ID         uuid.UUID
+	OccurredAt time.Time
+	ActorID    *uuid.UUID
+	Action     string
+	TargetType string
+	TargetID   *uuid.UUID
+	Reason     string
+	Details    map[string]any
+}
+
+// AuditFor lista las acciones de facturación de SuperAdmin sobre los objetivos
+// indicados (cuenta, suscripciones, cargos, facturas, discrepancias).
+func (l *Ledger) AuditFor(ctx context.Context, targets []uuid.UUID, limit int) ([]AuditRow, error) {
+	if l == nil || l.pool == nil || len(targets) == 0 {
+		return []AuditRow{}, nil
+	}
+	rows, err := l.q(ctx).Query(ctx, `
+SELECT id, occurred_at, actor_id, action, coalesce(target_type, ''), target_id, coalesce(reason, ''), details
+  FROM platform.audit_log
+ WHERE target_id = ANY($1) AND action LIKE 'admin.billing.%'
+ ORDER BY occurred_at DESC
+ LIMIT $2`, targets, limit)
+	if err != nil {
+		return nil, fmt.Errorf("billing audit: %w", err)
+	}
+	defer rows.Close()
+	out := []AuditRow{}
+	for rows.Next() {
+		var r AuditRow
+		var details []byte
+		if err := rows.Scan(&r.ID, &r.OccurredAt, &r.ActorID, &r.Action, &r.TargetType, &r.TargetID, &r.Reason, &details); err != nil {
+			return nil, err
+		}
+		if len(details) > 0 {
+			if err := json.Unmarshal(details, &r.Details); err != nil {
+				return nil, fmt.Errorf("billing audit details: %w", err)
+			}
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

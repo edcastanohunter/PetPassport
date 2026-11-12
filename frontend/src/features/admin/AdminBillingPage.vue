@@ -173,7 +173,8 @@ const planJson = ref('')
 const planCode = ref<string | null>(null) // null = plan nuevo
 async function loadPlans() {
   try {
-    plans.value = (await run(() => api().GET('/plans', {})))?.data ?? []
+    // Todas las versiones (draft, published, retired): la consola las gestiona.
+    plans.value = (await run(() => api().GET('/admin/plans', {})))?.data ?? []
   } catch (e) {
     error.value = message(e)
   }
@@ -269,6 +270,8 @@ type Action =
   | 'refund'
   | 'resolve'
   | 'retry_invoice'
+  | 'publish_plan'
+  | 'retire_plan'
 const FIELDS: Record<Action, readonly BillingField[]> = {
   extend_trial: ['until'],
   credit: ['amount'],
@@ -279,6 +282,8 @@ const FIELDS: Record<Action, readonly BillingField[]> = {
   refund: ['amount'],
   resolve: ['resolution'],
   retry_invoice: [],
+  publish_plan: ['effective_from'],
+  retire_plan: [],
 }
 const SUB_ACTIONS: readonly Action[] = [
   'extend_trial',
@@ -362,6 +367,25 @@ async function confirm(values: Record<string, string>, reason: string) {
       case 'retry_invoice':
         await run(() => api().POST('/admin/invoices/{id}/retry', { params: { path: { id } } }))
         break
+      case 'publish_plan':
+      case 'retire_plan': {
+        const [code, version] = planRef(id)
+        const path = { params: { path: { code } } }
+        if (p.action === 'publish_plan') {
+          await run(() =>
+            api().POST('/admin/plans/{code}/publish', {
+              ...path,
+              body: { version, effective_from: values.effective_from ?? '', reason },
+            }),
+          )
+        } else {
+          await run(() =>
+            api().POST('/admin/plans/{code}/retire', { ...path, body: { version, reason } }),
+          )
+        }
+        await loadPlans()
+        break
+      }
     }
     notice.value = t(`admin.billing.done.${p.action}`)
     pending.value = null
@@ -375,9 +399,21 @@ async function confirm(values: Record<string, string>, reason: string) {
   }
 }
 
-const planOptions = computed(() =>
-  plans.value.map((p) => ({ code: p.code, name: `${p.name} (${p.kind})` })),
-)
+// Planes contratables: una entrada por código con versión publicada.
+const planOptions = computed(() => {
+  const seen = new Set<string>()
+  return plans.value
+    .filter((p) => p.status === 'published' && !seen.has(p.code) && seen.add(p.code))
+    .map((p) => ({ code: p.code, name: `${p.name} (${p.kind})` }))
+})
+// Las acciones de plan identifican la versión como "código@versión".
+function planKey(p: BillingPlan) {
+  return `${p.code}@${p.version}`
+}
+function planRef(key: string): [string, number] {
+  const at = key.lastIndexOf('@')
+  return [key.slice(0, at), Number(key.slice(at + 1))]
+}
 function charges(s: Subscription): Charge[] {
   return s.charges ?? []
 }
@@ -598,6 +634,20 @@ function charges(s: Subscription): Charge[] {
               </li>
             </ul>
           </div>
+
+          <div class="border-t border-surface-200 pt-3 dark:border-surface-700">
+            <h3 class="font-medium">{{ t('admin.billing.audit') }}</h3>
+            <p v-if="!detail.audit.length" class="text-sm text-surface-500">
+              {{ t('admin.billing.noAudit') }}
+            </p>
+            <ul class="text-sm" data-testid="account-audit">
+              <li v-for="a in detail.audit" :key="a.id">
+                {{ d(new Date(a.occurred_at), 'short') }} ·
+                {{ a.action.replace('admin.billing.', '') }}
+                <span v-if="a.reason" class="block text-surface-500">{{ a.reason }}</span>
+              </li>
+            </ul>
+          </div>
         </aside>
       </div>
     </template>
@@ -799,11 +849,34 @@ function charges(s: Subscription): Charge[] {
         >
           <span>
             <span class="font-semibold">{{ p.name }}</span> · {{ p.code }} v{{ p.version }} ·
-            {{ p.kind }} · {{ p.status }} · {{ d(new Date(p.effective_from), 'short') }}
+            {{ p.kind }} · {{ t(`admin.billing.planStatus.${p.status}`) }}
+            <template v-if="p.effective_from && p.status !== 'draft'">
+              · {{ d(new Date(p.effective_from), 'short') }}
+            </template>
           </span>
-          <button type="button" class="btn-secondary" @click="editPlan(p)">
-            {{ t('admin.billing.newVersion') }}
-          </button>
+          <span class="flex flex-wrap gap-2">
+            <button
+              v-if="p.status === 'draft'"
+              type="button"
+              class="btn-primary"
+              :data-testid="`publish-${planKey(p)}`"
+              @click="ask('publish_plan', planKey(p), `${p.name} v${p.version}`)"
+            >
+              {{ t('admin.billing.action.publish_plan') }}
+            </button>
+            <button
+              v-if="p.status === 'published'"
+              type="button"
+              class="btn-secondary"
+              :data-testid="`retire-${planKey(p)}`"
+              @click="ask('retire_plan', planKey(p), `${p.name} v${p.version}`)"
+            >
+              {{ t('admin.billing.action.retire_plan') }}
+            </button>
+            <button type="button" class="btn-secondary" @click="editPlan(p)">
+              {{ t('admin.billing.newVersion') }}
+            </button>
+          </span>
         </li>
       </ul>
       <button type="button" class="btn-secondary" @click="editPlan(null)">

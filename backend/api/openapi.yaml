@@ -5994,6 +5994,21 @@ paths:
           $ref: "#/components/responses/Problem"
 
   /admin/plans:
+    get:
+      operationId: adminListPlanVersions
+      summary: Todas las versiones de los planes (super_admin)
+      description: Versiones en cualquier estado (draft, published, retired) para la consola (PP-F5-API-001, FE-005).
+      tags: [admin, billing]
+      x-pp-action: admin:plans:write
+      responses:
+        "200":
+          description: Versiones de planes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
     post:
       operationId: createPlan
       summary: Crear un nuevo plan o versión (super_admin)
@@ -6021,8 +6036,10 @@ paths:
       - $ref: "#/components/parameters/PlanCode"
     put:
       operationId: updatePlan
-      summary: Actualizar plan existente (super_admin)
-      description: Actualiza la definición del plan (PP-F5-API-001).
+      summary: Nueva versión de un plan (super_admin)
+      description: |
+        Crea la siguiente versión del plan en `draft` (PP-F5-API-001). No cambia el catálogo hasta
+        `POST /admin/plans/{code}/publish`; las suscripciones conservan la versión que fijaron (B10).
       tags: [admin, billing]
       x-pp-action: admin:plans:write
       requestBody:
@@ -6034,6 +6051,61 @@ paths:
       responses:
         "200":
           description: Plan actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlan"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/plans/{code}/publish:
+    parameters:
+      - $ref: "#/components/parameters/PlanCode"
+    post:
+      operationId: publishPlan
+      summary: Publicar una versión de plan (super_admin)
+      description: |
+        Publica una versión `draft` desde `effective_from` (PP-F5-API-001). Si hay suscripciones vigentes en
+        otra versión del plan, `effective_from` debe estar al menos 30 días en el futuro (RN-39) →
+        `422 PLAN_NOTICE_TOO_SHORT`. Versión que no está en draft → `409 PLAN_VERSION_STATE`.
+      tags: [admin, billing]
+      x-pp-action: admin:plans:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishPlanRequest"
+      responses:
+        "200":
+          description: Versión publicada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlan"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/plans/{code}/retire:
+    parameters:
+      - $ref: "#/components/parameters/PlanCode"
+    post:
+      operationId: retirePlan
+      summary: Retirar una versión de plan (super_admin)
+      description: |
+        Saca una versión publicada del catálogo: no admite nuevas contrataciones, y las suscripciones que
+        la fijaron siguen renovando con ella (B10). Versión no publicada → `409 PLAN_VERSION_STATE`.
+      tags: [admin, billing]
+      x-pp-action: admin:plans:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetirePlanRequest"
+      responses:
+        "200":
+          description: Versión retirada
           content:
             application/json:
               schema:
@@ -11985,8 +12057,13 @@ components:
             $ref: "#/components/schemas/AdminBillingAccountSummary"
     AdminBillingAccountDetail:
       type: object
-      required: [account, subscriptions, payments, invoices, discrepancies]
+      required: [account, subscriptions, payments, invoices, discrepancies, audit]
       properties:
+        audit:
+          description: Acciones de SuperAdmin sobre la cuenta, sus suscripciones, cargos, facturas y discrepancias.
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingAuditEntry"
         account:
           $ref: "#/components/schemas/BillingAccount"
         subscriptions:
@@ -12048,6 +12125,56 @@ components:
           type: string
           minLength: 1
           maxLength: 120
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    BillingAuditEntry:
+      type: object
+      required: [id, occurred_at, action]
+      properties:
+        id:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    PublishPlanRequest:
+      type: object
+      required: [version, effective_from, reason]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        effective_from:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    RetirePlanRequest:
+      type: object
+      required: [version, reason]
+      properties:
+        version:
+          type: integer
+          minimum: 1
         reason:
           type: string
           minLength: 3

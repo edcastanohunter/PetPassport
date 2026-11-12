@@ -465,17 +465,20 @@ func (q *Queries) GetPlans(ctx context.Context, kind *string, country *string) (
 			},
 		}, nil
 	}
+	// Una fila por plan: la versión publicada vigente más reciente. Las
+	// versiones con effective_from futuro aún no son las del catálogo.
 	query := `
-SELECT code, version, kind, name, pricing, trial_days, seats, quotas, features, status, effective_from, published_at
-FROM ref.plans
-WHERE status = 'published'`
+SELECT * FROM (
+  SELECT DISTINCT ON (code) code, version, kind, name, pricing, trial_days, seats, quotas, features, status, effective_from, published_at
+  FROM ref.plans
+  WHERE status = 'published' AND (effective_from IS NULL OR effective_from <= current_date)`
 	var args []any
 
 	if kind != nil && *kind != "" {
 		query += fmt.Sprintf(" AND kind = $%d", len(args)+1)
 		args = append(args, *kind)
 	}
-	query += " ORDER BY kind, code, version DESC"
+	query += " ORDER BY code, version DESC) p ORDER BY kind, code"
 
 	rows, err := q.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -529,7 +532,7 @@ func (q *Queries) GetPlan(ctx context.Context, code string) (*domain.PlanDefinit
 	const sql = `
 SELECT code, version, kind, name, pricing, trial_days, seats, quotas, features, status, effective_from, published_at
 FROM ref.plans
-WHERE code = $1 AND status = 'published'
+WHERE code = $1 AND status = 'published' AND (effective_from IS NULL OR effective_from <= current_date)
 ORDER BY version DESC LIMIT 1`
 
 	var (
@@ -544,8 +547,8 @@ ORDER BY version DESC LIMIT 1`
 		&p.Code, &p.Version, &p.Kind, &nameRaw, &pricingRaw, &p.TrialDays,
 		&seatsRaw, &quotasRaw, &p.Features, &p.Status, &p.EffectiveFrom, &p.PublishedAt,
 	)
-	if err == pgx.ErrNoRows {
-		return nil, errors.New("plan no encontrado")
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrPlanNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get plan: %w", err)

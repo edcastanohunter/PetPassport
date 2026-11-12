@@ -7,7 +7,14 @@ import { MIN_REASON } from './adminStore'
 // de la acción (fecha, importe, plan…) y motivo obligatorio de ≥ 10 caracteres.
 // El backend repite las validaciones y deja la entrada en el audit log.
 export type BillingField =
-  'until' | 'amount' | 'plan_code' | 'seats' | 'cycle' | 'reference' | 'resolution'
+  | 'effective_from'
+  | 'until'
+  | 'amount'
+  | 'plan_code'
+  | 'seats'
+  | 'cycle'
+  | 'reference'
+  | 'resolution'
 
 const props = defineProps<{
   title: string
@@ -83,7 +90,13 @@ function submit() {
           :id="`ba-${f}`"
           v-model="values[f]"
           class="input"
-          :type="f === 'until' ? 'date' : f === 'amount' || f === 'seats' ? 'number' : 'text'"
+          :type="
+            f === 'until' || f === 'effective_from'
+              ? 'date'
+              : f === 'amount' || f === 'seats'
+                ? 'number'
+                : 'text'
+          "
           :min="f === 'amount' ? '0' : f === 'seats' ? '1' : undefined"
           :step="f === 'amount' ? 'any' : undefined"
           maxlength="120"

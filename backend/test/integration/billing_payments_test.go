@@ -482,3 +482,104 @@ func TestPPF5PRD006_SubscriptionContactsAgainstPostgres(t *testing.T) {
 		t.Fatalf("suscripción inexistente: ok=%v err=%v", ok, err)
 	}
 }
+
+// PP-F5-API-001: versionado de planes sobre Postgres. Una versión nueva nace en
+// draft, se publica con 30 días de preaviso si hay suscripciones vivas en otra
+// versión (RN-39), el catálogo muestra una sola versión vigente por plan y
+// retirar no rompe la versión fijada (B10). PP-F5-API-007: el detalle de la
+// cuenta trae las acciones de SuperAdmin.
+func TestPPF5API001_PlanVersioningAgainstPostgres(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+
+	base, err := e.queries.GetPlan(ctx, "starter")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := "it_" + uuid.NewString()[:8]
+	v1 := *base
+	v1.Code, v1.Version, v1.Status = code, 1, "published"
+	past := time.Now().AddDate(0, 0, -1)
+	v1.EffectiveFrom = &past
+	if err := e.queries.UpsertPlan(ctx, v1); err != nil {
+		t.Fatal(err)
+	}
+
+	accountID, subID, _ := e.subscribedAccount(t, "Clínica Versiones")
+	if _, err := e.pool.Exec(ctx, `UPDATE billing.subscriptions SET plan_code = $1, plan_version = 1 WHERE id = $2`, code, subID); err != nil {
+		t.Fatal(err)
+	}
+
+	next, err := e.queries.NextPlanVersion(ctx, code)
+	if err != nil || next != 2 {
+		t.Fatalf("siguiente versión = %d err=%v", next, err)
+	}
+	v2 := v1
+	v2.Version, v2.Status, v2.EffectiveFrom = 2, "draft", nil
+	if err := e.queries.UpsertPlan(ctx, v2); err != nil {
+		t.Fatal(err)
+	}
+	if live, err := e.queries.LiveSubscriptionsOnOtherVersions(ctx, code, 2); err != nil || live != 1 {
+		t.Fatalf("suscripciones vivas en otra versión = %d err=%v", live, err)
+	}
+
+	effective := time.Now().UTC().AddDate(0, 0, 40)
+	if err := e.queries.PublishPlanVersion(ctx, code, 2, effective, uuid.New()); err != nil {
+		t.Fatalf("publicar v2: %v", err)
+	}
+	if err := e.queries.PublishPlanVersion(ctx, code, 2, effective, uuid.New()); !errors.Is(err, billinginfra.ErrPlanVersionState) {
+		t.Fatalf("publicar dos veces: %v", err)
+	}
+	// v2 aún no está en vigor: el catálogo y GetPlan siguen en v1, una fila por plan.
+	if p, err := e.queries.GetPlan(ctx, code); err != nil || p.Version != 1 {
+		t.Fatalf("plan vigente: %+v err=%v", p, err)
+	}
+	plans, err := e.queries.GetPlans(ctx, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]int{}
+	for _, p := range plans {
+		seen[p.Code]++
+	}
+	for c, n := range seen {
+		if n != 1 {
+			t.Fatalf("el catálogo repite %s %d veces", c, n)
+		}
+	}
+
+	if err := e.queries.RetirePlanVersion(ctx, code, 1); err != nil {
+		t.Fatalf("retirar v1: %v", err)
+	}
+	if _, err := e.queries.GetPlan(ctx, code); !errors.Is(err, billinginfra.ErrPlanNotFound) {
+		t.Fatalf("sin versión vigente: %v", err)
+	}
+	if p, err := e.queries.PlanVersion(ctx, code, 1); err != nil || p == nil || p.Status != "retired" {
+		t.Fatalf("la versión fijada sigue legible: %+v err=%v", p, err)
+	}
+	all, err := e.queries.ListPlanVersions(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	versions := 0
+	for _, p := range all {
+		if p.Code == code {
+			versions++
+		}
+	}
+	if versions != 2 {
+		t.Fatalf("versiones listadas = %d", versions)
+	}
+
+	// Auditoría del detalle: solo acciones admin.billing.* sobre sus objetivos.
+	actor := uuid.New()
+	for _, action := range []string{"admin.billing.subscription.adjust", "me.update"} {
+		if err := e.ledger.Audit(ctx, audit.Entry{ActorID: &actor, Action: action, TargetType: "subscription", TargetID: &subID, Reason: "ajuste de prueba"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	trail, err := e.ledger.AuditFor(ctx, []uuid.UUID{accountID, subID}, 10)
+	if err != nil || len(trail) != 1 || trail[0].Action != "admin.billing.subscription.adjust" || *trail[0].TargetID != subID {
+		t.Fatalf("auditoría de la cuenta: %+v err=%v", trail, err)
+	}
+}

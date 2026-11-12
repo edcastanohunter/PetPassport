@@ -239,7 +239,10 @@
     "PAYMENT_REFERENCE_DUPLICATE": "Esa referencia de pago ya está registrada.",
     "REFUND_EXCEEDS_BALANCE": "El reembolso supera el saldo del cargo.",
     "REFUND_IN_PROGRESS": "Ya hay un reembolso en curso para este cargo.",
-    "SUBSCRIPTION_NOT_FOUND": "No se encontró la suscripción."
+    "SUBSCRIPTION_NOT_FOUND": "No se encontró la suscripción.",
+    "PLAN_NOTICE_TOO_SHORT": "Hay suscripciones en otra versión del plan: la nueva debe entrar en vigor con al menos 30 días de preaviso.",
+    "PLAN_VERSION_STATE": "La versión del plan no está en el estado que requiere la operación.",
+    "PLAN_EXISTS": "Ya existe un plan con ese código: crea una nueva versión."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -803,7 +806,8 @@
         "seats": "Asientos (vacío = actuales)",
         "cycle": "Ciclo",
         "reference": "Referencia del pago",
-        "resolution": "Resolución"
+        "resolution": "Resolución",
+        "effective_from": "En vigor desde"
       },
       "action": {
         "extend_trial": "Extender prueba",
@@ -814,7 +818,9 @@
         "manual_payment": "Registrar pago manual",
         "refund": "Reembolsar",
         "resolve": "Resolver",
-        "retry_invoice": "Reemitir factura"
+        "retry_invoice": "Reemitir factura",
+        "publish_plan": "Publicar",
+        "retire_plan": "Retirar del catálogo"
       },
       "done": {
         "extend_trial": "Prueba extendida.",
@@ -825,7 +831,9 @@
         "manual_payment": "Pago manual registrado.",
         "refund": "Reembolso solicitado.",
         "resolve": "Discrepancia resuelta.",
-        "retry_invoice": "Reemisión programada."
+        "retry_invoice": "Reemisión programada.",
+        "publish_plan": "Versión publicada.",
+        "retire_plan": "Versión retirada del catálogo."
       },
       "couponCreated": "Cupón {code} creado.",
       "coupon": {
@@ -843,12 +851,19 @@
         "usesOf": "{uses} de {max} usos",
         "months": "{n} meses"
       },
-      "plansHelp": "Una nueva versión se aplica a las suscripciones en su renovación si se publica con al menos 30 días de antelación (RN-39). Edita el JSON y guarda.",
+      "plansHelp": "Cada cambio crea una versión en borrador; publícala con fecha de entrada en vigor. Si hay suscripciones en otra versión, el preaviso mínimo es de 30 días (RN-39). Las suscripciones conservan la versión que contrataron.",
       "newVersion": "Nueva versión",
       "newPlan": "Nuevo plan",
       "versionOf": "Nueva versión de {code}",
       "planJsonInvalid": "El JSON del plan no es válido.",
-      "planSaved": "Plan {code} guardado."
+      "planSaved": "Plan {code} guardado.",
+      "planStatus": {
+        "draft": "Borrador",
+        "published": "Publicado",
+        "retired": "Retirado"
+      },
+      "audit": "Acciones de administración",
+      "noAudit": "Sin acciones registradas."
     }
   },
   "freshness": {

@@ -513,14 +513,48 @@ func (h *BillingHandlers) AdminGetBillingAccount(ctx context.Context, req gen.Ad
 	if err != nil {
 		return nil, err
 	}
+	targets := []uuid.UUID{acc.ID}
+	for i := range subs {
+		targets = append(targets, subs[i].ID)
+		for _, c := range subs[i].Charges {
+			targets = append(targets, c.ID)
+		}
+	}
+	for _, inv := range invRows {
+		targets = append(targets, inv.ID)
+	}
+	for _, d := range discrepancies {
+		targets = append(targets, d.ID)
+	}
+	trail, err := h.ledger.AuditFor(ctx, targets, defaultLimit)
+	if err != nil {
+		return nil, err
+	}
 	out := gen.AdminGetBillingAccount200JSONResponse{
 		Account: toGenAccount(acc), Subscriptions: make([]gen.Subscription, 0, len(subs)),
 		Payments: toGenPayments(payments), Invoices: invoices, Discrepancies: toGenDiscrepancies(discrepancies),
+		Audit: toGenAudit(trail),
 	}
 	for i := range subs {
 		out.Subscriptions = append(out.Subscriptions, toGenSubscription(&subs[i]))
 	}
 	return out, nil
+}
+
+func toGenAudit(rows []infra.AuditRow) []gen.BillingAuditEntry {
+	out := make([]gen.BillingAuditEntry, 0, len(rows))
+	for _, r := range rows {
+		e := gen.BillingAuditEntry{
+			Id: r.ID, OccurredAt: r.OccurredAt, ActorId: r.ActorID, Action: r.Action,
+			TargetType: strPtr(r.TargetType), TargetId: r.TargetID, Reason: strPtr(r.Reason),
+		}
+		if len(r.Details) > 0 {
+			d := r.Details
+			e.Details = &d
+		}
+		out = append(out, e)
+	}
+	return out
 }
 
 func (h *BillingHandlers) subscriptionView(ctx context.Context, id uuid.UUID) (gen.Subscription, error) {

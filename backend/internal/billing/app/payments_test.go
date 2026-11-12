@@ -35,6 +35,7 @@ type world struct {
 	jobs     []job
 	account  *infra.AccountView
 	plan     domain.PlanDefinition
+	retired  bool // el plan no tiene versión publicada vigente
 	pay      *payfake.FakePaymentProvider
 	svc      *PaymentService
 	seq      int
@@ -119,6 +120,17 @@ func (w *world) GetAccount(context.Context, uuid.UUID) (*infra.AccountView, erro
 }
 
 func (w *world) GetPlan(context.Context, string) (*domain.PlanDefinition, error) {
+	if w.retired {
+		return nil, infra.ErrPlanNotFound
+	}
+	p := w.plan
+	return &p, nil
+}
+
+func (w *world) PlanVersion(_ context.Context, code string, version int) (*domain.PlanDefinition, error) {
+	if code != w.plan.Code || version != w.plan.Version {
+		return nil, nil
+	}
 	p := w.plan
 	return &p, nil
 }
@@ -831,6 +843,22 @@ func TestRenewSubscription_PP_F5_DOM_012_OnlyAtPeriodEnd(t *testing.T) {
 	must(t, err)
 	if !sub.CurrentPeriod().End.Equal(end.AddDate(0, 1, 0)) {
 		t.Fatalf("fin de periodo = %s", sub.CurrentPeriod().End)
+	}
+}
+
+// B10: retirar un plan del catálogo no impide renovar las suscripciones que
+// fijaron su versión.
+func TestRenewSubscription_PP_F5_API_001_RetiredPlanKeepsPinnedVersion(t *testing.T) {
+	w := newWorld(t)
+	subID, first := w.subscribe(false)
+	ctx := context.Background()
+	must(t, w.svc.CollectCharge(ctx, first))
+	w.retired = true
+	end := t0.AddDate(0, 1, 0)
+	w.now = end
+	must(t, w.svc.RenewSubscription(ctx, subID, end))
+	if len(w.charges) != 2 {
+		t.Fatalf("cargos = %d, quiero 2: la renovación usa la versión fijada", len(w.charges))
 	}
 }
 

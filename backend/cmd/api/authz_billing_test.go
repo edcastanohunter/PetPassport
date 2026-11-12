@@ -42,6 +42,10 @@ var billingMatrix = map[string][9]int{
 	// super_admin only
 	"createPlan": {403, 403, 403, 403, 403, 403, 403, 403, ok},
 	"updatePlan": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	// M5.2 — versionado de planes (API-001, FE-005)
+	"adminListPlanVersions": {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"publishPlan":           {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"retirePlan":            {403, 403, 403, 403, 403, 403, 403, 403, ok},
 
 	// billing:read
 	"getOrgBilling":            {403, 403, ok, 403, 403, 403, ok, 403, ok},

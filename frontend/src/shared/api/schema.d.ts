@@ -3928,7 +3928,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Todas las versiones de los planes (super_admin)
+         * @description Versiones en cualquier estado (draft, published, retired) para la consola (PP-F5-API-001, FE-005).
+         */
+        get: operations["adminListPlanVersions"];
         put?: never;
         /**
          * Crear un nuevo plan o versión (super_admin)
@@ -3952,11 +3956,59 @@ export interface paths {
         };
         get?: never;
         /**
-         * Actualizar plan existente (super_admin)
-         * @description Actualiza la definición del plan (PP-F5-API-001).
+         * Nueva versión de un plan (super_admin)
+         * @description Crea la siguiente versión del plan en `draft` (PP-F5-API-001). No cambia el catálogo hasta
+         *     `POST /admin/plans/{code}/publish`; las suscripciones conservan la versión que fijaron (B10).
          */
         put: operations["updatePlan"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans/{code}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publicar una versión de plan (super_admin)
+         * @description Publica una versión `draft` desde `effective_from` (PP-F5-API-001). Si hay suscripciones vigentes en
+         *     otra versión del plan, `effective_from` debe estar al menos 30 días en el futuro (RN-39) →
+         *     `422 PLAN_NOTICE_TOO_SHORT`. Versión que no está en draft → `409 PLAN_VERSION_STATE`.
+         */
+        post: operations["publishPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans/{code}/retire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retirar una versión de plan (super_admin)
+         * @description Saca una versión publicada del catálogo: no admite nuevas contrataciones, y las suscripciones que
+         *     la fijaron siguen renovando con ella (B10). Versión no publicada → `409 PLAN_VERSION_STATE`.
+         */
+        post: operations["retirePlan"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7058,6 +7110,8 @@ export interface components {
             data: components["schemas"]["AdminBillingAccountSummary"][];
         };
         AdminBillingAccountDetail: {
+            /** @description Acciones de SuperAdmin sobre la cuenta, sus suscripciones, cargos, facturas y discrepancias. */
+            audit: components["schemas"]["BillingAuditEntry"][];
             account: components["schemas"]["BillingAccount"];
             subscriptions: components["schemas"]["Subscription"][];
             payments: components["schemas"]["BillingPayment"][];
@@ -7089,6 +7143,32 @@ export interface components {
             amount: number;
             /** @description Referencia bancaria de la transferencia. */
             reference: string;
+            reason: string;
+        };
+        BillingAuditEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: uuid */
+            actor_id?: string;
+            action: string;
+            target_type?: string;
+            /** Format: uuid */
+            target_id?: string;
+            reason?: string;
+            details?: {
+                [key: string]: unknown;
+            };
+        };
+        PublishPlanRequest: {
+            version: number;
+            /** Format: date */
+            effective_from: string;
+            reason: string;
+        };
+        RetirePlanRequest: {
+            version: number;
             reason: string;
         };
         Coupon: {
@@ -13142,6 +13222,27 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    adminListPlanVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versiones de planes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanListResponse"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     createPlan: {
         parameters: {
             query?: never;
@@ -13183,6 +13284,60 @@ export interface operations {
         };
         responses: {
             /** @description Plan actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPlan"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    publishPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Versión publicada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPlan"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    retirePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: components["parameters"]["PlanCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetirePlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Versión retirada */
             200: {
                 headers: {
                     [name: string]: unknown;
