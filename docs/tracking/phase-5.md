@@ -10,12 +10,12 @@
 | PP-F5-PRD-003 | PRD | Contratar, cambiar plan y asientos con prorrateo | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Backend: tokenización en el proveedor, cobro recurrente y reintentos. Falta la UI (FE-003), PSE y verificar Wompi contra su sandbox |
 | PP-F5-PRD-005 | PRD | Facturas electrónicas válidas | MUST | M5.2 | EN_PROGRESO | | #38 | Emisión, estados, contingencia pdf_local y notas crédito con adaptador fake. Falta el adaptador DIAN (proveedor sin decidir, ADR-022 §4) |
-| PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | EN_PROGRESO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días y emails de la categoría billing (no desactivable) al titular y a los administradores. Falta el banner persistente (FE-003) |
+| PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | IMPLEMENTADO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días, emails de la categoría billing (no desactivable) y banner persistente para administradores |
 | PP-F5-PRD-007 | PRD | Límites de plan comprensibles y upgrade en contexto | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-008 | PRD | Cuenta de facturación multi-organización (cadenas) | SHOULD | M5.2 | PENDIENTE | |  | No iniciado: invitación y aceptación de organizaciones en una cuenta |
 | PP-F5-PRD-009 | PRD | Plan Enterprise con factura manual | SHOULD | M5.2 | IMPLEMENTADO | | #38 | Facturación manual sin dunning y pago manual de SuperAdmin (API). La pantalla va en FE-005 |
 | PP-F5-PRD-010 | PRD | Panel de uso de la organización | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-PRD-011 | PRD | Administración de suscripciones, ajustes y reembolsos | MUST | M5.2 | EN_PROGRESO | | #38 | API de SuperAdmin con motivo y audit log: ajustes (incluido change_plan), pago manual, reembolso, cancelación. Falta la UI (FE-005) |
+| PP-F5-PRD-011 | PRD | Administración de suscripciones, ajustes y reembolsos | MUST | M5.2 | IMPLEMENTADO | | #38 | API y consola de SuperAdmin con motivo y audit log: ajustes (incluido change_plan), pago manual, reembolso, cancelación |
 | PP-F5-PRD-012 | PRD | Exportación de datos (tutor y organización) | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-013 | PRD | Eliminación de cuenta con gracia y excepciones | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-014 | PRD | Centro de ayuda y tickets con SLA | MUST | M5.4 | PENDIENTE | | | |
@@ -26,7 +26,7 @@
 | PP-F5-PRD-019 | PRD | Métricas de negocio | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-PRD-020 | PRD | Textos legales por plan y país | MUST | M5.2 | PENDIENTE | |  | Requiere textos revisados por legal (prerrequisito humano del hito) |
 | PP-F5-PRD-021 | PRD | Plan Tutor Plus | COULD | M5.5 | PENDIENTE | | | |
-| PP-F5-PRD-022 | PRD | Cupones y descuentos | COULD | M5.2 | EN_PROGRESO | | #38 | Catálogo con canje atómico y límite de usos, GET/POST /admin/coupons y cupón en checkout y vista previa (API). Faltan las pantallas (FE-003, FE-005) |
+| PP-F5-PRD-022 | PRD | Cupones y descuentos | COULD | M5.2 | IMPLEMENTADO | | #38 | Catálogo con canje atómico y límite de usos, GET/POST /admin/coupons, cupón en checkout y pestaña de cupones en /admin/billing |
 | PP-F5-DOM-001 | DOM | Glosario F5 | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-DOM-002 | DOM | Context map F5 | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-DOM-003 | DOM | Agregado BillingAccount | MUST | M5.1 | IMPLEMENTADO | | | |
@@ -75,9 +75,9 @@
 | PP-F5-DAT-007 | DAT | Métricas diarias de negocio y soporte | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-001 | FE | Pricing público | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-FE-002 | FE | Prueba, vencimiento y contratación | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-FE-003 | FE | Ajustes de facturación | MUST | M5.2 | PENDIENTE | |  | No iniciado; el contrato OpenAPI y schema.d.ts ya incluyen las rutas |
+| PP-F5-FE-003 | FE | Ajustes de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Resumen, cambio de plan con vista previa, método de pago con widget del proveedor, datos fiscales, facturas, pagos, cancelar y reactivar, banner. Falta PSE y verificar el modo tokenización del widget de Wompi (SIN VERIFICAR) |
 | PP-F5-FE-004 | FE | Límites en contexto e indicadores de uso | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-FE-005 | FE | Admin de facturación y planes | MUST | M5.2 | PENDIENTE | |  | No iniciado; el contrato OpenAPI y schema.d.ts ya incluyen las rutas |
+| PP-F5-FE-005 | FE | Admin de facturación y planes | MUST | M5.2 | EN_PROGRESO | | #38 | Cuentas con filtros y detalle, ajustes con motivo, facturas con reemisión, discrepancias, cupones y versiones de plan. Faltan MRR por cuenta y retirar plan: la API no los expone |
 | PP-F5-FE-006 | FE | Privacidad: exportar, eliminar, accesos | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-FE-007 | FE | Centro de ayuda y tickets | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-008 | FE | Impersonación: concesión y banner | MUST | M5.4 | PENDIENTE | | | |
@@ -106,7 +106,7 @@
 | PP-F5-CMP-009 | CMP | Cumplimiento fiscal DIAN y conciliación contable | MUST | M5.2 | EN_PROGRESO | | #38 | Conciliación diaria con discrepancias y notas crédito. Falta el adaptador DIAN y las reglas de IVA/retenciones del contador |
 | PP-F5-CMP-010 | CMP | Marco de controles y auditoría interna | SHOULD | M5.5 | PENDIENTE | | | |
 | PP-F5-CMP-011 | CMP | Consentimiento de telemetría y cookies | MUST | M5.3 | PENDIENTE | | | |
-| PP-F5-SEC-001 | SEC | Pagos: tokenización, alcance PCI SAQ-A | MUST | M5.2 | EN_PROGRESO | | #38 | Sin datos de tarjeta en el backend ni en logs (solo token, last4, vencimiento). Faltan el documento SAQ-A y la CSP de la página de pago (con FE-003) |
+| PP-F5-SEC-001 | SEC | Pagos: tokenización, alcance PCI SAQ-A | MUST | M5.2 | EN_PROGRESO | | #38 | Sin datos de tarjeta en el backend ni en logs (solo token, last4, vencimiento); CSP del widget solo en la página de facturación. Falta el documento SAQ-A |
 | PP-F5-SEC-002 | SEC | Webhooks de proveedores firmados e idempotentes | MUST | M5.2 | IMPLEMENTADO | | #38 | Webhook de pagos: firma, ventana temporal, idempotencia por provider_event_id y contraste con el proveedor |
 | PP-F5-SEC-003 | SEC | KMS y gestión de claves | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-SEC-004 | SEC | Impersonación segura | MUST | M5.4 | PENDIENTE | | | |
