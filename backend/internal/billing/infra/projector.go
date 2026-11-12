@@ -462,7 +462,7 @@ INSERT INTO billing.entitlements (
 )
 SELECT
   o.organization_id, $1, $2, $3, $4,
-  $5, $6, COALESCE((SELECT COUNT(*) FROM read_partnernetwork.members m WHERE m.organization_id = o.organization_id AND m.role = 'veterinarian' AND m.active = true), 0),
+  $5, $6, COALESCE((SELECT COUNT(*) FROM read_partnernetwork.org_members m WHERE m.organization_id = o.organization_id AND m.role = 'veterinarian' AND m.status = 'active'), 0),
   $7, $8, $9, now()
 FROM billing.account_organizations o
 WHERE o.account_id = $1

@@ -404,8 +404,8 @@ SELECT type, verified_at FROM read_partnernetwork.organizations WHERE id = $1`, 
 func (q *Queries) ActiveProfessionals(ctx context.Context, orgID uuid.UUID) (int, error) {
 	var count int
 	err := q.pool.QueryRow(ctx, `
-SELECT COUNT(*) FROM read_partnernetwork.members
-WHERE organization_id = $1 AND role = 'veterinarian' AND active = true`, orgID).Scan(&count)
+SELECT COUNT(*) FROM read_partnernetwork.org_members
+WHERE organization_id = $1 AND role = 'veterinarian' AND status = 'active'`, orgID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("active professionals count: %w", err)
 	}
