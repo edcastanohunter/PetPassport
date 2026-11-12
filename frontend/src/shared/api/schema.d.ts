@@ -7246,7 +7246,7 @@ export interface components {
             /** @enum {string} */
             cycle: "monthly" | "annual";
             /** @enum {string} */
-            status: "trialing" | "active" | "past_due" | "grace_period" | "restricted" | "cancelled";
+            status: "trialing" | "active" | "grace" | "restricted" | "cancelled" | "expired";
             /** Format: date-time */
             trial_ends_at?: string;
             current_period: components["schemas"]["SubscriptionPeriod"];
