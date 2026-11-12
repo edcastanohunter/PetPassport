@@ -863,7 +863,8 @@
         "retired": "Retired"
       },
       "audit": "Admin actions",
-      "noAudit": "No actions recorded."
+      "noAudit": "No actions recorded.",
+      "mrr": "MRR"
     }
   },
   "freshness": {

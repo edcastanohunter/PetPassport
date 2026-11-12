@@ -12016,8 +12016,11 @@ components:
             $ref: "#/components/schemas/BillingPayment"
     AdminBillingAccountSummary:
       type: object
-      required: [id, legal_name, country, currency, status, subscriptions, created_at]
+      required: [id, legal_name, country, currency, status, subscriptions, created_at, mrr]
       properties:
+        mrr:
+          description: Ingreso recurrente mensual de la cuenta en su moneda (último cargo de periodo cobrado; anual / 12).
+          type: number
         id:
           type: string
           format: uuid

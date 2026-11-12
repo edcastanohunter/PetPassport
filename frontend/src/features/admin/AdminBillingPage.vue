@@ -507,7 +507,7 @@ function charges(s: Subscription): Charge[] {
               >
                 <span class="block font-semibold">{{ a.legal_name }}</span>
                 <span class="block text-sm text-surface-500">
-                  {{ a.country }} · {{ a.currency }} ·
+                  {{ a.country }} · {{ t('admin.billing.mrr') }} {{ money(a.mrr, a.currency) }} ·
                   <template v-for="(s, i) in a.subscriptions" :key="s.id">
                     {{ i ? ', ' : '' }}{{ s.plan_code }} ({{
                       t(`billing.status.${s.status}`, s.status)

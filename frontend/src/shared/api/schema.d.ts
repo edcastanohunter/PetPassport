@@ -7090,6 +7090,8 @@ export interface components {
             data: components["schemas"]["BillingPayment"][];
         };
         AdminBillingAccountSummary: {
+            /** @description Ingreso recurrente mensual de la cuenta en su moneda (último cargo de periodo cobrado; anual / 12). */
+            mrr: number;
             /** Format: uuid */
             id: string;
             legal_name: string;

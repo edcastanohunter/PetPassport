@@ -863,7 +863,8 @@
         "retired": "Retirado"
       },
       "audit": "Acciones de administración",
-      "noAudit": "Sin acciones registradas."
+      "noAudit": "Sin acciones registradas.",
+      "mrr": "MRR"
     }
   },
   "freshness": {

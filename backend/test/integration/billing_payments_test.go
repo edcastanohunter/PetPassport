@@ -234,6 +234,10 @@ func TestPPF5QA002_ChargeInvoiceRefundAgainstPostgres(t *testing.T) {
 	if mrr, err := e.ledger.MRR(ctx); err != nil || mrr["COP"] <= 0 {
 		t.Fatalf("MRR: %v err=%v", mrr, err)
 	}
+	// La cifra por cuenta usa la misma regla que el MRR global.
+	if rows, err := e.queries.ListAccounts(ctx, billinginfra.AccountFilter{Query: "Central", Limit: 10}); err != nil || len(rows) != 1 || rows[0].MRR != ch.Amount {
+		t.Fatalf("MRR de la cuenta: %+v err=%v (cargo %v)", rows, err, ch.Amount)
+	}
 	if n, err := e.ledger.RenewalsOverdue(ctx, time.Now()); err != nil || n != 0 {
 		t.Fatalf("renovaciones atrasadas: %d err=%v", n, err)
 	}
@@ -289,6 +293,11 @@ func TestPPF5API007_AdminQueriesAgainstPostgres(t *testing.T) {
 		if err != nil || done != want {
 			t.Fatalf("resolver discrepancia #%d: done=%v err=%v", i+1, done, err)
 		}
+	}
+
+	// MRR por cuenta: con el cargo aún pendiente no hay ingreso recurrente.
+	if rows, err := e.queries.ListAccounts(ctx, billinginfra.AccountFilter{Query: "veterinaria", Limit: 10}); err != nil || rows[0].MRR != 0 {
+		t.Fatalf("MRR sin cobros: %+v err=%v", rows, err)
 	}
 
 	// Pago manual: el importe debe coincidir y la referencia es única.

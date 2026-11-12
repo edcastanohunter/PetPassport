@@ -468,6 +468,7 @@ func (h *BillingHandlers) AdminListBillingAccounts(ctx context.Context, req gen.
 	for _, r := range rows {
 		item := gen.AdminBillingAccountSummary{
 			Id: r.ID, LegalName: r.LegalName, Country: r.Country, Currency: r.Currency, Status: r.Status, CreatedAt: r.CreatedAt,
+			Mrr: float32(r.MRR),
 		}
 		raw, err := json.Marshal(r.Subscriptions)
 		if err != nil {

@@ -40,6 +40,9 @@ type AccountSummary struct {
 	Status        string
 	CreatedAt     time.Time
 	Subscriptions []SubscriptionBrief
+	// MRR de la cuenta en su moneda, con la misma regla que Ledger.MRR: último
+	// cargo de periodo cobrado de cada suscripción active/grace, anual / 12.
+	MRR float64
 }
 
 // ListAccounts busca cuentas de facturación (API-007), de la más reciente a la más antigua.
@@ -50,7 +53,15 @@ func (q *Queries) ListAccounts(ctx context.Context, f AccountFilter) ([]AccountS
 	rows, err := q.pool.Query(ctx, `
 SELECT a.id, COALESCE(a.legal_entity->>'legal_name', ''), a.country, a.currency, a.status, a.created_at,
        COALESCE((SELECT jsonb_agg(jsonb_build_object('id', s.id, 'kind', s.kind, 'plan_code', s.plan_code, 'status', s.status) ORDER BY s.kind)
-                 FROM billing.subscriptions s WHERE s.account_id = a.id), '[]'::jsonb)
+                 FROM billing.subscriptions s WHERE s.account_id = a.id), '[]'::jsonb),
+       COALESCE((SELECT SUM(CASE WHEN s.cycle = 'annual' THEN c.amount / 12 ELSE c.amount END)
+                   FROM billing.subscriptions s
+                   JOIN LATERAL (
+                     SELECT amount FROM billing.charges
+                      WHERE subscription_id = s.id AND period_start IS NOT NULL AND status IN ('paid','partially_refunded')
+                      ORDER BY scheduled_at DESC LIMIT 1
+                   ) c ON true
+                  WHERE s.account_id = a.id AND s.status IN ('active','grace')), 0)::float8
 FROM billing.accounts a
 WHERE ($1 = '' OR position(lower($1) IN lower(COALESCE(a.legal_entity->>'legal_name', ''))) > 0)
   AND ($2 = '' OR a.country = $2)
@@ -69,7 +80,7 @@ LIMIT $5`, f.Query, f.Country, f.Status, f.Plan, f.Limit)
 			a    AccountSummary
 			subs []byte
 		)
-		if err := rows.Scan(&a.ID, &a.LegalName, &a.Country, &a.Currency, &a.Status, &a.CreatedAt, &subs); err != nil {
+		if err := rows.Scan(&a.ID, &a.LegalName, &a.Country, &a.Currency, &a.Status, &a.CreatedAt, &subs, &a.MRR); err != nil {
 			return nil, fmt.Errorf("billing accounts scan: %w", err)
 		}
 		if err := json.Unmarshal(subs, &a.Subscriptions); err != nil {

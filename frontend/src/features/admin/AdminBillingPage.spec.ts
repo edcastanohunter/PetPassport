@@ -88,6 +88,7 @@ describe('AdminBillingPage (PP-F5-FE-005)', () => {
                 legal_name: 'Clínica Sur SAS',
                 country: 'CO',
                 currency: 'COP',
+                mrr: 357000,
                 status: 'active',
                 created_at: '2026-11-01T00:00:00Z',
                 subscriptions: [{ id: 'sub-1', kind: 'clinic', plan_code: 'pro', status: 'grace' }],
@@ -124,6 +125,7 @@ describe('AdminBillingPage (PP-F5-FE-005)', () => {
     await w.get('#ba-q').setValue('Sur')
     await w.get('form[role="search"]').trigger('submit')
     await flushPromises()
+    expect(w.get('[data-testid="account-row"]').text()).toMatch(/MRR.*357\.000/)
     expect(GET).toHaveBeenCalledWith('/admin/billing/accounts', {
       params: { query: { q: 'Sur', status: undefined, country: undefined, limit: 100 } },
     })
