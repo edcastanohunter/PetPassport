@@ -10,12 +10,12 @@
 | PP-F5-PRD-003 | PRD | Contratar, cambiar plan y asientos con prorrateo | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Backend: tokenización en el proveedor, cobro recurrente y reintentos. Falta la UI (FE-003), PSE y verificar Wompi contra su sandbox |
 | PP-F5-PRD-005 | PRD | Facturas electrónicas válidas | MUST | M5.2 | EN_PROGRESO | | #38 | Emisión, estados, contingencia pdf_local y notas crédito con adaptador fake. Falta el adaptador DIAN (proveedor sin decidir, ADR-022 §4) |
-| PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | EN_PROGRESO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción y cancelación a 60 días. Faltan los emails (categoría billing) y el banner |
+| PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | EN_PROGRESO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días y emails de la categoría billing (no desactivable) al titular y a los administradores. Falta el banner persistente (FE-003) |
 | PP-F5-PRD-007 | PRD | Límites de plan comprensibles y upgrade en contexto | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-008 | PRD | Cuenta de facturación multi-organización (cadenas) | SHOULD | M5.2 | PENDIENTE | |  | No iniciado: invitación y aceptación de organizaciones en una cuenta |
 | PP-F5-PRD-009 | PRD | Plan Enterprise con factura manual | SHOULD | M5.2 | IMPLEMENTADO | | #38 | Facturación manual sin dunning y pago manual de SuperAdmin (API). La pantalla va en FE-005 |
 | PP-F5-PRD-010 | PRD | Panel de uso de la organización | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-PRD-011 | PRD | Administración de suscripciones, ajustes y reembolsos | MUST | M5.2 | EN_PROGRESO | | #38 | API de SuperAdmin con motivo y audit log: ajustes, pago manual, reembolso, cancelación. Falta el ajuste change_plan y la UI (FE-005) |
+| PP-F5-PRD-011 | PRD | Administración de suscripciones, ajustes y reembolsos | MUST | M5.2 | EN_PROGRESO | | #38 | API de SuperAdmin con motivo y audit log: ajustes (incluido change_plan), pago manual, reembolso, cancelación. Falta la UI (FE-005) |
 | PP-F5-PRD-012 | PRD | Exportación de datos (tutor y organización) | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-013 | PRD | Eliminación de cuenta con gracia y excepciones | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-PRD-014 | PRD | Centro de ayuda y tickets con SLA | MUST | M5.4 | PENDIENTE | | | |
@@ -26,7 +26,7 @@
 | PP-F5-PRD-019 | PRD | Métricas de negocio | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-PRD-020 | PRD | Textos legales por plan y país | MUST | M5.2 | PENDIENTE | |  | Requiere textos revisados por legal (prerrequisito humano del hito) |
 | PP-F5-PRD-021 | PRD | Plan Tutor Plus | COULD | M5.5 | PENDIENTE | | | |
-| PP-F5-PRD-022 | PRD | Cupones y descuentos | COULD | M5.2 | PENDIENTE | |  | El agregado aplica cupones; falta el catálogo y POST /admin/coupons |
+| PP-F5-PRD-022 | PRD | Cupones y descuentos | COULD | M5.2 | EN_PROGRESO | | #38 | Catálogo con canje atómico y límite de usos, GET/POST /admin/coupons y cupón en checkout y vista previa (API). Faltan las pantallas (FE-003, FE-005) |
 | PP-F5-DOM-001 | DOM | Glosario F5 | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-DOM-002 | DOM | Context map F5 | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-DOM-003 | DOM | Agregado BillingAccount | MUST | M5.1 | IMPLEMENTADO | | | |
@@ -57,10 +57,10 @@
 | PP-F5-API-001 | API | Planes (público y admin) | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-API-002 | API | Cuenta de facturación | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-API-003 | API | Suscripción: previsualizar, contratar, cambiar, cancelar | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-API-004 | API | Métodos de pago y webhooks de pago | MUST | M5.2 | EN_PROGRESO | | #38 | setup, attach y webhook firmado. Falta DELETE payment-methods: el modelo (DOM-006) no define el evento de retirada |
+| PP-F5-API-004 | API | Métodos de pago y webhooks de pago | MUST | M5.2 | IMPLEMENTADO | | #38 | setup, attach, DELETE (evento PaymentMethodRemoved, ver decisiones del PR) y webhook firmado |
 | PP-F5-API-005 | API | Facturas y pagos | MUST | M5.2 | IMPLEMENTADO | | #38 | Listas con limit en lugar de cursor (desviación anotada en el PR) |
 | PP-F5-API-006 | API | Uso y entitlements | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-API-007 | API | Administración de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Cuentas, detalle, ajustes, pago manual, reembolso, cancelación, discrepancias y reemisión. Faltan change_plan, cupones (COULD) y la auditoría en el detalle |
+| PP-F5-API-007 | API | Administración de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Cuentas, detalle, ajustes con change_plan, pago manual, reembolso, cancelación, discrepancias, reemisión y cupones. Falta la auditoría en el detalle |
 | PP-F5-API-008 | API | Derechos del titular y accesos de soporte | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-API-009 | API | Soporte: tickets, agentes, impersonación | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-API-010 | API | Teléfono y canales | SHOULD | M5.4 | PENDIENTE | | | |
