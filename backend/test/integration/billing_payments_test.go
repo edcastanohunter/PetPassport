@@ -95,7 +95,8 @@ func newBillingEnv(t *testing.T) *billingEnv {
 		[]providers.PaymentProvider{e.fake, manual.New()},
 		[]invoicing.Provider{invfake.NewFakeInvoicingProvider()})
 	subs := billinginfra.NewSubscriptionRepository(store, reg)
-	e.svc = billingapp.NewBillingService(billinginfra.NewBillingAccountRepository(store, reg), subs, e.queries, router, unit, projects).WithJobs(jobs)
+	e.svc = billingapp.NewBillingService(billinginfra.NewBillingAccountRepository(store, reg), subs, e.queries, router, unit, projects).WithJobs(jobs).
+		WithCoupons(billinginfra.NewCouponStore(pool.Pool))
 	e.pay = billingapp.NewPaymentService(billingapp.PaymentOptions{
 		Subscriptions: subs, Reader: e.queries, Ledger: e.ledger, Router: router, UoW: unit, Projects: projects, Jobs: jobs,
 	})
@@ -357,5 +358,103 @@ func TestPPF5DOM007_BillingProjectorIsIdempotent(t *testing.T) {
 	}
 	if after := e.billingSnapshot(t); after != before {
 		t.Fatalf("el read model cambió al proyectar dos veces\nantes:   %s\ndespués: %s", before, after)
+	}
+}
+
+// openAccount abre una cuenta colombiana con tarjeta tokenizada.
+func (e *billingEnv) openAccount(t *testing.T, legalName string) uuid.UUID {
+	t.Helper()
+	ctx := context.Background()
+	id, org := uuid.New(), uuid.New()
+	if _, err := e.svc.OpenAccount(ctx, billingapp.OpenAccountCmd{
+		AccountID: id, OwnerUserID: uuid.New(), Country: "CO", OrgID: &org,
+		LegalEntity: billingdomain.LegalEntity{
+			Kind: "company", LegalName: legalName, Address: "Calle 10 # 5-20", Email: "facturacion@example.com",
+			TaxID: billingdomain.TaxID{Country: "CO", Value: "900123456-7", Kind: "NIT"},
+		},
+	}); err != nil {
+		t.Fatalf("abrir cuenta: %v", err)
+	}
+	if _, err := e.svc.AttachPaymentMethod(ctx, id, billingapp.AttachPaymentMethodCmd{ProviderToken: "tok_ok"}); err != nil {
+		t.Fatalf("registrar método de pago: %v", err)
+	}
+	return id
+}
+
+// PP-F5-PRD-022: un cupón descuenta el primer cargo, consume un uso en la misma
+// transacción que la contratación y no supera max_uses.
+func TestPPF5PRD022_CouponIsRedeemedOnceAndAppliedToTheCharge(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	coupons := billinginfra.NewCouponStore(e.pool.Pool)
+	one, three := 1, 3
+	if err := coupons.Create(ctx, billinginfra.Coupon{Code: "LANZA20", Kind: "pct", Value: 20, MaxUses: &one, DurationMonths: &three, Plans: []string{"starter"}}); err != nil {
+		t.Fatalf("crear cupón: %v", err)
+	}
+	if err := coupons.Create(ctx, billinginfra.Coupon{Code: "LANZA20", Kind: "pct", Value: 10}); !errors.Is(err, billinginfra.ErrCouponExists) {
+		t.Fatalf("código repetido: esperaba ErrCouponExists, obtuvo %v", err)
+	}
+
+	code := "lanza20"
+	acc := e.openAccount(t, "Clínica Uno")
+	preview, err := e.svc.PreviewSubscription(ctx, billingapp.PreviewSubscriptionCmd{
+		AccountID: acc, Kind: billingdomain.KindClinic, PlanCode: "starter", Cycle: billingdomain.CycleMonthly, Coupon: &code,
+	})
+	if err != nil {
+		t.Fatalf("previsualizar con cupón: %v", err)
+	}
+	if preview.Subtotal != 96000 {
+		t.Fatalf("subtotal con 20 %% de descuento = %v, esperaba 96000", preview.Subtotal)
+	}
+	if _, err := e.svc.PreviewSubscription(ctx, billingapp.PreviewSubscriptionCmd{
+		AccountID: acc, Kind: billingdomain.KindClinic, PlanCode: "pro", Cycle: billingdomain.CycleMonthly, Coupon: &code,
+	}); !errors.Is(err, billinginfra.ErrCouponInvalid) {
+		t.Fatalf("cupón en un plan no incluido: esperaba ErrCouponInvalid, obtuvo %v", err)
+	}
+
+	sub := uuid.New()
+	if _, err := e.svc.Subscribe(ctx, billingapp.SubscribeCmd{
+		SubscriptionID: sub, AccountID: acc, Kind: billingdomain.KindClinic, PlanCode: "starter", Cycle: billingdomain.CycleMonthly, CouponCode: &code,
+	}); err != nil {
+		t.Fatalf("suscribir con cupón: %v", err)
+	}
+	var amount float64
+	if err := e.pool.QueryRow(ctx, `SELECT amount::float8 FROM billing.charges WHERE subscription_id = $1`, sub).Scan(&amount); err != nil || amount != 96000 {
+		t.Fatalf("base del cargo = %v (err=%v), esperaba 96000", amount, err)
+	}
+
+	// Segundo canje: max_uses agotado; la contratación se revierte entera.
+	other, sub2 := e.openAccount(t, "Clínica Dos"), uuid.New()
+	if _, err := e.svc.Subscribe(ctx, billingapp.SubscribeCmd{
+		SubscriptionID: sub2, AccountID: other, Kind: billingdomain.KindClinic, PlanCode: "starter", Cycle: billingdomain.CycleMonthly, CouponCode: &code,
+	}); !errors.Is(err, billinginfra.ErrCouponInvalid) {
+		t.Fatalf("cupón agotado: esperaba ErrCouponInvalid, obtuvo %v", err)
+	}
+	var subs, uses int
+	_ = e.pool.QueryRow(ctx, `SELECT count(*) FROM billing.subscriptions WHERE id = $1`, sub2).Scan(&subs)
+	_ = e.pool.QueryRow(ctx, `SELECT uses FROM billing.coupons WHERE code = 'LANZA20'`).Scan(&uses)
+	if subs != 0 || uses != 1 {
+		t.Fatalf("tras el canje rechazado: suscripciones=%d usos=%d, esperaba 0 y 1", subs, uses)
+	}
+}
+
+// PP-F5-API-004: el método de pago no se retira mientras respalda una
+// suscripción vigente; tras cancelarla, sí.
+func TestPPF5API004_RemovePaymentMethodAgainstPostgres(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	acc, sub, _ := e.subscribedAccount(t, "Clínica Veterinaria Central")
+	if err := e.svc.RemovePaymentMethod(ctx, acc); !errors.Is(err, billingdomain.ErrPaymentMethodInUse) {
+		t.Fatalf("con suscripción activa: esperaba ErrPaymentMethodInUse, obtuvo %v", err)
+	}
+	if err := e.svc.CancelSubscription(ctx, sub, false, "Cierre de la clínica"); err != nil {
+		t.Fatalf("cancelar: %v", err)
+	}
+	if err := e.svc.RemovePaymentMethod(ctx, acc); err != nil {
+		t.Fatalf("retirar tras cancelar: %v", err)
+	}
+	view, err := e.queries.GetAccount(ctx, acc)
+	if err != nil || view.PaymentMethod != nil {
+		t.Fatalf("la cuenta conserva el método: %+v err=%v", view.PaymentMethod, err)
 	}
 }

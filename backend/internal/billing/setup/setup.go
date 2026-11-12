@@ -27,7 +27,8 @@ func (a allowlisted) Do(req *http.Request) (*http.Response, error) {
 	if err := a.client.CheckAllowed(req.URL.String()); err != nil {
 		return nil, err
 	}
-	return a.client.HTTPClient().Do(req) //nolint:gosec // G704: el host se acaba de comprobar contra la allowlist de egress
+	// #nosec G704 -- el host se acaba de comprobar contra la allowlist de egress.
+	return a.client.HTTPClient().Do(req) //nolint:gosec // G704: ver arriba
 }
 
 // Router construye el router de proveedores:

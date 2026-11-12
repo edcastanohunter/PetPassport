@@ -201,6 +201,23 @@ func (a *BillingAccount) SetPaymentMethod(ref PaymentMethodRef, now time.Time) e
 	return nil
 }
 
+// RemovePaymentMethod retira el método de pago. Solo si ninguna suscripción
+// vigente se cobra con él (todas canceladas o de facturación manual): quitarlo
+// dejaría la próxima renovación sin forma de cobro. Idempotente sin método.
+func (a *BillingAccount) RemovePaymentMethod(backsLiveSubscription bool, now time.Time) error {
+	if a.status == "closed" {
+		return ErrAccountClosed
+	}
+	if a.paymentMethod == nil {
+		return nil
+	}
+	if backsLiveSubscription {
+		return ErrPaymentMethodInUse
+	}
+	a.recordThat(PaymentMethodRemoved{AccountID: a.id, At: now.UTC()})
+	return nil
+}
+
 // CloseAccount cierra la cuenta siempre que no tenga suscripciones activas.
 func (a *BillingAccount) CloseAccount(hasActiveSubscription bool, now time.Time) error {
 	if a.status == "closed" {
@@ -242,6 +259,8 @@ func (a *BillingAccount) apply(event any) {
 	case PaymentMethodSet:
 		ref := e.PaymentMethod
 		a.paymentMethod = &ref
+	case PaymentMethodRemoved:
+		a.paymentMethod = nil
 	case BillingAccountClosed:
 		a.status = "closed"
 	}

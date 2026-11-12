@@ -60,6 +60,17 @@ type PaymentMethodSet struct {
 func (PaymentMethodSet) EventName() string  { return "PaymentMethodSet" }
 func (PaymentMethodSet) SchemaVersion() int { return 1 }
 
+// PaymentMethodRemoved retira el método de pago de la cuenta (API-004). No está
+// en la lista de DOM-006: se añade porque DELETE payment-methods necesita un
+// hecho propio (ver "Decisiones tomadas" del PR de M5.2).
+type PaymentMethodRemoved struct {
+	AccountID uuid.UUID `json:"account_id"`
+	At        time.Time `json:"at"`
+}
+
+func (PaymentMethodRemoved) EventName() string  { return "PaymentMethodRemoved" }
+func (PaymentMethodRemoved) SchemaVersion() int { return 1 }
+
 // BillingAccountClosed cierra definitivamente la cuenta de facturación.
 type BillingAccountClosed struct {
 	AccountID uuid.UUID `json:"account_id"`

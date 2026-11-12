@@ -6384,6 +6384,20 @@ paths:
                 $ref: "#/components/schemas/PaymentMethodSummary"
         default:
           $ref: "#/components/responses/Problem"
+    delete:
+      operationId: removePaymentMethod
+      summary: Retirar el método de pago
+      description: |
+        Retira el método de pago de la cuenta (PP-F5-API-004). Solo si ninguna suscripción vigente se
+        cobra con él (todas canceladas o con facturación manual); si no → `409 PAYMENT_METHOD_IN_USE`.
+        Sin método registrado es una operación vacía (204).
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "204":
+          description: Método de pago retirado
+        default:
+          $ref: "#/components/responses/Problem"
 
   /webhooks/payments/{provider}:
     parameters:
@@ -6743,6 +6757,49 @@ paths:
           description: Discrepancia resuelta
         "404":
           $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/coupons:
+    get:
+      operationId: adminListCoupons
+      summary: Cupones (SuperAdmin)
+      description: Catálogo de cupones con sus usos (PP-F5-API-007, PRD-022).
+      tags: [admin]
+      x-pp-action: admin:billing:read
+      parameters:
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Cupones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponList"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: adminCreateCoupon
+      summary: Crear un cupón (SuperAdmin)
+      description: |
+        Da de alta un cupón de porcentaje o importe (PP-F5-API-007, PRD-022). Sin `duration_months` el
+        descuento se aplica solo al primer cargo; con duración, también a las renovaciones de ese
+        periodo. Código repetido → `409 COUPON_EXISTS`.
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCouponRequest"
+      responses:
+        "201":
+          description: Cupón creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -11954,7 +12011,19 @@ components:
       properties:
         kind:
           type: string
-          enum: [extend_trial, credit, comp_plan]
+          enum: [extend_trial, credit, comp_plan, change_plan]
+        plan_code:
+          description: Plan destino (change_plan).
+          type: string
+          maxLength: 64
+        seats:
+          description: Asientos (change_plan; por defecto, los actuales).
+          type: integer
+          minimum: 1
+        cycle:
+          description: Ciclo (change_plan; por defecto, el actual).
+          type: string
+          enum: [monthly, annual]
         until:
           description: Nueva fecha de fin (extend_trial, comp_plan).
           type: string
@@ -11979,6 +12048,75 @@ components:
           type: string
           minLength: 1
           maxLength: 120
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    Coupon:
+      type: object
+      required: [code, kind, value, uses, active]
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+          enum: [pct, amount]
+        value:
+          type: number
+        duration_months:
+          type: integer
+        max_uses:
+          type: integer
+        uses:
+          type: integer
+        valid_until:
+          type: string
+          format: date
+        plans:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+    CouponList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Coupon"
+    CreateCouponRequest:
+      type: object
+      required: [code, kind, value, reason]
+      properties:
+        code:
+          type: string
+          pattern: "^[A-Z0-9_-]{3,32}$"
+        kind:
+          type: string
+          enum: [pct, amount]
+        value:
+          description: Porcentaje (1–100) o importe en la moneda del plan.
+          type: number
+          exclusiveMinimum: 0
+        duration_months:
+          type: integer
+          minimum: 1
+          maximum: 36
+        max_uses:
+          type: integer
+          minimum: 1
+        valid_until:
+          type: string
+          format: date
+        plans:
+          description: Planes a los que aplica; vacío = todos.
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 64
         reason:
           type: string
           minLength: 3

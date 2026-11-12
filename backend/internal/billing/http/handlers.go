@@ -31,6 +31,7 @@ type BillingHandlers struct {
 	ledger   *infra.Ledger
 	invoices *infra.InvoiceStore
 	objects  Presigner
+	coupons  *infra.CouponStore
 	scope    Scope
 }
 

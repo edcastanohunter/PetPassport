@@ -67,6 +67,21 @@ func (s *Subscription) hasFailedCharges() bool {
 // discount calcula el descuento del cupón sobre subtotal para un cargo que
 // empieza en at. Un cupón sin Until aplica solo al primer cargo (comportamiento
 // de M5.1); con Until, a todos los cargos que empiecen antes de esa fecha.
+// FirstChargeDiscount es el descuento del cupón sobre el primer cargo, el mismo
+// que aplica Subscribe (vigente aunque no tenga fecha de fin).
+func (c *CouponApplied) FirstChargeDiscount(subtotal float64) float64 {
+	if c == nil {
+		return 0
+	}
+	switch c.Kind {
+	case "pct":
+		return RoundCents(subtotal * (c.Value / 100.0))
+	case "amount":
+		return RoundCents(math.Min(subtotal, c.Value))
+	}
+	return 0
+}
+
 func (c *CouponApplied) discount(subtotal float64, at time.Time) float64 {
 	if c == nil || c.Until == nil || !at.Before(*c.Until) {
 		return 0

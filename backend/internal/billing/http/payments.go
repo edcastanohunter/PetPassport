@@ -70,11 +70,13 @@ type PaymentDeps struct {
 	Ledger    *infra.Ledger
 	Invoices  *infra.InvoiceStore
 	Objects   Presigner
+	Coupons   *infra.CouponStore
 }
 
 // WithPayments conecta los servicios de cobro y facturación (M5.2).
 func (h *BillingHandlers) WithPayments(d PaymentDeps) *BillingHandlers {
 	h.pay, h.inv, h.ledger, h.invoices, h.objects = d.Payments, d.Invoicing, d.Ledger, d.Invoices, d.Objects
+	h.coupons = d.Coupons
 	return h
 }
 
@@ -163,6 +165,12 @@ func mapPaymentError(err error) error {
 		return kernel.NewDomainError("PAYMENT_REFERENCE_DUPLICATE", "La referencia de pago ya está registrada.")
 	case errors.Is(err, domain.ErrInvalidAdjustment):
 		return kernel.NewDomainError("ADJUSTMENT_INVALID", "El ajuste no es aplicable a esta suscripción.")
+	case errors.Is(err, domain.ErrPaymentMethodInUse):
+		return kernel.NewDomainError("PAYMENT_METHOD_IN_USE", "El método de pago respalda una suscripción vigente: cancélala o cambia de método primero.")
+	case errors.Is(err, infra.ErrCouponInvalid):
+		return kernel.NewDomainError("COUPON_INVALID", "El cupón no es válido para este plan.")
+	case errors.Is(err, infra.ErrCouponExists):
+		return kernel.NewDomainError("COUPON_EXISTS", "Ya existe un cupón con ese código.")
 	case errors.Is(err, app.ErrInvoiceNotRetryable):
 		return kernel.NewDomainError("INVOICE_NOT_RETRYABLE", "Solo se pueden reemitir facturas rechazadas.")
 	default:
@@ -541,13 +549,26 @@ func (h *BillingHandlers) AdminAdjustSubscription(ctx context.Context, req gen.A
 	if body.Until != nil {
 		details["until"] = body.Until.UTC().Format(time.RFC3339)
 	}
+	if body.PlanCode != nil {
+		details["plan_code"] = *body.PlanCode
+	}
+	if body.Seats != nil {
+		details["seats"] = *body.Seats
+	}
+	if body.Cycle != nil {
+		details["cycle"] = string(*body.Cycle)
+	}
 	if err := h.adminWrite(ctx, "subscription.adjust", "subscription", req.Id, body.Reason, details); err != nil {
 		return nil, err
 	}
 	if h.pay == nil {
 		return gen.AdminAdjustSubscription200JSONResponse{}, nil
 	}
-	if err := h.pay.AdjustSubscription(ctx, req.Id, cmd); err != nil {
+	if body.Kind == gen.ChangePlan {
+		if err := h.adminChangePlan(ctx, req.Id, body); err != nil {
+			return nil, err
+		}
+	} else if err := h.pay.AdjustSubscription(ctx, req.Id, cmd); err != nil {
 		return nil, mapPaymentError(err)
 	}
 	view, err := h.subscriptionView(ctx, req.Id)

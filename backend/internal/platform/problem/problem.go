@@ -173,6 +173,7 @@ var defaultStatus = map[Code]int{
 	Code("REFUND_EXCEEDS_BALANCE"):       http.StatusUnprocessableEntity,
 	Code("MANUAL_AMOUNT_MISMATCH"):       http.StatusUnprocessableEntity,
 	Code("ADJUSTMENT_INVALID"):           http.StatusUnprocessableEntity,
+	Code("COUPON_INVALID"):               http.StatusUnprocessableEntity,
 
 	// Prescriptions / OCR F4 (PP-F4-API-010).
 	Code("CREDENTIAL_REQUIRED"):       http.StatusForbidden,

@@ -534,8 +534,9 @@ func run() error {
 	billingJobs := billingpm.NewJobQueue(scheduler.New(billingAllowed, nil))
 	billingProjects := billinginfra.NewSyncProjector(runner)
 	billingMetrics := billingapp.NewMetrics(tel.Registry)
+	billingCoupons := billinginfra.NewCouponStore(pool.Pool)
 	billingSvc := billingapp.NewBillingService(billingAccountRepo, billingSubRepo, billingQueries, billingRouter, unit, billingProjects).
-		WithJobs(billingJobs)
+		WithJobs(billingJobs).WithCoupons(billingCoupons)
 	billingPayments := billingapp.NewPaymentService(billingapp.PaymentOptions{
 		Subscriptions: billingSubRepo, Reader: billingQueries, Ledger: billingLedger, Router: billingRouter, UoW: unit,
 		Projects: billingProjects, Jobs: billingJobs, Metrics: billingMetrics, Logger: logger,
@@ -547,6 +548,7 @@ func run() error {
 	})
 	billingDeps := billinghttp.PaymentDeps{
 		Payments: billingPayments, Invoicing: billingInvoicing, Ledger: billingLedger, Invoices: billingInvoices,
+		Coupons: billingCoupons,
 	}
 	if objects != nil {
 		billingDeps.Objects = objects

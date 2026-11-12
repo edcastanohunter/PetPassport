@@ -14,6 +14,7 @@ var (
 	ErrInvalidTaxID           = errors.New("identificación fiscal inválida")
 	ErrLegalEntityIncomplete  = errors.New("datos de la entidad legal incompletos")
 	ErrPaymentMethodRequired  = errors.New("se requiere un método de pago activo")
+	ErrPaymentMethodInUse     = errors.New("el método de pago respalda una suscripción vigente")
 	ErrSeatsBelowUsage        = errors.New("los asientos contratados no pueden ser inferiores a los profesionales activos")
 	ErrPlanNotAvailable       = errors.New("el plan solicitado no está disponible")
 	ErrPlanChangePending      = errors.New("ya existe un cambio de plan pendiente para el fin de ciclo")

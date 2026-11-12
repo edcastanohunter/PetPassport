@@ -36,6 +36,7 @@ func (*BillingProjector) Handles() []string {
 		"OrganizationAttached",
 		"OrganizationDetached",
 		"PaymentMethodSet",
+		"PaymentMethodRemoved",
 		"BillingAccountClosed",
 		"TrialStarted",
 		"Subscribed",
@@ -133,6 +134,12 @@ ON CONFLICT (account_id, organization_id) DO UPDATE SET seat_pool = EXCLUDED.sea
 		const q = `UPDATE billing.accounts SET version = $2, payment_method = $3, updated_at = $4 WHERE id = $1`
 		if _, err := tx.Exec(ctx, q, ev.AccountID, e.StreamVersion, pmJSON, ev.At); err != nil {
 			return fmt.Errorf("project PaymentMethodSet: %w", err)
+		}
+
+	case domain.PaymentMethodRemoved:
+		const q = `UPDATE billing.accounts SET version = $2, payment_method = NULL, updated_at = $3 WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.AccountID, e.StreamVersion, ev.At); err != nil {
+			return fmt.Errorf("project PaymentMethodRemoved: %w", err)
 		}
 
 	case domain.BillingAccountClosed:

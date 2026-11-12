@@ -65,6 +65,7 @@ var billingMatrix = map[string][9]int{
 	// M5.2 — billing:manage / billing:read sobre la cuenta (API-004, API-005)
 	"setupPaymentMethod":  {403, 403, ok, 403, 403, 403, ok, 403, ok},
 	"attachPaymentMethod": {403, 403, ok, 403, 403, 403, ok, 403, ok},
+	"removePaymentMethod": {403, 403, ok, 403, 403, 403, ok, 403, ok},
 	"listAccountInvoices": {403, 403, ok, 403, 403, 403, ok, 403, ok},
 	"listAccountPayments": {403, 403, ok, 403, 403, 403, ok, 403, ok},
 	"getInvoicePdf":       {403, 403, ok, 403, 403, 403, ok, 403, ok},
@@ -81,6 +82,8 @@ var billingMatrix = map[string][9]int{
 	"adminResolveBillingDiscrepancy": {403, 403, 403, 403, 403, 403, 403, 403, ok},
 	"adminListBillingInvoices":       {403, 403, 403, 403, 403, 403, 403, 403, ok},
 	"adminRetryInvoice":              {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminListCoupons":               {403, 403, 403, 403, 403, 403, 403, 403, ok},
+	"adminCreateCoupon":              {403, 403, 403, 403, 403, 403, 403, 403, ok},
 }
 
 func init() {

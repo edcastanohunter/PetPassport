@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,7 +34,14 @@ type Service struct {
 	uow         UnitOfWork
 	runner      ProjectionRunner
 	jobs        CommandScheduler
+	coupons     CouponStore
 	clock       func() time.Time
+}
+
+// CouponStore valida y consume cupones (PRD-022).
+type CouponStore interface {
+	Check(ctx context.Context, code, planCode string, now time.Time) (*infra.Coupon, error)
+	Redeem(ctx context.Context, code, planCode string, now time.Time) (*infra.Coupon, error)
 }
 
 // NewService construye el servicio de aplicación de facturación.
@@ -75,6 +83,39 @@ func NewBillingService(
 func (s *Service) WithClock(clock func() time.Time) *Service {
 	s.clock = clock
 	return s
+}
+
+// WithCoupons conecta el catálogo de cupones. Sin él, contratar con cupón falla
+// con infra.ErrCouponInvalid: nunca se ignora un cupón en silencio.
+func (s *Service) WithCoupons(c CouponStore) *Service {
+	s.coupons = c
+	return s
+}
+
+// coupon resuelve el cupón de una contratación. redeem consume un uso en la
+// transacción del contexto.
+func (s *Service) coupon(ctx context.Context, code *string, planCode string, now time.Time, redeem bool) (*domain.CouponApplied, error) {
+	if code == nil || strings.TrimSpace(*code) == "" {
+		return nil, nil
+	}
+	if s.coupons == nil {
+		return nil, infra.ErrCouponInvalid
+	}
+	c := strings.ToUpper(strings.TrimSpace(*code))
+	var (
+		found *infra.Coupon
+		err   error
+	)
+	if redeem {
+		found, err = s.coupons.Redeem(ctx, c, planCode, now)
+	} else {
+		found, err = s.coupons.Check(ctx, c, planCode, now)
+	}
+	if err != nil {
+		return nil, err
+	}
+	applied := found.Applied(now)
+	return &applied, nil
 }
 
 // WithJobs conecta el scheduler de comandos (reintento de cobro a demanda).
@@ -243,6 +284,20 @@ func (s *Service) PreviewSubscription(ctx context.Context, cmd PreviewSubscripti
 	if err != nil {
 		return nil, err
 	}
+	lines := []domain.ChargeLine{{
+		Description: fmt.Sprintf("Plan %s (%s)", plan.Name["es"], cmd.Cycle),
+		Amount:      subtotal,
+		Quantity:    seats,
+	}}
+	coupon, err := s.coupon(ctx, cmd.Coupon, cmd.PlanCode, s.clock().UTC(), false)
+	if err != nil {
+		return nil, err
+	}
+	if coupon != nil {
+		d := coupon.FirstChargeDiscount(subtotal)
+		lines = append(lines, domain.ChargeLine{Description: "Cupón " + coupon.Code, Amount: -d, Quantity: 1})
+		subtotal = domain.RoundCents(subtotal - d)
+	}
 
 	acc, err := s.queries.GetAccount(ctx, cmd.AccountID)
 	if err != nil || acc == nil {
@@ -264,13 +319,7 @@ func (s *Service) PreviewSubscription(ctx context.Context, cmd PreviewSubscripti
 	}
 
 	return &PreviewResult{
-		Lines: []domain.ChargeLine{
-			{
-				Description: fmt.Sprintf("Plan %s (%s)", plan.Name["es"], cmd.Cycle),
-				Amount:      subtotal,
-				Quantity:    seats,
-			},
-		},
+		Lines:        lines,
 		Subtotal:     subtotal,
 		Tax:          tax,
 		Total:        total,
@@ -324,11 +373,17 @@ func (s *Service) Subscribe(ctx context.Context, cmd SubscribeCmd) (*domain.Subs
 		if err != nil {
 			return err
 		}
+		// El uso del cupón se consume en la misma transacción: si la contratación
+		// falla, el uso se revierte.
+		coupon, err := s.coupon(txCtx, cmd.CouponCode, cmd.PlanCode, now, true)
+		if err != nil {
+			return err
+		}
 		// El cobro del cargo programado es asíncrono (ARQ-002): lo lanza el process
 		// manager billing.charge-collector al ver ChargeScheduled.
 		sub, err = domain.Subscribe(
 			cmd.SubscriptionID, cmd.AccountID, cmd.Kind, *plan, seats, cmd.Tier, cmd.Cycle,
-			nil, cmd.ManualBilling, hasPayment, activeProfs, rate, now,
+			coupon, cmd.ManualBilling, hasPayment, activeProfs, rate, now,
 		)
 		if err != nil {
 			return err

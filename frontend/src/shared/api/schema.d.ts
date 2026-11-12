@@ -4271,7 +4271,13 @@ export interface paths {
          *     `last4`, marca y vencimiento. Token rechazado → `422 PAYMENT_METHOD_INVALID`.
          */
         post: operations["attachPaymentMethod"];
-        delete?: never;
+        /**
+         * Retirar el método de pago
+         * @description Retira el método de pago de la cuenta (PP-F5-API-004). Solo si ninguna suscripción vigente se
+         *     cobra con él (todas canceladas o con facturación manual); si no → `409 PAYMENT_METHOD_IN_USE`.
+         *     Sin método registrado es una operación vacía (204).
+         */
+        delete: operations["removePaymentMethod"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4558,6 +4564,32 @@ export interface paths {
          * @description Cierra la discrepancia con la resolución aplicada (PP-F5-API-007). Inexistente o ya resuelta → 404.
          */
         post: operations["adminResolveBillingDiscrepancy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/coupons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cupones (SuperAdmin)
+         * @description Catálogo de cupones con sus usos (PP-F5-API-007, PRD-022).
+         */
+        get: operations["adminListCoupons"];
+        put?: never;
+        /**
+         * Crear un cupón (SuperAdmin)
+         * @description Da de alta un cupón de porcentaje o importe (PP-F5-API-007, PRD-022). Sin `duration_months` el
+         *     descuento se aplica solo al primer cargo; con duración, también a las renovaciones de ese
+         *     periodo. Código repetido → `409 COUPON_EXISTS`.
+         */
+        post: operations["adminCreateCoupon"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7034,7 +7066,16 @@ export interface components {
         };
         AdminAdjustSubscriptionRequest: {
             /** @enum {string} */
-            kind: "extend_trial" | "credit" | "comp_plan";
+            kind: "extend_trial" | "credit" | "comp_plan" | "change_plan";
+            /** @description Plan destino (change_plan). */
+            plan_code?: string;
+            /** @description Asientos (change_plan; por defecto, los actuales). */
+            seats?: number;
+            /**
+             * @description Ciclo (change_plan; por defecto, el actual).
+             * @enum {string}
+             */
+            cycle?: "monthly" | "annual";
             /**
              * Format: date-time
              * @description Nueva fecha de fin (extend_trial, comp_plan).
@@ -7048,6 +7089,36 @@ export interface components {
             amount: number;
             /** @description Referencia bancaria de la transferencia. */
             reference: string;
+            reason: string;
+        };
+        Coupon: {
+            code: string;
+            /** @enum {string} */
+            kind: "pct" | "amount";
+            value: number;
+            duration_months?: number;
+            max_uses?: number;
+            uses: number;
+            /** Format: date */
+            valid_until?: string;
+            plans?: string[];
+            active: boolean;
+        };
+        CouponList: {
+            data: components["schemas"]["Coupon"][];
+        };
+        CreateCouponRequest: {
+            code: string;
+            /** @enum {string} */
+            kind: "pct" | "amount";
+            /** @description Porcentaje (1–100) o importe en la moneda del plan. */
+            value: number;
+            duration_months?: number;
+            max_uses?: number;
+            /** Format: date */
+            valid_until?: string;
+            /** @description Planes a los que aplica; vacío = todos. */
+            plans?: string[];
             reason: string;
         };
         AdminRefundRequest: {
@@ -13506,6 +13577,27 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    removePaymentMethod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Método de pago retirado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     paymentsWebhook: {
         parameters: {
             query?: never;
@@ -13864,6 +13956,54 @@ export interface operations {
                 content?: never;
             };
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListCoupons: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cupones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CouponList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminCreateCoupon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCouponRequest"];
+            };
+        };
+        responses: {
+            /** @description Cupón creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coupon"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

@@ -89,6 +89,13 @@ func TestEvents_Golden(t *testing.T) {
 			},
 		},
 		{
+			name: "PaymentMethodRemoved",
+			data: PaymentMethodRemoved{
+				AccountID: fixedUUID,
+				At:        fixedTime,
+			},
+		},
+		{
 			name: "BillingAccountClosed",
 			data: BillingAccountClosed{
 				AccountID: fixedUUID,
@@ -341,6 +348,7 @@ func TestEvents_EventNameAndSchemaVersion(t *testing.T) {
 		OrganizationAttached{},
 		OrganizationDetached{},
 		PaymentMethodSet{},
+		PaymentMethodRemoved{},
 		BillingAccountClosed{},
 		TrialStarted{},
 		Subscribed{},

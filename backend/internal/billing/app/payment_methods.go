@@ -71,3 +71,38 @@ func (s *Service) AttachPaymentMethod(ctx context.Context, accountID uuid.UUID, 
 	}
 	return ref, nil
 }
+
+// RemovePaymentMethod retira el método de pago de la cuenta (PP-F5-API-004):
+// solo si ninguna suscripción vigente se cobra con él. El token queda sin
+// referencia en PetPassport; revocarlo en el proveedor es responsabilidad de este.
+func (s *Service) RemovePaymentMethod(ctx context.Context, accountID uuid.UUID) error {
+	now := s.clock().UTC()
+	return s.uow.Do(ctx, func(txCtx context.Context) error {
+		acc, err := s.accountRepo.Load(txCtx, accountID)
+		if err != nil {
+			return err
+		}
+		subs, err := s.queries.ListAccountSubscriptions(txCtx, accountID)
+		if err != nil {
+			return err
+		}
+		inUse := false
+		for _, sub := range subs {
+			live := sub.Status != domain.StatusCancelled && sub.Status != domain.StatusExpired
+			if live && !sub.ManualBilling {
+				inUse = true
+			}
+		}
+		if err := acc.RemovePaymentMethod(inUse, now); err != nil {
+			return err
+		}
+		events, err := s.accountRepo.Save(txCtx, acc)
+		if err != nil {
+			return err
+		}
+		if s.runner != nil {
+			return s.runner.Apply(txCtx, events)
+		}
+		return nil
+	})
+}
