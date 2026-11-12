@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -31,6 +32,7 @@ type Service struct {
 	router      *providers.Router
 	uow         UnitOfWork
 	runner      ProjectionRunner
+	jobs        CommandScheduler
 	clock       func() time.Time
 }
 
@@ -73,6 +75,22 @@ func NewBillingService(
 func (s *Service) WithClock(clock func() time.Time) *Service {
 	s.clock = clock
 	return s
+}
+
+// WithJobs conecta el scheduler de comandos (reintento de cobro a demanda).
+func (s *Service) WithJobs(jobs CommandScheduler) *Service {
+	s.jobs = jobs
+	return s
+}
+
+// taxRate devuelve la tasa de impuestos del país según billing.provider_routing
+// y ref.tax_rules (ARQ-003). No hay tasa por defecto: un país sin regla es un error.
+func (s *Service) taxRate(ctx context.Context, country string) (float64, error) {
+	route, err := s.router.Route(ctx, country)
+	if err != nil {
+		return 0, err
+	}
+	return route.TaxRate, nil
 }
 
 // OpenAccountCmd define los datos para abrir una cuenta de facturación.
@@ -226,7 +244,15 @@ func (s *Service) PreviewSubscription(ctx context.Context, cmd PreviewSubscripti
 		return nil, err
 	}
 
-	tax := domain.RoundCents(subtotal * 0.19)
+	acc, err := s.queries.GetAccount(ctx, cmd.AccountID)
+	if err != nil || acc == nil {
+		return nil, domain.ErrAccountClosed
+	}
+	rate, err := s.taxRate(ctx, acc.Country)
+	if err != nil {
+		return nil, err
+	}
+	tax := domain.RoundCents(subtotal * rate)
 	total := domain.RoundCents(subtotal + tax)
 	now := s.clock().UTC()
 
@@ -294,29 +320,18 @@ func (s *Service) Subscribe(ctx context.Context, cmd SubscribeCmd) (*domain.Subs
 			seats = *cmd.Seats
 		}
 
-		sub, err = domain.Subscribe(
-			cmd.SubscriptionID, cmd.AccountID, cmd.Kind, *plan, seats, cmd.Tier, cmd.Cycle,
-			nil, cmd.ManualBilling, hasPayment, activeProfs, 0.19, now,
-		)
+		rate, err := s.taxRate(txCtx, acc.Country)
 		if err != nil {
 			return err
 		}
-
-		// Cobrar cargo pendiente si no es manual
-		for chID, ch := range sub.Charges() {
-			if ch.Status == domain.ChargeStatusPending && !cmd.ManualBilling && hasPayment {
-				paymentProvider, _ := s.router.ForCountry(acc.Country)
-				token := ""
-				if acc.PaymentMethod != nil {
-					token = acc.PaymentMethod.Token
-				}
-				payRef, status, err := paymentProvider.Charge(txCtx, chID, cmd.AccountID.String(), ch.Total, ch.Currency, token)
-				if err == nil && status == "paid" {
-					_ = sub.RecordChargeResult(chID, "paid", payRef, "", now)
-				} else {
-					_ = sub.RecordChargeResult(chID, "failed", "", "PAYMENT_FAILED", now)
-				}
-			}
+		// El cobro del cargo programado es asíncrono (ARQ-002): lo lanza el process
+		// manager billing.charge-collector al ver ChargeScheduled.
+		sub, err = domain.Subscribe(
+			cmd.SubscriptionID, cmd.AccountID, cmd.Kind, *plan, seats, cmd.Tier, cmd.Cycle,
+			nil, cmd.ManualBilling, hasPayment, activeProfs, rate, now,
+		)
+		if err != nil {
+			return err
 		}
 
 		events, err := s.subRepo.Save(txCtx, sub)
@@ -362,7 +377,14 @@ func (s *Service) ChangePlan(ctx context.Context, subID uuid.UUID, planCode stri
 			newSeatsVal = sub.Seats().Purchased
 		}
 
-		if err := sub.ChangePlan(*newPlan, newSeatsVal, tier, cycle, *currPlan, activeProfs, 0.19, now); err != nil {
+		if acc == nil {
+			return domain.ErrAccountClosed
+		}
+		rate, err := s.taxRate(txCtx, acc.Country)
+		if err != nil {
+			return err
+		}
+		if err := sub.ChangePlan(*newPlan, newSeatsVal, tier, cycle, *currPlan, activeProfs, rate, now); err != nil {
 			return err
 		}
 
@@ -402,7 +424,14 @@ func (s *Service) AdjustSeats(ctx context.Context, subID uuid.UUID, delta int) e
 		}
 		newSeats := currSeats + delta
 
-		if err := sub.AdjustSeats(newSeats, *plan, activeProfs, 0.19, now); err != nil {
+		if acc == nil {
+			return domain.ErrAccountClosed
+		}
+		rate, err := s.taxRate(txCtx, acc.Country)
+		if err != nil {
+			return err
+		}
+		if err := sub.AdjustSeats(newSeats, *plan, activeProfs, rate, now); err != nil {
 			return err
 		}
 
@@ -474,37 +503,28 @@ func (s *Service) RetryCharge(ctx context.Context, subID uuid.UUID) error {
 			return domain.ErrPaymentMethodRequired
 		}
 
-		var targetChargeID uuid.UUID
-		var targetTotal float64
-		var targetCur string
-		for chID, ch := range sub.Charges() {
-			if ch.Status == domain.ChargeStatusPending || ch.Status == domain.ChargeStatusFailed {
-				targetChargeID = chID
-				targetTotal = ch.Total
-				targetCur = ch.Currency
-				break
+		// El más antiguo primero. El cobro lo ejecuta el worker con
+		// billing.CollectCharge, que es idempotente: pulsar dos veces no cobra dos veces.
+		var target *domain.Charge
+		for _, ch := range sub.Charges() {
+			if ch.Status != domain.ChargeStatusPending && ch.Status != domain.ChargeStatusFailed {
+				continue
+			}
+			if target == nil || ch.ScheduledAt.Before(target.ScheduledAt) {
+				c := ch
+				target = &c
 			}
 		}
-
-		if targetChargeID == uuid.Nil {
-			return fmt.Errorf("no hay cargos pendientes para reintentar")
+		if target == nil {
+			return ErrNothingToRetry
 		}
-
-		payProv, _ := s.router.ForCountry(acc.Country)
-		ref, status, err := payProv.Charge(txCtx, targetChargeID, sub.AccountID().String(), targetTotal, targetCur, acc.PaymentMethod.Token)
-		if err == nil && status == "paid" {
-			_ = sub.RecordChargeResult(targetChargeID, "paid", ref, "", now)
-		} else {
-			_ = sub.RecordChargeResult(targetChargeID, "failed", "", "RETRY_FAILED", now)
+		if s.jobs == nil {
+			return errors.New("billing: scheduler de comandos no configurado")
 		}
-
-		events, err := s.subRepo.Save(txCtx, sub)
-		if err != nil {
-			return err
-		}
-		if s.runner != nil {
-			return s.runner.Apply(txCtx, events)
-		}
-		return nil
+		return s.jobs.ScheduleCommand(txCtx, now, CollectCharge{ChargeID: target.ID},
+			fmt.Sprintf("billing.collect-manual:%s:%d", target.ID, now.Unix()/60))
 	})
 }
+
+// ErrNothingToRetry: la suscripción no tiene cargos pendientes ni fallidos.
+var ErrNothingToRetry = errors.New("no hay cargos pendientes para reintentar")

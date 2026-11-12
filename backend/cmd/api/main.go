@@ -520,8 +520,10 @@ func run() error {
 	billingSubRepo := billinginfra.NewSubscriptionRepository(store, registry)
 	billingQueries := billinginfra.NewQueries(pool.Pool)
 	billinginfra.RegisterSyncProjectors(runner, registry)
-	fakePayment := fakebilling.NewFakePaymentProvider()
-	billingRouter := billingproviders.NewRouter(fakePayment, nil)
+	// Routing por país (billing.provider_routing). M5.2: el cableado de wompi,
+	// manual y pdf_local por configuración está pendiente; de momento solo fake.
+	billingRouter := billingproviders.NewRouter(billinginfra.NewLedger(pool.Pool),
+		[]billingproviders.PaymentProvider{fakebilling.NewFakePaymentProvider()}, nil)
 	billingSvc := billingapp.NewBillingService(billingAccountRepo, billingSubRepo, billingQueries, billingRouter, unit, billinginfra.NewSyncProjector(runner))
 	billingHandlers := billinghttp.NewBillingHandlers(billingSvc, billingQueries, logger)
 

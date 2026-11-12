@@ -54,6 +54,8 @@ func (*BillingProjector) Handles() []string {
 		"SubscriptionCancelled",
 		"SubscriptionResumed",
 		"TrialExpired",
+		"AdminAdjustmentApplied",
+		"CouponAppliedEvent",
 	}
 }
 
@@ -280,16 +282,18 @@ ON CONFLICT (id) DO NOTHING`
 	case domain.ChargePaid:
 		const q = `
 UPDATE billing.charges SET
-  status = 'paid', paid_at = $2, updated_at = $2
-WHERE id = $1`
-		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.PaidAt); err != nil {
+  status = 'paid', paid_at = $2, updated_at = $2,
+  payment_ref = NULLIF($3, ''), provider = NULLIF($4, '')
+WHERE id = $1 AND status IN ('pending','failed','paid')`
+		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.PaidAt, ev.PaymentRef, ev.Provider); err != nil {
 			return fmt.Errorf("project ChargePaid: %w", err)
 		}
 
 	case domain.ChargeFailed:
 		const q = `
 UPDATE billing.charges SET
-  status = 'failed', failed_at = $2, error_code = $3, updated_at = $2
+  status = 'failed', failed_at = $2, error_code = $3, updated_at = $2,
+  first_failed_at = COALESCE(first_failed_at, $2)
 WHERE id = $1`
 		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.FailedAt, ev.ErrorCode); err != nil {
 			return fmt.Errorf("project ChargeFailed: %w", err)
@@ -361,6 +365,36 @@ WHERE id = $1`
 		}
 		if err := p.recalculateEntitlementsForSub(ctx, tx, ev.SubscriptionID); err != nil {
 			return err
+		}
+
+	case domain.AdminAdjustmentApplied:
+		// Solo la extensión de prueba cambia el read model; el crédito vive en el agregado.
+		if ev.TrialEndsAt == nil {
+			const q = `UPDATE billing.subscriptions SET version = $2, updated_at = $3 WHERE id = $1`
+			if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, ev.At); err != nil {
+				return fmt.Errorf("project AdminAdjustmentApplied: %w", err)
+			}
+			return nil
+		}
+		const q = `
+UPDATE billing.subscriptions SET
+  version = $2, status = 'trialing', trial_ends_at = $3, period_end = $3, updated_at = $4
+WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, *ev.TrialEndsAt, ev.At); err != nil {
+			return fmt.Errorf("project AdminAdjustmentApplied: %w", err)
+		}
+		if err := p.recalculateEntitlementsForSub(ctx, tx, ev.SubscriptionID); err != nil {
+			return err
+		}
+
+	case domain.CouponAppliedEvent:
+		couponJSON, err := jsonRaw(ev.Coupon)
+		if err != nil {
+			return err
+		}
+		const q = `UPDATE billing.subscriptions SET version = $2, coupon = $3, updated_at = $4 WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, couponJSON, ev.At); err != nil {
+			return fmt.Errorf("project CouponAppliedEvent: %w", err)
 		}
 	}
 
