@@ -315,6 +315,21 @@ Tasa de errores 5xx en la Partner API `/partner/v1` superior al 1 % en 5 min. Re
 ### 7.39 SandboxDown
 El endpoint de healthcheck del entorno sandbox (`partners-sandbox.<dominio>`) no responde durante más de 2 min. Revisar contenedor `pp-sandbox-api` o máquina virtual aislada de sandbox.
 
+### 7.40 ChargeFailureRateHigh / PaymentProviderDown
+Más del 20 % de los cobros falla en 1 h, o el proveedor de pagos devuelve errores de forma sostenida. Revisar en el dashboard *Billing* los fallos por proveedor: si domina `status="error"` es una caída del proveedor (ver su página de estado y `egress_circuit_state`); si domina `status="failed"` son rechazos del emisor. Los cobros se reintentan solos (días 0/3/7/12): no relanzar a mano hasta que el proveedor confirme la recuperación.
+
+### 7.41 InvoiceRejected
+La autoridad fiscal rechazó una factura. Ver la cola con `GET /admin/billing/invoices?status=rejected`: el motivo suele ser un dato fiscal inválido de la cuenta. Corregir los datos con el cliente y reemitir con `POST /admin/invoices/{id}/retry`.
+
+### 7.42 InvoicingProviderDown
+El proveedor de facturación no responde hace 15 min. La emisión se reintenta sola; pasadas 24 h la factura sale por contingencia (`pdf_local`) y queda en estado `contingency`. Verificar credenciales, allowlist de egress y estado del proveedor.
+
+### 7.43 DiscrepanciesOpen
+La conciliación diaria (`billing-reconcile` en el worker) encontró diferencias con el proveedor de pagos que llevan más de 24 h abiertas. Mientras una cuenta tenga una discrepancia abierta no se le aplica restricción ni cancelación por impago. Revisar cada una con `GET /admin/billing/discrepancies?status=open`, contrastarla con el panel del proveedor y cerrarla con `POST /admin/billing/discrepancies/{id}/resolve`.
+
+### 7.44 RenewalJobStalled
+Hay suscripciones con el periodo vencido hace más de 1 h sin renovar. Comprobar que el worker está arriba (§7.8), que el scheduler de comandos avanza (jobs `billing.renew:*` vencidos) y que el process manager `billing.timers` no está en reintento.
+
 ## 8. Observabilidad
 
 Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con un túnel:

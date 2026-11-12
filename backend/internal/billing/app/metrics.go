@@ -80,6 +80,9 @@ func (m *Metrics) discrepancy(kind string) {
 	}
 }
 
+// SetOpenDiscrepancies publica las discrepancias abiertas (alerta DiscrepanciesOpen).
+func (m *Metrics) SetOpenDiscrepancies(n int) { m.setOpenDiscrepancies(n) }
+
 func (m *Metrics) setOpenDiscrepancies(n int) {
 	if m != nil {
 		m.discrepanciesOpen.Set(float64(n))

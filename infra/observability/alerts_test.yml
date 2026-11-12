@@ -287,3 +287,74 @@ tests:
               summary: "Entorno Sandbox caído por más de 2 min"
               runbook: "infra/deploy/RUNBOOK.md#739-sandboxdown"
 
+
+  # F5 M5.2: cobro (PP-F5-INF-004)
+  - interval: 1m
+    input_series:
+      - series: 'billing_charges_total{status="paid",provider="wompi"}'
+        values: "0+1x70"
+      - series: 'billing_charges_total{status="failed",provider="wompi"}'
+        values: "0+1x70"
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: ChargeFailureRateHigh
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "Más del 20 % de los cobros falla en la última hora: 50%"
+              runbook: "infra/deploy/RUNBOOK.md#740-chargefailureratehigh--paymentproviderdown"
+      - eval_time: 70m
+        alertname: PaymentProviderDown
+        exp_alerts: []
+
+  # Pocos cobros: un único fallo no dispara la alerta de tasa.
+  - interval: 1m
+    input_series:
+      - series: 'billing_charges_total{status="paid",provider="wompi"}'
+        values: "0x30 1x40"
+      - series: 'billing_charges_total{status="failed",provider="wompi"}'
+        values: "0x30 1x40"
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: ChargeFailureRateHigh
+        exp_alerts: []
+
+  # F5 M5.2: facturación, conciliación y renovaciones (PP-F5-INF-004)
+  - interval: 1m
+    input_series:
+      - series: 'billing_invoices_total{status="rejected"}'
+        values: "0 0 0 1 1 1"
+      - series: 'billing_invoicing_provider_up{provider="dian"}'
+        values: "1 1 0x40"
+      - series: 'billing_renewals_overdue'
+        values: "0 0 3x60"
+      - series: 'billing_discrepancies_open'
+        values: "0 2x60"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: InvoiceRejected
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: "Facturas rechazadas por la autoridad fiscal en la última hora"
+              runbook: "infra/deploy/RUNBOOK.md#741-invoicerejected"
+      - eval_time: 10m
+        alertname: InvoicingProviderDown
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: InvoicingProviderDown
+        exp_alerts:
+          - exp_labels: { severity: page, provider: dian }
+            exp_annotations:
+              summary: "El proveedor de facturación dian lleva 15 min sin responder"
+              runbook: "infra/deploy/RUNBOOK.md#742-invoicingproviderdown"
+      - eval_time: 40m
+        alertname: RenewalJobStalled
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: "3 suscripciones con el periodo vencido hace más de 1 h siguen sin renovar"
+              runbook: "infra/deploy/RUNBOOK.md#744-renewaljobstalled"
+      - eval_time: 60m
+        alertname: DiscrepanciesOpen
+        exp_alerts: []

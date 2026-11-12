@@ -26,7 +26,11 @@ import (
 // se factura y se concilia. El api solo tokeniza, recibe webhooks y atiende a
 // SuperAdmin.
 
-const billingReconcileEvery = 24 * time.Hour
+const (
+	billingReconcileEvery = 24 * time.Hour
+	// Los gauges alimentan alertas con ventanas de 30 min (RenewalJobStalled).
+	billingGaugesEvery = 5 * time.Minute
+)
 
 // noArchive hace fallar la emisión de facturas mientras no haya object storage:
 // el job reintenta y queda visible, en vez de emitir sin archivar.
@@ -99,30 +103,45 @@ func (b *billingModule) register(consumer *process.Consumer, allowed *scheduler.
 	consumer.Register(billingpm.NewInvoicing(process.Guard(billingpm.NewInvoicing(nil, nil, clock), sched), b.ledger, clock))
 }
 
-// runners devuelve la conciliación diaria (ARQ-002), que además publica las
-// métricas de negocio que no salen de un contador (INF-003).
-func (b *billingModule) runners() []worker.Runner {
-	return []worker.Runner{{Name: "billing-reconcile", Run: func(ctx context.Context) error {
-		t := time.NewTicker(billingReconcileEvery)
-		defer t.Stop()
-		for {
-			b.reconcile(ctx)
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-t.C:
-			}
+// every ejecuta fn al arrancar y después en cada intervalo, hasta que el
+// contexto termina.
+func every(ctx context.Context, interval time.Duration, fn func(context.Context)) error {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		fn(ctx)
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-t.C:
 		}
-	}}}
+	}
+}
+
+// runners devuelve la conciliación diaria (ARQ-002) y la publicación periódica
+// de las métricas de negocio que no salen de un contador (INF-003).
+func (b *billingModule) runners() []worker.Runner {
+	return []worker.Runner{
+		{Name: "billing-reconcile", Run: func(ctx context.Context) error { return every(ctx, billingReconcileEvery, b.reconcile) }},
+		{Name: "billing-gauges", Run: func(ctx context.Context) error { return every(ctx, billingGaugesEvery, b.gauges) }},
+	}
 }
 
 func (b *billingModule) reconcile(ctx context.Context) {
 	sum, err := b.pay.Reconcile(ctx)
 	if err != nil {
 		b.logger.ErrorContext(ctx, "billing: conciliación fallida", "error", err)
+		return
+	}
+	b.logger.InfoContext(ctx, "billing: conciliación completada",
+		"checked", sum.Checked, "healed", sum.Healed, "errors", sum.Errors, "open_discrepancies", sum.Discrepancies)
+}
+
+func (b *billingModule) gauges(ctx context.Context) {
+	if n, err := b.ledger.CountOpenDiscrepancies(ctx); err != nil {
+		b.logger.ErrorContext(ctx, "billing: discrepancias abiertas", "error", err)
 	} else {
-		b.logger.InfoContext(ctx, "billing: conciliación completada",
-			"checked", sum.Checked, "healed", sum.Healed, "errors", sum.Errors, "open_discrepancies", sum.Discrepancies)
+		b.metrics.SetOpenDiscrepancies(n)
 	}
 	if n, err := b.ledger.RenewalsOverdue(ctx, time.Now().Add(-time.Hour)); err != nil {
 		b.logger.ErrorContext(ctx, "billing: renovaciones atrasadas", "error", err)
