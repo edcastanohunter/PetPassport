@@ -260,7 +260,9 @@ func (f *FakePaymentProvider) GetPayment(_ context.Context, ref string) (provide
 	}
 	p, ok := f.payments[ref]
 	if !ok {
-		return providers.Payment{}, fmt.Errorf("fake: pago %s desconocido", ref)
+		// El fake vive en memoria: el api no ve los pagos creados en el worker.
+		// Sin consulta posible, quien llama decide con el evento firmado.
+		return providers.Payment{}, providers.ErrNotSupported
 	}
 	return p, nil
 }

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,7 +126,7 @@ func CollectKey(chargeID uuid.UUID) string { return "billing.collect:" + chargeI
 
 // DunningRetryKey identifica el reintento n (0..2) del dunning de un cargo.
 func DunningRetryKey(chargeID uuid.UUID, n int) string {
-	return "billing.dunning-retry:" + chargeID.String() + ":" + string(rune('0'+n))
+	return "billing.dunning-retry:" + chargeID.String() + ":" + strconv.Itoa(n)
 }
 
 // DunningRestrictKey identifica la restricción del día 14.
