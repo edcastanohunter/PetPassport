@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { ADMIN_ROLES, CLINIC_ROLES, PHARMACY_ROLES } from '@/shared/validation/schemas'
-import { authGuard } from './guards'
+import { authGuard, fullPageLoadGuard } from './guards'
 
 // Code splitting por ruta y feature (PP-F3-FE-010) para cumplir el presupuesto de bundle
 // (JS inicial <= 180 KB gz para /app y <= 250 KB gz para espacio clínico)
@@ -77,6 +77,8 @@ const PharmacyOrderDetailView = () =>
   import('@/features/pharmacy/views/PharmacyOrderDetailView.vue')
 const PharmacySettingsView = () => import('@/features/pharmacy/views/PharmacySettingsView.vue')
 const PricingPage = () => import('@/features/billing/views/PricingPage.vue')
+const OrgBillingPage = () => import('@/features/billing/views/OrgBillingPage.vue')
+const AdminBillingPage = () => import('@/features/admin/AdminBillingPage.vue')
 const StatusPage = () => import('@/features/status/StatusPage.vue')
 
 const orgMeta = {
@@ -352,6 +354,12 @@ export function createAppRouter() {
         meta: { ...orgMeta, requiresOrgRole: ADMIN_ROLES },
       },
       {
+        path: '/org/:orgId/settings/billing',
+        name: 'org-billing',
+        component: OrgBillingPage,
+        meta: { ...orgMeta, requiresOrgRole: ADMIN_ROLES, fullPageLoad: true },
+      },
+      {
         path: '/org/:orgId/medication-suggestions',
         name: 'org-medication-suggestions',
         component: OrgMedicationSuggestionsPage,
@@ -427,6 +435,12 @@ export function createAppRouter() {
         meta: adminMeta,
       },
       {
+        path: '/admin/billing',
+        name: 'admin-billing',
+        component: AdminBillingPage,
+        meta: adminMeta,
+      },
+      {
         path: '/admin/ai',
         name: 'admin-ai',
         component: AdminAIPage,
@@ -485,5 +499,6 @@ export function createAppRouter() {
     scrollBehavior: () => ({ top: 0 }),
   })
   router.beforeEach(authGuard)
+  router.beforeEach(fullPageLoadGuard)
   return router
 }

@@ -15,7 +15,20 @@ declare module 'vue-router' {
     requiresOrgRole?: readonly string[]
     /** Con requiresMembership: tipo de organización requerido. */
     requiresOrgType?: 'clinic' | 'pharmacy'
+    /**
+     * La página tiene una CSP propia en nginx (p. ej. el widget del proveedor de
+     * pagos, PP-F5-SEC-001): se entra con carga completa del documento para que
+     * rija esa política y no la de la página anterior.
+     */
+    fullPageLoad?: boolean
   }
+}
+
+/** Navegación SPA hacia una ruta con fullPageLoad: se recarga el documento. */
+export const fullPageLoadGuard: NavigationGuardWithThis<undefined> = (to, from) => {
+  if (!to.meta.fullPageLoad || from.matched.length === 0) return true
+  window.location.assign(to.fullPath)
+  return false
 }
 
 export const authGuard: NavigationGuardWithThis<undefined> = async (to) => {

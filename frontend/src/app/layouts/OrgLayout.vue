@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/features/auth/sessionStore'
@@ -9,6 +9,8 @@ import AppFooter from '@/shared/ui/AppFooter.vue'
 import SkipLink from '@/shared/ui/SkipLink.vue'
 import ContextSwitcher from '@/shared/ui/ContextSwitcher.vue'
 import QuickSearchModal from '@/features/search/QuickSearchModal.vue'
+import BillingStatusBanner from '@/features/billing/components/BillingStatusBanner.vue'
+import { api } from '@/shared/api/client'
 
 // Layout Org (FE-004/FE-007, FE-001): selector de contexto (Mis mascotas + una
 // entrada por organización + Administración), barra global de búsqueda (Ctrl+K)
@@ -29,6 +31,29 @@ const contexts = computed(() => {
   return items
 })
 
+// Banner persistente de impago (PP-F5-PRD-006): solo los administradores
+// pueden leer la facturación; la página de facturación muestra el suyo.
+const billingStatus = ref<{ status: string; graceEndsAt?: string } | null>(null)
+const isAdmin = computed(() =>
+  Boolean(membership.value && ADMIN_ROLES.includes(membership.value.role)),
+)
+watch(
+  [orgId, isAdmin],
+  async ([id, admin]) => {
+    billingStatus.value = null
+    if (!id || !admin) return
+    try {
+      const { data } = await api().GET('/organizations/{orgId}/entitlements', {
+        params: { path: { orgId: id } },
+      })
+      if (data) billingStatus.value = { status: data.status, graceEndsAt: data.grace_period_until }
+    } catch {
+      // Sin datos de facturación no hay banner; el resto del área sigue funcionando.
+    }
+  },
+  { immediate: true },
+)
+
 const sections = computed(() => {
   const m = membership.value
   if (!m) return []
@@ -42,6 +67,7 @@ const sections = computed(() => {
   if (ADMIN_ROLES.includes(m.role)) {
     items.push({ name: 'org-members', label: t('orgs.nav.members') })
     items.push({ name: 'org-settings', label: t('orgs.nav.settings') })
+    items.push({ name: 'org-billing', label: t('billing.page.nav') })
     if (m.type === 'clinic') {
       items.push({ name: 'org-agendas', label: t('scheduling.nav.agendas') })
     }
@@ -96,6 +122,13 @@ const sections = computed(() => {
       </nav>
     </header>
     <main id="main" tabindex="-1" class="outline-none mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <BillingStatusBanner
+        v-if="billingStatus && route.name !== 'org-billing'"
+        class="mb-6"
+        :status="billingStatus.status"
+        :org-id="orgId"
+        :grace-ends-at="billingStatus.graceEndsAt"
+      />
       <slot />
     </main>
     <AppFooter />

@@ -223,7 +223,23 @@
     "CARE_LINK_REQUEST_NOT_PENDING": "La solicitud ya fue respondida o caducó.",
     "SEARCH_UNAVAILABLE": "El servicio de búsqueda no está disponible en este momento.",
     "SEARCH_QUERY_INVALID": "La consulta de búsqueda es inválida.",
-    "ADMIN_REASON_REQUIRED": "Se requiere un motivo justificado para esta operación administrativa."
+    "ADMIN_REASON_REQUIRED": "Se requiere un motivo justificado para esta operación administrativa.",
+    "ADJUSTMENT_INVALID": "El ajuste no es válido para esta suscripción.",
+    "BILLING_ACCOUNT_NOT_FOUND": "No se encontró la cuenta de facturación.",
+    "CHARGE_NOT_PAID": "El cargo no está pagado.",
+    "CHARGE_NOT_PENDING": "El cargo no está pendiente de pago.",
+    "COUPON_EXISTS": "Ya existe un cupón con ese código.",
+    "COUPON_INVALID": "El cupón no es válido para este plan.",
+    "INVOICE_NOT_RETRYABLE": "Esta factura no se puede reemitir.",
+    "MANUAL_AMOUNT_MISMATCH": "El importe no coincide con el del cargo.",
+    "PAYMENT_METHOD_IN_USE": "El método de pago respalda una suscripción vigente: cancélala o cambia de método primero.",
+    "PAYMENT_METHOD_INVALID": "El proveedor rechazó el método de pago.",
+    "PAYMENT_OPERATION_NOT_SUPPORTED": "El proveedor de pagos no admite esta operación.",
+    "PAYMENT_PROVIDER_UNAVAILABLE": "El proveedor de pagos no está disponible. Inténtalo más tarde.",
+    "PAYMENT_REFERENCE_DUPLICATE": "Esa referencia de pago ya está registrada.",
+    "REFUND_EXCEEDS_BALANCE": "El reembolso supera el saldo del cargo.",
+    "REFUND_IN_PROGRESS": "Ya hay un reembolso en curso para este cargo.",
+    "SUBSCRIPTION_NOT_FOUND": "No se encontró la suscripción."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -593,7 +609,8 @@
       "partners": "Partners B2B",
       "regulatory": "Reglas Regulatorias",
       "ai": "Presupuesto IA",
-      "ocr": "Monitor OCR"
+      "ocr": "Monitor OCR",
+      "billing": "Facturación"
     },
     "medications": {
       "title": "Catálogo de medicamentos",
@@ -760,6 +777,78 @@
       "retrySuccess": "Se reintentaron {count} eventos en la cola",
       "reindexSuccess": "Reindexación iniciada para {alias} (Trabajo {job})",
       "purgeSuccess": "Caché purgada con éxito"
+    },
+    "billing": {
+      "tab": {
+        "accounts": "Cuentas",
+        "invoices": "Facturas",
+        "discrepancies": "Discrepancias",
+        "coupons": "Cupones",
+        "plans": "Planes"
+      },
+      "search": "Razón social o NIT",
+      "status": "Estado",
+      "allStatuses": "Todos los estados",
+      "country": "País",
+      "noAccounts": "No hay cuentas con esos filtros.",
+      "open": "Abiertas",
+      "resolved": "Resueltas",
+      "noDiscrepancies": "No hay discrepancias.",
+      "viewAccount": "Ver cuenta",
+      "fieldsRequired": "Completa los campos de la acción.",
+      "field": {
+        "until": "Hasta",
+        "amount": "Importe",
+        "plan_code": "Plan",
+        "seats": "Asientos (vacío = actuales)",
+        "cycle": "Ciclo",
+        "reference": "Referencia del pago",
+        "resolution": "Resolución"
+      },
+      "action": {
+        "extend_trial": "Extender prueba",
+        "credit": "Dar crédito",
+        "comp_plan": "Plan de cortesía",
+        "change_plan": "Cambiar plan",
+        "cancel": "Cancelar suscripción",
+        "manual_payment": "Registrar pago manual",
+        "refund": "Reembolsar",
+        "resolve": "Resolver",
+        "retry_invoice": "Reemitir factura"
+      },
+      "done": {
+        "extend_trial": "Prueba extendida.",
+        "credit": "Crédito aplicado.",
+        "comp_plan": "Plan de cortesía aplicado.",
+        "change_plan": "Plan cambiado.",
+        "cancel": "Suscripción cancelada.",
+        "manual_payment": "Pago manual registrado.",
+        "refund": "Reembolso solicitado.",
+        "resolve": "Discrepancia resuelta.",
+        "retry_invoice": "Reemisión programada."
+      },
+      "couponCreated": "Cupón {code} creado.",
+      "coupon": {
+        "code": "Código",
+        "kind": "Tipo",
+        "pct": "Porcentaje",
+        "amount": "Importe fijo",
+        "value": "Valor",
+        "duration": "Duración (meses)",
+        "maxUses": "Usos máximos",
+        "validUntil": "Válido hasta",
+        "plans": "Planes (códigos separados por comas; vacío = todos)",
+        "create": "Crear cupón",
+        "empty": "No hay cupones.",
+        "usesOf": "{uses} de {max} usos",
+        "months": "{n} meses"
+      },
+      "plansHelp": "Una nueva versión se aplica a las suscripciones en su renovación si se publica con al menos 30 días de antelación (RN-39). Edita el JSON y guarda.",
+      "newVersion": "Nueva versión",
+      "newPlan": "Nuevo plan",
+      "versionOf": "Nueva versión de {code}",
+      "planJsonInvalid": "El JSON del plan no es válido.",
+      "planSaved": "Plan {code} guardado."
     }
   },
   "freshness": {
@@ -1523,6 +1612,102 @@
     "graceBannerDesc": "Tu cuenta está en periodo de gracia. Tienes {days} días para actualizar tu método de pago antes de que se restrinja el acceso de escritura.",
     "updatePayment": "Actualizar método de pago",
     "softLimitWarning": "Has superado el 90% de este límite.",
-    "free": "Gratis"
+    "free": "Gratis",
+    "fiscalRequired": "Completa razón social, identificación fiscal, correo y dirección: aparecen en la factura electrónica.",
+    "status": {
+      "trialing": "En prueba",
+      "active": "Activa",
+      "grace": "Pago pendiente",
+      "restricted": "Restringida",
+      "cancelled": "Cancelada",
+      "expired": "Vencida"
+    },
+    "cycle": {
+      "monthly": "Mensual",
+      "annual": "Anual"
+    },
+    "invoiceStatus": {
+      "issued": "Emitida",
+      "accepted": "Aceptada por la DIAN",
+      "rejected": "Rechazada",
+      "contingency": "En contingencia",
+      "credited": "Anulada con nota crédito"
+    },
+    "paymentKind": {
+      "payment": "Pago",
+      "refund": "Reembolso"
+    },
+    "banner": {
+      "graceTitle": "No pudimos cobrar tu suscripción",
+      "graceDesc": "Reintentaremos el cobro. Si no se completa antes del {date}, la organización pasará a solo lectura.",
+      "graceDescNoDate": "Reintentaremos el cobro. Si no se completa, la organización pasará a solo lectura.",
+      "restrictedTitle": "Organización en modo de solo lectura",
+      "restrictedDesc": "Puedes consultar toda la información, pero no registrar ni modificar datos hasta completar el pago. La reactivación es inmediata.",
+      "retry": "Reintentar cobro",
+      "goToBilling": "Ir a facturación"
+    },
+    "payment": {
+      "title": "Método de pago",
+      "none": "No hay un método de pago registrado.",
+      "kind": {
+        "card": "Tarjeta",
+        "pse": "PSE"
+      },
+      "expires": "vence {date}",
+      "add": "Añadir método de pago",
+      "replace": "Cambiar método de pago",
+      "remove": "Retirar",
+      "saved": "Método de pago guardado.",
+      "removed": "Método de pago retirado.",
+      "acceptPrefix": "Acepto los",
+      "acceptTerms": "términos del proveedor de pagos",
+      "acceptAnd": "y la",
+      "acceptData": "autorización de tratamiento de datos personales",
+      "continue": "Continuar al formulario seguro",
+      "secureNote": "Los datos de la tarjeta se introducen en el formulario seguro del proveedor de pagos; PetPassport no los recibe ni los guarda.",
+      "WIDGET_LOAD_FAILED": "No se pudo cargar el formulario seguro del proveedor de pagos. Inténtalo de nuevo.",
+      "WIDGET_UNSUPPORTED": "Este proveedor de pagos aún no está disponible desde aquí. Contacta con soporte.",
+      "WIDGET_CLOSED": "Se cerró el formulario sin registrar el método de pago."
+    },
+    "page": {
+      "nav": "Facturación",
+      "title": "Facturación",
+      "noSubscription": "Esta organización aún no tiene una suscripción de pago.",
+      "seePlans": "Ver planes",
+      "nextCharge": "Próximo cargo",
+      "endsAt": "Termina el",
+      "pendingChange": "Cambio programado",
+      "seats": "{used} de {purchased} asientos en uso",
+      "seatsLabel": "Asientos en uso",
+      "changeTitle": "Cambiar plan, ciclo o asientos",
+      "plan": "Plan",
+      "preview": "Ver importe",
+      "proration": "Crédito por prorrateo",
+      "previewNext": "Siguiente cargo: {date}",
+      "confirmChange": "Confirmar cambio",
+      "changed": "Plan actualizado.",
+      "retried": "Cobro reintentado.",
+      "fiscalSaved": "Datos fiscales guardados.",
+      "invoices": "Facturas",
+      "noInvoices": "Aún no hay facturas.",
+      "number": "Número",
+      "date": "Fecha",
+      "dianStatus": "Estado DIAN",
+      "files": "Archivos",
+      "payments": "Pagos",
+      "noPayments": "Aún no hay pagos.",
+      "cancelTitle": "Cancelar suscripción",
+      "cancel": "Cancelar suscripción",
+      "cancelAtEnd": "Cancelar al final del periodo ({date})",
+      "cancelEffectiveEnd": "Seguirás teniendo acceso completo hasta el {date}; después, la información queda en solo lectura y disponible para exportar.",
+      "cancelEffectiveNow": "La cancelación es inmediata: la organización pasa a solo lectura hoy.",
+      "cancelReason": "Motivo (opcional)",
+      "confirmCancel": "Confirmar cancelación",
+      "cancelled": "Suscripción cancelada.",
+      "cancelScheduled": "La suscripción se cancelará el {date}.",
+      "resume": "Mantener la suscripción",
+      "resumed": "La suscripción seguirá activa.",
+      "cancelledInfo": "La suscripción está cancelada. Puedes contratar un plan de nuevo desde Planes."
+    }
   }
 }

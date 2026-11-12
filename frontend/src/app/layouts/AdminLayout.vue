@@ -18,6 +18,7 @@ const sections = [
   { name: 'admin-platform', label: 'admin.nav.platform' },
   { name: 'admin-partners', label: 'admin.nav.partners' },
   { name: 'admin-regulatory', label: 'admin.nav.regulatory' },
+  { name: 'admin-billing', label: 'admin.nav.billing' },
   { name: 'admin-ai', label: 'admin.nav.ai' },
   { name: 'admin-ocr', label: 'admin.nav.ocr' },
 ] as const
