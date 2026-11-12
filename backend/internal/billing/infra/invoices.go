@@ -104,7 +104,7 @@ func scanInvoice(row pgx.Row) (*InvoiceRow, error) {
 // Get devuelve la factura, o nil si no existe.
 func (s *InvoiceStore) Get(ctx context.Context, id uuid.UUID) (*InvoiceRow, error) {
 	if s == nil || s.pool == nil {
-		return &InvoiceRow{ID: id, Status: InvoiceAccepted}, nil
+		return &InvoiceRow{ID: id, Status: InvoiceAccepted, PDFKey: "stub.pdf", XMLKey: "stub.xml"}, nil
 	}
 	return scanInvoice(s.q(ctx).QueryRow(ctx, `SELECT `+invoiceCols+` FROM billing.invoices WHERE id = $1`, id))
 }

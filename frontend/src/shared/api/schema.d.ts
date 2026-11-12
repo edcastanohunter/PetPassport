@@ -4229,6 +4229,383 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing-accounts/{id}/payment-methods/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preparar la tokenización de un método de pago
+         * @description Devuelve los datos públicos que la SPA necesita para abrir el widget o redirect del proveedor
+         *     de pagos del país de la cuenta (PP-F5-API-004). PetPassport nunca recibe datos de tarjeta
+         *     (PP-F5-SEC-001): la tokenización ocurre en el proveedor.
+         */
+        post: operations["setupPaymentMethod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar el método de pago tokenizado
+         * @description Cambia el token de un solo uso del widget por un método de pago reutilizable en el proveedor
+         *     y lo deja como método por defecto de la cuenta (PP-F5-API-004). Solo se guardan `kind`,
+         *     `last4`, marca y vencimiento. Token rechazado → `422 PAYMENT_METHOD_INVALID`.
+         */
+        post: operations["attachPaymentMethod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/payments/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Adaptador de pagos que firma el evento (`wompi`; `fake` fuera de producción). */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Webhook de pagos (público, firmado)
+         * @description Verifica la firma y la ventana temporal del evento según el proveedor (PP-F5-SEC-002),
+         *     contrasta el estado con el proveedor y lo aplica una sola vez por `provider_event_id`
+         *     (PP-F5-API-004). Firma inválida → 401; proveedor desconocido → 404; cargo aún no visible →
+         *     409 (el proveedor reintenta).
+         */
+        post: operations["paymentsWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Facturas de la cuenta
+         * @description Facturas emitidas de la cuenta con sus notas crédito, de la más reciente a la más antigua (PP-F5-API-005).
+         */
+        get: operations["listAccountInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * PDF de la factura
+         * @description 302 a URL prefirmada (15 min) de la representación gráfica (PP-F5-API-005).
+         */
+        get: operations["getInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/{id}/xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * XML de la factura electrónica
+         * @description 302 a URL prefirmada (15 min) del XML firmado, cuando el proveedor fiscal lo emite (PP-F5-API-005).
+         */
+        get: operations["getInvoiceXml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Pagos y reembolsos de la cuenta
+         * @description Pagos y reembolsos de la cuenta, del más reciente al más antiguo (PP-F5-API-005).
+         */
+        get: operations["listAccountPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuentas de facturación (SuperAdmin)
+         * @description Búsqueda de cuentas por razón social, estado de suscripción, plan y país (PP-F5-API-007).
+         */
+        get: operations["adminListBillingAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Detalle de una cuenta de facturación (SuperAdmin)
+         * @description Cuenta con suscripciones, pagos, facturas y discrepancias (PP-F5-API-007).
+         */
+        get: operations["adminGetBillingAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/subscriptions/{id}/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajuste administrativo de una suscripción (SuperAdmin)
+         * @description Extiende la prueba, concede un crédito o aplica un plan de cortesía, con motivo obligatorio (PP-F5-API-007, PRD-011).
+         */
+        post: operations["adminAdjustSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/subscriptions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancelar una suscripción de inmediato (SuperAdmin)
+         * @description Cancelación inmediata con motivo obligatorio (PP-F5-API-007).
+         */
+        post: operations["adminCancelSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/charges/{id}/manual-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar un pago manual (SuperAdmin)
+         * @description Asienta una transferencia recibida para un cargo pendiente o fallido (PP-F5-API-007, PRD-009).
+         *     El importe debe coincidir con el total del cargo; la referencia es única por proveedor.
+         */
+        post: operations["adminRecordManualPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/charges/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reembolsar un cargo (SuperAdmin)
+         * @description Reembolso total o parcial de un cargo pagado; genera nota crédito (PP-F5-API-007, PRD-011).
+         */
+        post: operations["adminRefundCharge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/discrepancies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discrepancias de conciliación (SuperAdmin)
+         * @description Diferencias entre el libro de pagos y el proveedor detectadas por la conciliación diaria (PP-F5-API-007).
+         */
+        get: operations["adminListBillingDiscrepancies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/discrepancies/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscrepancyId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolver una discrepancia (SuperAdmin)
+         * @description Cierra la discrepancia con la resolución aplicada (PP-F5-API-007). Inexistente o ya resuelta → 404.
+         */
+        post: operations["adminResolveBillingDiscrepancy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/billing/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Facturas por estado (SuperAdmin)
+         * @description Cola de facturas por estado; por defecto las rechazadas por la autoridad fiscal (PP-F5-API-007).
+         */
+        get: operations["adminListBillingInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/invoices/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reemitir una factura rechazada (SuperAdmin)
+         * @description Reemite la factura con los datos fiscales actuales de la cuenta (PP-F5-API-007). Solo facturas `rejected`.
+         */
+        post: operations["adminRetryInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{orgId}/entitlements": {
         parameters: {
             query?: never;
@@ -6551,6 +6928,161 @@ export interface components {
             phone?: string;
             tax_regime?: string;
         };
+        PaymentMethodSetupRequest: {
+            /** @enum {string} */
+            kind: "card" | "pse";
+        };
+        PaymentMethodSetup: {
+            /** @example wompi */
+            provider: string;
+            /** @description Valores públicos para abrir el widget del proveedor (nunca secretos). */
+            client_config: {
+                [key: string]: string;
+            };
+        };
+        AttachPaymentMethodRequest: {
+            /** @description Token de un solo uso devuelto por el widget del proveedor. */
+            provider_token: string;
+            /** @description Aceptación de los términos del proveedor mostrada al usuario (de `client_config`). */
+            acceptance_token?: string;
+            /** @description Autorización de tratamiento de datos personales del proveedor (de `client_config`). */
+            personal_auth_token?: string;
+        };
+        InvoiceCreditNote: {
+            /** Format: uuid */
+            id: string;
+            number?: string;
+            status: string;
+            amount: number;
+            reason?: string;
+        };
+        Invoice: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            charge_id: string;
+            number?: string;
+            /** @enum {string} */
+            status: "issued" | "accepted" | "rejected" | "contingency" | "credited";
+            provider?: string;
+            /** Format: date-time */
+            issued_at?: string;
+            /** Format: date-time */
+            created_at: string;
+            subtotal?: number;
+            tax?: number;
+            total: number;
+            currency: string;
+            has_pdf: boolean;
+            has_xml: boolean;
+            /** @description Ruta de la API que redirige a la descarga prefirmada. */
+            pdf_url?: string;
+            xml_url?: string;
+            rejection_reason?: string;
+            credit_notes: components["schemas"]["InvoiceCreditNote"][];
+        };
+        InvoiceList: {
+            data: components["schemas"]["Invoice"][];
+        };
+        BillingPayment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            charge_id: string;
+            /** @enum {string} */
+            kind: "payment" | "refund";
+            amount: number;
+            currency: string;
+            status: string;
+            provider: string;
+            reference?: string;
+            reason?: string;
+            /** Format: date-time */
+            at: string;
+        };
+        BillingPaymentList: {
+            data: components["schemas"]["BillingPayment"][];
+        };
+        AdminBillingAccountSummary: {
+            /** Format: uuid */
+            id: string;
+            legal_name: string;
+            country: string;
+            currency: string;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            subscriptions: {
+                /** Format: uuid */
+                id: string;
+                kind: string;
+                plan_code: string;
+                status: string;
+            }[];
+        };
+        AdminBillingAccountList: {
+            data: components["schemas"]["AdminBillingAccountSummary"][];
+        };
+        AdminBillingAccountDetail: {
+            account: components["schemas"]["BillingAccount"];
+            subscriptions: components["schemas"]["Subscription"][];
+            payments: components["schemas"]["BillingPayment"][];
+            invoices: components["schemas"]["Invoice"][];
+            discrepancies: components["schemas"]["BillingDiscrepancy"][];
+        };
+        AdminAdjustSubscriptionRequest: {
+            /** @enum {string} */
+            kind: "extend_trial" | "credit" | "comp_plan";
+            /**
+             * Format: date-time
+             * @description Nueva fecha de fin (extend_trial, comp_plan).
+             */
+            until?: string;
+            /** @description Importe del crédito en la moneda de la suscripción (credit). */
+            amount?: number;
+            reason: string;
+        };
+        AdminManualPaymentRequest: {
+            amount: number;
+            /** @description Referencia bancaria de la transferencia. */
+            reference: string;
+            reason: string;
+        };
+        AdminRefundRequest: {
+            amount: number;
+            reason: string;
+        };
+        AdminRefundResult: {
+            refund_ref: string;
+        };
+        BillingDiscrepancy: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            charge_id?: string;
+            kind: string;
+            /** @enum {string} */
+            status: "open" | "resolved";
+            details?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            detected_at: string;
+            /** Format: date-time */
+            resolved_at?: string;
+            resolution?: string;
+        };
+        BillingDiscrepancyList: {
+            data: components["schemas"]["BillingDiscrepancy"][];
+        };
+        AdminResolveDiscrepancyRequest: {
+            resolution: string;
+            reason: string;
+        };
         PaymentMethodSummary: {
             /** @example card */
             kind: string;
@@ -6849,6 +7381,10 @@ export interface components {
         UnsubscribeToken: string;
         AppointmentId: string;
         ProfessionalId: string;
+        BillingLimit: number;
+        InvoiceId: string;
+        ChargeId: string;
+        DiscrepancyId: string;
         BillingAccountId: string;
         SubscriptionId: string;
         PlanCode: string;
@@ -12912,6 +13448,466 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Subscription"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    setupPaymentMethod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentMethodSetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Configuración del widget del proveedor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodSetup"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    attachPaymentMethod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachPaymentMethodRequest"];
+            };
+        };
+        responses: {
+            /** @description Método de pago registrado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    paymentsWebhook: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Event-Checksum"?: string;
+                "X-Fake-Signature"?: string;
+                "X-Fake-Timestamp"?: string;
+            };
+            path: {
+                /** @description Adaptador de pagos que firma el evento (`wompi`; `fake` fuera de producción). */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Evento aceptado (procesado, duplicado o ignorado) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountInvoices: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Facturas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+                Accept?: components["parameters"]["AcceptLink"];
+            };
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada (con `Accept: application/json`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInvoiceXml: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Con `application/json` la descarga responde `200 DownloadLink` en lugar de `302` (clientes SPA que no pueden leer `Location` de una redirección con fetch). */
+                Accept?: components["parameters"]["AcceptLink"];
+            };
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL prefirmada (con `Accept: application/json`) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Redirección a la URL prefirmada */
+            302: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listAccountPayments: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pagos y reembolsos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPaymentList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListBillingAccounts: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "trialing" | "active" | "grace" | "restricted" | "cancelled";
+                plan?: string;
+                country?: string;
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cuentas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBillingAccountList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminGetBillingAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBillingAccountDetail"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminAdjustSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminAdjustSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción ajustada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminCancelSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Suscripción cancelada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subscription"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminRecordManualPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminManualPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Pago registrado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminRefundCharge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Reembolso confirmado por el proveedor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRefundResult"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListBillingDiscrepancies: {
+        parameters: {
+            query?: {
+                status?: "open" | "resolved";
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discrepancias */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingDiscrepancyList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminResolveBillingDiscrepancy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscrepancyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminResolveDiscrepancyRequest"];
+            };
+        };
+        responses: {
+            /** @description Discrepancia resuelta */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminListBillingInvoices: {
+        parameters: {
+            query?: {
+                status?: "issued" | "accepted" | "rejected" | "contingency" | "credited";
+                limit?: components["parameters"]["BillingLimit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Facturas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    adminRetryInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["InvoiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reemisión programada */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };

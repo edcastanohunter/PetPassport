@@ -24,6 +24,14 @@ type BillingHandlers struct {
 	svc     *app.BillingService
 	queries *infra.Queries
 	logger  *slog.Logger
+
+	// Cobro y facturación (M5.2, WithPayments). Los almacenes toleran receptor nil.
+	pay      *app.PaymentService
+	inv      *app.InvoicingService
+	ledger   *infra.Ledger
+	invoices *infra.InvoiceStore
+	objects  Presigner
+	scope    Scope
 }
 
 // NewBillingHandlers crea una nueva instancia de BillingHandlers.
@@ -35,6 +43,7 @@ func NewBillingHandlers(svc *app.BillingService, queries *infra.Queries, logger 
 		svc:     svc,
 		queries: queries,
 		logger:  logger,
+		scope:   queryScope{queries: queries},
 	}
 }
 
@@ -556,7 +565,7 @@ func (h *BillingHandlers) UpdateBillingAccount(ctx context.Context, req gen.Upda
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -578,7 +587,7 @@ func (h *BillingHandlers) CloseBillingAccount(ctx context.Context, req gen.Close
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -608,7 +617,7 @@ func (h *BillingHandlers) ListAccountSubscriptions(ctx context.Context, req gen.
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingRead, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingRead, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -635,7 +644,7 @@ func (h *BillingHandlers) PreviewSubscription(ctx context.Context, req gen.Previ
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -694,7 +703,7 @@ func (h *BillingHandlers) CreateSubscription(ctx context.Context, req gen.Create
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -737,7 +746,7 @@ func (h *BillingHandlers) GetSubscription(ctx context.Context, req gen.GetSubscr
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingRead, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingRead, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -759,7 +768,7 @@ func (h *BillingHandlers) ChangeSubscriptionPlan(ctx context.Context, req gen.Ch
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -802,7 +811,7 @@ func (h *BillingHandlers) AdjustSubscriptionSeats(ctx context.Context, req gen.A
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -828,7 +837,7 @@ func (h *BillingHandlers) CancelSubscription(ctx context.Context, req gen.Cancel
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -859,7 +868,7 @@ func (h *BillingHandlers) ResumeSubscription(ctx context.Context, req gen.Resume
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -885,7 +894,7 @@ func (h *BillingHandlers) RetrySubscriptionCharge(ctx context.Context, req gen.R
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 

@@ -6329,6 +6329,463 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /billing-accounts/{id}/payment-methods/setup:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    post:
+      operationId: setupPaymentMethod
+      summary: Preparar la tokenización de un método de pago
+      description: |
+        Devuelve los datos públicos que la SPA necesita para abrir el widget o redirect del proveedor
+        de pagos del país de la cuenta (PP-F5-API-004). PetPassport nunca recibe datos de tarjeta
+        (PP-F5-SEC-001): la tokenización ocurre en el proveedor.
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMethodSetupRequest"
+      responses:
+        "200":
+          description: Configuración del widget del proveedor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodSetup"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/payment-methods:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    post:
+      operationId: attachPaymentMethod
+      summary: Registrar el método de pago tokenizado
+      description: |
+        Cambia el token de un solo uso del widget por un método de pago reutilizable en el proveedor
+        y lo deja como método por defecto de la cuenta (PP-F5-API-004). Solo se guardan `kind`,
+        `last4`, marca y vencimiento. Token rechazado → `422 PAYMENT_METHOD_INVALID`.
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachPaymentMethodRequest"
+      responses:
+        "200":
+          description: Método de pago registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /webhooks/payments/{provider}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        description: Adaptador de pagos que firma el evento (`wompi`; `fake` fuera de producción).
+        schema:
+          type: string
+          pattern: "^[a-z0-9_-]{1,32}$"
+    post:
+      operationId: paymentsWebhook
+      summary: Webhook de pagos (público, firmado)
+      description: |
+        Verifica la firma y la ventana temporal del evento según el proveedor (PP-F5-SEC-002),
+        contrasta el estado con el proveedor y lo aplica una sola vez por `provider_event_id`
+        (PP-F5-API-004). Firma inválida → 401; proveedor desconocido → 404; cargo aún no visible →
+        409 (el proveedor reintenta).
+      tags: [billing]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: X-Event-Checksum
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: X-Fake-Signature
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: X-Fake-Timestamp
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "204":
+          description: Evento aceptado (procesado, duplicado o ignorado)
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/invoices:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: listAccountInvoices
+      summary: Facturas de la cuenta
+      description: Facturas emitidas de la cuenta con sus notas crédito, de la más reciente a la más antigua (PP-F5-API-005).
+      tags: [billing]
+      x-pp-action: billing:read
+      parameters:
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Facturas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /invoices/{id}/pdf:
+    parameters:
+      - $ref: "#/components/parameters/InvoiceId"
+    get:
+      operationId: getInvoicePdf
+      summary: PDF de la factura
+      description: 302 a URL prefirmada (15 min) de la representación gráfica (PP-F5-API-005).
+      tags: [billing]
+      x-pp-action: billing:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /invoices/{id}/xml:
+    parameters:
+      - $ref: "#/components/parameters/InvoiceId"
+    get:
+      operationId: getInvoiceXml
+      summary: XML de la factura electrónica
+      description: 302 a URL prefirmada (15 min) del XML firmado, cuando el proveedor fiscal lo emite (PP-F5-API-005).
+      tags: [billing]
+      x-pp-action: billing:read
+      parameters:
+        - $ref: "#/components/parameters/AcceptLink"
+      responses:
+        "200":
+          description: "URL prefirmada (con `Accept: application/json`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "302":
+          description: Redirección a la URL prefirmada
+          headers:
+            Location:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/payments:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: listAccountPayments
+      summary: Pagos y reembolsos de la cuenta
+      description: Pagos y reembolsos de la cuenta, del más reciente al más antiguo (PP-F5-API-005).
+      tags: [billing]
+      x-pp-action: billing:read
+      parameters:
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Pagos y reembolsos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPaymentList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/billing/accounts:
+    get:
+      operationId: adminListBillingAccounts
+      summary: Cuentas de facturación (SuperAdmin)
+      description: Búsqueda de cuentas por razón social, estado de suscripción, plan y país (PP-F5-API-007).
+      tags: [admin]
+      x-pp-action: admin:billing:read
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [trialing, active, grace, restricted, cancelled]
+        - name: plan
+          in: query
+          schema:
+            type: string
+            maxLength: 64
+        - name: country
+          in: query
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Cuentas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBillingAccountList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/billing/accounts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: adminGetBillingAccount
+      summary: Detalle de una cuenta de facturación (SuperAdmin)
+      description: Cuenta con suscripciones, pagos, facturas y discrepancias (PP-F5-API-007).
+      tags: [admin]
+      x-pp-action: admin:billing:read
+      responses:
+        "200":
+          description: Detalle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBillingAccountDetail"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/subscriptions/{id}/adjust:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: adminAdjustSubscription
+      summary: Ajuste administrativo de una suscripción (SuperAdmin)
+      description: Extiende la prueba, concede un crédito o aplica un plan de cortesía, con motivo obligatorio (PP-F5-API-007, PRD-011).
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAdjustSubscriptionRequest"
+      responses:
+        "200":
+          description: Suscripción ajustada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/subscriptions/{id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: adminCancelSubscription
+      summary: Cancelar una suscripción de inmediato (SuperAdmin)
+      description: Cancelación inmediata con motivo obligatorio (PP-F5-API-007).
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminReasonRequest"
+      responses:
+        "200":
+          description: Suscripción cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/charges/{id}/manual-payment:
+    parameters:
+      - $ref: "#/components/parameters/ChargeId"
+    post:
+      operationId: adminRecordManualPayment
+      summary: Registrar un pago manual (SuperAdmin)
+      description: |
+        Asienta una transferencia recibida para un cargo pendiente o fallido (PP-F5-API-007, PRD-009).
+        El importe debe coincidir con el total del cargo; la referencia es única por proveedor.
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminManualPaymentRequest"
+      responses:
+        "204":
+          description: Pago registrado
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/charges/{id}/refund:
+    parameters:
+      - $ref: "#/components/parameters/ChargeId"
+    post:
+      operationId: adminRefundCharge
+      summary: Reembolsar un cargo (SuperAdmin)
+      description: Reembolso total o parcial de un cargo pagado; genera nota crédito (PP-F5-API-007, PRD-011).
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRefundRequest"
+      responses:
+        "200":
+          description: Reembolso confirmado por el proveedor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRefundResult"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/billing/discrepancies:
+    get:
+      operationId: adminListBillingDiscrepancies
+      summary: Discrepancias de conciliación (SuperAdmin)
+      description: Diferencias entre el libro de pagos y el proveedor detectadas por la conciliación diaria (PP-F5-API-007).
+      tags: [admin]
+      x-pp-action: admin:billing:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, resolved]
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Discrepancias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingDiscrepancyList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/billing/discrepancies/{id}/resolve:
+    parameters:
+      - $ref: "#/components/parameters/DiscrepancyId"
+    post:
+      operationId: adminResolveBillingDiscrepancy
+      summary: Resolver una discrepancia (SuperAdmin)
+      description: Cierra la discrepancia con la resolución aplicada (PP-F5-API-007). Inexistente o ya resuelta → 404.
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminResolveDiscrepancyRequest"
+      responses:
+        "204":
+          description: Discrepancia resuelta
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/billing/invoices:
+    get:
+      operationId: adminListBillingInvoices
+      summary: Facturas por estado (SuperAdmin)
+      description: Cola de facturas por estado; por defecto las rechazadas por la autoridad fiscal (PP-F5-API-007).
+      tags: [admin]
+      x-pp-action: admin:billing:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [issued, accepted, rejected, contingency, credited]
+            default: rejected
+        - $ref: "#/components/parameters/BillingLimit"
+      responses:
+        "200":
+          description: Facturas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/invoices/{id}/retry:
+    parameters:
+      - $ref: "#/components/parameters/InvoiceId"
+    post:
+      operationId: adminRetryInvoice
+      summary: Reemitir una factura rechazada (SuperAdmin)
+      description: Reemite la factura con los datos fiscales actuales de la cuenta (PP-F5-API-007). Solo facturas `rejected`.
+      tags: [admin]
+      x-pp-action: admin:billing:write
+      responses:
+        "202":
+          description: Reemisión programada
+        default:
+          $ref: "#/components/responses/Problem"
+
   /organizations/{orgId}/entitlements:
     parameters:
       - $ref: "#/components/parameters/OrgId"
@@ -6561,6 +7018,36 @@ components:
         format: uuid
     ProfessionalId:
       name: professionalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BillingLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    InvoiceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChargeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DiscrepancyId:
+      name: id
       in: path
       required: true
       schema:
@@ -11254,6 +11741,314 @@ components:
         tax_regime:
           type: string
 
+    PaymentMethodSetupRequest:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [card, pse]
+    PaymentMethodSetup:
+      type: object
+      required: [provider, client_config]
+      properties:
+        provider:
+          type: string
+          example: wompi
+        client_config:
+          description: Valores públicos para abrir el widget del proveedor (nunca secretos).
+          type: object
+          additionalProperties:
+            type: string
+    AttachPaymentMethodRequest:
+      type: object
+      required: [provider_token]
+      properties:
+        provider_token:
+          description: Token de un solo uso devuelto por el widget del proveedor.
+          type: string
+          minLength: 1
+          maxLength: 500
+        acceptance_token:
+          description: Aceptación de los términos del proveedor mostrada al usuario (de `client_config`).
+          type: string
+          maxLength: 4000
+        personal_auth_token:
+          description: Autorización de tratamiento de datos personales del proveedor (de `client_config`).
+          type: string
+          maxLength: 4000
+    InvoiceCreditNote:
+      type: object
+      required: [id, status, amount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        status:
+          type: string
+        amount:
+          type: number
+        reason:
+          type: string
+    Invoice:
+      type: object
+      required: [id, account_id, charge_id, status, total, currency, has_pdf, has_xml, credit_notes, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        charge_id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        status:
+          type: string
+          enum: [issued, accepted, rejected, contingency, credited]
+        provider:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        subtotal:
+          type: number
+        tax:
+          type: number
+        total:
+          type: number
+        currency:
+          type: string
+        has_pdf:
+          type: boolean
+        has_xml:
+          type: boolean
+        pdf_url:
+          description: Ruta de la API que redirige a la descarga prefirmada.
+          type: string
+        xml_url:
+          type: string
+        rejection_reason:
+          type: string
+        credit_notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceCreditNote"
+    InvoiceList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+    BillingPayment:
+      type: object
+      required: [id, charge_id, kind, amount, currency, status, provider, at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        charge_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [payment, refund]
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        provider:
+          type: string
+        reference:
+          type: string
+        reason:
+          type: string
+        at:
+          type: string
+          format: date-time
+    BillingPaymentList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingPayment"
+    AdminBillingAccountSummary:
+      type: object
+      required: [id, legal_name, country, currency, status, subscriptions, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        legal_name:
+          type: string
+        country:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        subscriptions:
+          type: array
+          items:
+            type: object
+            required: [id, kind, plan_code, status]
+            properties:
+              id:
+                type: string
+                format: uuid
+              kind:
+                type: string
+              plan_code:
+                type: string
+              status:
+                type: string
+    AdminBillingAccountList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminBillingAccountSummary"
+    AdminBillingAccountDetail:
+      type: object
+      required: [account, subscriptions, payments, invoices, discrepancies]
+      properties:
+        account:
+          $ref: "#/components/schemas/BillingAccount"
+        subscriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingPayment"
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        discrepancies:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingDiscrepancy"
+    AdminAdjustSubscriptionRequest:
+      type: object
+      required: [kind, reason]
+      properties:
+        kind:
+          type: string
+          enum: [extend_trial, credit, comp_plan]
+        until:
+          description: Nueva fecha de fin (extend_trial, comp_plan).
+          type: string
+          format: date-time
+        amount:
+          description: Importe del crédito en la moneda de la suscripción (credit).
+          type: number
+          exclusiveMinimum: 0
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    AdminManualPaymentRequest:
+      type: object
+      required: [amount, reference, reason]
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        reference:
+          description: Referencia bancaria de la transferencia.
+          type: string
+          minLength: 1
+          maxLength: 120
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    AdminRefundRequest:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    AdminRefundResult:
+      type: object
+      required: [refund_ref]
+      properties:
+        refund_ref:
+          type: string
+    BillingDiscrepancy:
+      type: object
+      required: [id, account_id, kind, status, detected_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        charge_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved]
+        details:
+          type: object
+          additionalProperties: true
+        detected_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        resolution:
+          type: string
+    BillingDiscrepancyList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingDiscrepancy"
+    AdminResolveDiscrepancyRequest:
+      type: object
+      required: [resolution, reason]
+      properties:
+        resolution:
+          type: string
+          minLength: 1
+          maxLength: 64
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
     PaymentMethodSummary:
       type: object
       required: [kind]

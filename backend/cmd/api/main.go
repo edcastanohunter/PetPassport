@@ -20,8 +20,8 @@ import (
 	billingapp "github.com/edcastanohunter/petpassport/backend/internal/billing/app"
 	billinghttp "github.com/edcastanohunter/petpassport/backend/internal/billing/http"
 	billinginfra "github.com/edcastanohunter/petpassport/backend/internal/billing/infra"
-	billingproviders "github.com/edcastanohunter/petpassport/backend/internal/billing/providers"
-	fakebilling "github.com/edcastanohunter/petpassport/backend/internal/billing/providers/fake"
+	billingpm "github.com/edcastanohunter/petpassport/backend/internal/billing/pm"
+	billingsetup "github.com/edcastanohunter/petpassport/backend/internal/billing/setup"
 	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
@@ -63,6 +63,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/queue"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/ratelimit"
 	ppredis "github.com/edcastanohunter/petpassport/backend/internal/platform/redis"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/scheduler"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/storage"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/telemetry"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/webhooks"
@@ -520,12 +521,37 @@ func run() error {
 	billingSubRepo := billinginfra.NewSubscriptionRepository(store, registry)
 	billingQueries := billinginfra.NewQueries(pool.Pool)
 	billinginfra.RegisterSyncProjectors(runner, registry)
-	// Routing por país (billing.provider_routing). M5.2: el cableado de wompi,
-	// manual y pdf_local por configuración está pendiente; de momento solo fake.
-	billingRouter := billingproviders.NewRouter(billinginfra.NewLedger(pool.Pool),
-		[]billingproviders.PaymentProvider{fakebilling.NewFakePaymentProvider()}, nil)
-	billingSvc := billingapp.NewBillingService(billingAccountRepo, billingSubRepo, billingQueries, billingRouter, unit, billinginfra.NewSyncProjector(runner))
-	billingHandlers := billinghttp.NewBillingHandlers(billingSvc, billingQueries, logger)
+	// Mismos proveedores que el worker (billingsetup). El api tokeniza, recibe
+	// webhooks y atiende a SuperAdmin; cobrar y facturar es trabajo del worker,
+	// al que llega por comandos programados (billing.*).
+	billingLedger := billinginfra.NewLedger(pool.Pool)
+	billingInvoices := billinginfra.NewInvoiceStore(pool.Pool)
+	billingRouter := billingsetup.Router(cfg.Env, cfg.Billing, billingLedger, typstRenderer)
+	billingAllowed := scheduler.NewAllowedCommands()
+	for _, factory := range billingapp.SystemCommands() {
+		billingAllowed.Allow(factory)
+	}
+	billingJobs := billingpm.NewJobQueue(scheduler.New(billingAllowed, nil))
+	billingProjects := billinginfra.NewSyncProjector(runner)
+	billingMetrics := billingapp.NewMetrics(tel.Registry)
+	billingSvc := billingapp.NewBillingService(billingAccountRepo, billingSubRepo, billingQueries, billingRouter, unit, billingProjects).
+		WithJobs(billingJobs)
+	billingPayments := billingapp.NewPaymentService(billingapp.PaymentOptions{
+		Subscriptions: billingSubRepo, Reader: billingQueries, Ledger: billingLedger, Router: billingRouter, UoW: unit,
+		Projects: billingProjects, Jobs: billingJobs, Metrics: billingMetrics, Logger: logger,
+	})
+	// El api nunca emite documentos (solo reprograma la emisión): sin Archive.
+	billingInvoicing := billingapp.NewInvoicingService(billingapp.InvoicingOptions{
+		Charges: billingLedger, Reader: billingQueries, Store: billingInvoices, Router: billingRouter,
+		UoW: unit, Jobs: billingJobs, Metrics: billingMetrics, Logger: logger,
+	})
+	billingDeps := billinghttp.PaymentDeps{
+		Payments: billingPayments, Invoicing: billingInvoicing, Ledger: billingLedger, Invoices: billingInvoices,
+	}
+	if objects != nil {
+		billingDeps.Objects = objects
+	}
+	billingHandlers := billinghttp.NewBillingHandlers(billingSvc, billingQueries, logger).WithPayments(billingDeps)
 
 	entitlementsClient := entitlements.NewClient(billingQueries, distCache)
 	commands.Use(entitlements.EnforceEntitlements(entitlementsClient))
