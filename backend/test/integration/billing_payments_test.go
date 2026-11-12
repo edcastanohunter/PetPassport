@@ -25,6 +25,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/billing/providers"
 	payfake "github.com/edcastanohunter/petpassport/backend/internal/billing/providers/fake"
 	"github.com/edcastanohunter/petpassport/backend/internal/billing/providers/manual"
+	notificationsinfra "github.com/edcastanohunter/petpassport/backend/internal/notifications/infra"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/audit"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
@@ -456,5 +457,28 @@ func TestPPF5API004_RemovePaymentMethodAgainstPostgres(t *testing.T) {
 	view, err := e.queries.GetAccount(ctx, acc)
 	if err != nil || view.PaymentMethod != nil {
 		t.Fatalf("la cuenta conserva el método: %+v err=%v", view.PaymentMethod, err)
+	}
+}
+
+// PP-F5-PRD-006: el directorio de Notifications resuelve titular y
+// organizaciones de una suscripción para los avisos de impago.
+func TestPPF5PRD006_SubscriptionContactsAgainstPostgres(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	accountID, subID, _ := e.subscribedAccount(t, "Clínica Contactos")
+	var owner, org uuid.UUID
+	if err := e.pool.QueryRow(ctx, `SELECT owner_user_id FROM billing.accounts WHERE id = $1`, accountID).Scan(&owner); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.pool.QueryRow(ctx, `SELECT organization_id FROM billing.account_organizations WHERE account_id = $1`, accountID).Scan(&org); err != nil {
+		t.Fatal(err)
+	}
+	dir := notificationsinfra.NewDirectory(e.pool.Pool)
+	c, ok, err := dir.SubscriptionContacts(ctx, subID)
+	if err != nil || !ok || c.OwnerID != owner || len(c.OrgIDs) != 1 || c.OrgIDs[0] != org {
+		t.Fatalf("contactos: %+v ok=%v err=%v", c, ok, err)
+	}
+	if _, ok, err := dir.SubscriptionContacts(ctx, uuid.New()); ok || err != nil {
+		t.Fatalf("suscripción inexistente: ok=%v err=%v", ok, err)
 	}
 }

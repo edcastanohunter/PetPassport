@@ -22,12 +22,14 @@ type fakeDir struct {
 	entries  map[uuid.UUID]app.CardEntry
 	members  map[string][]uuid.UUID // org|rol
 	guardian []uuid.UUID
+	subs     map[uuid.UUID]app.BillingContacts
 }
 
 func newDir() *fakeDir {
 	return &fakeDir{
 		users: map[uuid.UUID]app.User{}, pets: map[uuid.UUID]app.Pet{}, orgs: map[uuid.UUID]app.Org{},
 		appts: map[uuid.UUID]app.Appointment{}, encs: map[uuid.UUID]app.Encounter{}, entries: map[uuid.UUID]app.CardEntry{}, members: map[string][]uuid.UUID{},
+		subs: map[uuid.UUID]app.BillingContacts{},
 	}
 }
 
@@ -61,6 +63,10 @@ func (d *fakeDir) OrgMembers(_ context.Context, org uuid.UUID, roles ...string) 
 		out = append(out, d.members[org.String()+"|"+r]...)
 	}
 	return out, nil
+}
+func (d *fakeDir) SubscriptionContacts(_ context.Context, id uuid.UUID) (app.BillingContacts, bool, error) {
+	c, ok := d.subs[id]
+	return c, ok, nil
 }
 func (d *fakeDir) FutureConfirmedGuardians(context.Context, uuid.UUID, time.Time) ([]uuid.UUID, error) {
 	return d.guardian, nil
@@ -410,6 +416,48 @@ func TestUnknownEventAndMissingDataProduceNothing(t *testing.T) {
 	// Payload corrupto: error (el outbox reintenta y termina en dead-letter).
 	if _, err := w.pl.Plan(context.Background(), eventstore.StoredEvent{Type: "AppointmentConfirmed", Payload: []byte("{")}); err == nil {
 		t.Fatal("un payload ilegible debe devolver error")
+	}
+}
+
+// TestPPF5PRD006_DunningEmailsGoToOwnerAndOrgAdmins: cada evento del ciclo de
+// impago avisa al titular y a los administradores (sin duplicados), en la
+// categoría billing; la cancelación voluntaria no envía correo.
+func TestPPF5PRD006_DunningEmailsGoToOwnerAndOrgAdmins(t *testing.T) {
+	w := newWorld()
+	sub, owner := uuid.New(), uuid.New()
+	w.dir.users[owner] = app.User{ID: owner, Email: "owner@sur.co", Locale: "es"}
+	w.dir.subs[sub] = app.BillingContacts{OwnerID: owner, OrgIDs: []uuid.UUID{w.org}}
+
+	cases := map[string]string{
+		"ChargeFailed":            "billing_payment_failed",
+		"SubscriptionRestricted":  "billing_restricted",
+		"SubscriptionCancelled":   "billing_cancelled",
+		"SubscriptionReactivated": "billing_reactivated",
+	}
+	for typ, tpl := range cases {
+		sends, _, _ := kinds(plan(t, w, event(typ, map[string]any{"subscription_id": sub, "reason": "non_payment"})))
+		if len(sends) != 2 || sends[0].Recipient.ID != owner || sends[1].Recipient.ID != w.admin {
+			t.Fatalf("%s: destinatarios %+v", typ, sends)
+		}
+		for _, s := range sends {
+			if s.Template != tpl || s.Category != domain.Billing || s.SubjectID != sub ||
+				s.Vars["link_path"] != "/org/"+w.org.String()+"/settings/billing" || s.Vars["org_name"] != "Clínica Sur" {
+				t.Fatalf("%s: %+v", typ, s)
+			}
+		}
+	}
+
+	// El titular que además administra la org recibe un solo correo.
+	w.dir.subs[sub] = app.BillingContacts{OwnerID: w.admin, OrgIDs: []uuid.UUID{w.org}}
+	if sends, _, _ := kinds(plan(t, w, event("ChargeFailed", map[string]any{"subscription_id": sub}))); len(sends) != 1 {
+		t.Fatalf("sin deduplicar: %+v", sends)
+	}
+	// Cancelación voluntaria y suscripción desconocida: nada.
+	if acts := plan(t, w, event("SubscriptionCancelled", map[string]any{"subscription_id": sub, "reason": "customer"})); len(acts) != 0 {
+		t.Fatalf("cancelación voluntaria: %+v", acts)
+	}
+	if acts := plan(t, w, event("ChargeFailed", map[string]any{"subscription_id": uuid.New()})); len(acts) != 0 {
+		t.Fatalf("suscripción desconocida: %+v", acts)
 	}
 }
 

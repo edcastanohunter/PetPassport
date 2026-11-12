@@ -1,0 +1,7 @@
+We could not charge the PetPassport subscription for {{.V.org_name}} with the payment method on file.
+
+We will retry automatically. Everything keeps working in the meantime; if the payment is not completed within 14 days, the organization will become read-only until the payment is settled.
+
+You can review or change the payment method in the billing settings.
+
+Review billing: {{.V.link}}

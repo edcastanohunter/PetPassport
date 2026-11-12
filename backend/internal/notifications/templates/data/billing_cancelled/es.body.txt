@@ -1,0 +1,5 @@
+La suscripción de PetPassport de {{.V.org_name}} se canceló porque el pago no se regularizó en 60 días.
+
+La información sigue disponible para consulta y exportación desde la configuración de facturación. Puedes contratar de nuevo un plan en cualquier momento.
+
+Ir a facturación: {{.V.link}}
