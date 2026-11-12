@@ -55,6 +55,8 @@ tags:
     description: Solicitudes de cotización, pedidos de farmacia y ciclo de vida de pedidos para tutores (F4 M4.2)
   - name: pharmacy-portal
     description: Operaciones del portal farmacéutico, cotización, dispensación y configuración (F4 M4.2)
+  - name: billing
+    description: Planes, cuentas de facturación, suscripciones y entitlements (F5 M5.1)
 security:
   - bearerAuth: []
 paths:
@@ -5940,6 +5942,444 @@ paths:
                 $ref: "#/components/schemas/PharmacyStatsResponse"
         default:
           $ref: "#/components/responses/Problem"
+
+  /plans:
+    get:
+      operationId: listPlans
+      summary: Listar planes de facturación
+      description: Devuelve el catálogo de planes vigentes según tipo (clinic o pharmacy) y país (PP-F5-API-001).
+      tags: [billing]
+      security: []
+      x-pp-action: public
+      parameters:
+        - name: kind
+          in: query
+          description: Tipo de organización (clinic o pharmacy)
+          schema:
+            type: string
+            enum: [clinic, pharmacy]
+        - name: country
+          in: query
+          description: Código ISO de dos letras del país (p. ej. CO)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de planes disponibles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /plans/{code}:
+    parameters:
+      - $ref: "#/components/parameters/PlanCode"
+    get:
+      operationId: getPlan
+      summary: Detalle de un plan de facturación
+      description: Devuelve el plan vigente correspondiente al código indicado (PP-F5-API-001).
+      tags: [billing]
+      security: []
+      x-pp-action: public
+      responses:
+        "200":
+          description: Plan encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlan"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/plans:
+    post:
+      operationId: createPlan
+      summary: Crear un nuevo plan o versión (super_admin)
+      description: Registra una nueva definición de plan (PP-F5-API-001).
+      tags: [admin, billing]
+      x-pp-action: admin:plans:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanInput"
+      responses:
+        "201":
+          description: Plan creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlan"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /admin/plans/{code}:
+    parameters:
+      - $ref: "#/components/parameters/PlanCode"
+    put:
+      operationId: updatePlan
+      summary: Actualizar plan existente (super_admin)
+      description: Actualiza la definición del plan (PP-F5-API-001).
+      tags: [admin, billing]
+      x-pp-action: admin:plans:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanInput"
+      responses:
+        "200":
+          description: Plan actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPlan"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/billing:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgBilling
+      summary: Resumen de facturación de la organización
+      description: Consulta el estado de cuenta, método de pago, suscripción y entitlements de la organización (PP-F5-API-002).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Resumen de facturación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgBillingSummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts:
+    post:
+      operationId: openBillingAccount
+      summary: Abrir cuenta de facturación
+      description: Crea una cuenta de facturación vinculando la entidad legal y la organización inicial (PP-F5-API-002).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenBillingAccountRequest"
+      responses:
+        "201":
+          description: Cuenta de facturación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingAccount"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    patch:
+      operationId: updateBillingAccount
+      summary: Actualizar datos fiscales de cuenta de facturación
+      description: Modifica los datos fiscales o entidad legal de la cuenta (PP-F5-API-002).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBillingAccountRequest"
+      responses:
+        "200":
+          description: Cuenta de facturación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingAccount"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/close:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    post:
+      operationId: closeBillingAccount
+      summary: Cerrar cuenta de facturación
+      description: Cierra la cuenta de facturación si no tiene suscripciones activas (PP-F5-API-002).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseBillingAccountRequest"
+      responses:
+        "200":
+          description: Cuenta de facturación cerrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingAccount"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/subscriptions:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: listAccountSubscriptions
+      summary: Listar suscripciones de una cuenta
+      description: Devuelve todas las suscripciones de la cuenta (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Lista de suscripciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createSubscription
+      summary: Crear suscripción
+      description: Contrata un plan y emite el cargo inicial correspondiente (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionRequest"
+      responses:
+        "201":
+          description: Suscripción creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/subscriptions/preview:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    post:
+      operationId: previewSubscription
+      summary: Previsualizar cálculo de suscripción o prorrateo
+      description: Calcula el subtotal, impuestos, prorrateo y total a cobrar sin persistir cambios (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionPreviewRequest"
+      responses:
+        "200":
+          description: Cálculo de cotización/prorrateo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPreviewResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    get:
+      operationId: getSubscription
+      summary: Detalle de suscripción
+      description: Obtiene el estado actual de la suscripción con su periodo, dunning y cargos (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Suscripción
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}/change:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: changeSubscriptionPlan
+      summary: Cambiar plan o ciclo de la suscripción
+      description: Upgrade inmediato con prorrateo o downgrade programado al final del periodo (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeSubscriptionPlanRequest"
+      responses:
+        "200":
+          description: Suscripción modificada o cambio programado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}/seats:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: adjustSubscriptionSeats
+      summary: Ajustar asientos de la suscripción
+      description: Incrementa o reduce asientos validados contra el uso actual de profesionales (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustSubscriptionSeatsRequest"
+      responses:
+        "200":
+          description: Suscripción actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: cancelSubscription
+      summary: Cancelar suscripción
+      description: Cancela la suscripción al final del ciclo o de forma inmediata (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelSubscriptionRequest"
+      responses:
+        "200":
+          description: Suscripción cancelada o programada para cancelación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}/resume:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: resumeSubscription
+      summary: Reanudar suscripción cancelada
+      description: Revierte la cancelación programada para fin de periodo (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "200":
+          description: Suscripción reanudada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /subscriptions/{id}/retry-charge:
+    parameters:
+      - $ref: "#/components/parameters/SubscriptionId"
+    post:
+      operationId: retrySubscriptionCharge
+      summary: Reintentar cobro de suscripción
+      description: Dispara un reintento manual inmediato del último cargo pendiente o fallido (PP-F5-API-003).
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "200":
+          description: Resultado de la suscripción tras el intento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/entitlements:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgEntitlements
+      summary: Consultar entitlements de la organización
+      description: Devuelve el conjunto de capacidades, cuotas, asientos y estado de suscripción de la organización (PP-F5-API-006).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Entitlements vigentes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementSet"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/usage:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: getOrgUsage
+      summary: Consultar contadores de uso del periodo
+      description: Devuelve el consumo actual de cuotas y recursos de la organización contra sus límites (PP-F5-API-006).
+      tags: [billing]
+      x-pp-action: billing:read
+      parameters:
+        - name: from
+          in: query
+          description: Fecha inicio de consulta
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: Fecha fin de consulta
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Reporte de uso del periodo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageReportResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -6126,6 +6566,26 @@ components:
       schema:
         type: string
         format: uuid
+    BillingAccountId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SubscriptionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PlanCode:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
   headers:
     X-PP-Freshness:
       description: Retraso de la proyección derivada, `lag=<segundos>` (FE-014, API-013).
@@ -10632,6 +11092,566 @@ components:
           type: string
         attestation:
           type: boolean
+
+    VolumeTier:
+      type: object
+      required: [up_to, monthly_price]
+      properties:
+        up_to:
+          type: integer
+          description: Volumen máximo incluido en este escalón
+        monthly_price:
+          type: integer
+          description: Precio mensual base para este escalón en centavos
+        overage_unit_price:
+          type: integer
+          description: Precio unitario por exceso en centavos
+
+    PlanPricing:
+      type: object
+      required: [model, currency]
+      properties:
+        model:
+          type: string
+          enum: [per_seat, tiered_volume, flat]
+        currency:
+          type: string
+          example: COP
+        monthly:
+          type: integer
+          description: Precio base mensual en centavos
+        annual:
+          type: integer
+          description: Precio base anual en centavos
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeTier"
+
+    PlanSeats:
+      type: object
+      required: [min, max, included]
+      properties:
+        min:
+          type: integer
+        max:
+          type: integer
+        included:
+          type: integer
+
+    BillingPlan:
+      type: object
+      required: [code, version, kind, name, pricing, trial_days, seats, quotas, features, effective_from, status]
+      properties:
+        code:
+          type: string
+          example: clinic_standard
+        version:
+          type: integer
+          example: 1
+        kind:
+          type: string
+          enum: [clinic, pharmacy]
+        name:
+          type: string
+          example: Estándar
+        description:
+          type: string
+        pricing:
+          $ref: "#/components/schemas/PlanPricing"
+        trial_days:
+          type: integer
+          example: 30
+        seats:
+          $ref: "#/components/schemas/PlanSeats"
+        quotas:
+          type: object
+          additionalProperties:
+            type: integer
+        features:
+          type: array
+          items:
+            type: string
+        effective_from:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [draft, published, retired]
+
+    PlanListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingPlan"
+
+    PlanInput:
+      type: object
+      required: [code, kind, name, pricing, trial_days, seats, quotas, features, effective_from]
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+          enum: [clinic, pharmacy]
+        name:
+          type: string
+        description:
+          type: string
+        pricing:
+          $ref: "#/components/schemas/PlanPricing"
+        trial_days:
+          type: integer
+        seats:
+          $ref: "#/components/schemas/PlanSeats"
+        quotas:
+          type: object
+          additionalProperties:
+            type: integer
+        features:
+          type: array
+          items:
+            type: string
+        effective_from:
+          type: string
+          format: date-time
+
+    TaxID:
+      type: object
+      required: [country, value, kind]
+      properties:
+        country:
+          type: string
+          example: CO
+        value:
+          type: string
+          example: "901234567-1"
+        kind:
+          type: string
+          example: NIT
+
+    LegalEntity:
+      type: object
+      required: [kind, legal_name, tax_id, address, email]
+      properties:
+        kind:
+          type: string
+          enum: [person, company]
+        legal_name:
+          type: string
+        tax_id:
+          $ref: "#/components/schemas/TaxID"
+        address:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        tax_regime:
+          type: string
+
+    PaymentMethodSummary:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          example: card
+        last4:
+          type: string
+          example: "4242"
+        expires_at:
+          type: string
+          example: "12/28"
+        brand:
+          type: string
+          example: visa
+
+    BillingAccount:
+      type: object
+      required: [id, legal_entity, country, currency, organizations, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        legal_entity:
+          $ref: "#/components/schemas/LegalEntity"
+        country:
+          type: string
+          example: CO
+        currency:
+          type: string
+          example: COP
+        payment_method:
+          $ref: "#/components/schemas/PaymentMethodSummary"
+        organizations:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+
+    OpenBillingAccountRequest:
+      type: object
+      required: [legal_entity, organization_id]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        legal_entity:
+          $ref: "#/components/schemas/LegalEntity"
+
+    UpdateBillingAccountRequest:
+      type: object
+      properties:
+        legal_entity:
+          $ref: "#/components/schemas/LegalEntity"
+
+    CloseBillingAccountRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    PlanRef:
+      type: object
+      required: [code, version, name]
+      properties:
+        code:
+          type: string
+        version:
+          type: integer
+        name:
+          type: string
+
+    SubscriptionSeats:
+      type: object
+      required: [purchased, used]
+      properties:
+        purchased:
+          type: integer
+        used:
+          type: integer
+
+    SubscriptionPeriod:
+      type: object
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+
+    PendingChange:
+      type: object
+      required: [effective_at]
+      properties:
+        plan_code:
+          type: string
+        seats:
+          type: integer
+        tier:
+          type: integer
+        cycle:
+          type: string
+        effective_at:
+          type: string
+          format: date-time
+
+    DunningInfo:
+      type: object
+      required: [grace_ends_at]
+      properties:
+        grace_ends_at:
+          type: string
+          format: date-time
+        next_attempt_at:
+          type: string
+          format: date-time
+
+    SubscriptionCharge:
+      type: object
+      required: [id, number, amount, currency, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+        due_at:
+          type: string
+          format: date-time
+        paid_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    Subscription:
+      type: object
+      required: [id, billing_account_id, kind, plan, cycle, status, current_period, cancel_at_period_end, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        billing_account_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [clinic, pharmacy]
+        plan:
+          $ref: "#/components/schemas/PlanRef"
+        seats:
+          $ref: "#/components/schemas/SubscriptionSeats"
+        tier:
+          type: integer
+        cycle:
+          type: string
+          enum: [monthly, annual]
+        status:
+          type: string
+          enum: [trialing, active, past_due, grace_period, restricted, cancelled]
+        trial_ends_at:
+          type: string
+          format: date-time
+        current_period:
+          $ref: "#/components/schemas/SubscriptionPeriod"
+        pending_change:
+          $ref: "#/components/schemas/PendingChange"
+        dunning:
+          $ref: "#/components/schemas/DunningInfo"
+        cancel_at_period_end:
+          type: boolean
+        cancelled_at:
+          type: string
+          format: date-time
+        cancel_reason:
+          type: string
+        charges:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionCharge"
+        created_at:
+          type: string
+          format: date-time
+
+    SubscriptionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+
+    PreviewLine:
+      type: object
+      required: [description, amount]
+      properties:
+        description:
+          type: string
+        amount:
+          type: integer
+
+    SubscriptionPreviewRequest:
+      type: object
+      required: [kind, plan_code, cycle]
+      properties:
+        kind:
+          type: string
+          enum: [clinic, pharmacy]
+        plan_code:
+          type: string
+        seats:
+          type: integer
+        tier:
+          type: integer
+        cycle:
+          type: string
+          enum: [monthly, annual]
+        coupon:
+          type: string
+
+    SubscriptionPreviewResponse:
+      type: object
+      required: [currency, subtotal, tax, total, lines, next_charge_at]
+      properties:
+        currency:
+          type: string
+        subtotal:
+          type: integer
+        tax:
+          type: integer
+        total:
+          type: integer
+        proration_credit:
+          type: integer
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviewLine"
+        next_charge_at:
+          type: string
+          format: date-time
+
+    CreateSubscriptionRequest:
+      type: object
+      required: [kind, plan_code, cycle]
+      properties:
+        kind:
+          type: string
+          enum: [clinic, pharmacy]
+        plan_code:
+          type: string
+        seats:
+          type: integer
+        tier:
+          type: integer
+        cycle:
+          type: string
+          enum: [monthly, annual]
+        coupon:
+          type: string
+
+    ChangeSubscriptionPlanRequest:
+      type: object
+      properties:
+        plan_code:
+          type: string
+        seats:
+          type: integer
+        tier:
+          type: integer
+        cycle:
+          type: string
+          enum: [monthly, annual]
+
+    AdjustSubscriptionSeatsRequest:
+      type: object
+      required: [delta]
+      properties:
+        delta:
+          type: integer
+
+    CancelSubscriptionRequest:
+      type: object
+      required: [at_period_end]
+      properties:
+        at_period_end:
+          type: boolean
+        reason:
+          type: string
+
+    QuotaItem:
+      type: object
+      required: [limit, used, soft_limit, period_end]
+      properties:
+        limit:
+          type: integer
+        used:
+          type: integer
+        soft_limit:
+          type: integer
+        period_end:
+          type: string
+          format: date-time
+
+    EntitlementSet:
+      type: object
+      required: [organization_id, plan_code, status, seats, quotas, features]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        plan_code:
+          type: string
+        status:
+          type: string
+        grace_period_until:
+          type: string
+          format: date-time
+        trial_ends_at:
+          type: string
+          format: date-time
+        seats:
+          type: object
+          required: [limit, used]
+          properties:
+            limit:
+              type: integer
+            used:
+              type: integer
+        quotas:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/QuotaItem"
+        features:
+          type: array
+          items:
+            type: string
+
+    OrgBillingSummary:
+      type: object
+      properties:
+        account:
+          $ref: "#/components/schemas/BillingAccount"
+        subscription:
+          $ref: "#/components/schemas/Subscription"
+        entitlements:
+          $ref: "#/components/schemas/EntitlementSet"
+
+    UsageCounterItem:
+      type: object
+      required: [counter_key, used, period_start, period_end]
+      properties:
+        counter_key:
+          type: string
+        used:
+          type: integer
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+
+    UsageReportResponse:
+      type: object
+      required: [organization_id, period_start, period_end, counters]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        period_start:
+          type: string
+          format: date-time
+        period_end:
+          type: string
+          format: date-time
+        counters:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/UsageCounterItem"
+
 
   responses:
     EncounterOK:

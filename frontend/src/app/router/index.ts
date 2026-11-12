@@ -76,6 +76,7 @@ const PharmacyOrdersView = () => import('@/features/pharmacy/views/PharmacyOrder
 const PharmacyOrderDetailView = () =>
   import('@/features/pharmacy/views/PharmacyOrderDetailView.vue')
 const PharmacySettingsView = () => import('@/features/pharmacy/views/PharmacySettingsView.vue')
+const PricingPage = () => import('@/features/billing/views/PricingPage.vue')
 const StatusPage = () => import('@/features/status/StatusPage.vue')
 
 const orgMeta = {
@@ -95,6 +96,12 @@ export function createAppRouter() {
     history: createWebHistory(),
     routes: [
       { path: '/', name: 'home', component: HomePage, meta: { layout: 'public' } },
+      {
+        path: '/pricing',
+        name: 'pricing',
+        component: PricingPage,
+        meta: { layout: 'public' },
+      },
       {
         path: '/directory',
         name: 'directory',

@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
 // Comandos del agregado Organization (docs/phase-1/02 §4.1). Los de admin
@@ -111,6 +113,19 @@ type InviteMember struct {
 // CommandName implementa bus.Command.
 func (InviteMember) CommandName() string { return "partnernetwork.InviteMember" }
 
+// Consumes implementa kernel.ConsumingCommand (PP-F5-ARQ-004).
+func (c InviteMember) Consumes() kernel.Requirement {
+	if c.Role == "veterinarian" {
+		return kernel.SeatReq()
+	}
+	return kernel.Requirement{}
+}
+
+// TargetOrgID implementa kernel.ConsumingCommand.
+func (c InviteMember) TargetOrgID() uuid.UUID {
+	return c.OrganizationID
+}
+
 // RevokeInvitation revoca una invitación pendiente.
 type RevokeInvitation struct {
 	OrganizationID uuid.UUID
@@ -168,3 +183,16 @@ type UpdateDirectoryListing struct {
 
 // CommandName implementa bus.Command.
 func (UpdateDirectoryListing) CommandName() string { return "partnernetwork.UpdateDirectoryListing" }
+
+// Consumes implementa kernel.ConsumingCommand (PP-F5-ARQ-004).
+func (c UpdateDirectoryListing) Consumes() kernel.Requirement {
+	if c.Listed {
+		return kernel.FeatureReq("directory")
+	}
+	return kernel.Requirement{}
+}
+
+// TargetOrgID implementa kernel.ConsumingCommand.
+func (c UpdateDirectoryListing) TargetOrgID() uuid.UUID {
+	return c.OrganizationID
+}

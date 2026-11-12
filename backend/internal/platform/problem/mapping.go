@@ -140,6 +140,18 @@ var titles = map[Code]string{
 	Code("QUOTE_REQUEST_OPEN"):        "Hay una solicitud de cotización abierta",
 	Code("EXTERNAL_UPLOAD_LIMIT"):     "Límite de imágenes superado",
 	Code("EMPTY_IMAGES"):              "Imágenes no proporcionadas",
+
+	// Billing (PP-F5-API-012, M5.1)
+	PlanLimitReached:          "Límite del plan alcanzado",
+	SubscriptionRestricted:    "Suscripción restringida",
+	PaymentMethodRequired:     "Método de pago requerido",
+	PaymentMethodInvalid:      "Método de pago inválido",
+	SeatsBelowUsage:           "Asientos por debajo del uso",
+	PlanNotAvailable:          "Plan no disponible",
+	PlanChangePending:         "Cambio de plan pendiente",
+	TaxIDInvalid:              "Identificación fiscal inválida",
+	LegalEntityIncomplete:     "Entidad legal incompleta",
+	OrganizationAlreadyBilled: "Organización ya facturada",
 }
 
 func titleFor(c Code) string {

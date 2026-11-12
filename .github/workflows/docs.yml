@@ -17,7 +17,7 @@ jobs:
       - name: specs status summary
         run: scripts/specs-status.sh
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@v19
+        uses: DavidAnson/markdownlint-cli2-action@v25
         with:
           globs: "docs/**/*.md"
           config: .markdownlint.yaml

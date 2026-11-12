@@ -1,0 +1,9 @@
+{
+  "account_id": "01930000-0000-7000-8000-000000000001",
+  "payment_method": {
+    "provider": "wompi",
+    "token": "tok_test_12345",
+    "kind": "card"
+  },
+  "at": "2026-11-10T12:00:00Z"
+}

@@ -143,6 +143,10 @@ func quoteReqRes(s suitePersona) Resource {
 	}
 }
 
+func billingRes(s suitePersona) Resource {
+	return BillingResource{OrganizationID: s.org}
+}
+
 func orderRes(s suitePersona) Resource {
 	return OrderResource{
 		ID:            uuid.MustParse("01930000-0000-7000-8000-00000000d002"),
@@ -285,6 +289,17 @@ var suite = map[Action][]suiteRow{
 	OrderRead:        {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
 	OrderCancel:      {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, Y}}},
 	OrderRate:        {{orderRes, [11]bool{Y, N, N, N, N, N, N, N, N, N, N}}},
+
+	// Facturación (PP-F5-API-001..003, 006)
+	BillingRead: {
+		{orgRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
+		{billingRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
+	},
+	BillingManage: {
+		{orgRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
+		{billingRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
+	},
+	AdminPlansWrite: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

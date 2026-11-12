@@ -17,6 +17,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/edcastanohunter/petpassport/backend/api/gen"
+	billingapp "github.com/edcastanohunter/petpassport/backend/internal/billing/app"
+	billinghttp "github.com/edcastanohunter/petpassport/backend/internal/billing/http"
+	billinginfra "github.com/edcastanohunter/petpassport/backend/internal/billing/infra"
+	billingproviders "github.com/edcastanohunter/petpassport/backend/internal/billing/providers"
+	fakebilling "github.com/edcastanohunter/petpassport/backend/internal/billing/providers/fake"
 	clinicalapp "github.com/edcastanohunter/petpassport/backend/internal/clinical/app"
 	clinicalhttp "github.com/edcastanohunter/petpassport/backend/internal/clinical/http"
 	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
@@ -47,6 +52,7 @@ import (
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/config"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/db"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/egress"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/entitlements"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/eventstore"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/httpserver"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/idempotency"
@@ -141,6 +147,7 @@ func run() error {
 	schedulinginfra.RegisterEvents(registry)
 	prescriptioninfra.RegisterEvents(registry)
 	pharmacyinfra.RegisterEvents(registry)
+	billinginfra.RegisterEvents(registry)
 	if err := registry.Validate(); err != nil {
 		return fmt.Errorf("eventstore registry: %w", err)
 	}
@@ -508,6 +515,19 @@ func run() error {
 		WithDispatcher(partnerDispatcher)
 	orgHandlers.WithPool(pool.Pool)
 
+	// Billing (PP-F5-DOM-001..011, ARQ-001..005)
+	billingAccountRepo := billinginfra.NewBillingAccountRepository(store, registry)
+	billingSubRepo := billinginfra.NewSubscriptionRepository(store, registry)
+	billingQueries := billinginfra.NewQueries(pool.Pool)
+	billinginfra.RegisterSyncProjectors(runner, registry)
+	fakePayment := fakebilling.NewFakePaymentProvider()
+	billingRouter := billingproviders.NewRouter(fakePayment, nil)
+	billingSvc := billingapp.NewBillingService(billingAccountRepo, billingSubRepo, billingQueries, billingRouter, unit, billinginfra.NewSyncProjector(runner))
+	billingHandlers := billinghttp.NewBillingHandlers(billingSvc, billingQueries, logger)
+
+	entitlementsClient := entitlements.NewClient(billingQueries, distCache)
+	commands.Use(entitlements.EnforceEntitlements(entitlementsClient))
+
 	servers := httpserver.New(cfg.HTTPAddr, cfg.InternalAddr, httpserver.Options{
 		Logger: logger, Registry: tel.Registry, Health: health,
 		CORSOrigins: cfg.CORSOrigins, Dev: cfg.IsDev(),
@@ -523,6 +543,7 @@ func run() error {
 			NotificationHandlers: notificationHandlers,
 			PrescriptionHandlers: prescriptionHandlers,
 			PharmacyHandlers:     pharmacyHandlers,
+			BillingHandlers:      billingHandlers,
 		},
 		Guard:            guard.Middleware,
 		PartnerGuard:     partnerGuard.Middleware,

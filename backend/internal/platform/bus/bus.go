@@ -28,16 +28,41 @@ type Result struct {
 // Handler ejecuta un comando.
 type Handler func(ctx context.Context, cmd Command) (Result, error)
 
+// Middleware envuelve la ejecución de un Handler de comando.
+type Middleware func(Handler) Handler
+
 // Bus despacha comandos a sus handlers por nombre.
 type Bus struct {
-	handlers map[string]Handler
+	handlers   map[string]Handler
+	prototypes map[string]Command
+	middleware []Middleware
 
 	commands *prometheus.CounterVec
 	duration *prometheus.HistogramVec
 }
 
 // New construye el bus.
-func New() *Bus { return &Bus{handlers: map[string]Handler{}} }
+func New() *Bus {
+	return &Bus{
+		handlers:   map[string]Handler{},
+		prototypes: map[string]Command{},
+	}
+}
+
+// Use registra middlewares que interceptan la ejecución de comandos.
+func (b *Bus) Use(m ...Middleware) *Bus {
+	b.middleware = append(b.middleware, m...)
+	return b
+}
+
+// Commands devuelve prototipos de todos los comandos registrados en el bus.
+func (b *Bus) Commands() []Command {
+	res := make([]Command, 0, len(b.prototypes))
+	for _, c := range b.prototypes {
+		res = append(res, c)
+	}
+	return res
+}
 
 // Instrument registra commands_total{command,result} y
 // command_duration_seconds{command} (INF-007). Sin llamar = sin métricas.
@@ -63,6 +88,7 @@ func (b *Bus) Register(cmd Command, h Handler) {
 		panic("bus: comando ya registrado: " + name)
 	}
 	b.handlers[name] = h
+	b.prototypes[name] = cmd
 }
 
 // SystemOrigin identifica un comando despachado por el worker con
@@ -98,6 +124,12 @@ func (b *Bus) Dispatch(ctx context.Context, cmd Command) (Result, error) {
 	if !ok {
 		return Result{}, fmt.Errorf("bus: sin handler para %T", cmd)
 	}
+
+	// Encadena los middlewares aplicados
+	for i := len(b.middleware) - 1; i >= 0; i-- {
+		h = b.middleware[i](h)
+	}
+
 	if b.commands == nil {
 		return h(ctx, cmd)
 	}

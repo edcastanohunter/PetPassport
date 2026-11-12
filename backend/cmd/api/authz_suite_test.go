@@ -260,6 +260,7 @@ func newSuiteHandlers() apiHandlers {
 		CredentialHandlers:   newSuiteCredentialHandlers(identityHandlers, logger),
 		PrescriptionHandlers: newSuitePrescriptionHandlers(logger),
 		PharmacyHandlers:     newSuitePharmacyHandlers(logger),
+		BillingHandlers:      newSuiteBillingHandlers(logger),
 	}
 }
 
@@ -379,6 +380,8 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			field.Set(reflect.ValueOf(rxID).Convert(f.Type))
 		case f.Name == "Token":
 			field.SetString("tok_tok_tok_tok_tok_tok_tok")
+		case f.Name == "Code":
+			field.SetString("clinic_standard")
 		case f.Name == "Body" && f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct &&
 			!strings.Contains(f.Type.Elem().PkgPath(), "mime"):
 			field.Set(reflect.New(f.Type.Elem()))
@@ -393,6 +396,9 @@ func call(t *testing.T, h apiHandlers, op operation, who persona) (status int) {
 			}
 			if pf := field.Elem().FieldByName("PharmacyId"); pf.IsValid() && pf.CanSet() && pf.Kind() == reflect.Array {
 				pf.Set(reflect.ValueOf(orgActive).Convert(pf.Type()))
+			}
+			if of := field.Elem().FieldByName("OrganizationId"); of.IsValid() && of.CanSet() && of.Kind() == reflect.Array {
+				of.Set(reflect.ValueOf(who.homeOrg).Convert(of.Type()))
 			}
 		}
 	}
