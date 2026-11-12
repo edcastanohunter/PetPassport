@@ -6,8 +6,9 @@ import { api, type BillingPlan } from '@/shared/api/client'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import { useOrgStore } from '@/features/orgs/orgStore'
 import CheckoutModal from '../components/CheckoutModal.vue'
+import { formatMoney as fmt } from '../money'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const session = useSessionStore()
 const orgStore = useOrgStore()
@@ -85,19 +86,16 @@ function getPlanPriceCents(plan: BillingPlan) {
   return plan.pricing.monthly ?? 0
 }
 
-function formatMoney(cents: number, currency = 'COP') {
-  if (cents === 0) return t('billing.free')
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: currency,
-    maximumFractionDigits: 0,
-  }).format(cents / 100)
+// Los precios de la API vienen en unidades de la moneda, no en centavos.
+function formatMoney(amount: number, currency = 'COP') {
+  if (amount === 0) return t('billing.free')
+  return fmt(amount, currency, locale.value)
 }
 
 function onSubscribed() {
   // Redirigir al resumen de la organización tras contratar
   if (userOrg.value) {
-    router.push(`/orgs/${userOrg.value.id}`)
+    router.push(`/org/${userOrg.value.id}/settings/billing`)
   }
 }
 </script>
