@@ -216,6 +216,7 @@ func TestEvents_Golden(t *testing.T) {
 				Amount:         50000,
 				Reason:         "Ajuste comercial",
 				RefundedAt:     fixedTime,
+				RefundedTotal:  50000,
 			},
 		},
 		{

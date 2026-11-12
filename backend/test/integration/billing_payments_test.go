@@ -59,6 +59,9 @@ type billingEnv struct {
 	queries  *billinginfra.Queries
 	fake     *payfake.FakePaymentProvider
 	archive  *memArchive
+	store    *eventstore.Store
+	unit     *db.UnitOfWork
+	projects *billinginfra.SyncProjector
 }
 
 func newBillingEnv(t *testing.T) *billingEnv {
@@ -86,6 +89,7 @@ func newBillingEnv(t *testing.T) *billingEnv {
 		pool: pool, ledger: billinginfra.NewLedger(pool.Pool), invoices: billinginfra.NewInvoiceStore(pool.Pool),
 		queries: billinginfra.NewQueries(pool.Pool), fake: payfake.NewFakePaymentProvider().WithSecret("it-secret"),
 		archive: &memArchive{objects: map[string][]byte{}},
+		store:   store, unit: unit, projects: projects,
 	}
 	router := providers.NewRouter(e.ledger,
 		[]providers.PaymentProvider{e.fake, manual.New()},
@@ -307,5 +311,51 @@ func TestPPF5API007_AdminQueriesAgainstPostgres(t *testing.T) {
 	var audited int
 	if err := e.pool.QueryRow(ctx, `SELECT count(*) FROM platform.audit_log WHERE target_id = $1`, chargeID).Scan(&audited); err != nil || audited != 1 {
 		t.Fatalf("entradas de auditoría = %d err=%v", audited, err)
+	}
+}
+
+// billingSnapshot serializa el read model de Billing sin las marcas de tiempo
+// que el proyector fija con now().
+func (e *billingEnv) billingSnapshot(t *testing.T) string {
+	t.Helper()
+	var out string
+	err := e.pool.QueryRow(context.Background(), `
+SELECT concat_ws(' | ',
+  (SELECT jsonb_agg(to_jsonb(a) - 'updated_at' ORDER BY a.id) FROM billing.accounts a)::text,
+  (SELECT jsonb_agg(to_jsonb(s) - 'updated_at' ORDER BY s.id) FROM billing.subscriptions s)::text,
+  (SELECT jsonb_agg(to_jsonb(c) - 'updated_at' ORDER BY c.id) FROM billing.charges c)::text,
+  (SELECT jsonb_agg(to_jsonb(n) - 'computed_at' ORDER BY n.organization_id) FROM billing.entitlements n)::text)`).Scan(&out)
+	if err != nil {
+		t.Fatalf("snapshot del read model: %v", err)
+	}
+	return out
+}
+
+// PP-F5-DOM-007: proyectar dos veces los mismos eventos deja el mismo estado
+// (cobro, reembolso parcial y ajuste administrativo incluidos).
+func TestPPF5DOM007_BillingProjectorIsIdempotent(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	_, subID, chargeID := e.subscribedAccount(t, "Clínica Veterinaria Central")
+	if err := e.pay.CollectCharge(ctx, chargeID); err != nil {
+		t.Fatalf("cobrar: %v", err)
+	}
+	if _, err := e.pay.RefundCharge(ctx, chargeID, 5000, "Compensación por incidencia"); err != nil {
+		t.Fatalf("reembolsar: %v", err)
+	}
+	if err := e.pay.AdjustSubscription(ctx, subID, billingapp.AdjustCmd{Kind: "credit", Amount: 20000, Reason: "Cortesía por incidencia"}); err != nil {
+		t.Fatalf("ajustar: %v", err)
+	}
+	before := e.billingSnapshot(t)
+
+	events, err := e.store.ReadAll(ctx, 0, 1000)
+	if err != nil || len(events) == 0 {
+		t.Fatalf("leer eventos: %d err=%v", len(events), err)
+	}
+	if err := e.unit.Do(ctx, func(ctx context.Context) error { return e.projects.Apply(ctx, events) }); err != nil {
+		t.Fatalf("reproyectar: %v", err)
+	}
+	if after := e.billingSnapshot(t); after != before {
+		t.Fatalf("el read model cambió al proyectar dos veces\nantes:   %s\ndespués: %s", before, after)
 	}
 }

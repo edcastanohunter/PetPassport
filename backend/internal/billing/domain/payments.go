@@ -195,6 +195,7 @@ func (s *Subscription) RefundCharge(chargeID uuid.UUID, amount float64, reason, 
 		RefundedAt:     now.UTC(),
 		RefundRef:      refundRef,
 		Provider:       provider,
+		RefundedTotal:  RoundCents(s.charges[chargeID].Refunded + amount),
 	})
 	return nil
 }

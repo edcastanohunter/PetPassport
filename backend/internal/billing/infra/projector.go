@@ -300,13 +300,20 @@ WHERE id = $1`
 		}
 
 	case domain.ChargeRefunded:
+		// Idempotente (ARQ-006): con RefundedTotal se fija el acumulado en vez de
+		// sumar. Los eventos anteriores a M5.2 no lo traen y conservan la suma.
 		const q = `
-UPDATE billing.charges SET
-  refunded = refunded + $2,
-  status = CASE WHEN (refunded + $2) >= total THEN 'refunded' ELSE 'partially_refunded' END,
+WITH next AS (
+  SELECT CASE WHEN $4::numeric > 0 THEN GREATEST(refunded, $4::numeric) ELSE refunded + $2::numeric END AS refunded
+  FROM billing.charges WHERE id = $1
+)
+UPDATE billing.charges c SET
+  refunded = next.refunded,
+  status = CASE WHEN next.refunded >= c.total THEN 'refunded' ELSE 'partially_refunded' END,
   updated_at = $3
-WHERE id = $1`
-		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.Amount, ev.RefundedAt); err != nil {
+FROM next
+WHERE c.id = $1`
+		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.Amount, ev.RefundedAt, ev.RefundedTotal); err != nil {
 			return fmt.Errorf("project ChargeRefunded: %w", err)
 		}
 

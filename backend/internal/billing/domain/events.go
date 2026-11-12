@@ -206,6 +206,10 @@ type ChargeRefunded struct {
 	// RefundRef y Provider identifican el reembolso en el proveedor (aditivos, M5.2).
 	RefundRef string `json:"refund_ref,omitempty"`
 	Provider  string `json:"provider,omitempty"`
+	// RefundedTotal es el total reembolsado del cargo tras este reembolso
+	// (aditivo, M5.2). Hace idempotente la proyección: reaplicar el evento no
+	// vuelve a sumar Amount. Cero en eventos anteriores a M5.2.
+	RefundedTotal float64 `json:"refunded_total,omitempty"`
 }
 
 func (ChargeRefunded) EventName() string  { return "ChargeRefunded" }
