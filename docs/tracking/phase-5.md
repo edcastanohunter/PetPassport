@@ -8,7 +8,7 @@
 | PP-F5-PRD-001 | PRD | Página pública de planes y precios desde catálogo | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-002 | PRD | Prueba de 30 días y vencimiento | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-003 | PRD | Contratar, cambiar plan y asientos con prorrateo | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Backend: tokenización en el proveedor, cobro recurrente y reintentos. Falta la UI (FE-003), PSE y verificar Wompi contra su sandbox |
+| PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Tokenización en el proveedor (widget en /org/:orgId/settings/billing), cobro recurrente y reintentos. Falta PSE y verificar Wompi contra su sandbox |
 | PP-F5-PRD-005 | PRD | Facturas electrónicas válidas | MUST | M5.2 | EN_PROGRESO | | #38 | Emisión, estados, contingencia pdf_local y notas crédito con adaptador fake. Falta el adaptador DIAN (proveedor sin decidir, ADR-022 §4) |
 | PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | IMPLEMENTADO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días, emails de la categoría billing (no desactivable) y banner persistente para administradores |
 | PP-F5-PRD-007 | PRD | Límites de plan comprensibles y upgrade en contexto | MUST | M5.1 | IMPLEMENTADO | | | |
@@ -60,7 +60,7 @@
 | PP-F5-API-004 | API | Métodos de pago y webhooks de pago | MUST | M5.2 | IMPLEMENTADO | | #38 | setup, attach, DELETE (evento PaymentMethodRemoved, ver decisiones del PR) y webhook firmado |
 | PP-F5-API-005 | API | Facturas y pagos | MUST | M5.2 | IMPLEMENTADO | | #38 | Listas con limit en lugar de cursor (desviación anotada en el PR) |
 | PP-F5-API-006 | API | Uso y entitlements | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-API-007 | API | Administración de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Cuentas, detalle, ajustes con change_plan, pago manual, reembolso, cancelación, discrepancias, reemisión y cupones. Falta la auditoría en el detalle |
+| PP-F5-API-007 | API | Administración de facturación | MUST | M5.2 | IMPLEMENTADO | | #38 | Cuentas con MRR, detalle con pagos, facturas, discrepancias y auditoría, ajustes con change_plan, pago manual, reembolso, cancelación, discrepancias, reemisión y cupones |
 | PP-F5-API-008 | API | Derechos del titular y accesos de soporte | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-API-009 | API | Soporte: tickets, agentes, impersonación | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-API-010 | API | Teléfono y canales | SHOULD | M5.4 | PENDIENTE | | | |
@@ -77,7 +77,7 @@
 | PP-F5-FE-002 | FE | Prueba, vencimiento y contratación | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-FE-003 | FE | Ajustes de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Resumen, cambio de plan con vista previa, método de pago con widget del proveedor, datos fiscales, facturas, pagos, cancelar y reactivar, banner. Falta PSE y verificar el modo tokenización del widget de Wompi (SIN VERIFICAR) |
 | PP-F5-FE-004 | FE | Límites en contexto e indicadores de uso | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-FE-005 | FE | Admin de facturación y planes | MUST | M5.2 | EN_PROGRESO | | #38 | Cuentas con filtros y detalle, ajustes con motivo, facturas con reemisión, discrepancias, cupones y versiones de plan. Faltan MRR por cuenta y retirar plan: la API no los expone |
+| PP-F5-FE-005 | FE | Admin de facturación y planes | MUST | M5.2 | IMPLEMENTADO | | #38 | Cuentas con filtros y MRR, detalle con auditoría, ajustes con motivo, facturas con reemisión, discrepancias, cupones y versiones de plan (crear, publicar con fecha, retirar) |
 | PP-F5-FE-006 | FE | Privacidad: exportar, eliminar, accesos | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-FE-007 | FE | Centro de ayuda y tickets | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-008 | FE | Impersonación: concesión y banner | MUST | M5.4 | PENDIENTE | | | |
