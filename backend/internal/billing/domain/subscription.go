@@ -185,10 +185,11 @@ func Subscribe(
 
 	// Descuento por cupón si aplica
 	if coupon != nil {
-		if coupon.Kind == "pct" {
+		switch coupon.Kind {
+		case "pct":
 			discount := RoundCents(subtotal * (coupon.Value / 100.0))
 			subtotal = RoundCents(subtotal - discount)
-		} else if coupon.Kind == "amount" {
+		case "amount":
 			subtotal = RoundCents(math.Max(0, subtotal-coupon.Value))
 		}
 	}
@@ -285,10 +286,11 @@ func (s *Subscription) ConvertTrialToSubscription(
 	}
 
 	if coupon != nil {
-		if coupon.Kind == "pct" {
+		switch coupon.Kind {
+		case "pct":
 			discount := RoundCents(subtotal * (coupon.Value / 100.0))
 			subtotal = RoundCents(subtotal - discount)
-		} else if coupon.Kind == "amount" {
+		case "amount":
 			subtotal = RoundCents(math.Max(0, subtotal-coupon.Value))
 		}
 	}

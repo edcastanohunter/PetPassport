@@ -66,9 +66,9 @@ func TestPeriod_EdgeCases(t *testing.T) {
 func TestPlanDefinition_CalculatePrice_EdgeCases(t *testing.T) {
 	_, pro, _ := sampleClinicPlans()
 
-	// Min seats error
+	// seats <= 0 se normaliza a 1, que cumple el mínimo de 1
 	if _, err := pro.CalculatePrice(0, "", CycleMonthly); err != nil {
-		// Defaults seats <= 0 to 1, which meets min 1
+		t.Fatalf("expected seats<=0 to default to 1, got %v", err)
 	}
 
 	proMax := pro

@@ -15,7 +15,7 @@ func TestProperty_SumChargesMinusRefundsEqualsSumNetPayments(t *testing.T) {
 	starter, pro, enterprise := sampleClinicPlans()
 	plans := []PlanDefinition{starter, pro, enterprise}
 
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // G404: semilla fija para reproducibilidad del test de propiedad
 
 	for i := 0; i < 50; i++ {
 		accountID := uuid.New()

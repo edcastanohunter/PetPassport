@@ -1,4 +1,4 @@
-package entitlements
+package app_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	partnerdomain "github.com/edcastanohunter/petpassport/backend/internal/partnernetwork/domain"
 	"github.com/edcastanohunter/petpassport/backend/internal/platform/bus"
+	"github.com/edcastanohunter/petpassport/backend/internal/platform/entitlements"
 	"github.com/edcastanohunter/petpassport/backend/internal/shared/kernel"
 )
 
@@ -116,7 +117,7 @@ func TestCommandMatrix_PlansVsRequirements(t *testing.T) {
 			planCopy.OrgID = orgID
 			fake.Set(orgID, planCopy)
 
-			mw := EnforceEntitlements(fake)
+			mw := entitlements.EnforceEntitlements(fake)
 			handler := mw(func(ctx context.Context, cmd bus.Command) (bus.Result, error) {
 				return bus.Result{}, nil
 			})

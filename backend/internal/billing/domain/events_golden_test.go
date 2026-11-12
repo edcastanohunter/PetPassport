@@ -299,7 +299,7 @@ func TestEvents_Golden(t *testing.T) {
 
 	goldenDir := filepath.Join("testdata")
 	if *update {
-		_ = os.MkdirAll(goldenDir, 0755)
+		_ = os.MkdirAll(goldenDir, 0o750)
 	}
 
 	for _, tt := range events {
