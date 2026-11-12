@@ -163,6 +163,8 @@ type ChargeScheduled struct {
 	Lines          []ChargeLine `json:"lines"`
 	Period         *Period      `json:"period,omitempty"`
 	ScheduledAt    time.Time    `json:"scheduled_at"`
+	// CreditApplied es el crédito de cortesía consumido por este cargo (aditivo, M5.2).
+	CreditApplied float64 `json:"credit_applied,omitempty"`
 }
 
 func (ChargeScheduled) EventName() string  { return "ChargeScheduled" }
@@ -176,6 +178,8 @@ type ChargePaid struct {
 	PaymentRef     string    `json:"payment_ref"`
 	Manual         bool      `json:"manual"`
 	PaidAt         time.Time `json:"paid_at"`
+	// Provider es el adaptador que confirmó el pago (aditivo, M5.2).
+	Provider string `json:"provider,omitempty"`
 }
 
 func (ChargePaid) EventName() string  { return "ChargePaid" }
@@ -199,6 +203,9 @@ type ChargeRefunded struct {
 	Amount         float64   `json:"amount"`
 	Reason         string    `json:"reason"`
 	RefundedAt     time.Time `json:"refunded_at"`
+	// RefundRef y Provider identifican el reembolso en el proveedor (aditivos, M5.2).
+	RefundRef string `json:"refund_ref,omitempty"`
+	Provider  string `json:"provider,omitempty"`
 }
 
 func (ChargeRefunded) EventName() string  { return "ChargeRefunded" }
@@ -282,6 +289,9 @@ type AdminAdjustmentApplied struct {
 	Details        string    `json:"details"`
 	Reason         string    `json:"reason"`
 	At             time.Time `json:"at"`
+	// Efectos estructurados del ajuste (aditivos, M5.2).
+	TrialEndsAt *time.Time `json:"trial_ends_at,omitempty"`
+	Credit      float64    `json:"credit,omitempty"`
 }
 
 func (AdminAdjustmentApplied) EventName() string  { return "AdminAdjustmentApplied" }

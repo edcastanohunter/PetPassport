@@ -30,6 +30,7 @@ type Subscription struct {
 	manualBilling     bool
 	cancelAtPeriodEnd bool
 	cancelledAt       *time.Time
+	creditBalance     float64
 
 	changes []any
 }
@@ -618,6 +619,21 @@ func (s *Subscription) RenewPeriod(
 	if err != nil {
 		return err
 	}
+	lines := []ChargeLine{{
+		Description: fmt.Sprintf("Renovación %s (%s)", planCode, cycle),
+		Amount:      subtotal,
+		Quantity:    1,
+	}}
+	// Cupón vigente (PRD-022) y crédito de cortesía (PRD-011) reducen la base gravable.
+	if d := s.coupon.discount(subtotal, s.currentPeriod.End); d > 0 {
+		lines = append(lines, ChargeLine{Description: "Cupón " + s.coupon.Code, Amount: -d, Quantity: 1})
+		subtotal = RoundCents(subtotal - d)
+	}
+	credit := RoundCents(math.Min(s.creditBalance, subtotal))
+	if credit > 0 {
+		lines = append(lines, ChargeLine{Description: "Crédito de cortesía", Amount: -credit, Quantity: 1})
+		subtotal = RoundCents(subtotal - credit)
+	}
 
 	tax := RoundCents(subtotal * taxRate)
 	total := RoundCents(subtotal + tax)
@@ -649,21 +665,17 @@ func (s *Subscription) RenewPeriod(
 		Tax:            tax,
 		Total:          total,
 		Currency:       planCatalog.Pricing.Currency,
-		Lines: []ChargeLine{
-			{
-				Description: fmt.Sprintf("Renovación %s (%s)", planCode, cycle),
-				Amount:      subtotal,
-				Quantity:    1,
-			},
-		},
-		Period:      &newPeriod,
-		ScheduledAt: start,
+		Lines:          lines,
+		Period:         &newPeriod,
+		ScheduledAt:    start,
+		CreditApplied:  credit,
 	})
 
 	return nil
 }
 
 // RecordChargeResult procesa la confirmación o rechazo de un intento de cobro (B4).
+// Conserva la firma de M5.1; delega en RecordChargePaid / RecordChargeFailed.
 func (s *Subscription) RecordChargeResult(
 	chargeID uuid.UUID,
 	result string, // "paid" | "failed"
@@ -671,51 +683,10 @@ func (s *Subscription) RecordChargeResult(
 	errorCode string,
 	now time.Time,
 ) error {
-	ch, ok := s.charges[chargeID]
-	if !ok {
-		return fmt.Errorf("cargo %s no encontrado", chargeID)
-	}
-	if ch.Status != ChargeStatusPending && ch.Status != ChargeStatusFailed {
-		return ErrChargeNotPending
-	}
-
 	if result == "paid" {
-		s.recordThat(ChargePaid{
-			SubscriptionID: s.id,
-			ChargeID:       chargeID,
-			Amount:         ch.Total,
-			PaymentRef:     paymentRef,
-			Manual:         false,
-			PaidAt:         now.UTC(),
-		})
-
-		// Si estaba en grace o restricted, el pago exitoso la reactiva (B4)
-		if s.status == StatusGrace || s.status == StatusRestricted {
-			s.recordThat(SubscriptionReactivated{
-				SubscriptionID: s.id,
-				At:             now.UTC(),
-			})
-		}
-	} else {
-		s.recordThat(ChargeFailed{
-			SubscriptionID: s.id,
-			ChargeID:       chargeID,
-			ErrorCode:      errorCode,
-			FailedAt:       now.UTC(),
-		})
-
-		// Si estaba activa, pasa a grace de 14 días (ADR-025, ARQ-006)
-		if s.status == StatusActive {
-			graceEnd := now.AddDate(0, 0, 14).UTC()
-			s.recordThat(SubscriptionGraceStarted{
-				SubscriptionID: s.id,
-				GraceEndsAt:    graceEnd,
-				At:             now.UTC(),
-			})
-		}
+		return s.RecordChargePaid(chargeID, "", paymentRef, now)
 	}
-
-	return nil
+	return s.RecordChargeFailed(chargeID, errorCode, now)
 }
 
 // EnterGrace marca el inicio de gracia por dunning (ADR-025).
@@ -819,23 +790,21 @@ func (s *Subscription) ApplyAdminAdjustment(kind string, details string, reason 
 	return nil
 }
 
-// RecordManualPayment asienta un pago manual para clientes Enterprise.
+// RecordManualPayment asienta un pago recibido fuera del proveedor (transferencia):
+// planes Enterprise (PRD-009) o regularización por SuperAdmin (PRD-011). El importe
+// debe coincidir con el total del cargo para conservar Σ cargos − reembolsos = Σ pagos.
 func (s *Subscription) RecordManualPayment(chargeID uuid.UUID, amount float64, ref string, now time.Time) error {
 	ch, ok := s.charges[chargeID]
 	if !ok {
-		return fmt.Errorf("cargo %s no encontrado", chargeID)
+		return fmt.Errorf("%w: %s", ErrChargeNotFound, chargeID)
 	}
-	if ch.Status != ChargeStatusPending {
+	if ch.Status != ChargeStatusPending && ch.Status != ChargeStatusFailed {
 		return ErrChargeNotPending
 	}
-	s.recordThat(ChargePaid{
-		SubscriptionID: s.id,
-		ChargeID:       chargeID,
-		Amount:         amount,
-		PaymentRef:     ref,
-		Manual:         true,
-		PaidAt:         now.UTC(),
-	})
+	if RoundCents(amount) != ch.Total {
+		return ErrManualAmountMismatch
+	}
+	s.recordPaid(ch, "manual", ref, true, now)
 	return nil
 }
 
@@ -935,6 +904,7 @@ func (s *Subscription) apply(event any) {
 			ch.PeriodEnd = &e.Period.End
 		}
 		s.charges[e.ChargeID] = ch
+		s.creditBalance = RoundCents(s.creditBalance - e.CreditApplied)
 	case ChargePaid:
 		ch := s.charges[e.ChargeID]
 		ch.Status = ChargeStatusPaid
@@ -943,7 +913,9 @@ func (s *Subscription) apply(event any) {
 		pref := e.PaymentRef
 		ch.PaymentRef = &pref
 		s.charges[e.ChargeID] = ch
-		s.dunning = nil
+		if !s.hasFailedCharges() {
+			s.dunning = nil
+		}
 	case ChargeFailed:
 		ch := s.charges[e.ChargeID]
 		ch.Status = ChargeStatusFailed
@@ -989,7 +961,13 @@ func (s *Subscription) apply(event any) {
 	case TrialExpired:
 		s.status = StatusRestricted
 	case AdminAdjustmentApplied:
-		// Se registra en auditoría
+		if e.TrialEndsAt != nil {
+			end := *e.TrialEndsAt
+			s.trialEndsAt = &end
+			s.currentPeriod.End = end
+			s.status = StatusTrialing
+		}
+		s.creditBalance = RoundCents(s.creditBalance + e.Credit)
 	case CouponAppliedEvent:
 		c := e.Coupon
 		s.coupon = &c

@@ -25,6 +25,9 @@ var (
 	ErrPlanLimitReached       = errors.New("límite del plan alcanzado")
 	ErrTrialExpired           = errors.New("el periodo de prueba ha expirado")
 	ErrDuplicateSubscription  = errors.New("la cuenta ya posee una suscripción para este tipo de servicio")
+	ErrChargeNotFound         = errors.New("el cargo no existe en la suscripción")
+	ErrManualAmountMismatch   = errors.New("el importe del pago manual debe coincidir con el total del cargo")
+	ErrInvalidAdjustment      = errors.New("ajuste administrativo inválido")
 	ErrTrialNotAllowed        = errors.New("el plan no permite periodo de prueba o ya fue utilizado")
 )
 
