@@ -2,7 +2,7 @@ name: api-contract
 
 on:
   pull_request:
-    paths: ["backend/api/openapi.yaml", "backend/api/partner-v1.yaml", "backend/api/.spectral.yaml"]
+    paths: ["backend/api/openapi.yaml", "backend/api/partner-v1.yaml", "backend/api/.spectral.yaml", "backend/api/oasdiff-ignore.txt"]
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           if git show "origin/$BASE_REF:backend/api/openapi.yaml" > /tmp/base-openapi.yaml 2>/dev/null; then
-            go run github.com/oasdiff/oasdiff@latest breaking --fail-on ERR /tmp/base-openapi.yaml backend/api/openapi.yaml
+            go run github.com/oasdiff/oasdiff@latest breaking --fail-on ERR --err-ignore backend/api/oasdiff-ignore.txt /tmp/base-openapi.yaml backend/api/openapi.yaml
           else
             echo "No hay backend/api/openapi.yaml en origin/$BASE_REF: primera versión del contrato, se omite."
           fi

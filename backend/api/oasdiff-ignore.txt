@@ -1,0 +1,26 @@
+# Excepciones justificadas al chequeo `oasdiff breaking` (ADR-005). Una línea por cambio:
+# "<MÉTODO> <ruta> <mensaje de oasdiff>". Cada bloque cita el commit que lo justifica.
+# Las líneas dejan de tener efecto en cuanto la rama base ya contiene el cambio; pueden
+# borrarse después del merge.
+#
+# e159513 fix(billing): subscription status enum matches the domain (PP-F5-API-003).
+# El contrato de M5.1 declaraba [past_due, grace_period], pero el dominio y los handlers
+# en main ya emitían `grace` y `expired`. No cambia el wire format: se corrige el contrato.
+GET /billing-accounts/{id}/subscriptions added the new `expired` enum value to the `data/items/status` response property for the response status `200`
+GET /billing-accounts/{id}/subscriptions added the new `grace` enum value to the `data/items/status` response property for the response status `200`
+GET /organizations/{orgId}/billing added the new `expired` enum value to the `subscription/status` response property for the response status `200`
+GET /organizations/{orgId}/billing added the new `grace` enum value to the `subscription/status` response property for the response status `200`
+GET /subscriptions/{id} added the new `expired` enum value to the `status` response property for the response status `200`
+GET /subscriptions/{id} added the new `grace` enum value to the `status` response property for the response status `200`
+POST /billing-accounts/{id}/subscriptions added the new `expired` enum value to the `status` response property for the response status `201`
+POST /billing-accounts/{id}/subscriptions added the new `grace` enum value to the `status` response property for the response status `201`
+POST /subscriptions/{id}/cancel added the new `expired` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/cancel added the new `grace` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/change added the new `expired` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/change added the new `grace` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/resume added the new `expired` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/resume added the new `grace` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/retry-charge added the new `expired` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/retry-charge added the new `grace` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/seats added the new `expired` enum value to the `status` response property for the response status `200`
+POST /subscriptions/{id}/seats added the new `grace` enum value to the `status` response property for the response status `200`
