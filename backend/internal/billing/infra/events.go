@@ -13,6 +13,7 @@ func RegisterEvents(reg *eventstore.Registry) {
 	reg.Register(func() eventstore.Event { return domain.OrganizationAttached{} })
 	reg.Register(func() eventstore.Event { return domain.OrganizationDetached{} })
 	reg.Register(func() eventstore.Event { return domain.PaymentMethodSet{} })
+	reg.Register(func() eventstore.Event { return domain.PaymentMethodRemoved{} })
 	reg.Register(func() eventstore.Event { return domain.BillingAccountClosed{} })
 
 	// Subscription events

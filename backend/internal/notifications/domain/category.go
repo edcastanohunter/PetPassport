@@ -11,19 +11,24 @@ import (
 // Category agrupa notificaciones para las preferencias del usuario (NOT-004).
 type Category string
 
-// Categorías de F2. security no se puede desactivar.
+// Categorías. security y billing (F5, PP-F5-API: «no desactivable») no se
+// pueden desactivar.
 const (
 	Appointments   Category = "appointments"
 	PreventiveCare Category = "preventive_care"
 	Clinical       Category = "clinical"
 	Account        Category = "account"
 	Security       Category = "security"
+	Billing        Category = "billing"
 )
 
 // All lista las categorías en el orden de presentación.
 func All() []Category {
-	return []Category{Appointments, PreventiveCare, Clinical, Account, Security}
+	return []Category{Appointments, PreventiveCare, Clinical, Account, Security, Billing}
 }
+
+// Mandatory indica si la categoría se envía siempre, sin preferencia ni baja.
+func (c Category) Mandatory() bool { return c == Security || c == Billing }
 
 // Valid indica si c es una categoría conocida.
 func (c Category) Valid() bool {
@@ -36,7 +41,7 @@ func (c Category) Valid() bool {
 }
 
 // Optional indica si el usuario puede desactivar la categoría.
-func (c Category) Optional() bool { return c.Valid() && c != Security }
+func (c Category) Optional() bool { return c.Valid() && !c.Mandatory() }
 
 // Preferences son las preferencias de un usuario (canales email y push, PP-F3-DOM-011, PP-F3-API-008).
 type Preferences struct {
@@ -58,6 +63,7 @@ func DefaultPushPreferences() map[Category]bool {
 		Clinical:       false,
 		Account:        false,
 		Security:       true,
+		Billing:        true,
 	}
 }
 
@@ -80,7 +86,7 @@ func (p Preferences) Allows(c Category) bool {
 
 // AllowsEmail indica si el usuario quiere recibir la categoría por email.
 func (p Preferences) AllowsEmail(c Category) bool {
-	if c == Security {
+	if c.Mandatory() {
 		return true
 	}
 	v, ok := p.Email[c]
@@ -89,7 +95,7 @@ func (p Preferences) AllowsEmail(c Category) bool {
 
 // AllowsPush indica si el usuario quiere recibir la categoría por push.
 func (p Preferences) AllowsPush(c Category) bool {
-	if c == Security {
+	if c.Mandatory() {
 		return true
 	}
 	if p.Push == nil {
@@ -120,8 +126,12 @@ func (p Preferences) Normalize() Preferences {
 			}
 		}
 	}
-	out.Email[Security] = true
-	out.Push[Security] = true
+	for _, c := range All() {
+		if c.Mandatory() {
+			out.Email[c] = true
+			out.Push[c] = true
+		}
+	}
 	out.Digest = p.Digest
 	return out
 }

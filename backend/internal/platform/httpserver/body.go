@@ -28,8 +28,14 @@ func captureBody(next http.Handler) http.Handler {
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(b))
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), rawBodyKey{}, b)))
+		next.ServeHTTP(w, r.WithContext(WithRawBody(r.Context(), b)))
 	})
+}
+
+// WithRawBody deja el cuerpo crudo en el contexto (lo usa captureBody; las
+// pruebas de handlers que verifican firmas lo usan para simular la petición).
+func WithRawBody(ctx context.Context, b []byte) context.Context {
+	return context.WithValue(ctx, rawBodyKey{}, b)
 }
 
 // RawBodyFrom devuelve el cuerpo crudo capturado (nil si no hay).

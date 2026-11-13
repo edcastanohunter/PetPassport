@@ -157,6 +157,7 @@ func reasonFor(category, locale string) string {
 		"clinical":        "Recibes este correo porque hay novedades en la historia clínica de tu mascota en PetPassport.",
 		"account":         "Recibes este correo por tu cuenta o tu organización en PetPassport.",
 		"security":        "Este aviso de seguridad no se puede desactivar.",
+		"billing":         "Recibes este aviso de facturación por administrar una organización en PetPassport; no se puede desactivar.",
 	}
 	en := map[string]string{
 		"appointments":    "You are receiving this email because you have appointments or appointment requests on PetPassport.",
@@ -164,6 +165,7 @@ func reasonFor(category, locale string) string {
 		"clinical":        "You are receiving this email because there is news in your pet's record on PetPassport.",
 		"account":         "You are receiving this email because of your account or organization on PetPassport.",
 		"security":        "This security notice cannot be turned off.",
+		"billing":         "You are receiving this billing notice because you manage an organization on PetPassport; it cannot be turned off.",
 	}
 	m := es
 	if locale == "en" {

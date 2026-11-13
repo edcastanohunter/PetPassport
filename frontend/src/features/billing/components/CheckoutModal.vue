@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatMoney as fmt } from '../money'
 import {
   api,
   ApiError,
@@ -29,7 +30,7 @@ const emit = defineEmits<{
   (e: 'subscribed', sub: Subscription): void
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const cycle = ref<'monthly' | 'annual'>(props.initialCycle)
 const seats = ref<number>(1)
@@ -99,12 +100,9 @@ const totalCents = computed(() => {
   return subtotalCents.value + taxCents.value
 })
 
-function formatMoney(cents: number, currency = 'COP') {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: currency,
-    maximumFractionDigits: 0,
-  }).format(cents / 100)
+// Los precios de la API vienen en unidades de la moneda, no en centavos.
+function formatMoney(amount: number, currency = 'COP') {
+  return fmt(amount, currency, locale.value)
 }
 
 function close() {
@@ -121,20 +119,28 @@ async function handleConfirm() {
 
     // Si no tenemos cuenta de facturación previa, crearla primero
     if (!targetAccountId && props.orgId) {
+      // Los datos fiscales van a la factura electrónica: nunca valores de relleno.
+      if (
+        !legalName.value.trim() ||
+        !taxIdValue.value.trim() ||
+        !billingEmail.value.trim() ||
+        !address.value.trim()
+      ) {
+        throw new Error(t('billing.fiscalRequired'))
+      }
       const openReq: OpenBillingAccountRequest = {
         organization_id: props.orgId,
         legal_entity: {
           kind: 'company',
-          legal_name: legalName.value || 'Organización',
+          legal_name: legalName.value.trim(),
           tax_id: {
             country: country.value,
-            value: taxIdValue.value || '900123456-1',
+            value: taxIdValue.value.trim(),
             kind: taxIdKind.value,
           },
           tax_regime: taxRegime.value,
-          email: billingEmail.value || 'facturacion@example.com',
-          address: address.value || 'Calle Principal 123',
-          phone: '+573001234567',
+          email: billingEmail.value.trim(),
+          address: address.value.trim(),
         },
       }
 

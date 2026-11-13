@@ -26,6 +26,20 @@ func TestPreferencesSecurityAlwaysOn(t *testing.T) {
 	}
 }
 
+// TestPPF5API_BillingCategoryCannotBeTurnedOff: billing es obligatoria como security.
+func TestPPF5API_BillingCategoryCannotBeTurnedOff(t *testing.T) {
+	p := domain.Preferences{
+		Email: map[domain.Category]bool{domain.Billing: false},
+		Push:  map[domain.Category]bool{domain.Billing: false},
+	}.Normalize()
+	if !p.AllowsEmail(domain.Billing) || !p.Email[domain.Billing] || !p.AllowsPush(domain.Billing) {
+		t.Fatal("billing debe seguir activa")
+	}
+	if domain.Billing.Optional() || !domain.Billing.Valid() {
+		t.Fatal("billing es válida y no opcional")
+	}
+}
+
 func TestParsePreferencesDefaults(t *testing.T) {
 	p, err := domain.ParsePreferences(nil, nil, nil)
 	if err != nil {

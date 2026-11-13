@@ -74,6 +74,13 @@ type FollowUp struct {
 	DueDate string // YYYY-MM-DD
 }
 
+// BillingContacts son los destinatarios de los avisos de cobro de una
+// suscripción: el titular de la cuenta de facturación y sus organizaciones.
+type BillingContacts struct {
+	OwnerID uuid.UUID
+	OrgIDs  []uuid.UUID // por fecha de alta en la cuenta
+}
+
 // Directory resuelve destinatarios y datos de presentación desde los read
 // models. En producción lee con la misma transacción del outbox, de modo que
 // ve las proyecciones síncronas del evento que está procesando.
@@ -88,13 +95,16 @@ type Directory interface {
 	OrgMembers(ctx context.Context, orgID uuid.UUID, roles ...string) ([]uuid.UUID, error)
 	// FutureConfirmedGuardians: tutores con citas confirmadas futuras en la org.
 	FutureConfirmedGuardians(ctx context.Context, orgID uuid.UUID, now time.Time) ([]uuid.UUID, error)
+	// SubscriptionContacts resuelve titular y organizaciones de una suscripción (F5).
+	SubscriptionContacts(ctx context.Context, subscriptionID uuid.UUID) (BillingContacts, bool, error)
 }
 
 // Subject types de notifications.scheduled.
 const (
-	SubjectAppointment = "appointment"
-	SubjectCardEntry   = "card_entry"
-	SubjectEncounter   = "encounter"
+	SubjectAppointment  = "appointment"
+	SubjectCardEntry    = "card_entry"
+	SubjectEncounter    = "encounter"
+	SubjectSubscription = "subscription"
 )
 
 // Action es lo que el planificador decide para un evento.

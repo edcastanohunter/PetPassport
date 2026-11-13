@@ -168,6 +168,14 @@ var defaultStatus = map[Code]int{
 	// Notifications (M2.4): webhooks del proveedor de email.
 	Code("WEBHOOK_SIGNATURE_INVALID"): http.StatusUnauthorized,
 
+	// Billing: cobro y administración (M5.2). El resto usa el 409 por defecto.
+	Code("PAYMENT_PROVIDER_UNAVAILABLE"): http.StatusServiceUnavailable,
+	Code("REFUND_EXCEEDS_BALANCE"):       http.StatusUnprocessableEntity,
+	Code("MANUAL_AMOUNT_MISMATCH"):       http.StatusUnprocessableEntity,
+	Code("ADJUSTMENT_INVALID"):           http.StatusUnprocessableEntity,
+	Code("COUPON_INVALID"):               http.StatusUnprocessableEntity,
+	Code("PLAN_NOTICE_TOO_SHORT"):        http.StatusUnprocessableEntity,
+
 	// Prescriptions / OCR F4 (PP-F4-API-010).
 	Code("CREDENTIAL_REQUIRED"):       http.StatusForbidden,
 	Code("CREDENTIAL_EXPIRED"):        http.StatusForbidden,

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	billinginfra "github.com/edcastanohunter/petpassport/backend/internal/billing/infra"
 	clinicalinfra "github.com/edcastanohunter/petpassport/backend/internal/clinical/infra"
 	identityapp "github.com/edcastanohunter/petpassport/backend/internal/identity/app"
 	identityinfra "github.com/edcastanohunter/petpassport/backend/internal/identity/infra"
@@ -38,6 +39,7 @@ func newRegistry() (*eventstore.Registry, error) {
 	orginfra.RegisterEvents(reg)
 	clinicalinfra.RegisterEvents(reg)
 	schedulinginfra.RegisterEvents(reg)
+	billinginfra.RegisterEvents(reg)
 	prescriptioninfra.RegisterEvents(reg)
 	if err := reg.Validate(); err != nil {
 		return nil, fmt.Errorf("eventstore registry: %w", err)

@@ -137,9 +137,10 @@ func TestSubscription_ExtendedCoverage(t *testing.T) {
 
 	// Record Manual Payment
 	var chID uuid.UUID
+	var chTotal float64
 	for id, ch := range sub.Charges() {
 		if ch.Status == ChargeStatusPending {
-			chID = id
+			chID, chTotal = id, ch.Total
 			break
 		}
 	}
@@ -148,11 +149,11 @@ func TestSubscription_ExtendedCoverage(t *testing.T) {
 		t.Fatal("expected error on non-existent charge manual payment")
 	}
 	// Valid manual payment
-	if err := sub.RecordManualPayment(chID, 100000, "TRANSF-001", now); err != nil {
+	if err := sub.RecordManualPayment(chID, chTotal, "TRANSF-001", now); err != nil {
 		t.Fatalf("manual payment error: %v", err)
 	}
 	// Calling again should fail because not pending
-	if err := sub.RecordManualPayment(chID, 100000, "TRANSF-001", now); err != ErrChargeNotPending {
+	if err := sub.RecordManualPayment(chID, chTotal, "TRANSF-001", now); err != ErrChargeNotPending {
 		t.Fatalf("expected ErrChargeNotPending, got %v", err)
 	}
 

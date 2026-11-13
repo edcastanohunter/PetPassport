@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createAppRouter } from './index'
+import { fullPageLoadGuard } from './guards'
 
 describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
   it('toda ruta /admin/* exige super_admin y usa el layout admin', () => {
@@ -9,6 +10,7 @@ describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
     expect(admin.map((r) => r.path).sort()).toEqual([
       '/admin/ai',
       '/admin/audit',
+      '/admin/billing',
       '/admin/catalogs/medications',
       '/admin/credentials',
       '/admin/ocr',
@@ -54,5 +56,33 @@ describe('rutas admin (FE-009, docs/phase-1/07 §4)', () => {
       expect(r.meta.requiresAuth, r.path).toBe(true)
       expect(r.meta.layout, r.path).toBe('owner')
     }
+  })
+})
+
+describe('facturación de la organización (PP-F5-FE-003, SEC-001)', () => {
+  it('exige rol admin y se abre con carga completa (CSP propia del widget de pagos)', () => {
+    const r = createAppRouter()
+      .getRoutes()
+      .find((x) => x.path === '/org/:orgId/settings/billing')
+    expect(r?.meta.requiresOrgRole).toEqual(
+      expect.arrayContaining(['clinic_admin', 'pharmacy_admin']),
+    )
+    expect(r?.meta.fullPageLoad).toBe(true)
+  })
+
+  it('fullPageLoadGuard recarga el documento solo al navegar dentro del SPA', () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, assign })
+    const to = { meta: { fullPageLoad: true }, fullPath: '/org/o1/settings/billing' }
+    const inApp = { matched: [{}] }
+    const firstLoad = { matched: [] }
+    // @ts-expect-error -- rutas mínimas para el guard
+    expect(fullPageLoadGuard.call(undefined, to, firstLoad, () => {})).toBe(true)
+    // @ts-expect-error -- rutas mínimas para el guard
+    expect(fullPageLoadGuard.call(undefined, to, inApp, () => {})).toBe(false)
+    expect(assign).toHaveBeenCalledWith('/org/o1/settings/billing')
+    // @ts-expect-error -- rutas mínimas para el guard
+    expect(fullPageLoadGuard.call(undefined, { meta: {} }, inApp, () => {})).toBe(true)
+    vi.unstubAllGlobals()
   })
 })

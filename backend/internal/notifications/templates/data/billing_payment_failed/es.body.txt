@@ -1,0 +1,7 @@
+No pudimos cobrar la suscripción de PetPassport de {{.V.org_name}} con el método de pago registrado.
+
+Volveremos a intentarlo automáticamente. Mientras tanto todo sigue funcionando; si el cobro no se completa en 14 días, la organización pasará a modo de solo lectura hasta que se regularice el pago.
+
+Puedes revisar o cambiar el método de pago desde la configuración de facturación.
+
+Revisar facturación: {{.V.link}}

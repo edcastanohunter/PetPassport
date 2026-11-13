@@ -299,7 +299,9 @@ var suite = map[Action][]suiteRow{
 		{orgRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
 		{billingRes, [11]bool{N, N, Y, N, N, N, Y, N, Y, N, Y}},
 	},
-	AdminPlansWrite: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminPlansWrite:   {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminBillingRead:  {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
+	AdminBillingWrite: {{noRes, [11]bool{N, N, N, N, N, N, N, N, N, N, Y}}},
 }
 
 func TestSuite_EveryActionHasRows(t *testing.T) {

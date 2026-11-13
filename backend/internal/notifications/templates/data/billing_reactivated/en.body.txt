@@ -1,0 +1,5 @@
+We received the payment for the PetPassport subscription for {{.V.org_name}}. You can record and change data again as usual.
+
+Thank you.
+
+View billing: {{.V.link}}

@@ -24,6 +24,17 @@ type BillingHandlers struct {
 	svc     *app.BillingService
 	queries *infra.Queries
 	logger  *slog.Logger
+
+	// Cobro y facturación (M5.2, WithPayments). Los almacenes toleran receptor nil.
+	pay      *app.PaymentService
+	inv      *app.InvoicingService
+	ledger   *infra.Ledger
+	invoices *infra.InvoiceStore
+	objects  Presigner
+	coupons  *infra.CouponStore
+	// invitations: cuentas multi-organización (PRD-008); nil → sin invitaciones.
+	invitations Invitations
+	scope       Scope
 }
 
 // NewBillingHandlers crea una nueva instancia de BillingHandlers.
@@ -35,6 +46,7 @@ func NewBillingHandlers(svc *app.BillingService, queries *infra.Queries, logger 
 		svc:     svc,
 		queries: queries,
 		logger:  logger,
+		scope:   queryScope{queries: queries},
 	}
 }
 
@@ -63,6 +75,10 @@ func mapDomainError(err error) error {
 		return &kernel.DomainError{Code: "TAX_ID_INVALID", Message: err.Error()}
 	case errors.Is(err, domain.ErrLegalEntityIncomplete):
 		return &kernel.DomainError{Code: "LEGAL_ENTITY_INCOMPLETE", Message: err.Error()}
+	case errors.Is(err, domain.ErrLastOrganization):
+		return &kernel.DomainError{Code: "LAST_ORGANIZATION", Message: err.Error()}
+	case errors.Is(err, domain.ErrOrgNotAttached):
+		return &kernel.NotFoundError{Resource: "Organization"}
 	case errors.Is(err, domain.ErrOrgAlreadyBilled):
 		return &kernel.DomainError{Code: "ORGANIZATION_ALREADY_BILLED", Message: err.Error()}
 	case errors.Is(err, domain.ErrActiveSubscription):
@@ -342,6 +358,12 @@ func (h *BillingHandlers) CreatePlan(ctx context.Context, req gen.CreatePlanRequ
 	}
 
 	body := req.Body
+	// Un código existente no se sobrescribe: las versiones nuevas van por PUT.
+	if next, err := h.queries.NextPlanVersion(ctx, body.Code); err != nil {
+		return nil, err
+	} else if next != 1 {
+		return nil, kernel.NewDomainError("PLAN_EXISTS", "Ya existe un plan con ese código: crea una nueva versión.")
+	}
 	planDef := domain.PlanDefinition{
 		Code:          body.Code,
 		Version:       1,
@@ -351,7 +373,6 @@ func (h *BillingHandlers) CreatePlan(ctx context.Context, req gen.CreatePlanRequ
 		Features:      body.Features,
 		Status:        "draft",
 		EffectiveFrom: &body.EffectiveFrom,
-		PublishedAt:   &body.EffectiveFrom,
 	}
 
 	planDef.Pricing = domain.PlanPricing{
@@ -404,22 +425,26 @@ func (h *BillingHandlers) UpdatePlan(ctx context.Context, req gen.UpdatePlanRequ
 		return gen.UpdatePlan200JSONResponse{}, nil
 	}
 
-	existing, err := h.queries.GetPlan(ctx, req.Code)
+	// Nueva versión en draft (PP-F5-API-001): el catálogo no cambia hasta
+	// publicarla con el preaviso de RN-39.
+	next, err := h.queries.NextPlanVersion(ctx, req.Code)
 	if err != nil {
+		return nil, err
+	}
+	if next == 1 {
 		return nil, &kernel.NotFoundError{Resource: "Plan " + req.Code}
 	}
 
 	body := req.Body
 	planDef := domain.PlanDefinition{
 		Code:          req.Code,
-		Version:       existing.Version + 1,
+		Version:       next,
 		Kind:          string(body.Kind),
 		Name:          map[string]string{"es": body.Name},
 		TrialDays:     body.TrialDays,
 		Features:      body.Features,
-		Status:        "published",
+		Status:        "draft",
 		EffectiveFrom: &body.EffectiveFrom,
-		PublishedAt:   &body.EffectiveFrom,
 	}
 
 	planDef.Pricing = domain.PlanPricing{
@@ -556,7 +581,7 @@ func (h *BillingHandlers) UpdateBillingAccount(ctx context.Context, req gen.Upda
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -578,7 +603,7 @@ func (h *BillingHandlers) CloseBillingAccount(ctx context.Context, req gen.Close
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -608,7 +633,7 @@ func (h *BillingHandlers) ListAccountSubscriptions(ctx context.Context, req gen.
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingRead, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingRead, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -635,7 +660,7 @@ func (h *BillingHandlers) PreviewSubscription(ctx context.Context, req gen.Previ
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -694,7 +719,7 @@ func (h *BillingHandlers) CreateSubscription(ctx context.Context, req gen.Create
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, authz.BillingResource{AccountID: req.Id}); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.accountRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -737,7 +762,7 @@ func (h *BillingHandlers) GetSubscription(ctx context.Context, req gen.GetSubscr
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingRead, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingRead, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -759,7 +784,7 @@ func (h *BillingHandlers) ChangeSubscriptionPlan(ctx context.Context, req gen.Ch
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -802,7 +827,7 @@ func (h *BillingHandlers) AdjustSubscriptionSeats(ctx context.Context, req gen.A
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -828,7 +853,7 @@ func (h *BillingHandlers) CancelSubscription(ctx context.Context, req gen.Cancel
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -859,7 +884,7 @@ func (h *BillingHandlers) ResumeSubscription(ctx context.Context, req gen.Resume
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 
@@ -885,7 +910,7 @@ func (h *BillingHandlers) RetrySubscriptionCharge(ctx context.Context, req gen.R
 	if err != nil {
 		return nil, err
 	}
-	if d := authz.Can(p, authz.BillingManage, nil); !d.Allow {
+	if d := authz.Can(p, authz.BillingManage, h.subscriptionRes(ctx, req.Id)); !d.Allow {
 		return nil, &kernel.ForbiddenError{Reason: d.Reason}
 	}
 

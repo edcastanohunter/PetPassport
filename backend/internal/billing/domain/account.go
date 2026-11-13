@@ -177,6 +177,10 @@ func (a *BillingAccount) DetachOrganization(orgID uuid.UUID, now time.Time) erro
 	if _, exists := a.organizations[orgID]; !exists {
 		return ErrOrgNotAttached
 	}
+	if len(a.organizations) == 1 {
+		// Una cuenta sin organizaciones queda huérfana: se cierra en su lugar (PRD-008).
+		return ErrLastOrganization
+	}
 	a.recordThat(OrganizationDetached{
 		AccountID:      a.id,
 		OrganizationID: orgID,
@@ -198,6 +202,23 @@ func (a *BillingAccount) SetPaymentMethod(ref PaymentMethodRef, now time.Time) e
 		PaymentMethod: ref,
 		At:            now.UTC(),
 	})
+	return nil
+}
+
+// RemovePaymentMethod retira el método de pago. Solo si ninguna suscripción
+// vigente se cobra con él (todas canceladas o de facturación manual): quitarlo
+// dejaría la próxima renovación sin forma de cobro. Idempotente sin método.
+func (a *BillingAccount) RemovePaymentMethod(backsLiveSubscription bool, now time.Time) error {
+	if a.status == "closed" {
+		return ErrAccountClosed
+	}
+	if a.paymentMethod == nil {
+		return nil
+	}
+	if backsLiveSubscription {
+		return ErrPaymentMethodInUse
+	}
+	a.recordThat(PaymentMethodRemoved{AccountID: a.id, At: now.UTC()})
 	return nil
 }
 
@@ -242,6 +263,8 @@ func (a *BillingAccount) apply(event any) {
 	case PaymentMethodSet:
 		ref := e.PaymentMethod
 		a.paymentMethod = &ref
+	case PaymentMethodRemoved:
+		a.paymentMethod = nil
 	case BillingAccountClosed:
 		a.status = "closed"
 	}

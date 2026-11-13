@@ -1,0 +1,7 @@
+No hemos podido cobrar la suscripción de PetPassport de {{.V.org_name}} y el periodo de gracia terminó.
+
+Puedes seguir consultando toda la información, pero no registrar ni modificar datos hasta que se complete el pago. La reactivación es inmediata al pagar.
+
+Si el pago no se regulariza, la suscripción se cancelará a los 60 días del primer cobro fallido; la exportación de datos seguirá disponible.
+
+Pagar ahora: {{.V.link}}

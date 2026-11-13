@@ -296,3 +296,52 @@ groups:
           summary: "Entorno Sandbox caído por más de 2 min"
           runbook: "infra/deploy/RUNBOOK.md#739-sandboxdown"
 
+
+  # F5 M5.2: cobro y facturación (PP-F5-INF-004).
+  - name: petpassport-f5-billing
+    rules:
+      - alert: ChargeFailureRateHigh
+        expr: |
+          (
+            sum(increase(billing_charges_total{status=~"failed|error"}[1h]))
+              / sum(increase(billing_charges_total{status=~"paid|failed|error"}[1h])) > 0.20
+          ) and sum(increase(billing_charges_total{status=~"paid|failed|error"}[1h])) >= 5
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Más del 20 % de los cobros falla en la última hora: {{ $value | humanizePercentage }}"
+          runbook: "infra/deploy/RUNBOOK.md#740-chargefailureratehigh--paymentproviderdown"
+      - alert: PaymentProviderDown
+        expr: sum by (provider) (increase(billing_charges_total{status="error"}[15m])) >= 3
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "El proveedor de pagos {{ $labels.provider }} no responde a los cobros"
+          runbook: "infra/deploy/RUNBOOK.md#740-chargefailureratehigh--paymentproviderdown"
+      - alert: InvoiceRejected
+        expr: sum(increase(billing_invoices_total{status="rejected"}[1h])) > 0
+        labels: { severity: ticket }
+        annotations:
+          summary: "Facturas rechazadas por la autoridad fiscal en la última hora"
+          runbook: "infra/deploy/RUNBOOK.md#741-invoicerejected"
+      - alert: InvoicingProviderDown
+        expr: min by (provider) (billing_invoicing_provider_up) == 0
+        for: 15m
+        labels: { severity: page }
+        annotations:
+          summary: "El proveedor de facturación {{ $labels.provider }} lleva 15 min sin responder"
+          runbook: "infra/deploy/RUNBOOK.md#742-invoicingproviderdown"
+      - alert: DiscrepanciesOpen
+        expr: max(billing_discrepancies_open) > 0
+        for: 24h
+        labels: { severity: ticket }
+        annotations:
+          summary: "Hay {{ $value }} discrepancias de conciliación abiertas desde hace más de 24 h"
+          runbook: "infra/deploy/RUNBOOK.md#743-discrepanciesopen"
+      - alert: RenewalJobStalled
+        expr: max(billing_renewals_overdue) > 0
+        for: 30m
+        labels: { severity: page }
+        annotations:
+          summary: "{{ $value }} suscripciones con el periodo vencido hace más de 1 h siguen sin renovar"
+          runbook: "infra/deploy/RUNBOOK.md#744-renewaljobstalled"

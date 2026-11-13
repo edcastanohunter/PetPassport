@@ -1,0 +1,1 @@
+La suscripción de {{.V.org_name}} fue cancelada por falta de pago

@@ -2,58 +2,94 @@ package providers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
-
-	"github.com/edcastanohunter/petpassport/backend/internal/billing/invoicing/fake"
-	fakePay "github.com/edcastanohunter/petpassport/backend/internal/billing/providers/fake"
+	"github.com/edcastanohunter/petpassport/backend/internal/billing/invoicing"
 )
 
-// PaymentProvider es el puerto para la pasarela de pagos (PP-F5-DOM-011, ARQ-002).
-type PaymentProvider interface {
-	CreateCustomer(ctx context.Context, accountID uuid.UUID, email, name string) (customerID string, err error)
-	CreateSetupIntent(ctx context.Context, customerID string) (clientSecret string, err error)
-	Charge(ctx context.Context, chargeID uuid.UUID, customerID string, amount float64, currency string, token string) (paymentRef string, status string, err error)
-	Refund(ctx context.Context, paymentRef string, amount float64, reason string) (refundRef string, err error)
-	ParseWebhook(payload []byte, signature string) (eventID string, eventType string, data any, err error)
-	GetPayment(ctx context.Context, providerRef string) (status string, amount float64, err error)
+// ManualProvider es el nombre del adaptador de transferencia con conciliación
+// manual, siempre disponible para planes Enterprise (ADR-022 §3).
+const ManualProvider = "manual"
+
+// Route es la fila de billing.provider_routing de un país.
+type Route struct {
+	Country           string
+	PaymentProvider   string
+	InvoicingProvider string
+	TaxRule           string
+	TaxRate           float64
 }
 
-// InvoicingProvider es el puerto para la facturación fiscal DIAN / PDF (PP-F5-DOM-011, ARQ-003).
-type InvoicingProvider interface {
-	Issue(ctx context.Context, doc fake.InvoiceDocument) (invoiceNumber, cufe, pdfKey, xmlKey, status string, err error)
-	CreditNote(ctx context.Context, doc fake.CreditNoteDocument) (noteNumber, pdfKey, xmlKey string, err error)
-	Fetch(ctx context.Context, invoiceNumber string) (status string, err error)
+// RoutingReader lee el routing por país (billing.provider_routing + ref.tax_rules).
+type RoutingReader interface {
+	Route(ctx context.Context, country string) (Route, error)
 }
 
-// Router resuelve el proveedor de pagos y de facturación según la jurisdicción y configuración (ADR-022, ARQ-002).
+// Router resuelve los adaptadores de pago y de facturación fiscal según el país
+// de la cuenta (ADR-022 §3–4, ARQ-002). Un routing que apunta a un adaptador no
+// registrado es un error: nunca se sustituye en silencio por otro.
 type Router struct {
-	fakePayment   PaymentProvider
-	fakeInvoicing InvoicingProvider
+	routing   RoutingReader
+	payments  map[string]PaymentProvider
+	invoicers map[string]invoicing.Provider
 }
 
-// NewRouter crea un Router con adaptadores disponibles.
-func NewRouter(fakeP PaymentProvider, fakeI InvoicingProvider) *Router {
-	if fakeP == nil {
-		fakeP = fakePay.NewFakePaymentProvider()
+// NewRouter construye el router con los adaptadores disponibles en este entorno.
+func NewRouter(routing RoutingReader, payments []PaymentProvider, invoicers []invoicing.Provider) *Router {
+	r := &Router{routing: routing, payments: map[string]PaymentProvider{}, invoicers: map[string]invoicing.Provider{}}
+	for _, p := range payments {
+		r.payments[p.Name()] = p
 	}
-	if fakeI == nil {
-		fakeI = fake.NewFakeInvoicingProvider()
+	for _, i := range invoicers {
+		r.invoicers[i.Name()] = i
 	}
-	return &Router{
-		fakePayment:   fakeP,
-		fakeInvoicing: fakeI,
-	}
+	return r
 }
 
-// ForCountry devuelve el proveedor de pago y fiscal adecuado para el país de la cuenta.
-func (r *Router) ForCountry(country string) (PaymentProvider, InvoicingProvider) {
-	c := strings.ToUpper(strings.TrimSpace(country))
-	switch c {
-	case "CO":
-		return r.fakePayment, r.fakeInvoicing
-	default:
-		return r.fakePayment, r.fakeInvoicing
+// Route devuelve el routing del país.
+func (r *Router) Route(ctx context.Context, country string) (Route, error) {
+	return r.routing.Route(ctx, strings.ToUpper(strings.TrimSpace(country)))
+}
+
+// Payment devuelve el adaptador de pago de la cuenta. manual = true fuerza la
+// transferencia con conciliación manual (Enterprise, PRD-009).
+func (r *Router) Payment(ctx context.Context, country string, manual bool) (PaymentProvider, error) {
+	if manual {
+		return r.PaymentByName(ManualProvider)
 	}
+	route, err := r.Route(ctx, country)
+	if err != nil {
+		return nil, err
+	}
+	return r.PaymentByName(route.PaymentProvider)
+}
+
+// PaymentByName devuelve un adaptador de pago registrado (webhooks, reembolsos
+// y conciliación usan el proveedor que hizo el cobro, no el routing actual).
+func (r *Router) PaymentByName(name string) (PaymentProvider, error) {
+	p, ok := r.payments[name]
+	if !ok {
+		return nil, fmt.Errorf("%w: %q", ErrUnknownProvider, name)
+	}
+	return p, nil
+}
+
+// Invoicing devuelve el adaptador fiscal y el routing (regla de impuestos) del país.
+func (r *Router) Invoicing(ctx context.Context, country string) (invoicing.Provider, Route, error) {
+	route, err := r.Route(ctx, country)
+	if err != nil {
+		return nil, Route{}, err
+	}
+	p, err := r.InvoicingByName(route.InvoicingProvider)
+	return p, route, err
+}
+
+// InvoicingByName devuelve un adaptador fiscal registrado.
+func (r *Router) InvoicingByName(name string) (invoicing.Provider, error) {
+	p, ok := r.invoicers[name]
+	if !ok {
+		return nil, fmt.Errorf("%w: facturación %q", ErrUnknownProvider, name)
+	}
+	return p, nil
 }

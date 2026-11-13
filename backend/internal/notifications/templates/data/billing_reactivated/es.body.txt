@@ -1,0 +1,5 @@
+Recibimos el pago de la suscripción de PetPassport de {{.V.org_name}}. Ya puedes volver a registrar y modificar datos con normalidad.
+
+Gracias.
+
+Ver facturación: {{.V.link}}

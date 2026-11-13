@@ -36,6 +36,7 @@ func (*BillingProjector) Handles() []string {
 		"OrganizationAttached",
 		"OrganizationDetached",
 		"PaymentMethodSet",
+		"PaymentMethodRemoved",
 		"BillingAccountClosed",
 		"TrialStarted",
 		"Subscribed",
@@ -54,6 +55,8 @@ func (*BillingProjector) Handles() []string {
 		"SubscriptionCancelled",
 		"SubscriptionResumed",
 		"TrialExpired",
+		"AdminAdjustmentApplied",
+		"CouponAppliedEvent",
 	}
 }
 
@@ -131,6 +134,12 @@ ON CONFLICT (account_id, organization_id) DO UPDATE SET seat_pool = EXCLUDED.sea
 		const q = `UPDATE billing.accounts SET version = $2, payment_method = $3, updated_at = $4 WHERE id = $1`
 		if _, err := tx.Exec(ctx, q, ev.AccountID, e.StreamVersion, pmJSON, ev.At); err != nil {
 			return fmt.Errorf("project PaymentMethodSet: %w", err)
+		}
+
+	case domain.PaymentMethodRemoved:
+		const q = `UPDATE billing.accounts SET version = $2, payment_method = NULL, updated_at = $3 WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.AccountID, e.StreamVersion, ev.At); err != nil {
+			return fmt.Errorf("project PaymentMethodRemoved: %w", err)
 		}
 
 	case domain.BillingAccountClosed:
@@ -280,29 +289,38 @@ ON CONFLICT (id) DO NOTHING`
 	case domain.ChargePaid:
 		const q = `
 UPDATE billing.charges SET
-  status = 'paid', paid_at = $2, updated_at = $2
-WHERE id = $1`
-		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.PaidAt); err != nil {
+  status = 'paid', paid_at = $2, updated_at = $2,
+  payment_ref = NULLIF($3, ''), provider = NULLIF($4, '')
+WHERE id = $1 AND status IN ('pending','failed','paid')`
+		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.PaidAt, ev.PaymentRef, ev.Provider); err != nil {
 			return fmt.Errorf("project ChargePaid: %w", err)
 		}
 
 	case domain.ChargeFailed:
 		const q = `
 UPDATE billing.charges SET
-  status = 'failed', failed_at = $2, error_code = $3, updated_at = $2
+  status = 'failed', failed_at = $2, error_code = $3, updated_at = $2,
+  first_failed_at = COALESCE(first_failed_at, $2)
 WHERE id = $1`
 		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.FailedAt, ev.ErrorCode); err != nil {
 			return fmt.Errorf("project ChargeFailed: %w", err)
 		}
 
 	case domain.ChargeRefunded:
+		// Idempotente (ARQ-006): con RefundedTotal se fija el acumulado en vez de
+		// sumar. Los eventos anteriores a M5.2 no lo traen y conservan la suma.
 		const q = `
-UPDATE billing.charges SET
-  refunded = refunded + $2,
-  status = CASE WHEN (refunded + $2) >= total THEN 'refunded' ELSE 'partially_refunded' END,
+WITH next AS (
+  SELECT CASE WHEN $4::numeric > 0 THEN GREATEST(refunded, $4::numeric) ELSE refunded + $2::numeric END AS refunded
+  FROM billing.charges WHERE id = $1
+)
+UPDATE billing.charges c SET
+  refunded = next.refunded,
+  status = CASE WHEN next.refunded >= c.total THEN 'refunded' ELSE 'partially_refunded' END,
   updated_at = $3
-WHERE id = $1`
-		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.Amount, ev.RefundedAt); err != nil {
+FROM next
+WHERE c.id = $1`
+		if _, err := tx.Exec(ctx, q, ev.ChargeID, ev.Amount, ev.RefundedAt, ev.RefundedTotal); err != nil {
 			return fmt.Errorf("project ChargeRefunded: %w", err)
 		}
 
@@ -361,6 +379,36 @@ WHERE id = $1`
 		}
 		if err := p.recalculateEntitlementsForSub(ctx, tx, ev.SubscriptionID); err != nil {
 			return err
+		}
+
+	case domain.AdminAdjustmentApplied:
+		// Solo la extensión de prueba cambia el read model; el crédito vive en el agregado.
+		if ev.TrialEndsAt == nil {
+			const q = `UPDATE billing.subscriptions SET version = $2, updated_at = $3 WHERE id = $1`
+			if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, ev.At); err != nil {
+				return fmt.Errorf("project AdminAdjustmentApplied: %w", err)
+			}
+			return nil
+		}
+		const q = `
+UPDATE billing.subscriptions SET
+  version = $2, status = 'trialing', trial_ends_at = $3, period_end = $3, updated_at = $4
+WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, *ev.TrialEndsAt, ev.At); err != nil {
+			return fmt.Errorf("project AdminAdjustmentApplied: %w", err)
+		}
+		if err := p.recalculateEntitlementsForSub(ctx, tx, ev.SubscriptionID); err != nil {
+			return err
+		}
+
+	case domain.CouponAppliedEvent:
+		couponJSON, err := jsonRaw(ev.Coupon)
+		if err != nil {
+			return err
+		}
+		const q = `UPDATE billing.subscriptions SET version = $2, coupon = $3, updated_at = $4 WHERE id = $1`
+		if _, err := tx.Exec(ctx, q, ev.SubscriptionID, e.StreamVersion, couponJSON, ev.At); err != nil {
+			return fmt.Errorf("project CouponAppliedEvent: %w", err)
 		}
 	}
 
@@ -428,7 +476,7 @@ INSERT INTO billing.entitlements (
 )
 SELECT
   o.organization_id, $1, $2, $3, $4,
-  $5, $6, COALESCE((SELECT COUNT(*) FROM read_partnernetwork.members m WHERE m.organization_id = o.organization_id AND m.role = 'veterinarian' AND m.active = true), 0),
+  $5, $6, COALESCE((SELECT COUNT(*) FROM read_partnernetwork.org_members m WHERE m.organization_id = o.organization_id AND m.role = 'veterinarian' AND m.status = 'active'), 0),
   $7, $8, $9, now()
 FROM billing.account_organizations o
 WHERE o.account_id = $1

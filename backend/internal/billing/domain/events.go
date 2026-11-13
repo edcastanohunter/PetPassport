@@ -60,6 +60,17 @@ type PaymentMethodSet struct {
 func (PaymentMethodSet) EventName() string  { return "PaymentMethodSet" }
 func (PaymentMethodSet) SchemaVersion() int { return 1 }
 
+// PaymentMethodRemoved retira el método de pago de la cuenta (API-004). No está
+// en la lista de DOM-006: se añade porque DELETE payment-methods necesita un
+// hecho propio (ver "Decisiones tomadas" del PR de M5.2).
+type PaymentMethodRemoved struct {
+	AccountID uuid.UUID `json:"account_id"`
+	At        time.Time `json:"at"`
+}
+
+func (PaymentMethodRemoved) EventName() string  { return "PaymentMethodRemoved" }
+func (PaymentMethodRemoved) SchemaVersion() int { return 1 }
+
 // BillingAccountClosed cierra definitivamente la cuenta de facturación.
 type BillingAccountClosed struct {
 	AccountID uuid.UUID `json:"account_id"`
@@ -163,6 +174,8 @@ type ChargeScheduled struct {
 	Lines          []ChargeLine `json:"lines"`
 	Period         *Period      `json:"period,omitempty"`
 	ScheduledAt    time.Time    `json:"scheduled_at"`
+	// CreditApplied es el crédito de cortesía consumido por este cargo (aditivo, M5.2).
+	CreditApplied float64 `json:"credit_applied,omitempty"`
 }
 
 func (ChargeScheduled) EventName() string  { return "ChargeScheduled" }
@@ -176,6 +189,8 @@ type ChargePaid struct {
 	PaymentRef     string    `json:"payment_ref"`
 	Manual         bool      `json:"manual"`
 	PaidAt         time.Time `json:"paid_at"`
+	// Provider es el adaptador que confirmó el pago (aditivo, M5.2).
+	Provider string `json:"provider,omitempty"`
 }
 
 func (ChargePaid) EventName() string  { return "ChargePaid" }
@@ -199,6 +214,13 @@ type ChargeRefunded struct {
 	Amount         float64   `json:"amount"`
 	Reason         string    `json:"reason"`
 	RefundedAt     time.Time `json:"refunded_at"`
+	// RefundRef y Provider identifican el reembolso en el proveedor (aditivos, M5.2).
+	RefundRef string `json:"refund_ref,omitempty"`
+	Provider  string `json:"provider,omitempty"`
+	// RefundedTotal es el total reembolsado del cargo tras este reembolso
+	// (aditivo, M5.2). Hace idempotente la proyección: reaplicar el evento no
+	// vuelve a sumar Amount. Cero en eventos anteriores a M5.2.
+	RefundedTotal float64 `json:"refunded_total,omitempty"`
 }
 
 func (ChargeRefunded) EventName() string  { return "ChargeRefunded" }
@@ -282,6 +304,9 @@ type AdminAdjustmentApplied struct {
 	Details        string    `json:"details"`
 	Reason         string    `json:"reason"`
 	At             time.Time `json:"at"`
+	// Efectos estructurados del ajuste (aditivos, M5.2).
+	TrialEndsAt *time.Time `json:"trial_ends_at,omitempty"`
+	Credit      float64    `json:"credit,omitempty"`
 }
 
 func (AdminAdjustmentApplied) EventName() string  { return "AdminAdjustmentApplied" }

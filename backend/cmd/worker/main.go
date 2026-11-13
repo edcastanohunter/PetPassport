@@ -159,6 +159,11 @@ func run() error {
 	consumer := process.NewConsumer(a.pool, a.store, reg, process.ConsumerOptions{Logger: logger})
 	registerProcessManagers(consumer, allowed, sched)
 	registerCommands(commands, a.pool, a.store, logger)
+	billing, err := newBillingModule(ctx, a, sched, logger)
+	if err != nil {
+		return err
+	}
+	billing.register(consumer, allowed, sched, commands)
 	if err := process.ValidateEmits(consumer.ProcessManagers(), allowed); err != nil {
 		return err
 	}
@@ -223,6 +228,10 @@ func run() error {
 	}
 	for _, rx := range rxRunners {
 		runners = append(runners, makeLeased(rx.Name, rx.Run))
+	}
+
+	for _, br := range billing.runners() {
+		runners = append(runners, makeLeased(br.Name, br.Run))
 	}
 
 	// Pool de workers asynq (PP-F3-ARQ-008) si Redis está configurado

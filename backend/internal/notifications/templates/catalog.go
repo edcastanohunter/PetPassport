@@ -38,6 +38,10 @@ var Catalog = map[string]Spec{
 	"vaccine_reminder":        {1, []string{"pet_name", "due_date", "link"}},
 	"clinic_suspended_notice": {1, []string{"org_name", "link"}},
 	"clinic_daily_agenda":     {1, []string{"org_name", "date", "count", "link"}},
+	"billing_payment_failed":  {1, []string{"org_name", "link"}},
+	"billing_restricted":      {1, []string{"org_name", "link"}},
+	"billing_cancelled":       {1, []string{"org_name", "link"}},
+	"billing_reactivated":     {1, []string{"org_name", "link"}},
 }
 
 // Names devuelve los nombres del catálogo ordenados.

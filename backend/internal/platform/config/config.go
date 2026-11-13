@@ -70,6 +70,7 @@ type Config struct {
 	OTLPEndpoint  string
 	LogLevel      slog.Level
 	PublicBaseURL string
+	Billing       Billing
 	TypstBin      string
 
 	Redis struct {
@@ -185,6 +186,8 @@ func Load() (*Config, error) {
 	cfg.Search.Username = os.Getenv("PP_OPENSEARCH_USERNAME")
 	cfg.Search.Password = os.Getenv("PP_OPENSEARCH_PASSWORD")
 
+	cfg.Billing = loadBilling(cfg.Env, &errs)
+
 	cfg.ShutdownDrain = 5 * time.Second
 	cfg.ShutdownTimeout = 30 * time.Second
 
@@ -273,6 +276,7 @@ type Worker struct {
 	}
 	TypstBin      string
 	PublicBaseURL string
+	Billing       Billing
 
 	// Email transaccional (M2.4): solo el worker abre SMTP (ARQ-014).
 	SMTP struct {
@@ -379,11 +383,52 @@ func LoadWorker() (*Worker, error) {
 	cfg.Search.Addresses = splitCSV(getenv("PP_OPENSEARCH_URLS", "http://localhost:9200"))
 	cfg.Search.Username = os.Getenv("PP_OPENSEARCH_USERNAME")
 	cfg.Search.Password = os.Getenv("PP_OPENSEARCH_PASSWORD")
+	cfg.Billing = loadBilling(cfg.Env, &errs)
 
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
 	return &cfg, nil
+}
+
+// Billing es la configuración de cobro y facturación (PP-F5-ARQ-002, SEC-001).
+// Los secretos solo viven en el entorno: nunca en el repo ni en logs.
+type Billing struct {
+	// Wompi (Colombia). Con PP_WOMPI_PRIVATE_KEY vacía el adaptador no se registra.
+	WompiBaseURL         string // PP_WOMPI_BASE_URL (defecto: sandbox fuera de prod)
+	WompiPublicKey       string // PP_WOMPI_PUBLIC_KEY
+	WompiPrivateKey      string // PP_WOMPI_PRIVATE_KEY
+	WompiIntegritySecret string // PP_WOMPI_INTEGRITY_SECRET
+	WompiEventsSecret    string // PP_WOMPI_EVENTS_SECRET
+	// FakeWebhookSecret firma los webhooks del proveedor fake (dev y staging).
+	FakeWebhookSecret string // PP_BILLING_FAKE_WEBHOOK_SECRET
+}
+
+// WompiEnabled indica si hay credenciales de Wompi.
+func (b Billing) WompiEnabled() bool { return b.WompiPrivateKey != "" }
+
+func loadBilling(env Env, errs *[]error) Billing {
+	b := Billing{
+		WompiBaseURL:         os.Getenv("PP_WOMPI_BASE_URL"),
+		WompiPublicKey:       os.Getenv("PP_WOMPI_PUBLIC_KEY"),
+		WompiPrivateKey:      os.Getenv("PP_WOMPI_PRIVATE_KEY"),
+		WompiIntegritySecret: os.Getenv("PP_WOMPI_INTEGRITY_SECRET"),
+		WompiEventsSecret:    os.Getenv("PP_WOMPI_EVENTS_SECRET"),
+		FakeWebhookSecret:    os.Getenv("PP_BILLING_FAKE_WEBHOOK_SECRET"),
+	}
+	if b.WompiBaseURL == "" {
+		b.WompiBaseURL = "https://sandbox.wompi.co/v1"
+		if env == EnvProd {
+			b.WompiBaseURL = "https://production.wompi.co/v1"
+		}
+	}
+	if b.WompiEnabled() && (b.WompiPublicKey == "" || b.WompiIntegritySecret == "" || b.WompiEventsSecret == "") {
+		*errs = append(*errs, errors.New("wompi requiere PP_WOMPI_PUBLIC_KEY, PP_WOMPI_INTEGRITY_SECRET y PP_WOMPI_EVENTS_SECRET junto a PP_WOMPI_PRIVATE_KEY"))
+	}
+	if env == EnvProd && b.WompiEnabled() && strings.Contains(b.WompiBaseURL, "sandbox") {
+		*errs = append(*errs, errors.New("PP_WOMPI_BASE_URL apunta a sandbox en prod"))
+	}
+	return b
 }
 
 // unsubscribeSecret lee PP_UNSUBSCRIBE_SECRET: ≥ 32 bytes fuera de dev; en dev

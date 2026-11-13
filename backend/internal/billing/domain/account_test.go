@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -109,6 +110,12 @@ func TestBillingAccount_Lifecycle(t *testing.T) {
 	}
 	if err := acc.DetachOrganization(org2, now); err == nil {
 		t.Fatal("expected error detaching non-attached org")
+	}
+	// PRD-008: la última organización no se retira (se cierra la cuenta).
+	for id := range acc.Organizations() {
+		if err := acc.DetachOrganization(id, now); !errors.Is(err, ErrLastOrganization) {
+			t.Fatalf("expected ErrLastOrganization, got %v", err)
+		}
 	}
 
 	// 5. Set payment method

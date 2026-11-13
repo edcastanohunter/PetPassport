@@ -1,0 +1,5 @@
+The PetPassport subscription for {{.V.org_name}} was cancelled because the payment was not settled within 60 days.
+
+The information remains available to view and export from the billing settings. You can subscribe to a plan again at any time.
+
+Go to billing: {{.V.link}}

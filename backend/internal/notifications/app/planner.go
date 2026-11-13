@@ -42,6 +42,7 @@ const (
 	RuleClinicDailyAgenda     = "clinic_daily_agenda"
 	RuleCareLinkRequest       = "care_link_request"
 	RuleCareLinkResult        = "care_link_result"
+	RuleBillingDunning        = "billing_dunning"
 )
 
 // HandledEvents son los eventos a los que suscribe el PM notifications.rules.
@@ -58,6 +59,7 @@ var HandledEvents = []string{
 	"VaccinationEntryRecorded", "PreventiveEntryRecorded", "NextDueAdjusted", "VaccinationEntryVoided",
 	"PetMarkedDeceased", "PetGuardianshipTransferred",
 	"CareLinkRequested", "CareLinkRequestApproved", "CareLinkRequestDeclined",
+	"ChargeFailed", "SubscriptionRestricted", "SubscriptionCancelled", "SubscriptionReactivated",
 }
 
 // Planner traduce un evento del outbox en acciones. Es puro respecto a la
@@ -128,6 +130,8 @@ func (p *Planner) Plan(ctx context.Context, e eventstore.StoredEvent) ([]Action,
 		return p.careLinkRequested(ctx, e)
 	case "CareLinkRequestApproved", "CareLinkRequestDeclined":
 		return p.careLinkResolved(ctx, e)
+	case "ChargeFailed", "SubscriptionRestricted", "SubscriptionCancelled", "SubscriptionReactivated":
+		return p.billingDunning(ctx, e)
 	}
 	return nil, nil
 }
@@ -592,6 +596,70 @@ func (p *Planner) careLinkResolved(ctx context.Context, e eventstore.StoredEvent
 	return out, nil
 }
 
+// billingTemplates: plantilla de cada evento de cobro (PP-F5-PRD-006).
+var billingTemplates = map[string]string{
+	"ChargeFailed":            "billing_payment_failed",
+	"SubscriptionRestricted":  "billing_restricted",
+	"SubscriptionCancelled":   "billing_cancelled",
+	"SubscriptionReactivated": "billing_reactivated",
+}
+
+// billingDunning avisa del ciclo de impago (PP-F5-PRD-006): cada cargo fallido
+// (los reintentos de los días 0, 3, 7 y 12 emiten uno cada uno), la
+// restricción de escritura, la cancelación por impago y la reactivación. Van
+// al titular de la cuenta de facturación y a los administradores de sus
+// organizaciones, en la categoría billing (no desactivable). Las
+// cancelaciones voluntarias no envían correo.
+func (p *Planner) billingDunning(ctx context.Context, e eventstore.StoredEvent) ([]Action, error) {
+	var ev struct {
+		SubscriptionID uuid.UUID `json:"subscription_id"`
+		Reason         string    `json:"reason"`
+	}
+	if err := decode(e, &ev); err != nil {
+		return nil, err
+	}
+	if e.Type == "SubscriptionCancelled" && ev.Reason != "non_payment" {
+		return nil, nil
+	}
+	c, ok, err := p.dir.SubscriptionContacts(ctx, ev.SubscriptionID)
+	if err != nil || !ok || len(c.OrgIDs) == 0 {
+		return nil, err
+	}
+	org, ok, err := p.dir.Org(ctx, c.OrgIDs[0])
+	if err != nil || !ok {
+		return nil, err
+	}
+	seen := map[uuid.UUID]bool{}
+	var recipients []User
+	add := func(u User) {
+		if !seen[u.ID] {
+			seen[u.ID] = true
+			recipients = append(recipients, u)
+		}
+	}
+	if owner, found, err := p.dir.User(ctx, c.OwnerID); err != nil {
+		return nil, err
+	} else if found {
+		add(owner)
+	}
+	for _, orgID := range c.OrgIDs {
+		admins, err := p.members(ctx, orgID, orgAdminRoles)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range admins {
+			add(u)
+		}
+	}
+	vars := map[string]string{"org_name": org.Name, "link_path": "/org/" + org.ID.String() + "/settings/billing"}
+	template := billingTemplates[e.Type]
+	out := make([]Action, 0, len(recipients))
+	for _, r := range recipients {
+		out = append(out, send(RuleBillingDunning, template, domain.Billing, r, SubjectSubscription, ev.SubscriptionID, e, vars))
+	}
+	return out, nil
+}
+
 // ---------------------------------------------------------------- utilidades
 
 // Subject types adicionales para entregas inmediatas.
@@ -650,6 +718,7 @@ func Validate() error {
 		"encounter_signed", "encounter_addendum", "follow_up_reminder", "vaccine_recorded", "vaccine_reminder",
 		"clinic_suspended_notice", "transfer_done", "clinic_daily_agenda",
 		"care_link_request", "care_link_result",
+		"billing_payment_failed", "billing_restricted", "billing_cancelled", "billing_reactivated",
 	} {
 		if _, ok := templates.Catalog[t]; !ok {
 			return fmt.Errorf("notifications: la regla usa la plantilla %q, que no está en el manifiesto", t)

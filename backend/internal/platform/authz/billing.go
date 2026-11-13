@@ -11,9 +11,15 @@ const (
 	BillingRead     Action = "billing:read"
 	BillingManage   Action = "billing:manage"
 	AdminPlansWrite Action = "admin:plans:write"
+	// Administración de facturación de SuperAdmin (PP-F5-API-007).
+	AdminBillingRead  Action = "admin:billing:read"
+	AdminBillingWrite Action = "admin:billing:write"
 )
 
 // BillingResource es la vista de autorización para operaciones de facturación.
+// Una cuenta se autoriza por las organizaciones que agrupa (OrgIDs): sin
+// ninguna organización conocida solo pasan super_admin y billing_admin, de modo
+// que conocer el id de una cuenta ajena no da acceso a ella.
 type BillingResource struct {
 	OrganizationID uuid.UUID
 	AccountID      uuid.UUID
@@ -24,6 +30,8 @@ func init() {
 	Register(BillingRead, billingReadPolicy)
 	Register(BillingManage, billingManagePolicy)
 	Register(AdminPlansWrite, superAdminOnly)
+	Register(AdminBillingRead, superAdminOnly)
+	Register(AdminBillingWrite, superAdminOnly)
 }
 
 func hasBillingAuthority(p auth.Principal, orgID uuid.UUID) bool {
@@ -71,11 +79,6 @@ func billingReadPolicy(p auth.Principal, res Resource) Decision {
 				return allow
 			}
 		}
-		if r.OrganizationID == uuid.Nil && len(r.OrgIDs) == 0 {
-			if hasBillingAuthority(p, uuid.Nil) {
-				return allow
-			}
-		}
 		return deny("not authorized for billing account")
 	case nil:
 		if hasBillingAuthority(p, uuid.Nil) {
@@ -106,11 +109,6 @@ func billingManagePolicy(p auth.Principal, res Resource) Decision {
 		}
 		for _, orgID := range r.OrgIDs {
 			if hasBillingAuthority(p, orgID) {
-				return allow
-			}
-		}
-		if r.OrganizationID == uuid.Nil && len(r.OrgIDs) == 0 {
-			if hasBillingAuthority(p, uuid.Nil) {
 				return allow
 			}
 		}

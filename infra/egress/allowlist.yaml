@@ -14,6 +14,17 @@ core_services:
     ports: [8080, 8443]
     allowed_methods: ["GET", "POST"]
 
+# Proveedores de pago (PP-F5-ARQ-002, SEC-001). El host efectivo es el de PP_WOMPI_BASE_URL.
+payment_providers:
+  - host: "production.wompi.co"
+    description: "Wompi: cobro recurrente con método tokenizado, reembolsos y consulta de transacciones"
+    ports: [443]
+    allowed_methods: ["GET", "POST"]
+  - host: "sandbox.wompi.co"
+    description: "Wompi sandbox (nunca en prod: la configuración lo rechaza)"
+    ports: [443]
+    allowed_methods: ["GET", "POST"]
+
 # Dominios autorizados para webhooks salientes hacia partners (sincronizados desde read_partnernetwork.partner_integrations)
 partner_webhooks:
   - domain: "*.petpassport.local"

@@ -128,6 +128,22 @@ func (d *Directory) FutureConfirmedGuardians(ctx context.Context, orgID uuid.UUI
 		  WHERE organization_id = $1 AND status = 'confirmed' AND slot_start > $2 ORDER BY guardian_id`, orgID, now)
 }
 
+// SubscriptionContacts resuelve el titular de la cuenta de facturación y sus
+// organizaciones (PP-F5-PRD-006). Lee las proyecciones síncronas de Billing.
+func (d *Directory) SubscriptionContacts(ctx context.Context, subscriptionID uuid.UUID) (app.BillingContacts, bool, error) {
+	var c app.BillingContacts
+	var accountID uuid.UUID
+	err := d.q.QueryRow(ctx,
+		`SELECT a.id, a.owner_user_id FROM billing.subscriptions s JOIN billing.accounts a ON a.id = s.account_id WHERE s.id = $1`,
+		subscriptionID).Scan(&accountID, &c.OwnerID)
+	if c, ok, err := one(err, c); err != nil || !ok {
+		return c, ok, err
+	}
+	c.OrgIDs, err = d.ids(ctx,
+		`SELECT organization_id FROM billing.account_organizations WHERE account_id = $1 ORDER BY joined_at, organization_id`, accountID)
+	return c, err == nil, err
+}
+
 func (d *Directory) ids(ctx context.Context, sql string, args ...any) ([]uuid.UUID, error) {
 	rows, err := d.q.Query(ctx, sql, args...)
 	if err != nil {

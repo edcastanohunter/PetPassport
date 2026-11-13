@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +33,15 @@ type Service struct {
 	router      *providers.Router
 	uow         UnitOfWork
 	runner      ProjectionRunner
+	jobs        CommandScheduler
+	coupons     CouponStore
 	clock       func() time.Time
+}
+
+// CouponStore valida y consume cupones (PRD-022).
+type CouponStore interface {
+	Check(ctx context.Context, code, planCode string, now time.Time) (*infra.Coupon, error)
+	Redeem(ctx context.Context, code, planCode string, now time.Time) (*infra.Coupon, error)
 }
 
 // NewService construye el servicio de aplicación de facturación.
@@ -75,6 +85,55 @@ func (s *Service) WithClock(clock func() time.Time) *Service {
 	return s
 }
 
+// WithCoupons conecta el catálogo de cupones. Sin él, contratar con cupón falla
+// con infra.ErrCouponInvalid: nunca se ignora un cupón en silencio.
+func (s *Service) WithCoupons(c CouponStore) *Service {
+	s.coupons = c
+	return s
+}
+
+// coupon resuelve el cupón de una contratación. redeem consume un uso en la
+// transacción del contexto.
+func (s *Service) coupon(ctx context.Context, code *string, planCode string, now time.Time, redeem bool) (*domain.CouponApplied, error) {
+	if code == nil || strings.TrimSpace(*code) == "" {
+		return nil, nil
+	}
+	if s.coupons == nil {
+		return nil, infra.ErrCouponInvalid
+	}
+	c := strings.ToUpper(strings.TrimSpace(*code))
+	var (
+		found *infra.Coupon
+		err   error
+	)
+	if redeem {
+		found, err = s.coupons.Redeem(ctx, c, planCode, now)
+	} else {
+		found, err = s.coupons.Check(ctx, c, planCode, now)
+	}
+	if err != nil {
+		return nil, err
+	}
+	applied := found.Applied(now)
+	return &applied, nil
+}
+
+// WithJobs conecta el scheduler de comandos (reintento de cobro a demanda).
+func (s *Service) WithJobs(jobs CommandScheduler) *Service {
+	s.jobs = jobs
+	return s
+}
+
+// taxRate devuelve la tasa de impuestos del país según billing.provider_routing
+// y ref.tax_rules (ARQ-003). No hay tasa por defecto: un país sin regla es un error.
+func (s *Service) taxRate(ctx context.Context, country string) (float64, error) {
+	route, err := s.router.Route(ctx, country)
+	if err != nil {
+		return 0, err
+	}
+	return route.TaxRate, nil
+}
+
 // OpenAccountCmd define los datos para abrir una cuenta de facturación.
 type OpenAccountCmd struct {
 	AccountID   uuid.UUID
@@ -113,13 +172,46 @@ func (s *Service) OpenAccount(ctx context.Context, cmd OpenAccountCmd) (*domain.
 
 // AttachOrganization vincula una organización a la cuenta.
 func (s *Service) AttachOrganization(ctx context.Context, accountID, orgID uuid.UUID, seatPool string) error {
+	return s.AttachOrganizationWith(ctx, accountID, orgID, seatPool, nil)
+}
+
+// AttachOrganizationWith vincula la organización y ejecuta inTx en la misma
+// transacción (p. ej. marcar aceptada la invitación, PP-F5-PRD-008).
+func (s *Service) AttachOrganizationWith(ctx context.Context, accountID, orgID uuid.UUID, seatPool string, inTx func(ctx context.Context) error) error {
+	now := s.clock().UTC()
+	return s.uow.Do(ctx, func(txCtx context.Context) error {
+		if inTx != nil {
+			if err := inTx(txCtx); err != nil {
+				return err
+			}
+		}
+		acc, err := s.accountRepo.Load(txCtx, accountID)
+		if err != nil {
+			return err
+		}
+		if err := acc.AttachOrganization(orgID, seatPool, now); err != nil {
+			return err
+		}
+		events, err := s.accountRepo.Save(txCtx, acc)
+		if err != nil {
+			return err
+		}
+		if s.runner != nil {
+			return s.runner.Apply(txCtx, events)
+		}
+		return nil
+	})
+}
+
+// DetachOrganization retira una organización de la cuenta (PP-F5-PRD-008).
+func (s *Service) DetachOrganization(ctx context.Context, accountID, orgID uuid.UUID) error {
 	now := s.clock().UTC()
 	return s.uow.Do(ctx, func(txCtx context.Context) error {
 		acc, err := s.accountRepo.Load(txCtx, accountID)
 		if err != nil {
 			return err
 		}
-		if err := acc.AttachOrganization(orgID, seatPool, now); err != nil {
+		if err := acc.DetachOrganization(orgID, now); err != nil {
 			return err
 		}
 		events, err := s.accountRepo.Save(txCtx, acc)
@@ -225,8 +317,30 @@ func (s *Service) PreviewSubscription(ctx context.Context, cmd PreviewSubscripti
 	if err != nil {
 		return nil, err
 	}
+	lines := []domain.ChargeLine{{
+		Description: fmt.Sprintf("Plan %s (%s)", plan.Name["es"], cmd.Cycle),
+		Amount:      subtotal,
+		Quantity:    seats,
+	}}
+	coupon, err := s.coupon(ctx, cmd.Coupon, cmd.PlanCode, s.clock().UTC(), false)
+	if err != nil {
+		return nil, err
+	}
+	if coupon != nil {
+		d := coupon.FirstChargeDiscount(subtotal)
+		lines = append(lines, domain.ChargeLine{Description: "Cupón " + coupon.Code, Amount: -d, Quantity: 1})
+		subtotal = domain.RoundCents(subtotal - d)
+	}
 
-	tax := domain.RoundCents(subtotal * 0.19)
+	acc, err := s.queries.GetAccount(ctx, cmd.AccountID)
+	if err != nil || acc == nil {
+		return nil, domain.ErrAccountClosed
+	}
+	rate, err := s.taxRate(ctx, acc.Country)
+	if err != nil {
+		return nil, err
+	}
+	tax := domain.RoundCents(subtotal * rate)
 	total := domain.RoundCents(subtotal + tax)
 	now := s.clock().UTC()
 
@@ -238,13 +352,7 @@ func (s *Service) PreviewSubscription(ctx context.Context, cmd PreviewSubscripti
 	}
 
 	return &PreviewResult{
-		Lines: []domain.ChargeLine{
-			{
-				Description: fmt.Sprintf("Plan %s (%s)", plan.Name["es"], cmd.Cycle),
-				Amount:      subtotal,
-				Quantity:    seats,
-			},
-		},
+		Lines:        lines,
 		Subtotal:     subtotal,
 		Tax:          tax,
 		Total:        total,
@@ -294,29 +402,24 @@ func (s *Service) Subscribe(ctx context.Context, cmd SubscribeCmd) (*domain.Subs
 			seats = *cmd.Seats
 		}
 
-		sub, err = domain.Subscribe(
-			cmd.SubscriptionID, cmd.AccountID, cmd.Kind, *plan, seats, cmd.Tier, cmd.Cycle,
-			nil, cmd.ManualBilling, hasPayment, activeProfs, 0.19, now,
-		)
+		rate, err := s.taxRate(txCtx, acc.Country)
 		if err != nil {
 			return err
 		}
-
-		// Cobrar cargo pendiente si no es manual
-		for chID, ch := range sub.Charges() {
-			if ch.Status == domain.ChargeStatusPending && !cmd.ManualBilling && hasPayment {
-				paymentProvider, _ := s.router.ForCountry(acc.Country)
-				token := ""
-				if acc.PaymentMethod != nil {
-					token = acc.PaymentMethod.Token
-				}
-				payRef, status, err := paymentProvider.Charge(txCtx, chID, cmd.AccountID.String(), ch.Total, ch.Currency, token)
-				if err == nil && status == "paid" {
-					_ = sub.RecordChargeResult(chID, "paid", payRef, "", now)
-				} else {
-					_ = sub.RecordChargeResult(chID, "failed", "", "PAYMENT_FAILED", now)
-				}
-			}
+		// El uso del cupón se consume en la misma transacción: si la contratación
+		// falla, el uso se revierte.
+		coupon, err := s.coupon(txCtx, cmd.CouponCode, cmd.PlanCode, now, true)
+		if err != nil {
+			return err
+		}
+		// El cobro del cargo programado es asíncrono (ARQ-002): lo lanza el process
+		// manager billing.charge-collector al ver ChargeScheduled.
+		sub, err = domain.Subscribe(
+			cmd.SubscriptionID, cmd.AccountID, cmd.Kind, *plan, seats, cmd.Tier, cmd.Cycle,
+			coupon, cmd.ManualBilling, hasPayment, activeProfs, rate, now,
+		)
+		if err != nil {
+			return err
 		}
 
 		events, err := s.subRepo.Save(txCtx, sub)
@@ -362,7 +465,14 @@ func (s *Service) ChangePlan(ctx context.Context, subID uuid.UUID, planCode stri
 			newSeatsVal = sub.Seats().Purchased
 		}
 
-		if err := sub.ChangePlan(*newPlan, newSeatsVal, tier, cycle, *currPlan, activeProfs, 0.19, now); err != nil {
+		if acc == nil {
+			return domain.ErrAccountClosed
+		}
+		rate, err := s.taxRate(txCtx, acc.Country)
+		if err != nil {
+			return err
+		}
+		if err := sub.ChangePlan(*newPlan, newSeatsVal, tier, cycle, *currPlan, activeProfs, rate, now); err != nil {
 			return err
 		}
 
@@ -402,7 +512,14 @@ func (s *Service) AdjustSeats(ctx context.Context, subID uuid.UUID, delta int) e
 		}
 		newSeats := currSeats + delta
 
-		if err := sub.AdjustSeats(newSeats, *plan, activeProfs, 0.19, now); err != nil {
+		if acc == nil {
+			return domain.ErrAccountClosed
+		}
+		rate, err := s.taxRate(txCtx, acc.Country)
+		if err != nil {
+			return err
+		}
+		if err := sub.AdjustSeats(newSeats, *plan, activeProfs, rate, now); err != nil {
 			return err
 		}
 
@@ -474,37 +591,28 @@ func (s *Service) RetryCharge(ctx context.Context, subID uuid.UUID) error {
 			return domain.ErrPaymentMethodRequired
 		}
 
-		var targetChargeID uuid.UUID
-		var targetTotal float64
-		var targetCur string
-		for chID, ch := range sub.Charges() {
-			if ch.Status == domain.ChargeStatusPending || ch.Status == domain.ChargeStatusFailed {
-				targetChargeID = chID
-				targetTotal = ch.Total
-				targetCur = ch.Currency
-				break
+		// El más antiguo primero. El cobro lo ejecuta el worker con
+		// billing.CollectCharge, que es idempotente: pulsar dos veces no cobra dos veces.
+		var target *domain.Charge
+		for _, ch := range sub.Charges() {
+			if ch.Status != domain.ChargeStatusPending && ch.Status != domain.ChargeStatusFailed {
+				continue
+			}
+			if target == nil || ch.ScheduledAt.Before(target.ScheduledAt) {
+				c := ch
+				target = &c
 			}
 		}
-
-		if targetChargeID == uuid.Nil {
-			return fmt.Errorf("no hay cargos pendientes para reintentar")
+		if target == nil {
+			return ErrNothingToRetry
 		}
-
-		payProv, _ := s.router.ForCountry(acc.Country)
-		ref, status, err := payProv.Charge(txCtx, targetChargeID, sub.AccountID().String(), targetTotal, targetCur, acc.PaymentMethod.Token)
-		if err == nil && status == "paid" {
-			_ = sub.RecordChargeResult(targetChargeID, "paid", ref, "", now)
-		} else {
-			_ = sub.RecordChargeResult(targetChargeID, "failed", "", "RETRY_FAILED", now)
+		if s.jobs == nil {
+			return errors.New("billing: scheduler de comandos no configurado")
 		}
-
-		events, err := s.subRepo.Save(txCtx, sub)
-		if err != nil {
-			return err
-		}
-		if s.runner != nil {
-			return s.runner.Apply(txCtx, events)
-		}
-		return nil
+		return s.jobs.ScheduleCommand(txCtx, now, CollectCharge{ChargeID: target.ID},
+			fmt.Sprintf("billing.collect-manual:%s:%d", target.ID, now.Unix()/60))
 	})
 }
+
+// ErrNothingToRetry: la suscripción no tiene cargos pendientes ni fallidos.
+var ErrNothingToRetry = errors.New("no hay cargos pendientes para reintentar")
