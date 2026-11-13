@@ -32,7 +32,9 @@ type BillingHandlers struct {
 	invoices *infra.InvoiceStore
 	objects  Presigner
 	coupons  *infra.CouponStore
-	scope    Scope
+	// invitations: cuentas multi-organización (PRD-008); nil → sin invitaciones.
+	invitations Invitations
+	scope       Scope
 }
 
 // NewBillingHandlers crea una nueva instancia de BillingHandlers.
@@ -73,6 +75,10 @@ func mapDomainError(err error) error {
 		return &kernel.DomainError{Code: "TAX_ID_INVALID", Message: err.Error()}
 	case errors.Is(err, domain.ErrLegalEntityIncomplete):
 		return &kernel.DomainError{Code: "LEGAL_ENTITY_INCOMPLETE", Message: err.Error()}
+	case errors.Is(err, domain.ErrLastOrganization):
+		return &kernel.DomainError{Code: "LAST_ORGANIZATION", Message: err.Error()}
+	case errors.Is(err, domain.ErrOrgNotAttached):
+		return &kernel.NotFoundError{Resource: "Organization"}
 	case errors.Is(err, domain.ErrOrgAlreadyBilled):
 		return &kernel.DomainError{Code: "ORGANIZATION_ALREADY_BILLED", Message: err.Error()}
 	case errors.Is(err, domain.ErrActiveSubscription):

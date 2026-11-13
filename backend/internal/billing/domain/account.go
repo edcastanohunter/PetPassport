@@ -177,6 +177,10 @@ func (a *BillingAccount) DetachOrganization(orgID uuid.UUID, now time.Time) erro
 	if _, exists := a.organizations[orgID]; !exists {
 		return ErrOrgNotAttached
 	}
+	if len(a.organizations) == 1 {
+		// Una cuenta sin organizaciones queda huérfana: se cierra en su lugar (PRD-008).
+		return ErrLastOrganization
+	}
 	a.recordThat(OrganizationDetached{
 		AccountID:      a.id,
 		OrganizationID: orgID,

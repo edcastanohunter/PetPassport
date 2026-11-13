@@ -7,6 +7,8 @@ import type { components } from '@/shared/api/schema'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import BillingStatusBanner from '../components/BillingStatusBanner.vue'
 import PaymentMethodPanel from '../components/PaymentMethodPanel.vue'
+import AccountOrganizationsPanel from '../components/AccountOrganizationsPanel.vue'
+import BillingInvitationsPanel from '../components/BillingInvitationsPanel.vue'
 import { formatMoney } from '../money'
 
 type Invoice = components['schemas']['Invoice']
@@ -299,6 +301,8 @@ function resume() {
       {{ notice }}
     </p>
 
+    <BillingInvitationsPanel :org-id="orgId" @accepted="load" />
+
     <p v-if="loading" class="text-surface-500">{{ t('common.loading') }}</p>
 
     <div v-else-if="!account || !sub" class="card space-y-3" data-testid="billing-empty">
@@ -533,6 +537,9 @@ function resume() {
           </table>
         </div>
       </section>
+
+      <!-- Organizaciones de la cuenta (PRD-008) -->
+      <AccountOrganizationsPanel :account-id="account.id" :org-id="orgId" />
 
       <!-- Pagos -->
       <section class="card space-y-3" aria-labelledby="pay-title">

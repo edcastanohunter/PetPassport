@@ -10,6 +10,7 @@ var (
 	ErrAccountClosed          = errors.New("la cuenta de facturación está cerrada")
 	ErrOrgAlreadyBilled       = errors.New("la organización ya pertenece a una cuenta de facturación")
 	ErrOrgNotAttached         = errors.New("la organización no pertenece a esta cuenta")
+	ErrLastOrganization       = errors.New("no se puede retirar la última organización de la cuenta")
 	ErrActiveSubscription     = errors.New("la cuenta tiene suscripciones activas")
 	ErrInvalidTaxID           = errors.New("identificación fiscal inválida")
 	ErrLegalEntityIncomplete  = errors.New("datos de la entidad legal incompletos")

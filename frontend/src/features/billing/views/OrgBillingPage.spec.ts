@@ -88,11 +88,29 @@ function routeGet(status: string, withSub = true) {
             ],
           },
         })
+      case '/billing-accounts/{id}/organizations':
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                organization_id: 'org-1',
+                name: 'Sede Sur',
+                seat_pool: 'own',
+                joined_at: '2026-11-01T00:00:00Z',
+              },
+            ],
+            invitations: [],
+          },
+        })
+      case '/organizations/{orgId}/billing-invitations':
+        return Promise.resolve({ data: { data: invitations } })
       default:
         return Promise.resolve({ data: undefined })
     }
   })
 }
+
+let invitations: unknown[] = []
 
 function mountPage() {
   const i18n = createI18n({
@@ -238,5 +256,45 @@ describe('OrgBillingPage (PP-F5-FE-003)', () => {
     const w = mountPage()
     await flushPromises()
     expect(w.find('[data-testid="billing-empty"]').exists()).toBe(true)
+  })
+  it('PRD-008: invita una organización por su código público', async () => {
+    routeGet('active')
+    const w = mountPage()
+    await flushPromises()
+    expect(w.get('[data-testid="account-orgs"]').text()).toContain('Sede Sur')
+    expect(w.find('[data-testid="detach-org"]').exists()).toBe(false) // la última no se retira
+    await w.get('#invite-code').setValue(' norte01 ')
+    await w.get('[data-testid="invite-org"]').trigger('submit')
+    await flushPromises()
+    expect(POST).toHaveBeenCalledWith('/billing-accounts/{id}/organizations', {
+      params: { path: { id: 'acc-1' } },
+      body: { public_code: 'NORTE01', seat_pool: 'own' },
+    })
+  })
+
+  it('PRD-008: la organización invitada acepta aunque aún no tenga suscripción', async () => {
+    invitations = [
+      {
+        id: 'inv-9',
+        account_id: 'acc-9',
+        account_name: 'Cadena Vet SAS',
+        organization_id: 'org-1',
+        organization_name: 'Sede Sur',
+        seat_pool: 'shared',
+        status: 'pending',
+        created_at: '2026-11-10T00:00:00Z',
+      },
+    ]
+    routeGet('active', false)
+    const w = mountPage()
+    await flushPromises()
+    expect(w.get('[data-testid="billing-invitations"]').text()).toContain('Cadena Vet SAS')
+    await w.get('[data-testid="accept-invitation"]').trigger('click')
+    await flushPromises()
+    expect(POST).toHaveBeenCalledWith('/billing-invitations/{invitationId}/accept', {
+      params: { path: { invitationId: 'inv-9' } },
+    })
+    expect(w.find('[data-testid="billing-invitations"]').exists()).toBe(false)
+    invitations = []
   })
 })

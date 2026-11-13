@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -590,5 +591,94 @@ func TestPPF5API001_PlanVersioningAgainstPostgres(t *testing.T) {
 	trail, err := e.ledger.AuditFor(ctx, []uuid.UUID{accountID, subID}, 10)
 	if err != nil || len(trail) != 1 || trail[0].Action != "admin.billing.subscription.adjust" || *trail[0].TargetID != subID {
 		t.Fatalf("auditoría de la cuenta: %+v err=%v", trail, err)
+	}
+}
+
+// insertOrgReadModel registra una organización activa en el modelo de lectura
+// de partnernetwork con el código público indicado.
+func insertOrgReadModel(t *testing.T, e *billingEnv, name, code string) uuid.UUID {
+	t.Helper()
+	id := uuid.New()
+	_, err := e.pool.Exec(context.Background(), `
+INSERT INTO read_partnernetwork.organizations (id, version, type, legal_name, display_name, tax_country, tax_value,
+  address, city, country, contact_email, contact_phone, public_code, status, founder_id, created_at, updated_at)
+VALUES ($1, 1, 'clinic', $2, $2, 'CO', $3, '{}'::jsonb, 'Bogotá', 'CO', 'org@example.com', '+5700000000', $4, 'active', $5, now(), now())`,
+		id, name, uuid.NewString()[:12], code, uuid.New())
+	if err != nil {
+		t.Fatalf("organización de lectura: %v", err)
+	}
+	return id
+}
+
+func TestPPF5PRD008_OrganizationInvitationsAgainstPostgres(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	store := billinginfra.NewInvitationStore(e.pool.Pool)
+
+	accountID, _, _ := e.subscribedAccount(t, "Cadena Veterinaria")
+	code := "INV" + strings.ToUpper(uuid.NewString()[:6])
+	orgID := insertOrgReadModel(t, e, "Sede Norte", code)
+
+	found, name, ok, err := store.OrgByPublicCode(ctx, strings.ToLower(code))
+	if err != nil || !ok || found != orgID || name != "Sede Norte" {
+		t.Fatalf("código público: %v %q %v %v", found, name, ok, err)
+	}
+	inv := billinginfra.Invitation{
+		ID: uuid.New(), AccountID: accountID, OrganizationID: orgID, SeatPool: "shared",
+		InvitedBy: uuid.New(), CreatedAt: time.Now().UTC(),
+	}
+	if err := store.Create(ctx, inv); err != nil {
+		t.Fatal(err)
+	}
+	dup := inv
+	dup.ID = uuid.New()
+	if err := store.Create(ctx, dup); !errors.Is(err, billinginfra.ErrInvitationExists) {
+		t.Fatalf("invitación duplicada: %v", err)
+	}
+	pending, err := store.PendingForOrg(ctx, orgID)
+	if err != nil || len(pending) != 1 || pending[0].AccountLegalName != "Cadena Veterinaria" || pending[0].OrganizationName != "Sede Norte" {
+		t.Fatalf("pendientes de la organización: %+v err=%v", pending, err)
+	}
+
+	// Si vincular falla, la invitación sigue pendiente: misma transacción.
+	err = e.svc.AttachOrganizationWith(ctx, uuid.New(), orgID, "shared", func(txCtx context.Context) error {
+		return store.Resolve(txCtx, inv.ID, "accepted", uuid.New(), time.Now().UTC())
+	})
+	if err == nil {
+		t.Fatal("vincular a una cuenta inexistente debía fallar")
+	}
+	if got, _ := store.Get(ctx, inv.ID); got == nil || got.Status != "pending" {
+		t.Fatalf("la invitación debía seguir pendiente: %+v", got)
+	}
+
+	err = e.svc.AttachOrganizationWith(ctx, accountID, orgID, inv.SeatPool, func(txCtx context.Context) error {
+		return store.Resolve(txCtx, inv.ID, "accepted", uuid.New(), time.Now().UTC())
+	})
+	if err != nil {
+		t.Fatalf("aceptar: %v", err)
+	}
+	if got, _ := store.Get(ctx, inv.ID); got == nil || got.Status != "accepted" {
+		t.Fatalf("invitación aceptada: %+v", got)
+	}
+	if err := store.Resolve(ctx, inv.ID, "declined", uuid.New(), time.Now().UTC()); !errors.Is(err, billinginfra.ErrInvitationNotPending) {
+		t.Fatalf("resolver dos veces: %v", err)
+	}
+	orgs, err := store.AccountOrganizations(ctx, accountID)
+	if err != nil || len(orgs) != 2 {
+		t.Fatalf("organizaciones de la cuenta: %+v err=%v", orgs, err)
+	}
+	if billed, err := e.queries.GetAccountByOrg(ctx, orgID); err != nil || billed == nil || billed.ID != accountID {
+		t.Fatalf("la organización invitada debía facturar con la cuenta: %+v err=%v", billed, err)
+	}
+
+	if err := e.svc.DetachOrganization(ctx, accountID, orgID); err != nil {
+		t.Fatalf("desvincular: %v", err)
+	}
+	orgs, _ = store.AccountOrganizations(ctx, accountID)
+	if len(orgs) != 1 {
+		t.Fatalf("tras desvincular: %+v", orgs)
+	}
+	if err := e.svc.DetachOrganization(ctx, accountID, orgs[0].OrganizationID); !errors.Is(err, billingdomain.ErrLastOrganization) {
+		t.Fatalf("la última organización no se retira: %v", err)
 	}
 }

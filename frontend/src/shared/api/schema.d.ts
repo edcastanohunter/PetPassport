@@ -4101,6 +4101,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing-accounts/{id}/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Organizaciones de la cuenta e invitaciones pendientes
+         * @description Organizaciones vinculadas a la cuenta y las invitaciones que siguen pendientes (PP-F5-PRD-008).
+         */
+        get: operations["listBillingAccountOrganizations"];
+        put?: never;
+        /**
+         * Invitar una organización a la cuenta
+         * @description Invita una organización existente, identificada por su código público, a facturar con esta cuenta
+         *     (PP-F5-PRD-008). El administrador de la organización invitada debe aceptar. Organización ya vinculada
+         *     a una cuenta → `409 ORGANIZATION_ALREADY_BILLED`; invitación pendiente duplicada → `409 INVITATION_EXISTS`.
+         */
+        post: operations["inviteOrganizationToAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-accounts/{id}/organizations/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Desvincular una organización de la cuenta
+         * @description Retira la organización de la cuenta (PP-F5-PRD-008); deja de compartir la facturación. No se puede retirar
+         *     la última organización → `409 LAST_ORGANIZATION` (cerrar la cuenta en su lugar).
+         */
+        delete: operations["detachOrganizationFromAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{orgId}/billing-invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Invitaciones de facturación recibidas por la organización
+         * @description Invitaciones pendientes de cuentas de facturación a la organización (PP-F5-PRD-008).
+         */
+        get: operations["listOrgBillingInvitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-invitations/{invitationId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: components["parameters"]["BillingInvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar una invitación de facturación
+         * @description El administrador de la organización invitada acepta: la organización pasa a facturar con la cuenta
+         *     (OrganizationAttached) en la misma transacción (PP-F5-PRD-008). Invitación ya resuelta →
+         *     `409 INVITATION_NOT_PENDING`.
+         */
+        post: operations["acceptBillingInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/billing-invitations/{invitationId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: components["parameters"]["BillingInvitationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rechazar o revocar una invitación de facturación
+         * @description La organización invitada la rechaza (`declined`) o la cuenta que invitó la revoca (`revoked`)
+         *     (PP-F5-PRD-008).
+         */
+        post: operations["declineBillingInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/billing-accounts/{id}/subscriptions": {
         parameters: {
             query?: never;
@@ -7261,6 +7382,46 @@ export interface components {
             /** Format: date-time */
             closed_at?: string;
         };
+        InviteOrganizationRequest: {
+            public_code: string;
+            /**
+             * @default own
+             * @enum {string}
+             */
+            seat_pool: "own" | "shared";
+        };
+        BillingOrgInvitation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            account_id: string;
+            account_name: string;
+            /** Format: uuid */
+            organization_id: string;
+            organization_name: string;
+            /** @enum {string} */
+            seat_pool: "own" | "shared";
+            /** @enum {string} */
+            status: "pending" | "accepted" | "declined" | "revoked";
+            /** Format: date-time */
+            created_at: string;
+        };
+        BillingOrgInvitationList: {
+            data: components["schemas"]["BillingOrgInvitation"][];
+        };
+        BillingAccountOrganization: {
+            /** Format: uuid */
+            organization_id: string;
+            name: string;
+            /** @enum {string} */
+            seat_pool: "own" | "shared";
+            /** Format: date-time */
+            joined_at: string;
+        };
+        BillingAccountOrganizations: {
+            data: components["schemas"]["BillingAccountOrganization"][];
+            invitations: components["schemas"]["BillingOrgInvitation"][];
+        };
         OpenBillingAccountRequest: {
             /** Format: uuid */
             organization_id: string;
@@ -7539,6 +7700,7 @@ export interface components {
         ChargeId: string;
         DiscrepancyId: string;
         BillingAccountId: string;
+        BillingInvitationId: string;
         SubscriptionId: string;
         PlanCode: string;
     };
@@ -13448,6 +13610,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BillingAccount"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBillingAccountOrganizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organizaciones e invitaciones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAccountOrganizations"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    inviteOrganizationToAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Invitación creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingOrgInvitation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    detachOrganizationFromAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organización desvinculada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listOrgBillingInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitaciones pendientes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingOrgInvitationList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptBillingInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: components["parameters"]["BillingInvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitación aceptada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingOrgInvitation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    declineBillingInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: components["parameters"]["BillingInvitationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invitación cerrada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingOrgInvitation"];
                 };
             };
             default: components["responses"]["Problem"];

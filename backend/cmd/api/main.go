@@ -548,7 +548,7 @@ func run() error {
 	})
 	billingDeps := billinghttp.PaymentDeps{
 		Payments: billingPayments, Invoicing: billingInvoicing, Ledger: billingLedger, Invoices: billingInvoices,
-		Coupons: billingCoupons,
+		Coupons: billingCoupons, Invitations: billinginfra.NewInvitationStore(pool.Pool),
 	}
 	if objects != nil {
 		billingDeps.Objects = objects

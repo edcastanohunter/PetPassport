@@ -172,13 +172,46 @@ func (s *Service) OpenAccount(ctx context.Context, cmd OpenAccountCmd) (*domain.
 
 // AttachOrganization vincula una organización a la cuenta.
 func (s *Service) AttachOrganization(ctx context.Context, accountID, orgID uuid.UUID, seatPool string) error {
+	return s.AttachOrganizationWith(ctx, accountID, orgID, seatPool, nil)
+}
+
+// AttachOrganizationWith vincula la organización y ejecuta inTx en la misma
+// transacción (p. ej. marcar aceptada la invitación, PP-F5-PRD-008).
+func (s *Service) AttachOrganizationWith(ctx context.Context, accountID, orgID uuid.UUID, seatPool string, inTx func(ctx context.Context) error) error {
+	now := s.clock().UTC()
+	return s.uow.Do(ctx, func(txCtx context.Context) error {
+		if inTx != nil {
+			if err := inTx(txCtx); err != nil {
+				return err
+			}
+		}
+		acc, err := s.accountRepo.Load(txCtx, accountID)
+		if err != nil {
+			return err
+		}
+		if err := acc.AttachOrganization(orgID, seatPool, now); err != nil {
+			return err
+		}
+		events, err := s.accountRepo.Save(txCtx, acc)
+		if err != nil {
+			return err
+		}
+		if s.runner != nil {
+			return s.runner.Apply(txCtx, events)
+		}
+		return nil
+	})
+}
+
+// DetachOrganization retira una organización de la cuenta (PP-F5-PRD-008).
+func (s *Service) DetachOrganization(ctx context.Context, accountID, orgID uuid.UUID) error {
 	now := s.clock().UTC()
 	return s.uow.Do(ctx, func(txCtx context.Context) error {
 		acc, err := s.accountRepo.Load(txCtx, accountID)
 		if err != nil {
 			return err
 		}
-		if err := acc.AttachOrganization(orgID, seatPool, now); err != nil {
+		if err := acc.DetachOrganization(orgID, now); err != nil {
 			return err
 		}
 		events, err := s.accountRepo.Save(txCtx, acc)

@@ -6204,6 +6204,129 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /billing-accounts/{id}/organizations:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: listBillingAccountOrganizations
+      summary: Organizaciones de la cuenta e invitaciones pendientes
+      description: Organizaciones vinculadas a la cuenta y las invitaciones que siguen pendientes (PP-F5-PRD-008).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Organizaciones e invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingAccountOrganizations"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: inviteOrganizationToAccount
+      summary: Invitar una organización a la cuenta
+      description: |
+        Invita una organización existente, identificada por su código público, a facturar con esta cuenta
+        (PP-F5-PRD-008). El administrador de la organización invitada debe aceptar. Organización ya vinculada
+        a una cuenta → `409 ORGANIZATION_ALREADY_BILLED`; invitación pendiente duplicada → `409 INVITATION_EXISTS`.
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteOrganizationRequest"
+      responses:
+        "201":
+          description: Invitación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingOrgInvitation"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-accounts/{id}/organizations/{orgId}:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+      - $ref: "#/components/parameters/OrgId"
+    delete:
+      operationId: detachOrganizationFromAccount
+      summary: Desvincular una organización de la cuenta
+      description: |
+        Retira la organización de la cuenta (PP-F5-PRD-008); deja de compartir la facturación. No se puede retirar
+        la última organización → `409 LAST_ORGANIZATION` (cerrar la cuenta en su lugar).
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "204":
+          description: Organización desvinculada
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /organizations/{orgId}/billing-invitations:
+    parameters:
+      - $ref: "#/components/parameters/OrgId"
+    get:
+      operationId: listOrgBillingInvitations
+      summary: Invitaciones de facturación recibidas por la organización
+      description: Invitaciones pendientes de cuentas de facturación a la organización (PP-F5-PRD-008).
+      tags: [billing]
+      x-pp-action: billing:read
+      responses:
+        "200":
+          description: Invitaciones pendientes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingOrgInvitationList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-invitations/{invitationId}/accept:
+    parameters:
+      - $ref: "#/components/parameters/BillingInvitationId"
+    post:
+      operationId: acceptBillingInvitation
+      summary: Aceptar una invitación de facturación
+      description: |
+        El administrador de la organización invitada acepta: la organización pasa a facturar con la cuenta
+        (OrganizationAttached) en la misma transacción (PP-F5-PRD-008). Invitación ya resuelta →
+        `409 INVITATION_NOT_PENDING`.
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "200":
+          description: Invitación aceptada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingOrgInvitation"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /billing-invitations/{invitationId}/decline:
+    parameters:
+      - $ref: "#/components/parameters/BillingInvitationId"
+    post:
+      operationId: declineBillingInvitation
+      summary: Rechazar o revocar una invitación de facturación
+      description: |
+        La organización invitada la rechaza (`declined`) o la cuenta que invitó la revoca (`revoked`)
+        (PP-F5-PRD-008).
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "200":
+          description: Invitación cerrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingOrgInvitation"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /billing-accounts/{id}/subscriptions:
     parameters:
       - $ref: "#/components/parameters/BillingAccountId"
@@ -7184,6 +7307,13 @@ components:
         format: uuid
     BillingAccountId:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BillingInvitationId:
+      name: invitationId
       in: path
       required: true
       schema:
@@ -12362,6 +12492,80 @@ components:
         closed_at:
           type: string
           format: date-time
+
+    InviteOrganizationRequest:
+      type: object
+      required: [public_code]
+      properties:
+        public_code:
+          type: string
+          minLength: 3
+          maxLength: 32
+        seat_pool:
+          type: string
+          enum: [own, shared]
+          default: own
+    BillingOrgInvitation:
+      type: object
+      required: [id, account_id, account_name, organization_id, organization_name, seat_pool, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        account_name:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+        seat_pool:
+          type: string
+          enum: [own, shared]
+        status:
+          type: string
+          enum: [pending, accepted, declined, revoked]
+        created_at:
+          type: string
+          format: date-time
+    BillingOrgInvitationList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingOrgInvitation"
+    BillingAccountOrganization:
+      type: object
+      required: [organization_id, name, seat_pool, joined_at]
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        seat_pool:
+          type: string
+          enum: [own, shared]
+        joined_at:
+          type: string
+          format: date-time
+    BillingAccountOrganizations:
+      type: object
+      required: [data, invitations]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingAccountOrganization"
+        invitations:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingOrgInvitation"
 
     OpenBillingAccountRequest:
       type: object

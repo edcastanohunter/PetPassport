@@ -242,7 +242,10 @@
     "SUBSCRIPTION_NOT_FOUND": "Subscription not found.",
     "PLAN_NOTICE_TOO_SHORT": "There are subscriptions on another version of the plan: the new one must take effect with at least 30 days' notice.",
     "PLAN_VERSION_STATE": "The plan version is not in the state this operation requires.",
-    "PLAN_EXISTS": "A plan with that code already exists: create a new version."
+    "PLAN_EXISTS": "A plan with that code already exists: create a new version.",
+    "INVITATION_EXISTS": "The organization already has a pending invitation from this account.",
+    "INVITATION_NOT_PENDING": "The invitation was already accepted, declined or revoked.",
+    "LAST_ORGANIZATION": "The last organization cannot be removed from the account."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -1724,6 +1727,29 @@
       "resume": "Keep the subscription",
       "resumed": "The subscription will stay active.",
       "cancelledInfo": "The subscription is cancelled. You can subscribe again from Plans."
+    },
+    "orgs": {
+      "title": "Account organizations",
+      "intro": "Group several locations under one account: a single invoice and, optionally, shared seats. The invited organization must accept.",
+      "code": "Organization public code",
+      "seatPool": "Seats",
+      "pool": {
+        "own": "Own seats",
+        "shared": "Shared seats"
+      },
+      "invite": "Invite",
+      "invited": "Invitation sent. The organization's admin must accept it.",
+      "pending": "Pending invitation",
+      "revoke": "Revoke",
+      "revoked": "Invitation revoked.",
+      "detach": "Remove",
+      "detached": "Organization removed from the account.",
+      "joined": "since {date}",
+      "invitationsTitle": "Billing invitations",
+      "invitedBy": "{account} invites this organization to bill under its account.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "acceptHint": "Once accepted, this organization is billed under that account: its admin manages the plan and payment."
     }
   }
 }

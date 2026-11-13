@@ -71,12 +71,14 @@ type PaymentDeps struct {
 	Invoices  *infra.InvoiceStore
 	Objects   Presigner
 	Coupons   *infra.CouponStore
+	// Invitations debe ser nil (no un *InvitationStore nil) cuando no hay almacén.
+	Invitations Invitations
 }
 
 // WithPayments conecta los servicios de cobro y facturación (M5.2).
 func (h *BillingHandlers) WithPayments(d PaymentDeps) *BillingHandlers {
 	h.pay, h.inv, h.ledger, h.invoices, h.objects = d.Payments, d.Invoicing, d.Ledger, d.Invoices, d.Objects
-	h.coupons = d.Coupons
+	h.coupons, h.invitations = d.Coupons, d.Invitations
 	return h
 }
 
