@@ -12,7 +12,7 @@
 | PP-F5-PRD-005 | PRD | Facturas electrónicas válidas | MUST | M5.2 | EN_PROGRESO | | #38 | Emisión, estados, contingencia pdf_local y notas crédito con adaptador fake. Falta el adaptador DIAN (proveedor sin decidir, ADR-022 §4) |
 | PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | IMPLEMENTADO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días, emails de la categoría billing (no desactivable) y banner persistente para administradores |
 | PP-F5-PRD-007 | PRD | Límites de plan comprensibles y upgrade en contexto | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-PRD-008 | PRD | Cuenta de facturación multi-organización (cadenas) | SHOULD | M5.2 | PENDIENTE | |  | No iniciado: invitación y aceptación de organizaciones en una cuenta |
+| PP-F5-PRD-008 | PRD | Cuenta de facturación multi-organización (cadenas) | SHOULD | M5.2 | IMPLEMENTADO | | #38 | Invitación por código público, aceptación del admin de la organización invitada (vincula en la misma transacción), rechazo/revocación y retiro (nunca la última). Sin traslado entre cuentas ni email de invitación (ver decisiones del PR) |
 | PP-F5-PRD-009 | PRD | Plan Enterprise con factura manual | SHOULD | M5.2 | IMPLEMENTADO | | #38 | Facturación manual sin dunning y pago manual de SuperAdmin (API). La pantalla va en FE-005 |
 | PP-F5-PRD-010 | PRD | Panel de uso de la organización | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-011 | PRD | Administración de suscripciones, ajustes y reembolsos | MUST | M5.2 | IMPLEMENTADO | | #38 | API y consola de SuperAdmin con motivo y audit log: ajustes (incluido change_plan), pago manual, reembolso, cancelación |
