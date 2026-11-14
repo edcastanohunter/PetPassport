@@ -7,6 +7,7 @@ import type { components } from '@/shared/api/schema'
 import { useSessionStore } from '@/features/auth/sessionStore'
 import BillingStatusBanner from '../components/BillingStatusBanner.vue'
 import PaymentMethodPanel from '../components/PaymentMethodPanel.vue'
+import PsePaymentPanel from '../components/PsePaymentPanel.vue'
 import AccountOrganizationsPanel from '../components/AccountOrganizationsPanel.vue'
 import BillingInvitationsPanel from '../components/BillingInvitationsPanel.vue'
 import { formatMoney } from '../money'
@@ -88,6 +89,8 @@ async function loadPlans() {
 }
 
 onMounted(() => {
+  // Vuelta desde el banco (PSE): el desenlace llega por webhook, quizá aún no.
+  if (route.query?.pse === 'return') notice.value = t('billing.pse.returned')
   void load()
   void loadPlans().catch(() => undefined)
 })
@@ -449,6 +452,8 @@ function resume() {
           </button>
         </div>
       </section>
+
+      <PsePaymentPanel :account="account" :subscription="sub" :org-id="orgId" @changed="load" />
 
       <PaymentMethodPanel :account="account" @changed="load" />
 

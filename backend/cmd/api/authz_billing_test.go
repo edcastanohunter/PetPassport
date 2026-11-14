@@ -99,6 +99,11 @@ var billingMatrix = map[string][9]int{
 	"getInvoicePdf":       {403, 403, ok, 403, 403, 403, ok, 403, ok},
 	"getInvoiceXml":       {403, 403, ok, 403, 403, 403, ok, 403, ok},
 
+	// M5.2 — PSE (PRD-004). El pago es por cargo: sin cargo en el ledger de la
+	// suite el recurso no tiene cuenta y solo super_admin pasa authz (luego 404).
+	"listPseBanks":    {403, 403, ok, 403, 403, 403, ok, 403, ok},
+	"startPsePayment": {403, 403, 403, 403, 403, 403, 403, 403, 404},
+
 	// M5.2 — cuentas multi-organización (PRD-008): la cuenta invita y retira;
 	// solo el admin de la organización invitada acepta; rechaza la invitada o
 	// revoca la cuenta (phAd es admin de una organización de la cuenta).

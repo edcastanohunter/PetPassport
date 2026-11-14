@@ -245,7 +245,11 @@
     "PLAN_EXISTS": "Ya existe un plan con ese código: crea una nueva versión.",
     "INVITATION_EXISTS": "La organización ya tiene una invitación pendiente de esta cuenta.",
     "INVITATION_NOT_PENDING": "La invitación ya fue aceptada, rechazada o revocada.",
-    "LAST_ORGANIZATION": "No se puede retirar la última organización de la cuenta."
+    "LAST_ORGANIZATION": "No se puede retirar la última organización de la cuenta.",
+    "PSE_UNAVAILABLE": "PSE no está disponible para esta cuenta.",
+    "CHARGE_NOT_PAYABLE": "Este cargo ya está pagado o se factura manualmente.",
+    "PAYMENT_IN_PROGRESS": "Ya hay un pago en curso con tu banco. Espera a que se confirme.",
+    "PSE_REDIRECT_UNAVAILABLE": "El banco no respondió a tiempo. El pago quedó pendiente; revisa su estado en unos minutos."
   },
   "fieldErrors": {
     "INVALID": "Valor no válido.",
@@ -1750,6 +1754,27 @@
       "accept": "Aceptar",
       "decline": "Rechazar",
       "acceptHint": "Al aceptar, esta organización factura con esa cuenta: su administrador gestiona el plan y el pago."
+    },
+    "pse": {
+      "title": "Pagar con PSE",
+      "due": "Hay un pago pendiente de {amount}. Elige tu banco para completarlo con PSE.",
+      "start": "Pagar con PSE",
+      "bank": "Banco",
+      "chooseBank": "Elige tu banco",
+      "payerType": "Tipo de persona",
+      "company": "Persona jurídica",
+      "person": "Persona natural",
+      "legalIdType": "Documento",
+      "legalId": "Número (sin dígito de verificación)",
+      "phone": "Teléfono",
+      "pay": "Ir a mi banco",
+      "paid": "Pago confirmado. Gracias.",
+      "declined": "El banco rechazó el pago. Puedes intentarlo de nuevo o elegir otro banco.",
+      "returned": "Estamos confirmando tu pago con el banco. El estado se actualizará en unos minutos.",
+      "secureNote": "Te autenticas y apruebas el pago en la página de tu banco; PetPassport no recibe tus credenciales bancarias.",
+      "useMethod": "Pagar por PSE cada periodo",
+      "methodSaved": "Pagarás cada periodo por PSE. Te avisaremos por correo cuando haya un pago pendiente.",
+      "methodHint": "Con PSE el pago no es automático: cada periodo te avisaremos para que lo completes desde tu banco."
     }
   }
 }

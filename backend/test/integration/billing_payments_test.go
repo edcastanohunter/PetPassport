@@ -682,3 +682,59 @@ func TestPPF5PRD008_OrganizationInvitationsAgainstPostgres(t *testing.T) {
 		t.Fatalf("la última organización no se retira: %v", err)
 	}
 }
+
+// PP-F5-PRD-004 / QA-002: una cuenta que paga por PSE contra Postgres real. El
+// cobro deja el cargo esperando al cliente; el pago abierto en el banco bloquea
+// un segundo pago hasta que el webhook lo resuelve; la conciliación cuadra.
+func TestPPF5PRD004_PSEPaymentAgainstPostgres(t *testing.T) {
+	e := newBillingEnv(t)
+	ctx := context.Background()
+	accountID, _, chargeID := e.subscribedAccount(t, "Clínica Veterinaria del Norte")
+
+	pm, err := e.svc.AttachPaymentMethod(ctx, accountID, billingapp.AttachPaymentMethodCmd{Kind: billingapp.MethodPSE})
+	if err != nil || pm.Kind != billingapp.MethodPSE || pm.Token != "" {
+		t.Fatalf("elegir PSE: %+v err=%v", pm, err)
+	}
+	if err := e.pay.CollectCharge(ctx, chargeID); err != nil {
+		t.Fatalf("cobrar: %v", err)
+	}
+	ch, err := e.ledger.Charge(ctx, chargeID)
+	if err != nil || ch.Status != "failed" || e.fake.ChargesCreated() != 0 {
+		t.Fatalf("cargo PSE sin pagador: %+v err=%v (transacciones %d)", ch, err, e.fake.ChargesCreated())
+	}
+
+	cmd := billingapp.PSEPaymentCmd{
+		ChargeID: chargeID, BankCode: payfake.BankPending, PayerType: providers.PayerCompany, LegalIDType: "NIT",
+		LegalID: "900123456", Phone: "573001112233", AcceptanceToken: "acc", ReturnURL: "https://app.example.test/x",
+	}
+	out, err := e.pay.StartPSEPayment(ctx, cmd)
+	if err != nil || out.Status != providers.ChargePending || out.RedirectURL == "" {
+		t.Fatalf("abrir pago PSE: %+v err=%v", out, err)
+	}
+	at, err := e.ledger.OpenAttempt(ctx, chargeID)
+	if err != nil || at == nil || at.Status != billinginfra.AttemptPending || at.ProviderRef == "" {
+		t.Fatalf("intento PSE: %+v err=%v", at, err)
+	}
+	cmd.BankCode = payfake.BankApprove
+	if _, err := e.pay.StartPSEPayment(ctx, cmd); !errors.Is(err, billingapp.ErrPaymentInProgress) {
+		t.Fatalf("segundo pago: esperaba ErrPaymentInProgress, obtuvo %v", err)
+	}
+
+	headers, body, err := e.fake.Resolve(at.ProviderRef, providers.ChargePaid, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := e.pay.HandleWebhook(ctx, e.fake.Name(), headers, body); err != nil || got != billingapp.WebhookProcessed {
+		t.Fatalf("webhook: %q err=%v", got, err)
+	}
+	ch, _ = e.ledger.Charge(ctx, chargeID)
+	if ch.Status != "paid" || ch.PaymentRef != at.ProviderRef {
+		t.Fatalf("cargo tras el banco: status=%s ref=%q", ch.Status, ch.PaymentRef)
+	}
+	if _, err := e.pay.StartPSEPayment(ctx, cmd); !errors.Is(err, billingapp.ErrChargeNotPayable) {
+		t.Fatalf("cargo pagado: esperaba ErrChargeNotPayable, obtuvo %v", err)
+	}
+	if sum, err := e.pay.Reconcile(ctx); err != nil || sum.Discrepancies != 0 {
+		t.Fatalf("conciliación: %+v err=%v", sum, err)
+	}
+}

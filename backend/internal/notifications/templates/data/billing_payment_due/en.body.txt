@@ -1,0 +1,5 @@
+The new period of the PetPassport subscription for {{.V.org_name}} is ready to be paid.
+
+Your payment method is PSE, so the payment is not charged automatically: open the billing settings, choose your bank and complete the transfer there. Everything keeps working in the meantime; if the payment is not completed within 14 days, the organization will become read-only until the payment is settled.
+
+Pay now: {{.V.link}}

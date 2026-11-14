@@ -604,6 +604,10 @@ var billingTemplates = map[string]string{
 	"SubscriptionReactivated": "billing_reactivated",
 }
 
+// PayerActionRequired es el error_code de ChargeFailed de un cargo que el
+// cliente debe pagar por su cuenta (PSE); coincide con billing/app.
+const PayerActionRequired = "PAYER_ACTION_REQUIRED"
+
 // billingDunning avisa del ciclo de impago (PP-F5-PRD-006): cada cargo fallido
 // (los reintentos de los días 0, 3, 7 y 12 emiten uno cada uno), la
 // restricción de escritura, la cancelación por impago y la reactivación. Van
@@ -614,6 +618,7 @@ func (p *Planner) billingDunning(ctx context.Context, e eventstore.StoredEvent) 
 	var ev struct {
 		SubscriptionID uuid.UUID `json:"subscription_id"`
 		Reason         string    `json:"reason"`
+		ErrorCode      string    `json:"error_code"`
 	}
 	if err := decode(e, &ev); err != nil {
 		return nil, err
@@ -653,6 +658,10 @@ func (p *Planner) billingDunning(ctx context.Context, e eventstore.StoredEvent) 
 	}
 	vars := map[string]string{"org_name": org.Name, "link_path": "/org/" + org.ID.String() + "/settings/billing"}
 	template := billingTemplates[e.Type]
+	if e.Type == "ChargeFailed" && ev.ErrorCode == PayerActionRequired {
+		// PSE: nada falló; el cargo espera a que el cliente pague desde su banco.
+		template = "billing_payment_due"
+	}
 	out := make([]Action, 0, len(recipients))
 	for _, r := range recipients {
 		out = append(out, send(RuleBillingDunning, template, domain.Billing, r, SubjectSubscription, ev.SubscriptionID, e, vars))
@@ -718,7 +727,7 @@ func Validate() error {
 		"encounter_signed", "encounter_addendum", "follow_up_reminder", "vaccine_recorded", "vaccine_reminder",
 		"clinic_suspended_notice", "transfer_done", "clinic_daily_agenda",
 		"care_link_request", "care_link_result",
-		"billing_payment_failed", "billing_restricted", "billing_cancelled", "billing_reactivated",
+		"billing_payment_failed", "billing_payment_due", "billing_restricted", "billing_cancelled", "billing_reactivated",
 	} {
 		if _, ok := templates.Catalog[t]; !ok {
 			return fmt.Errorf("notifications: la regla usa la plantilla %q, que no está en el manifiesto", t)

@@ -549,9 +549,20 @@ func run() error {
 	billingDeps := billinghttp.PaymentDeps{
 		Payments: billingPayments, Invoicing: billingInvoicing, Ledger: billingLedger, Invoices: billingInvoices,
 		Coupons: billingCoupons, Invitations: billinginfra.NewInvitationStore(pool.Pool),
+		PublicBaseURL: cfg.PublicBaseURL,
 	}
-	if objects != nil {
-		billingDeps.Objects = objects
+	if cfg.Storage.Endpoint != "" {
+		// Las facturas viven en el bucket fiscal (Object Lock); el api solo firma
+		// URLs de descarga, pero comprueba igualmente que el bucket tenga el lock.
+		fiscal, err := storage.NewMinIO(ctx, storage.MinIOOptions{
+			Endpoint: cfg.Storage.Endpoint, Bucket: cfg.Storage.FiscalBucket,
+			AccessKey: cfg.Storage.AccessKey, SecretKey: cfg.Storage.SecretKey, UseSSL: cfg.Storage.UseSSL,
+			RetainFor: cfg.Storage.FiscalRetention,
+		})
+		if err != nil {
+			return fmt.Errorf("billing: bucket fiscal: %w", err)
+		}
+		billingDeps.Objects = fiscal
 	}
 	billingHandlers := billinghttp.NewBillingHandlers(billingSvc, billingQueries, logger).WithPayments(billingDeps)
 

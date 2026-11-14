@@ -73,12 +73,15 @@ type PaymentDeps struct {
 	Coupons   *infra.CouponStore
 	// Invitations debe ser nil (no un *InvitationStore nil) cuando no hay almacén.
 	Invitations Invitations
+	// PublicBaseURL es el origen de la SPA: el pagador de PSE vuelve a él.
+	PublicBaseURL string
 }
 
 // WithPayments conecta los servicios de cobro y facturación (M5.2).
 func (h *BillingHandlers) WithPayments(d PaymentDeps) *BillingHandlers {
 	h.pay, h.inv, h.ledger, h.invoices, h.objects = d.Payments, d.Invoicing, d.Ledger, d.Invoices, d.Objects
 	h.coupons, h.invitations = d.Coupons, d.Invitations
+	h.publicBaseURL = strings.TrimRight(d.PublicBaseURL, "/")
 	return h
 }
 
@@ -173,6 +176,16 @@ func mapPaymentError(err error) error {
 		return kernel.NewDomainError("COUPON_INVALID", "El cupón no es válido para este plan.")
 	case errors.Is(err, infra.ErrCouponExists):
 		return kernel.NewDomainError("COUPON_EXISTS", "Ya existe un cupón con ese código.")
+	case errors.Is(err, app.ErrPSEUnavailable):
+		return kernel.NewDomainError("PSE_UNAVAILABLE", "El proveedor de pagos de esta cuenta no ofrece PSE.")
+	case errors.Is(err, app.ErrChargeNotPayable):
+		return kernel.NewDomainError("CHARGE_NOT_PAYABLE", "Este cargo no admite pago: ya está pagado o se factura manualmente.")
+	case errors.Is(err, app.ErrPaymentInProgress):
+		return kernel.NewDomainError("PAYMENT_IN_PROGRESS", "Hay un pago en curso para este cargo. Espera a que el banco lo confirme.")
+	case errors.Is(err, app.ErrPSERedirectUnavailable):
+		return kernel.NewDomainError("PSE_REDIRECT_UNAVAILABLE", "El banco no respondió a tiempo. El pago quedó pendiente; revisa su estado en unos minutos.")
+	case errors.Is(err, app.ErrChargeNotReady):
+		return &kernel.NotFoundError{Resource: "Cargo"}
 	case errors.Is(err, app.ErrInvoiceNotRetryable):
 		return kernel.NewDomainError("INVOICE_NOT_RETRYABLE", "Solo se pueden reemitir facturas rechazadas.")
 	default:
@@ -207,8 +220,14 @@ func (h *BillingHandlers) AttachPaymentMethod(ctx context.Context, req gen.Attac
 	if req.Body == nil || h.svc == nil {
 		return gen.AttachPaymentMethod200JSONResponse{}, nil
 	}
-	cmd := app.AttachPaymentMethodCmd{ProviderToken: strings.TrimSpace(req.Body.ProviderToken)}
-	if cmd.ProviderToken == "" {
+	cmd := app.AttachPaymentMethodCmd{Kind: app.MethodCard}
+	if req.Body.Kind != nil {
+		cmd.Kind = string(*req.Body.Kind)
+	}
+	if req.Body.ProviderToken != nil {
+		cmd.ProviderToken = strings.TrimSpace(*req.Body.ProviderToken)
+	}
+	if cmd.Kind == app.MethodCard && cmd.ProviderToken == "" {
 		return nil, &kernel.ValidationError{Fields: []kernel.FieldViolation{{Field: "provider_token", Code: "REQUIRED"}}}
 	}
 	if req.Body.AcceptanceToken != nil {

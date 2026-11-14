@@ -466,3 +466,26 @@ func TestEveryRuleTemplateExists(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestPPF5PRD004_PSEChargeSendsPaymentDueNotFailure: un cargo PSE no se cobra
+// solo; el aviso pide al cliente pagar en vez de decir que el cobro falló.
+func TestPPF5PRD004_PSEChargeSendsPaymentDueNotFailure(t *testing.T) {
+	w := newWorld()
+	sub, owner := uuid.New(), uuid.New()
+	w.dir.users[owner] = app.User{ID: owner, Email: "owner@sur.co", Locale: "es"}
+	w.dir.subs[sub] = app.BillingContacts{OwnerID: owner, OrgIDs: []uuid.UUID{w.org}}
+
+	sends, _, _ := kinds(plan(t, w, event("ChargeFailed", map[string]any{"subscription_id": sub, "error_code": app.PayerActionRequired})))
+	if len(sends) != 2 {
+		t.Fatalf("destinatarios %+v", sends)
+	}
+	for _, s := range sends {
+		if s.Template != "billing_payment_due" || s.Category != domain.Billing {
+			t.Fatalf("aviso PSE: %+v", s)
+		}
+	}
+	sends, _, _ = kinds(plan(t, w, event("ChargeFailed", map[string]any{"subscription_id": sub, "error_code": "CARD_DECLINED"})))
+	if len(sends) == 0 || sends[0].Template != "billing_payment_failed" {
+		t.Fatalf("rechazo de tarjeta: %+v", sends)
+	}
+}

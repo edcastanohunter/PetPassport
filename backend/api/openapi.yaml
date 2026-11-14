@@ -6594,6 +6594,58 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /billing-accounts/{id}/payment-methods/pse-banks:
+    parameters:
+      - $ref: "#/components/parameters/BillingAccountId"
+    get:
+      operationId: listPseBanks
+      summary: Bancos disponibles para pagar por PSE
+      description: |
+        Entidades financieras del proveedor de pagos del país de la cuenta (PP-F5-PRD-004). Si el
+        proveedor no ofrece PSE → `422 PSE_UNAVAILABLE`.
+      tags: [billing]
+      x-pp-action: billing:manage
+      responses:
+        "200":
+          description: Bancos PSE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PseBankList"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /charges/{id}/pse-payment:
+    parameters:
+      - $ref: "#/components/parameters/ChargeId"
+    post:
+      operationId: startPsePayment
+      summary: Pagar un cargo por PSE
+      description: |
+        Abre el pago PSE de un cargo pendiente o fallido y devuelve la URL del banco a la que la SPA
+        redirige (PP-F5-PRD-004). El desenlace llega por webhook; el pagador vuelve a `return_path`.
+        PetPassport nunca recibe credenciales bancarias (PP-F5-SEC-001). Cargo pagado, de facturación
+        manual o sin importe → `409 CHARGE_NOT_PAYABLE`; pago en curso → `409 PAYMENT_IN_PROGRESS`;
+        proveedor sin PSE → `422 PSE_UNAVAILABLE`; pago creado sin URL del banco →
+        `503 PSE_REDIRECT_UNAVAILABLE`.
+      tags: [billing]
+      x-pp-action: billing:manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PsePaymentRequest"
+      responses:
+        "200":
+          description: Pago abierto (o ya resuelto por el banco)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsePayment"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /webhooks/payments/{provider}:
     parameters:
       - name: provider
@@ -12021,10 +12073,16 @@ components:
             type: string
     AttachPaymentMethodRequest:
       type: object
-      required: [provider_token]
       properties:
+        kind:
+          description: |
+            `card` (por defecto) cambia `provider_token` por un método reutilizable. `pse` no tokeniza:
+            cada cargo se paga con su propio redirect al banco (`POST /charges/{id}/pse-payment`).
+          type: string
+          enum: [card, pse]
+          default: card
         provider_token:
-          description: Token de un solo uso devuelto por el widget del proveedor.
+          description: Token de un solo uso devuelto por el widget del proveedor. Obligatorio con `kind=card`.
           type: string
           minLength: 1
           maxLength: 500
@@ -12036,6 +12094,77 @@ components:
           description: Autorización de tratamiento de datos personales del proveedor (de `client_config`).
           type: string
           maxLength: 4000
+    PseBank:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          example: "1007"
+        name:
+          type: string
+          example: Bancolombia
+    PseBankList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PseBank"
+    PsePaymentRequest:
+      type: object
+      required: [bank_code, payer_type, legal_id_type, legal_id, acceptance_token, return_path]
+      properties:
+        bank_code:
+          description: Código del banco de `GET /billing-accounts/{id}/payment-methods/pse-banks`.
+          type: string
+          minLength: 1
+          maxLength: 20
+        payer_type:
+          type: string
+          enum: [person, company]
+        legal_id_type:
+          type: string
+          enum: [CC, NIT, CE, PP, TI]
+        legal_id:
+          type: string
+          minLength: 3
+          maxLength: 20
+        full_name:
+          description: Titular de la cuenta bancaria; por defecto, la razón social de la cuenta de facturación.
+          type: string
+          maxLength: 200
+        phone:
+          description: Teléfono del pagador; por defecto, el de la cuenta de facturación.
+          type: string
+          maxLength: 20
+        acceptance_token:
+          description: Aceptación de los términos del proveedor (de `client_config` con `kind=pse`).
+          type: string
+          minLength: 1
+          maxLength: 4000
+        personal_auth_token:
+          description: Autorización de tratamiento de datos personales del proveedor (de `client_config`).
+          type: string
+          maxLength: 4000
+        return_path:
+          description: Ruta de la SPA a la que vuelve el pagador desde el banco (relativa, empieza por `/`).
+          type: string
+          minLength: 1
+          maxLength: 300
+          example: /org/2b8a…/settings/billing?pse=return
+    PsePayment:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, paid, failed]
+        redirect_url:
+          description: URL del banco. Presente mientras el pago está pendiente.
+          type: string
+          format: uri
     InvoiceCreditNote:
       type: object
       required: [id, status, amount]

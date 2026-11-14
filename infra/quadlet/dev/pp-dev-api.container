@@ -26,6 +26,9 @@ Environment=PP_OIDC_AUDIENCE=petpassport-api PP_OIDC_ALLOWED_AZP=petpassport-web
 Environment=PP_IP_HASH_SALT=dev-ip-hash-salt-change-me
 Environment=PP_KC_ADMIN_CLIENT_ID=petpassport-backend PP_KC_ADMIN_CLIENT_SECRET=dev-backend-secret-change-me
 Environment=PP_STORAGE_ENDPOINT=minio:9000 PP_STORAGE_BUCKET=petpassport-media
+# Facturas (F5 ARQ-003): bucket con Object Lock; en dev la retención es de 1 día
+# para poder vaciar MinIO (fuera de dev el mínimo son 10 años).
+Environment=PP_STORAGE_FISCAL_BUCKET=petpassport-compliance-archive PP_STORAGE_FISCAL_RETENTION_DAYS=1
 Environment=PP_STORAGE_ACCESS_KEY=minio PP_STORAGE_SECRET_KEY=minio12345
 Environment=PP_REDIS_ADDR=redis:6379
 Environment=PP_CORS_ORIGINS=https://app.pp.localhost,http://localhost:5173

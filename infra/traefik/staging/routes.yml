@@ -16,6 +16,16 @@ http:
       service: frontend
       middlewares: [strip-origin-auth, security-headers, compress]
       tls: {}
+    # Página de facturación (PP-F5-SEC-001): única con el widget del proveedor de
+    # pagos. Su CSP añade solo los orígenes de Wompi; el resto de la SPA mantiene
+    # script-src 'self'. La SPA la abre con carga completa (router/guards.ts).
+    frontend-billing:
+      rule: Host(`app.{{ $domain }}`) && PathRegexp(`^/org/[^/]+/settings/billing/?$`) && {{ $origin }}
+      priority: 300
+      entryPoints: [websecure]
+      service: frontend
+      middlewares: [strip-origin-auth, payment-page-headers, compress]
+      tls: {}
 
     # API: límites por método y ruta (SEC-001). El WAF aplica los de login/token
     # en el borde; aquí se aplican todos de nuevo por IP real (CF-Connecting-IP).
@@ -129,6 +139,19 @@ http:
         referrerPolicy: strict-origin-when-cross-origin
         frameDeny: true
         contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.{{ $domain }} https://auth.{{ $domain }}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.{{ $domain }}; object-src 'none'; upgrade-insecure-requests"
+        customResponseHeaders:
+          Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
+          Cross-Origin-Opener-Policy: same-origin
+    payment-page-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        # preload se activa tras validar HSTS en staging (SEC-001).
+        stsPreload: false
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        frameDeny: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' https://checkout.wompi.co; frame-src https://checkout.wompi.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.wompi.co; font-src 'self' data:; connect-src 'self' https://api.{{ $domain }} https://auth.{{ $domain }} https://checkout.wompi.co https://production.wompi.co https://sandbox.wompi.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.{{ $domain }}; object-src 'none'; upgrade-insecure-requests"
         customResponseHeaders:
           Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
           Cross-Origin-Opener-Policy: same-origin

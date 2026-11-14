@@ -194,7 +194,7 @@ func (a *BillingAccount) SetPaymentMethod(ref PaymentMethodRef, now time.Time) e
 	if a.status == "closed" {
 		return ErrAccountClosed
 	}
-	if strings.TrimSpace(ref.Token) == "" && ref.Kind != "manual" {
+	if ref.Reusable() && strings.TrimSpace(ref.Token) == "" {
 		return ErrPaymentMethodRequired
 	}
 	a.recordThat(PaymentMethodSet{

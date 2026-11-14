@@ -23,6 +23,8 @@ const error = ref<string | null>(null)
 const notice = ref<string | null>(null)
 
 const pm = computed(() => props.account.payment_method)
+// PSE solo existe en Colombia (PRD-004): no tokeniza; cada cargo se paga desde el banco.
+const pseAvailable = computed(() => props.account.country === 'CO' && pm.value?.kind !== 'pse')
 
 function message(e: unknown) {
   if (e instanceof WidgetError) return t(`billing.payment.${e.code}`)
@@ -60,6 +62,7 @@ async function openWidget() {
     const { error: err } = await api().POST('/billing-accounts/{id}/payment-methods', {
       params: { path: { id: props.account.id } },
       body: {
+        kind: 'card',
         provider_token: result.providerToken,
         acceptance_token: cfg.client_config.acceptance_token,
         personal_auth_token: cfg.client_config.personal_auth_token,
@@ -68,6 +71,26 @@ async function openWidget() {
     if (err) throw err
     setup.value = null
     notice.value = t('billing.payment.saved')
+    emit('changed')
+  } catch (e) {
+    error.value = message(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function usePse() {
+  error.value = null
+  notice.value = null
+  busy.value = true
+  try {
+    const { error: err } = await api().POST('/billing-accounts/{id}/payment-methods', {
+      params: { path: { id: props.account.id } },
+      body: { kind: 'pse' },
+    })
+    if (err) throw err
+    setup.value = null
+    notice.value = t('billing.pse.methodSaved')
     emit('changed')
   } catch (e) {
     error.value = message(e)
@@ -106,6 +129,9 @@ async function remove() {
       </span>
     </p>
     <p v-else class="text-surface-500">{{ t('billing.payment.none') }}</p>
+    <p v-if="pm?.kind === 'pse'" class="text-sm text-surface-600 dark:text-surface-300">
+      {{ t('billing.pse.methodHint') }}
+    </p>
 
     <div
       v-if="setup && requiresAcceptance(setup)"
@@ -160,6 +186,16 @@ async function remove() {
         @click="start"
       >
         {{ pm ? t('billing.payment.replace') : t('billing.payment.add') }}
+      </button>
+      <button
+        v-if="pseAvailable"
+        type="button"
+        class="btn-secondary"
+        :disabled="busy"
+        data-testid="pm-use-pse"
+        @click="usePse"
+      >
+        {{ t('billing.pse.useMethod') }}
       </button>
       <button
         v-if="pm"

@@ -99,7 +99,14 @@ func (*FakePaymentProvider) CreateCustomer(_ context.Context, c providers.Custom
 
 // SetupPaymentMethod implementa PaymentProvider.
 func (*FakePaymentProvider) SetupPaymentMethod(_ context.Context, req providers.SetupRequest) (providers.SetupConfig, error) {
-	return providers.SetupConfig{Provider: Name, ClientConfig: map[string]string{"mode": "fake", "kind": req.Kind}}, nil
+	cfg := map[string]string{"mode": "fake", "kind": req.Kind}
+	if req.Kind == "pse" {
+		// Como Wompi: PSE no abre widget, pero el pagador acepta los términos.
+		cfg["flow"] = "redirect"
+		cfg["acceptance_token"] = "fake_acceptance"
+		cfg["acceptance_permalink"] = "https://example.invalid/fake-terms"
+	}
+	return providers.SetupConfig{Provider: Name, ClientConfig: cfg}, nil
 }
 
 // AttachPaymentMethod implementa PaymentProvider. "tok_invalid" simula un token rechazado.
@@ -265,4 +272,56 @@ func (f *FakePaymentProvider) GetPayment(_ context.Context, ref string) (provide
 		return providers.Payment{}, providers.ErrNotSupported
 	}
 	return p, nil
+}
+
+var _ providers.PayerInitiated = (*FakePaymentProvider)(nil)
+
+// Bancos PSE simulados: como en el sandbox de Wompi, "1" aprueba y "2" rechaza;
+// "3" deja el pago pendiente (el pagador abandonó el banco).
+const (
+	BankApprove = "1"
+	BankDecline = "2"
+	BankPending = "3"
+)
+
+// Banks implementa PayerInitiated.
+func (*FakePaymentProvider) Banks(context.Context) ([]providers.Bank, error) {
+	return []providers.Bank{
+		{Code: BankApprove, Name: "Banco que aprueba"},
+		{Code: BankDecline, Name: "Banco que rechaza"},
+		{Code: BankPending, Name: "Banco sin respuesta"},
+	}, nil
+}
+
+// StartPayment implementa PayerInitiated; idempotente por referencia. No hay
+// banco simulado: el redirect vuelve directo a la URL de retorno y el banco
+// "1" deja el pago aprobado en el acto.
+func (f *FakePaymentProvider) StartPayment(_ context.Context, req providers.StartPaymentRequest) (providers.StartedPayment, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.scenario == ScenarioFailure {
+		return providers.StartedPayment{}, providers.ErrUnavailable
+	}
+	reference := req.Reference()
+	if ref, ok := f.byRef[reference]; ok {
+		p := f.payments[ref]
+		return providers.StartedPayment{Ref: p.Ref, Status: p.Status, RedirectURL: req.ReturnURL, ErrorCode: p.ErrorCode}, nil
+	}
+	f.seq++
+	f.charges++
+	p := providers.Payment{
+		Ref: "pse_fake_" + strconv.Itoa(f.seq), Reference: reference,
+		Amount: req.Amount, Currency: req.Currency,
+	}
+	switch req.BankCode {
+	case BankApprove:
+		p.Status = providers.ChargePaid
+	case BankDecline:
+		p.Status, p.ErrorCode = providers.ChargeFailed, "DECLINED"
+	default:
+		p.Status = providers.ChargePending
+	}
+	f.payments[p.Ref] = p
+	f.byRef[reference] = p.Ref
+	return providers.StartedPayment{Ref: p.Ref, Status: p.Status, RedirectURL: req.ReturnURL, ErrorCode: p.ErrorCode}, nil
 }

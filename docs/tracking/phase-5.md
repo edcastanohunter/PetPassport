@@ -8,7 +8,7 @@
 | PP-F5-PRD-001 | PRD | Página pública de planes y precios desde catálogo | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-002 | PRD | Prueba de 30 días y vencimiento | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-PRD-003 | PRD | Contratar, cambiar plan y asientos con prorrateo | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Tokenización en el proveedor (widget en /org/:orgId/settings/billing), cobro recurrente y reintentos. Falta PSE y verificar Wompi contra su sandbox |
+| PP-F5-PRD-004 | PRD | Métodos de pago y cobro recurrente | MUST | M5.2 | EN_PROGRESO | | #38 | Tokenización en el proveedor (widget en /org/:orgId/settings/billing), cobro recurrente y reintentos. PSE: redirect al banco por cargo y confirmación por webhook; una cuenta con PSE recibe cada periodo un aviso de pago pendiente con la gracia de 14 días. Falta verificar Wompi (tarjeta y PSE) contra su sandbox |
 | PP-F5-PRD-005 | PRD | Facturas electrónicas válidas | MUST | M5.2 | EN_PROGRESO | | #38 | Emisión, estados, contingencia pdf_local y notas crédito con adaptador fake. Falta el adaptador DIAN (proveedor sin decidir, ADR-022 §4) |
 | PP-F5-PRD-006 | PRD | Dunning con gracia y restricción | MUST | M5.2 | IMPLEMENTADO | | #38 | Reintentos día 0/3/7/12, gracia 14 días, restricción, cancelación a 60 días, emails de la categoría billing (no desactivable) y banner persistente para administradores |
 | PP-F5-PRD-007 | PRD | Límites de plan comprensibles y upgrade en contexto | MUST | M5.1 | IMPLEMENTADO | | | |
@@ -42,7 +42,7 @@
 | PP-F5-DOM-013 | DOM | Canal SMS/WhatsApp: verificación, plantillas, costes | SHOULD | M5.4 | PENDIENTE | | | |
 | PP-F5-ARQ-001 | ARQ | Módulos nuevos y dependencias | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-ARQ-002 | ARQ | Integración de pagos: tokenización, cobro, webhooks, conciliación | MUST | M5.2 | IMPLEMENTADO | | #38 | Adaptadores wompi, manual y fake. Wompi solo probado contra servidor simulado: 3 puntos SIN VERIFICAR (ver QA-002) |
-| PP-F5-ARQ-003 | ARQ | Facturación electrónica: emisión, estados, contingencia, notas crédito | MUST | M5.2 | EN_PROGRESO | | #38 | Puerto, fake y contingencia pdf_local. Falta el adaptador DIAN, compilar la plantilla Typst y la retención de 10 años en object storage |
+| PP-F5-ARQ-003 | ARQ | Facturación electrónica: emisión, estados, contingencia, notas crédito | MUST | M5.2 | EN_PROGRESO | | #38 | Puerto, fake y contingencia pdf_local. Plantilla Typst compilada con la versión de la imagen (CI instala typst); archivo en bucket propio con Object Lock y retención COMPLIANCE de 10 años por objeto. Falta el adaptador DIAN y los datos del emisor en el documento (contador) |
 | PP-F5-ARQ-004 | ARQ | Entitlements en el command bus | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-ARQ-005 | ARQ | Medición de uso por eventos | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-ARQ-006 | ARQ | Dunning con scheduler | MUST | M5.2 | IMPLEMENTADO | | #38 | Dunning sobre el scheduler de comandos de Postgres (no asynq): ver decisiones del PR |
@@ -75,7 +75,7 @@
 | PP-F5-DAT-007 | DAT | Métricas diarias de negocio y soporte | MUST | M5.4 | PENDIENTE | | | |
 | PP-F5-FE-001 | FE | Pricing público | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-FE-002 | FE | Prueba, vencimiento y contratación | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-FE-003 | FE | Ajustes de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Resumen, cambio de plan con vista previa, método de pago con widget del proveedor, datos fiscales, facturas, pagos, cancelar y reactivar, banner. Falta PSE y verificar el modo tokenización del widget de Wompi (SIN VERIFICAR) |
+| PP-F5-FE-003 | FE | Ajustes de facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Resumen, cambio de plan con vista previa, método de pago con widget del proveedor o PSE, pago PSE de cargos pendientes, datos fiscales, facturas, pagos, cancelar y reactivar, banner. Falta verificar el modo tokenización del widget de Wompi (SIN VERIFICAR) |
 | PP-F5-FE-004 | FE | Límites en contexto e indicadores de uso | MUST | M5.1 | IMPLEMENTADO | | | |
 | PP-F5-FE-005 | FE | Admin de facturación y planes | MUST | M5.2 | IMPLEMENTADO | | #38 | Cuentas con filtros y MRR, detalle con auditoría, ajustes con motivo, facturas con reemisión, discrepancias, cupones y versiones de plan (crear, publicar con fecha, retirar) |
 | PP-F5-FE-006 | FE | Privacidad: exportar, eliminar, accesos | MUST | M5.3 | PENDIENTE | | | |
@@ -106,7 +106,7 @@
 | PP-F5-CMP-009 | CMP | Cumplimiento fiscal DIAN y conciliación contable | MUST | M5.2 | EN_PROGRESO | | #38 | Conciliación diaria con discrepancias y notas crédito. Falta el adaptador DIAN y las reglas de IVA/retenciones del contador |
 | PP-F5-CMP-010 | CMP | Marco de controles y auditoría interna | SHOULD | M5.5 | PENDIENTE | | | |
 | PP-F5-CMP-011 | CMP | Consentimiento de telemetría y cookies | MUST | M5.3 | PENDIENTE | | | |
-| PP-F5-SEC-001 | SEC | Pagos: tokenización, alcance PCI SAQ-A | MUST | M5.2 | EN_PROGRESO | | #38 | Sin datos de tarjeta en el backend ni en logs (solo token, last4, vencimiento); CSP del widget solo en la página de facturación. Falta el documento SAQ-A |
+| PP-F5-SEC-001 | SEC | Pagos: tokenización, alcance PCI SAQ-A | MUST | M5.2 | EN_PROGRESO | | #38 | Sin datos de tarjeta en el backend ni en logs (solo token, last4, vencimiento); CSP del widget solo en la página de facturación (también en Traefik, que la anulaba). Alcance y controles en infra/deploy/PCI-SAQ-A.md. Falta (humano): AOC de Wompi, escaneos ASV, completar y firmar el SAQ A |
 | PP-F5-SEC-002 | SEC | Webhooks de proveedores firmados e idempotentes | MUST | M5.2 | IMPLEMENTADO | | #38 | Webhook de pagos: firma, ventana temporal, idempotencia por provider_event_id y contraste con el proveedor |
 | PP-F5-SEC-003 | SEC | KMS y gestión de claves | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-SEC-004 | SEC | Impersonación segura | MUST | M5.4 | PENDIENTE | | | |
@@ -118,7 +118,7 @@
 | PP-F5-INF-004 | INF | Alertas F5 | MUST | M5.2 | EN_PROGRESO | | #38 | Alertas de billing con pruebas promtool y runbook. Las de DSR, KMS, soporte y mensajería llegan con M5.3 y M5.4 |
 | PP-F5-INF-005 | INF | Runbook F5 | MUST | M5.5 | PENDIENTE | | | |
 | PP-F5-QA-001 | QA | Pruebas de billing con reloj simulado y property tests | MUST | M5.1 | IMPLEMENTADO | | | |
-| PP-F5-QA-002 | QA | Contract tests de proveedores de pago y facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Pruebas del adaptador Wompi contra servidor simulado e integración con fakes sobre Postgres. Faltan las pruebas contra los sandbox reales |
+| PP-F5-QA-002 | QA | Contract tests de proveedores de pago y facturación | MUST | M5.2 | EN_PROGRESO | | #38 | Pruebas del adaptador Wompi (tarjeta y PSE) contra servidor simulado e integración con fakes sobre Postgres. Faltan las pruebas contra los sandbox reales |
 | PP-F5-QA-003 | QA | Crypto-shredding end-to-end y ensayo de migración | MUST | M5.3 | PENDIENTE | | | |
 | PP-F5-QA-004 | QA | DR automatizado semanal | MUST | M5.0 | IMPLEMENTADO | | | Pipeline semanal dr-verify.sh y test de umbrales RPO <= 5m y RTO <= 1h |
 | PP-F5-QA-005 | QA | E2E F5 | MUST | M5.5 | PENDIENTE | | | |

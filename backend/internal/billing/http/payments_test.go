@@ -212,3 +212,22 @@ func TestPPF5API007_AdminActionsRequireSuperAdminAndReason(t *testing.T) {
 		t.Errorf("lista de cuentas como admin de clínica: esperaba 403, obtuvo %d", status(err))
 	}
 }
+
+// PP-F5-PRD-004 / SEC-001: el pagador de PSE solo vuelve a una ruta de la SPA;
+// nunca a otro origen (open redirect).
+func TestPPF5PRD004_PSEReturnPathStaysOnTheSPA(t *testing.T) {
+	for path, want := range map[string]bool{
+		"/org/x/settings/billing?pse=return": true,
+		"/":                                  true,
+		"":                                   false,
+		"https://evil.example/":              false,
+		"//evil.example/":                    false,
+		`/\evil.example`:                     false,
+		"/ok\r\nSet-Cookie: x":               false,
+		"org/x":                              false,
+	} {
+		if got := validReturnPath(path); got != want {
+			t.Errorf("validReturnPath(%q) = %v, quiero %v", path, got, want)
+		}
+	}
+}

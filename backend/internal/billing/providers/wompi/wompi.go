@@ -71,6 +71,7 @@ type Doer interface {
 type Provider struct {
 	cfg  Config
 	http Doer
+	wait func(ctx context.Context, d time.Duration) error // pausa entre consultas (pruebas)
 }
 
 var _ providers.PaymentProvider = (*Provider)(nil)
@@ -175,7 +176,7 @@ type merchantResponse struct {
 // SetupPaymentMethod devuelve lo que la SPA necesita para abrir el widget en
 // modo tokenización: la llave pública y los tokens de aceptación que el usuario
 // debe aprobar (con sus enlaces a los términos). Solo valores públicos.
-func (p *Provider) SetupPaymentMethod(ctx context.Context, _ providers.SetupRequest) (providers.SetupConfig, error) {
+func (p *Provider) SetupPaymentMethod(ctx context.Context, req providers.SetupRequest) (providers.SetupConfig, error) {
 	var m merchantResponse
 	// SIN VERIFICAR: la documentación describe /merchants/info con la llave
 	// pública en la cabecera x-merchant-public-key.
@@ -185,6 +186,9 @@ func (p *Provider) SetupPaymentMethod(ctx context.Context, _ providers.SetupRequ
 	}
 	if m.Data.PresignedAcceptance.AcceptanceToken == "" {
 		return providers.SetupConfig{}, errors.New("wompi: el comercio no devolvió token de aceptación")
+	}
+	if req.Kind == "pse" {
+		return providers.SetupConfig{Provider: Name, ClientConfig: pseClientConfig(p.cfg.PublicKey, m)}, nil
 	}
 	return providers.SetupConfig{Provider: Name, ClientConfig: map[string]string{
 		"widget_url":               widgetURL,
@@ -270,6 +274,11 @@ type transaction struct {
 	Reference     string `json:"reference"`
 	AmountInCents int64  `json:"amount_in_cents"`
 	Currency      string `json:"currency"`
+	PaymentMethod struct {
+		Extra struct {
+			AsyncPaymentURL string `json:"async_payment_url"`
+		} `json:"extra"`
+	} `json:"payment_method"`
 }
 
 type transactionResponse struct {

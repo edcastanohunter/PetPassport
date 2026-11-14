@@ -170,6 +170,8 @@ var defaultStatus = map[Code]int{
 
 	// Billing: cobro y administración (M5.2). El resto usa el 409 por defecto.
 	Code("PAYMENT_PROVIDER_UNAVAILABLE"): http.StatusServiceUnavailable,
+	Code("PSE_UNAVAILABLE"):              http.StatusUnprocessableEntity,
+	Code("PSE_REDIRECT_UNAVAILABLE"):     http.StatusServiceUnavailable,
 	Code("REFUND_EXCEEDS_BALANCE"):       http.StatusUnprocessableEntity,
 	Code("MANUAL_AMOUNT_MISMATCH"):       http.StatusUnprocessableEntity,
 	Code("ADJUSTMENT_INVALID"):           http.StatusUnprocessableEntity,

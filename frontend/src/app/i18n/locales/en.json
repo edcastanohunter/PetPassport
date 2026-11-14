@@ -245,7 +245,11 @@
     "PLAN_EXISTS": "A plan with that code already exists: create a new version.",
     "INVITATION_EXISTS": "The organization already has a pending invitation from this account.",
     "INVITATION_NOT_PENDING": "The invitation was already accepted, declined or revoked.",
-    "LAST_ORGANIZATION": "The last organization cannot be removed from the account."
+    "LAST_ORGANIZATION": "The last organization cannot be removed from the account.",
+    "PSE_UNAVAILABLE": "PSE is not available for this account.",
+    "CHARGE_NOT_PAYABLE": "This charge is already paid or billed manually.",
+    "PAYMENT_IN_PROGRESS": "A payment with your bank is already in progress. Wait for it to be confirmed.",
+    "PSE_REDIRECT_UNAVAILABLE": "The bank did not respond in time. The payment is pending; check its status in a few minutes."
   },
   "fieldErrors": {
     "INVALID": "Invalid value.",
@@ -1750,6 +1754,27 @@
       "accept": "Accept",
       "decline": "Decline",
       "acceptHint": "Once accepted, this organization is billed under that account: its admin manages the plan and payment."
+    },
+    "pse": {
+      "title": "Pay with PSE",
+      "due": "There is a pending payment of {amount}. Choose your bank to complete it with PSE.",
+      "start": "Pay with PSE",
+      "bank": "Bank",
+      "chooseBank": "Choose your bank",
+      "payerType": "Payer type",
+      "company": "Legal entity",
+      "person": "Individual",
+      "legalIdType": "Document",
+      "legalId": "Number (without check digit)",
+      "phone": "Phone",
+      "pay": "Go to my bank",
+      "paid": "Payment confirmed. Thank you.",
+      "declined": "The bank declined the payment. You can try again or choose another bank.",
+      "returned": "We are confirming your payment with the bank. The status will update in a few minutes.",
+      "secureNote": "You sign in and approve the payment on your bank's page; PetPassport never receives your banking credentials.",
+      "useMethod": "Pay by PSE every period",
+      "methodSaved": "You will pay every period by PSE. We will email you when a payment is due.",
+      "methodHint": "With PSE the payment is not automatic: every period we will remind you to complete it from your bank."
     }
   }
 }

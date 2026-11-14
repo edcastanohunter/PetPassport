@@ -14,9 +14,20 @@ import (
 // ErrAccountNotFound indica que la cuenta de facturación no existe.
 var ErrAccountNotFound = errors.New("billing: la cuenta de facturación no existe")
 
+// ErrPSEUnavailable: el proveedor de pagos del país de la cuenta no ofrece PSE.
+var ErrPSEUnavailable = errors.New("billing: PSE no está disponible para esta cuenta")
+
+// Tipos de método de pago que el cliente elige.
+const (
+	MethodCard = "card"
+	MethodPSE  = "pse"
+)
+
 // AttachPaymentMethodCmd lleva el token de un solo uso del widget del proveedor
 // y las aceptaciones que el usuario vio en él. Nunca datos de tarjeta (SEC-001).
 type AttachPaymentMethodCmd struct {
+	// Kind es card (por defecto) o pse. PSE no tokeniza: no lleva ProviderToken.
+	Kind            string
 	ProviderToken   string
 	AcceptanceToken string
 	PersonalAuth    string
@@ -55,6 +66,17 @@ func (s *Service) AttachPaymentMethod(ctx context.Context, accountID uuid.UUID, 
 	if err != nil {
 		return domain.PaymentMethodRef{}, err
 	}
+	if cmd.Kind == MethodPSE {
+		// Cada cargo se pagará con su propio redirect al banco (PayerInitiated).
+		if _, ok := prov.(providers.PayerInitiated); !ok {
+			return domain.PaymentMethodRef{}, ErrPSEUnavailable
+		}
+		ref := domain.PaymentMethodRef{Provider: prov.Name(), Kind: MethodPSE}
+		if err := s.SetPaymentMethod(ctx, accountID, ref); err != nil {
+			return domain.PaymentMethodRef{}, err
+		}
+		return ref, nil
+	}
 	pm, err := prov.AttachPaymentMethod(ctx, providers.AttachRequest{
 		AccountID: accountID, Email: acc.LegalEntity.Email, ProviderToken: cmd.ProviderToken,
 		AcceptanceToken: cmd.AcceptanceToken, PersonalAuth: cmd.PersonalAuth,
@@ -70,6 +92,26 @@ func (s *Service) AttachPaymentMethod(ctx context.Context, accountID uuid.UUID, 
 		return domain.PaymentMethodRef{}, err
 	}
 	return ref, nil
+}
+
+// PSEBanks lista los bancos PSE del proveedor del país de la cuenta.
+func (s *Service) PSEBanks(ctx context.Context, accountID uuid.UUID) ([]providers.Bank, error) {
+	acc, err := s.queries.GetAccount(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if acc == nil {
+		return nil, ErrAccountNotFound
+	}
+	prov, err := s.router.Payment(ctx, acc.Country, false)
+	if err != nil {
+		return nil, err
+	}
+	pi, ok := prov.(providers.PayerInitiated)
+	if !ok {
+		return nil, ErrPSEUnavailable
+	}
+	return pi.Banks(ctx)
 }
 
 // RemovePaymentMethod retira el método de pago de la cuenta (PP-F5-API-004):

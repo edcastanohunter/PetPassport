@@ -244,6 +244,7 @@ describe('OrgBillingPage (PP-F5-FE-003)', () => {
     expect(POST).toHaveBeenCalledWith('/billing-accounts/{id}/payment-methods', {
       params: { path: { id: 'acc-1' } },
       body: {
+        kind: 'card',
         provider_token: 'tok_ok',
         acceptance_token: undefined,
         personal_auth_token: undefined,
