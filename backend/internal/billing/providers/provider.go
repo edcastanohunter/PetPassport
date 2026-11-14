@@ -158,6 +158,59 @@ type WebhookEvent struct {
 	SentAt  time.Time
 }
 
+// Bank es una entidad financiera disponible para pagos por transferencia (PSE).
+type Bank struct {
+	Code string
+	Name string
+}
+
+// Tipos de pagador de PSE.
+const (
+	PayerPerson  = "person"
+	PayerCompany = "company"
+)
+
+// StartPaymentRequest abre un pago que el pagador completa fuera de PetPassport
+// (PSE: el banco). Igual que ChargeRequest, (ChargeID, Attempt) es la clave de
+// idempotencia y viaja como referencia hasta el webhook.
+type StartPaymentRequest struct {
+	ChargeID        uuid.UUID
+	Attempt         int
+	Amount          float64
+	Currency        string
+	Email           string
+	BankCode        string
+	PayerType       string // person | company
+	LegalIDType     string // CC | NIT | CE | PP | TI
+	LegalID         string
+	FullName        string
+	Phone           string
+	Description     string
+	AcceptanceToken string
+	PersonalAuth    string
+	ReturnURL       string // a donde vuelve el pagador desde el banco
+}
+
+// Reference es la referencia que viaja al proveedor y vuelve en sus webhooks.
+func (r StartPaymentRequest) Reference() string { return Reference(r.ChargeID, r.Attempt) }
+
+// StartedPayment es el pago abierto: RedirectURL lleva al pagador a su banco.
+// El desenlace llega por webhook o consulta, como un cobro pendiente.
+type StartedPayment struct {
+	Ref         string
+	Status      ChargeStatus
+	RedirectURL string
+	ErrorCode   string
+}
+
+// PayerInitiated lo implementan los adaptadores con pagos de un solo uso que el
+// pagador completa en otro sitio (PSE en CO). No hay token reutilizable: cada
+// cargo se paga con su propio redirect (PP-F5-PRD-004, 03-arquitectura §2).
+type PayerInitiated interface {
+	Banks(ctx context.Context) ([]Bank, error)
+	StartPayment(ctx context.Context, req StartPaymentRequest) (StartedPayment, error)
+}
+
 // PaymentProvider es el puerto de la pasarela de pagos.
 type PaymentProvider interface {
 	Name() string

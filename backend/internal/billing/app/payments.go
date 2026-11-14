@@ -179,6 +179,9 @@ func (s *PaymentService) CollectCharge(ctx context.Context, chargeID uuid.UUID) 
 	if pm.Kind == "manual" {
 		return nil
 	}
+	if pm.Kind == MethodPSE {
+		return s.collectPSE(ctx, ch)
+	}
 	prov, err := s.router.PaymentByName(pm.Provider)
 	if err != nil {
 		return err

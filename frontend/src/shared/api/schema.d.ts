@@ -4456,6 +4456,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/billing-accounts/{id}/payment-methods/pse-banks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Bancos disponibles para pagar por PSE
+         * @description Entidades financieras del proveedor de pagos del país de la cuenta (PP-F5-PRD-004). Si el
+         *     proveedor no ofrece PSE → `422 PSE_UNAVAILABLE`.
+         */
+        get: operations["listPseBanks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/charges/{id}/pse-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pagar un cargo por PSE
+         * @description Abre el pago PSE de un cargo pendiente o fallido y devuelve la URL del banco a la que la SPA
+         *     redirige (PP-F5-PRD-004). El desenlace llega por webhook; el pagador vuelve a `return_path`.
+         *     PetPassport nunca recibe credenciales bancarias (PP-F5-SEC-001). Cargo pagado, de facturación
+         *     manual o sin importe → `409 CHARGE_NOT_PAYABLE`; pago en curso → `409 PAYMENT_IN_PROGRESS`;
+         *     proveedor sin PSE → `422 PSE_UNAVAILABLE`; pago creado sin URL del banco →
+         *     `503 PSE_REDIRECT_UNAVAILABLE`.
+         */
+        post: operations["startPsePayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/webhooks/payments/{provider}": {
         parameters: {
             query?: never;
@@ -7146,12 +7196,59 @@ export interface components {
             };
         };
         AttachPaymentMethodRequest: {
-            /** @description Token de un solo uso devuelto por el widget del proveedor. */
-            provider_token: string;
+            /**
+             * @description `card` (por defecto) cambia `provider_token` por un método reutilizable. `pse` no tokeniza:
+             *     cada cargo se paga con su propio redirect al banco (`POST /charges/{id}/pse-payment`).
+             * @default card
+             * @enum {string}
+             */
+            kind: "card" | "pse";
+            /** @description Token de un solo uso devuelto por el widget del proveedor. Obligatorio con `kind=card`. */
+            provider_token?: string;
             /** @description Aceptación de los términos del proveedor mostrada al usuario (de `client_config`). */
             acceptance_token?: string;
             /** @description Autorización de tratamiento de datos personales del proveedor (de `client_config`). */
             personal_auth_token?: string;
+        };
+        PseBank: {
+            /** @example 1007 */
+            code: string;
+            /** @example Bancolombia */
+            name: string;
+        };
+        PseBankList: {
+            data: components["schemas"]["PseBank"][];
+        };
+        PsePaymentRequest: {
+            /** @description Código del banco de `GET /billing-accounts/{id}/payment-methods/pse-banks`. */
+            bank_code: string;
+            /** @enum {string} */
+            payer_type: "person" | "company";
+            /** @enum {string} */
+            legal_id_type: "CC" | "NIT" | "CE" | "PP" | "TI";
+            legal_id: string;
+            /** @description Titular de la cuenta bancaria; por defecto, la razón social de la cuenta de facturación. */
+            full_name?: string;
+            /** @description Teléfono del pagador; por defecto, el de la cuenta de facturación. */
+            phone?: string;
+            /** @description Aceptación de los términos del proveedor (de `client_config` con `kind=pse`). */
+            acceptance_token: string;
+            /** @description Autorización de tratamiento de datos personales del proveedor (de `client_config`). */
+            personal_auth_token?: string;
+            /**
+             * @description Ruta de la SPA a la que vuelve el pagador desde el banco (relativa, empieza por `/`).
+             * @example /org/2b8a…/settings/billing?pse=return
+             */
+            return_path: string;
+        };
+        PsePayment: {
+            /** @enum {string} */
+            status: "pending" | "paid" | "failed";
+            /**
+             * Format: uri
+             * @description URL del banco. Presente mientras el pago está pendiente.
+             */
+            redirect_url?: string;
         };
         InvoiceCreditNote: {
             /** Format: uuid */
@@ -14054,6 +14151,56 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listPseBanks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["BillingAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bancos PSE */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PseBankList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    startPsePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ChargeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PsePaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Pago abierto (o ya resuelto por el banco) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PsePayment"];
+                };
             };
             default: components["responses"]["Problem"];
         };

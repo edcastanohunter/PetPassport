@@ -57,6 +57,10 @@ type Config struct {
 		AccessKey string
 		SecretKey string
 		UseSSL    bool
+		// FiscalBucket guarda facturas y notas crédito con Object Lock y
+		// retención FiscalRetention (PP-F5-ARQ-003, CMP-009).
+		FiscalBucket    string
+		FiscalRetention time.Duration
 	}
 
 	// Notifications (M2.4): el api ya no abre SMTP (ARQ-014); solo firma/valida
@@ -156,6 +160,7 @@ func Load() (*Config, error) {
 	cfg.Storage.AccessKey = os.Getenv("PP_STORAGE_ACCESS_KEY")
 	cfg.Storage.SecretKey = os.Getenv("PP_STORAGE_SECRET_KEY")
 	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
+	cfg.Storage.FiscalBucket, cfg.Storage.FiscalRetention = fiscalStorage(cfg.Env, &errs)
 
 	cfg.Notifications.UnsubscribeSecret = unsubscribeSecret(cfg.Env, &errs)
 	cfg.Notifications.EmailWebhookSecret = os.Getenv("PP_EMAIL_WEBHOOK_SECRET")
@@ -217,6 +222,26 @@ func getenv(key, def string) string {
 	return def
 }
 
+// fiscalRetentionDays: 10 años (3 bisiestos) de conservación de documentos
+// fiscales (RN-34, CMP-009; Estatuto Tributario art. 632 y Código de Comercio).
+const fiscalRetentionDays = 3653
+
+// fiscalStorage lee el bucket fiscal y su retención. Fuera de dev la retención
+// no puede bajar de 10 años: un valor menor solo sirve para poder vaciar el
+// MinIO de desarrollo.
+func fiscalStorage(env Env, errs *[]error) (string, time.Duration) {
+	bucket := getenv("PP_STORAGE_FISCAL_BUCKET", "petpassport-compliance-archive")
+	days, err := getenvInt("PP_STORAGE_FISCAL_RETENTION_DAYS", fiscalRetentionDays)
+	if err != nil {
+		*errs = append(*errs, err)
+		return bucket, fiscalRetentionDays * 24 * time.Hour
+	}
+	if days < 1 || (env != EnvDev && days < fiscalRetentionDays) {
+		*errs = append(*errs, fmt.Errorf("PP_STORAGE_FISCAL_RETENTION_DAYS=%d: fuera de dev el mínimo es %d (10 años)", days, fiscalRetentionDays))
+	}
+	return bucket, time.Duration(days) * 24 * time.Hour
+}
+
 func getenvInt(key string, def int) (int, error) {
 	v, ok := os.LookupEnv(key)
 	if !ok || v == "" {
@@ -273,6 +298,10 @@ type Worker struct {
 		AccessKey string
 		SecretKey string
 		UseSSL    bool
+		// FiscalBucket guarda facturas y notas crédito con Object Lock y
+		// retención FiscalRetention (PP-F5-ARQ-003, CMP-009).
+		FiscalBucket    string
+		FiscalRetention time.Duration
 	}
 	TypstBin      string
 	PublicBaseURL string
@@ -343,6 +372,7 @@ func LoadWorker() (*Worker, error) {
 	cfg.Storage.AccessKey = os.Getenv("PP_STORAGE_ACCESS_KEY")
 	cfg.Storage.SecretKey = os.Getenv("PP_STORAGE_SECRET_KEY")
 	cfg.Storage.UseSSL = getenv("PP_STORAGE_USE_SSL", "false") == "true"
+	cfg.Storage.FiscalBucket, cfg.Storage.FiscalRetention = fiscalStorage(cfg.Env, &errs)
 	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")
 	cfg.PublicBaseURL = getenv("PP_PUBLIC_BASE_URL", "http://localhost:5173")
 	cfg.TypstBin = getenv("PP_TYPST_BIN", "typst")

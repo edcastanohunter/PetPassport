@@ -349,6 +349,7 @@ Grafana, Prometheus y Alertmanager solo escuchan en `127.0.0.1`. Se accede con u
 | Alertas del proveedor | almacenamiento > 80 %, CPU > 80 % 15 min, backup fallido → canal del equipo | regla visible en la consola |
 | Rol de respaldo | `petpassport_backup` LOGIN, miembro de `pp_app_reader` (solo SELECT) | `\du petpassport_backup` |
 | Object storage | buckets `petpassport-media-<env>` y `petpassport-backups-<env>`, privados, versionados | `infra/storage/apply.sh` (abajo) |
+| Archivo fiscal | bucket `petpassport-<env>-compliance-archive` con Object Lock COMPLIANCE 10 años (terraform `modules/storage`); la credencial `PP_STORAGE_*` tiene `PutObject`, `PutObjectRetention`, `GetObject` y `GetBucketObjectLockConfiguration` sobre él | api y worker no arrancan si el bucket no tiene Object Lock; `mc retention info pp/<bucket>/billing/invoices/<cuenta>/<doc>/factura.pdf` |
 
 Rol de respaldo (con el usuario administrador del proveedor):
 

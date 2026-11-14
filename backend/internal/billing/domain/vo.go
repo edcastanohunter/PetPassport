@@ -157,6 +157,10 @@ type PaymentMethodRef struct {
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
+// Reusable indica si el proveedor guarda un token con el que cobrar sin el
+// pagador. PSE y el pago manual no lo tienen: cada cargo lo paga el cliente.
+func (r PaymentMethodRef) Reusable() bool { return r.Kind != "pse" && r.Kind != "manual" }
+
 // PaymentProviderRef asocia la cuenta al cliente en la pasarela.
 type PaymentProviderRef struct {
 	Name       string `json:"name"`

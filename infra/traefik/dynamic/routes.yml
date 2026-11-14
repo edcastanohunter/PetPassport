@@ -8,6 +8,15 @@ http:
       service: frontend
       middlewares: [security-headers, compress]
       tls: {}
+    # Página de facturación (PP-F5-SEC-001): única con el widget del proveedor de
+    # pagos; su CSP añade solo los orígenes de Wompi.
+    frontend-billing:
+      rule: Host(`app.pp.localhost`) && PathRegexp(`^/org/[^/]+/settings/billing/?$`)
+      priority: 300
+      entryPoints: [websecure]
+      service: frontend
+      middlewares: [payment-page-headers, compress]
+      tls: {}
     api:
       rule: Host(`api.pp.localhost`) && (PathPrefix(`/api/`))
       entryPoints: [websecure]
@@ -86,6 +95,18 @@ http:
         referrerPolicy: strict-origin-when-cross-origin
         frameDeny: true
         contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.pp.localhost https://auth.pp.localhost wss://app.pp.localhost; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.pp.localhost; object-src 'none'; upgrade-insecure-requests"
+        customResponseHeaders:
+          Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
+          Cross-Origin-Opener-Policy: same-origin
+    payment-page-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        frameDeny: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' https://checkout.wompi.co; frame-src https://checkout.wompi.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.wompi.co; font-src 'self' data:; connect-src 'self' https://api.pp.localhost https://auth.pp.localhost wss://app.pp.localhost https://checkout.wompi.co https://production.wompi.co https://sandbox.wompi.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://auth.pp.localhost; object-src 'none'; upgrade-insecure-requests"
         customResponseHeaders:
           Permissions-Policy: "camera=(self), microphone=(), geolocation=()"
           Cross-Origin-Opener-Policy: same-origin

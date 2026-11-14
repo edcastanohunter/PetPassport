@@ -35,6 +35,8 @@ type BillingHandlers struct {
 	// invitations: cuentas multi-organización (PRD-008); nil → sin invitaciones.
 	invitations Invitations
 	scope       Scope
+	// publicBaseURL: origen de la SPA para la vuelta desde el banco (PSE).
+	publicBaseURL string
 }
 
 // NewBillingHandlers crea una nueva instancia de BillingHandlers.

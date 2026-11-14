@@ -11,4 +11,8 @@ until mc alias set local "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 
   sleep 2
 done
 /bin/sh /policies/apply.sh local petpassport-media petpassport-backups
-echo "buckets petpassport-media y petpassport-backups listos"
+# Documentos fiscales (F5 ARQ-003): Object Lock solo se activa al crear el bucket.
+# La retención la fija la aplicación por objeto (PP_STORAGE_FISCAL_RETENTION_DAYS).
+mc mb --ignore-existing --with-lock local/petpassport-compliance-archive
+mc anonymous set none local/petpassport-compliance-archive
+echo "buckets petpassport-media, petpassport-backups y petpassport-compliance-archive listos"

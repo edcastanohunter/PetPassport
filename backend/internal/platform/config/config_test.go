@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoad_Defaults(t *testing.T) {
@@ -98,6 +99,35 @@ func TestLoadWorker_MailSettings(t *testing.T) {
 	t.Setenv("PP_SMTP_HOST", "smtp.example.com")
 	t.Setenv("PP_UNSUBSCRIBE_SECRET", strings.Repeat("u", 32))
 	t.Setenv("PP_MAIL_ADDRESS", "PetPassport · Calle 1, Bogotá")
+	if _, err := LoadWorker(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// PP-F5-ARQ-003 / CMP-009: los documentos fiscales se conservan 10 años; solo
+// dev puede acortar la retención (para poder vaciar su MinIO).
+func TestLoadWorker_FiscalRetentionFloorOutsideDev(t *testing.T) {
+	t.Setenv("PP_DB_URL", "postgres://x")
+	cfg, err := LoadWorker()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Storage.FiscalBucket != "petpassport-compliance-archive" || cfg.Storage.FiscalRetention != 3653*24*time.Hour {
+		t.Fatalf("defaults: %q %s", cfg.Storage.FiscalBucket, cfg.Storage.FiscalRetention)
+	}
+	t.Setenv("PP_STORAGE_FISCAL_RETENTION_DAYS", "1")
+	if cfg, err = LoadWorker(); err != nil || cfg.Storage.FiscalRetention != 24*time.Hour {
+		t.Fatalf("dev con 1 día: %v %v", cfg, err)
+	}
+
+	t.Setenv("PP_ENV", "prod")
+	t.Setenv("PP_SMTP_HOST", "smtp.example.com")
+	t.Setenv("PP_UNSUBSCRIBE_SECRET", strings.Repeat("u", 32))
+	t.Setenv("PP_MAIL_ADDRESS", "PetPassport · Calle 1, Bogotá")
+	if _, err := LoadWorker(); err == nil || !strings.Contains(err.Error(), "PP_STORAGE_FISCAL_RETENTION_DAYS") {
+		t.Fatalf("prod con 1 día debe fallar: %v", err)
+	}
+	t.Setenv("PP_STORAGE_FISCAL_RETENTION_DAYS", "")
 	if _, err := LoadWorker(); err != nil {
 		t.Fatal(err)
 	}

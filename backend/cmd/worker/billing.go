@@ -55,9 +55,12 @@ func newBillingModule(ctx context.Context, a *app, sched *scheduler.Scheduler, l
 
 	var archive billingapp.DocumentArchive = noArchive{}
 	if a.cfg.Storage.Endpoint != "" {
+		// Facturas y notas crédito: bucket propio con Object Lock y retención
+		// COMPLIANCE de 10 años (PP-F5-ARQ-003, CMP-009), nunca el de media.
 		o, err := storage.NewMinIO(ctx, storage.MinIOOptions{
-			Endpoint: a.cfg.Storage.Endpoint, Bucket: a.cfg.Storage.Bucket,
+			Endpoint: a.cfg.Storage.Endpoint, Bucket: a.cfg.Storage.FiscalBucket,
 			AccessKey: a.cfg.Storage.AccessKey, SecretKey: a.cfg.Storage.SecretKey, UseSSL: a.cfg.Storage.UseSSL,
+			RetainFor: a.cfg.Storage.FiscalRetention,
 		})
 		if err != nil {
 			return nil, err
